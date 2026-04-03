@@ -4,7 +4,7 @@ import { NewTenantForm } from './new-tenant-form';
 
 export default async function NewTenantPage() {
   const user = await getUser();
-  if (!user) redirect('/auth/sign-in');
+  if (!user) redirect('/auth/sign-in?next=/new');
 
   return <NewTenantForm />;
 }
