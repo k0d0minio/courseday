@@ -1,24 +1,13 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
   experimental: {
-    // Enable experimental features if needed
+    // Required to use ioredis (Node.js TCP sockets) inside middleware.
+    // Without this, middleware runs on the Edge runtime which doesn't support
+    // Node.js APIs. The type definition lags the runtime — suppress the error.
+    // @ts-expect-error nodeMiddleware is not yet in ExperimentalConfig types
+    nodeMiddleware: true,
   },
-  // Ensure proper handling of Vercel Analytics and Speed Insights
-  // headers: async () => {
-  //   return [
-  //     {
-  //       source: '/_vercel/speed-insights/script.js',
-  //       headers: [
-  //         {
-  //           key: 'Cache-Control',
-  //           value: 'public, max-age=31536000, immutable',
-  //         },
-  //       ],
-  //     },
-  //   ];
-  // },
 };
 
 export default nextConfig;

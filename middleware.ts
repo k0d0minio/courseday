@@ -1,73 +1,60 @@
-import { type NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { redis } from '@/lib/redis';
+import { extractSubdomain } from '@/lib/subdomain';
 import { rootDomain } from '@/lib/utils';
+import type { TenantRedisData } from '@/app/actions/tenants';
 
-function extractSubdomain(request: NextRequest): string | null {
-  const url = request.url;
-  const host = request.headers.get('host') || '';
-  const hostname = host.split(':')[0];
-
-  // Local development environment
-  if (url.includes('localhost') || url.includes('127.0.0.1')) {
-    // Try to extract subdomain from the full URL
-    const fullUrlMatch = url.match(/http:\/\/([^.]+)\.localhost/);
-    if (fullUrlMatch && fullUrlMatch[1]) {
-      return fullUrlMatch[1];
-    }
-
-    // Fallback to host header approach
-    if (hostname.includes('.localhost')) {
-      return hostname.split('.')[0];
-    }
-
-    return null;
-  }
-
-  // Production environment
-  const rootDomainFormatted = rootDomain.split(':')[0];
-
-  // Handle preview deployment URLs (tenant---branch-name.vercel.app)
-  if (hostname.includes('---') && hostname.endsWith('.vercel.app')) {
-    const parts = hostname.split('---');
-    return parts.length > 0 ? parts[0] : null;
-  }
-
-  // Regular subdomain detection
-  const isSubdomain =
-    hostname !== rootDomainFormatted &&
-    hostname !== `www.${rootDomainFormatted}` &&
-    hostname.endsWith(`.${rootDomainFormatted}`);
-
-  return isSubdomain ? hostname.replace(`.${rootDomainFormatted}`, '') : null;
-}
+// Node.js runtime is required because ioredis uses TCP sockets,
+// which are not available in the Edge runtime.
+export const runtime = 'nodejs';
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const subdomain = extractSubdomain(request);
+  const host = request.headers.get('host') || '';
+  const subdomain = extractSubdomain(host, rootDomain);
 
-  if (subdomain) {
-    // Block access to admin page from subdomains
-    if (pathname.startsWith('/admin')) {
-      return NextResponse.redirect(new URL('/', request.url));
-    }
-
-    // For the root path on a subdomain, rewrite to the subdomain page
-    if (pathname === '/') {
-      return NextResponse.rewrite(new URL(`/s/${subdomain}`, request.url));
-    }
+  // No subdomain — root domain, pass through to platform pages.
+  if (!subdomain) {
+    return NextResponse.next();
   }
 
-  // On the root domain, allow normal access
-  return NextResponse.next();
+  // www — redirect to root domain.
+  if (subdomain === 'www') {
+    const url = request.nextUrl.clone();
+    url.host = rootDomain;
+    return NextResponse.redirect(url);
+  }
+
+  // Look up tenant in Redis.
+  const cached = await redis.get(`subdomain:${subdomain}`);
+  if (!cached) {
+    return new NextResponse('Not found', { status: 404 });
+  }
+
+  const tenant = JSON.parse(cached) as TenantRedisData;
+
+  // Inject tenant context into headers and rewrite to the tenant route group.
+  // e.g. pierpont.example.com/day/2026-04-03
+  //   → example.com/{slug}/day/2026-04-03  (handled by app/[tenant]/...)
+  const { pathname } = request.nextUrl;
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-tenant-id', tenant.id);
+  requestHeaders.set('x-tenant-slug', tenant.slug);
+
+  return NextResponse.rewrite(
+    new URL(`/${tenant.slug}${pathname}`, request.url),
+    { request: { headers: requestHeaders } }
+  );
 }
 
 export const config = {
   matcher: [
     /*
-     * Match all paths except for:
-     * 1. /api routes
-     * 2. /_next (Next.js internals)
-     * 3. all root files inside /public (e.g. /favicon.ico)
+     * Match all paths except:
+     * - /api routes
+     * - /_next (Next.js internals)
+     * - Static files (favicon.ico, images, etc.)
      */
-    '/((?!api|_next|[\\w-]+\\.\\w+).*)'
-  ]
+    '/((?!api|_next|[\\w-]+\\.\\w+).*)',
+  ],
 };
