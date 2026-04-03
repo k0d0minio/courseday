@@ -50,4 +50,21 @@ await redis.set(
 console.log('✓ Tenant inserted into Redis');
 
 await redis.quit();
+
+// ── Optional: seed editor membership ─────────────────────────────────────
+const userId = process.env.USER_ID;
+if (userId) {
+  const { error: memberError } = await supabase.from('memberships').upsert(
+    { user_id: userId, tenant_id: TENANT_ID, role: 'editor' },
+    { onConflict: 'user_id,tenant_id' }
+  );
+  if (memberError) {
+    console.error('Membership insert failed:', memberError.message);
+    process.exit(1);
+  }
+  console.log(`✓ Editor membership created for user ${userId}`);
+} else {
+  console.log('  (Skip membership — set USER_ID=<uuid> to seed an editor)');
+}
+
 console.log('\nDone. Visit test.localhost:3000 (dev) or test.<your-domain> (prod).');

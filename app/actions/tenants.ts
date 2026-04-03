@@ -6,6 +6,7 @@ import {
   createSupabaseServiceClient,
 } from '@/lib/supabase-server';
 import { isValidSlug } from '@/lib/tenant-validation';
+import { getUser } from '@/app/actions/auth';
 
 export type TenantRedisData = {
   id: string;
@@ -69,8 +70,21 @@ export async function createTenant(data: {
   };
   await redis.set(`subdomain:${tenant.slug}`, JSON.stringify(redisData));
 
-  // TODO (T-08): Create initial membership row for the creating user with role 'editor'.
-  // Requires the memberships table introduced in T-08.
+  // Create initial membership row for the creating user with role 'editor'.
+  // Must use service client — user has no membership yet so RLS would block.
+  const { getUser } = await import('@/app/actions/auth');
+  const currentUser = await getUser();
+  if (!currentUser) {
+    await serviceClient.from('tenants').delete().eq('id', tenant.id);
+    await redis.del(`subdomain:${tenant.slug}`);
+    return { success: false, error: 'Not authenticated.' };
+  }
+
+  await serviceClient.from('memberships').insert({
+    user_id: currentUser.id,
+    tenant_id: tenant.id,
+    role: 'editor',
+  });
 
   return { success: true, data: redisData };
 }
