@@ -2,6 +2,8 @@
 
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { getTenantId } from '@/lib/tenant';
+import { getUserRole } from '@/lib/membership';
 
 export async function signIn(_prevState: unknown, formData: FormData) {
   const email = formData.get('email') as string;
@@ -51,4 +53,20 @@ export async function requireUser() {
     redirect('/auth/sign-in');
   }
   return user;
+}
+
+/**
+ * Returns the current user + their role for the active tenant.
+ * Safe to call from client components via useEffect — returns null values
+ * rather than throwing when outside tenant context.
+ */
+export async function getAuthState() {
+  const user = await getUser();
+  if (!user) return { user: null, role: null, isEditor: false };
+
+  const tenantId = await getTenantId().catch(() => null);
+  if (!tenantId) return { user, role: null, isEditor: false };
+
+  const role = await getUserRole(tenantId);
+  return { user, role, isEditor: role === 'editor' };
 }
