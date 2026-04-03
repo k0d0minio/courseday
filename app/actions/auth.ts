@@ -8,6 +8,7 @@ import { getUserRole } from '@/lib/membership';
 export async function signIn(_prevState: unknown, formData: FormData) {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
+  const redirectTo = (formData.get('redirectTo') as string) || '/';
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -16,7 +17,7 @@ export async function signIn(_prevState: unknown, formData: FormData) {
     return { error: error.message };
   }
 
-  redirect('/');
+  redirect(redirectTo);
 }
 
 export async function signUp(_prevState: unknown, formData: FormData) {
