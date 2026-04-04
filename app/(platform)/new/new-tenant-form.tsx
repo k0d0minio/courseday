@@ -157,7 +157,7 @@ export function NewTenantForm() {
               </div>
             </CardContent>
 
-            <CardFooter>
+            <CardFooter className="pt-2">
               <Button
                 type="submit"
                 className="w-full"

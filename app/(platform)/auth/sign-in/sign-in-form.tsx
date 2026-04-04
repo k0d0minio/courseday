@@ -55,7 +55,7 @@ export function SignInForm() {
               </div>
             </CardContent>
 
-            <CardFooter className="flex flex-col gap-3">
+            <CardFooter className="flex flex-col gap-3 pt-2">
               <Button type="submit" className="w-full" disabled={isPending}>
                 {isPending ? 'Signing in…' : 'Sign in'}
               </Button>
