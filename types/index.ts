@@ -16,35 +16,43 @@ export type MembershipUpdate = TablesUpdate<'memberships'>;
 // ── Future table aliases (populated when tables are created and db:types is re-run) ──
 // These are stubs that will be replaced with generated row types.
 
-/** @todo Replace with Tables<'days'> once the days table migration exists */
+/** @todo Replace with Tables<'day'> once db:types is re-run after T-17 migration */
 export type Day = {
   id: string;
   tenant_id: string;
-  date: string;
+  date_iso: string;
+  weekday: string;
   created_at: string;
-  updated_at: string;
 };
-export type DayInsert = Omit<Day, 'id' | 'created_at' | 'updated_at'>;
-export type DayUpdate = Partial<DayInsert>;
+export type DayInsert = Omit<Day, 'id' | 'created_at'>;
 
-/** @todo Replace with Tables<'program_items'> once the program_items migration exists */
+/** @todo Replace with Tables<'program_item'> once the program_item migration exists (T-20) */
 export type ProgramItem = {
   id: string;
   tenant_id: string;
   day_id: string;
+  type: 'golf' | 'event';
   title: string;
+  description: string | null;
   start_time: string | null;
   end_time: string | null;
+  guest_count: number | null;
+  capacity: number | null;
   venue_type_id: string | null;
-  point_of_contact_id: string | null;
-  recurrence_rule: string | null;
+  poc_id: string | null;
+  table_breakdown: number[] | null;
+  is_tour_operator: boolean;
+  notes: string | null;
+  is_recurring: boolean;
+  recurrence_frequency: string | null;
+  recurrence_group_id: string | null;
   created_at: string;
   updated_at: string;
 };
 export type ProgramItemInsert = Omit<ProgramItem, 'id' | 'created_at' | 'updated_at'>;
 export type ProgramItemUpdate = Partial<ProgramItemInsert>;
 
-/** @todo Replace with Tables<'reservations'> once the reservations migration exists */
+/** @todo Replace with Tables<'reservation'> once the reservation migration exists (T-23) */
 export type Reservation = {
   id: string;
   tenant_id: string;
@@ -60,25 +68,31 @@ export type Reservation = {
 export type ReservationInsert = Omit<Reservation, 'id' | 'created_at' | 'updated_at'>;
 export type ReservationUpdate = Partial<ReservationInsert>;
 
-/** @todo Replace with Tables<'hotel_bookings'> */
+/** @todo Replace with Tables<'hotel_booking'> once the hotel_booking migration exists (T-25) */
 export type HotelBooking = {
   id: string;
   tenant_id: string;
   guest_name: string;
+  guest_count: number;
   check_in: string;
   check_out: string;
-  room_type: string | null;
+  is_tour_operator: boolean;
+  notes: string | null;
   created_at: string;
   updated_at: string;
 };
 export type HotelBookingInsert = Omit<HotelBooking, 'id' | 'created_at' | 'updated_at'>;
 export type HotelBookingUpdate = Partial<HotelBookingInsert>;
 
-/** @todo Replace with Tables<'breakfast_configurations'> */
+/** @todo Replace with Tables<'breakfast_configuration'> once the migration exists (T-26) */
 export type BreakfastConfiguration = {
   id: string;
   tenant_id: string;
-  day_id: string;
+  hotel_booking_id: string;
+  breakfast_date: string;
+  table_breakdown: number[] | null;
+  total_guests: number;
+  start_time: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;

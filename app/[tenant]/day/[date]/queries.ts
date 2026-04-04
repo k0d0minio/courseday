@@ -48,16 +48,16 @@ export async function getHotelBookingsForDate(
   return (data ?? []) as unknown as HotelBooking[];
 }
 
-export async function getBreakfastConfigForDay(
+export async function getBreakfastConfigsForDay(
   tenantId: string,
-  dayId: string
-): Promise<BreakfastConfiguration | null> {
+  dateIso: string
+): Promise<BreakfastConfiguration[]> {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from('breakfast_configurations')
     .select('*')
     .eq('tenant_id', tenantId)
-    .eq('day_id', dayId)
-    .maybeSingle();
-  return (data ?? null) as unknown as BreakfastConfiguration | null;
+    .eq('breakfast_date', dateIso)
+    .order('created_at');
+  return (data ?? []) as unknown as BreakfastConfiguration[];
 }

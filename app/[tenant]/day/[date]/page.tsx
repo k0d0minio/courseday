@@ -8,7 +8,7 @@ import {
   getProgramItemsForDay,
   getReservationsForDay,
   getHotelBookingsForDate,
-  getBreakfastConfigForDay,
+  getBreakfastConfigsForDay,
 } from './queries';
 import { DayViewClient } from './DayViewClient';
 import type { ProgramItem, Reservation, HotelBooking, BreakfastConfiguration } from '@/types/index';
@@ -16,10 +16,11 @@ import type { AuthState } from '@/types/actions';
 
 export type DayViewProps = {
   date: string;
+  today: string;
   programItems: ProgramItem[];
   reservations: Reservation[];
   hotelBookings: HotelBooking[];
-  breakfastConfig: BreakfastConfiguration | null;
+  breakfastConfigs: BreakfastConfiguration[];
   authState: AuthState;
 };
 
@@ -59,22 +60,23 @@ export default async function DayPage({
   const day = dayResult.data;
 
   // Load all day data + auth state in parallel
-  const [programItems, reservations, hotelBookings, breakfastConfig, authState] =
+  const [programItems, reservations, hotelBookings, breakfastConfigs, authState] =
     await Promise.all([
       getProgramItemsForDay(tenant.id, day.id),
       getReservationsForDay(tenant.id, day.id),
       getHotelBookingsForDate(tenant.id, date),
-      getBreakfastConfigForDay(tenant.id, day.id),
+      getBreakfastConfigsForDay(tenant.id, date),
       getAuthState(),
     ]);
 
   return (
     <DayViewClient
       date={date}
+      today={today}
       programItems={programItems}
       reservations={reservations}
       hotelBookings={hotelBookings}
-      breakfastConfig={breakfastConfig}
+      breakfastConfigs={breakfastConfigs}
       authState={authState}
     />
   );
