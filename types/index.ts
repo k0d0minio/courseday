@@ -52,16 +52,21 @@ export type ProgramItem = {
 export type ProgramItemInsert = Omit<ProgramItem, 'id' | 'created_at' | 'updated_at'>;
 export type ProgramItemUpdate = Partial<ProgramItemInsert>;
 
-/** @todo Replace with Tables<'reservation'> once the reservation migration exists (T-23) */
+/** @todo Replace with Tables<'reservation'> once db:types is re-run after T-23 migration */
 export type Reservation = {
   id: string;
   tenant_id: string;
   day_id: string;
-  guest_name: string;
-  tee_time: string | null;
-  holes: number | null;
+  guest_name: string | null;
+  guest_email: string | null;
+  guest_phone: string | null;
+  guest_count: number | null;
+  start_time: string | null;
+  end_time: string | null;
+  notes: string | null;
   hotel_booking_id: string | null;
   program_item_id: string | null;
+  table_index: number | null;
   created_at: string;
   updated_at: string;
 };
