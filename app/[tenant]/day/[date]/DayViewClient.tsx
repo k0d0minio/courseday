@@ -6,8 +6,15 @@ import { DayNav } from '@/components/day-nav';
 import { DaySummaryCard } from '@/components/day-summary-card';
 import { AddEntryModal } from '@/components/add-entry-modal';
 import { EntryCard } from '@/components/entry-card';
+import { AddReservationModal } from '@/components/add-reservation-modal';
+import { ReservationCard } from '@/components/reservation-card';
 import { Button } from '@/components/ui/button';
-import type { ProgramItem, ProgramItemWithRelations } from '@/types/index';
+import type {
+  ProgramItem,
+  ProgramItemWithRelations,
+  Reservation,
+  ReservationWithRelations,
+} from '@/types/index';
 import type { DayViewProps } from './page';
 
 export function DayViewClient({
@@ -15,7 +22,7 @@ export function DayViewClient({
   dayId,
   today,
   programItems: initialProgramItems,
-  reservations,
+  reservations: initialReservations,
   hotelBookings,
   breakfastConfigs,
   pocs,
@@ -25,15 +32,23 @@ export function DayViewClient({
   const [programItems, setProgramItems] = useState(
     initialProgramItems as ProgramItemWithRelations[]
   );
+  const [reservations, setReservations] = useState(
+    initialReservations as ReservationWithRelations[]
+  );
 
   // Entry modal state
   const [entryModalOpen, setEntryModalOpen] = useState(false);
   const [entryType, setEntryType] = useState<'golf' | 'event'>('golf');
   const [editEntry, setEditEntry] = useState<ProgramItemWithRelations | null>(null);
 
-  // Placeholder modal state for T-24 / T-27
-  const [_addReservationOpen, setAddReservationOpen] = useState(false);
+  // Reservation modal state
+  const [reservationModalOpen, setReservationModalOpen] = useState(false);
+  const [editReservation, setEditReservation] = useState<ReservationWithRelations | null>(null);
+
+  // Placeholder for T-27
   const [_addHotelBookingOpen, setAddHotelBookingOpen] = useState(false);
+
+  // ---------- Entry handlers ----------
 
   function openAddEntry(type: 'golf' | 'event') {
     setEntryType(type);
@@ -65,11 +80,43 @@ export function DayViewClient({
     if (mode === 'all') {
       const groupId = programItems.find((p) => p.id === id)?.recurrence_group_id;
       setProgramItems((prev) =>
-        groupId ? prev.filter((p) => p.recurrence_group_id !== groupId) : prev.filter((p) => p.id !== id)
+        groupId
+          ? prev.filter((p) => p.recurrence_group_id !== groupId)
+          : prev.filter((p) => p.id !== id)
       );
     } else {
       setProgramItems((prev) => prev.filter((p) => p.id !== id));
     }
+  }
+
+  // ---------- Reservation handlers ----------
+
+  function openAddReservation() {
+    setEditReservation(null);
+    setReservationModalOpen(true);
+  }
+
+  function openEditReservation(item: ReservationWithRelations) {
+    setEditReservation(item);
+    setReservationModalOpen(true);
+  }
+
+  function handleReservationSaved(item: Reservation) {
+    setReservations((prev) => {
+      const idx = prev.findIndex((r) => r.id === item.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = item as ReservationWithRelations;
+        return next;
+      }
+      return [...prev, item as ReservationWithRelations].sort((a, b) =>
+        (a.start_time ?? '').localeCompare(b.start_time ?? '')
+      );
+    });
+  }
+
+  function handleReservationDeleted(id: string) {
+    setReservations((prev) => prev.filter((r) => r.id !== id));
   }
 
   return (
@@ -98,7 +145,6 @@ export function DayViewClient({
             </div>
           )}
         </div>
-
         {programItems.length === 0 ? (
           <p className="text-sm text-muted-foreground">No entries yet.</p>
         ) : (
@@ -116,18 +162,30 @@ export function DayViewClient({
         )}
       </section>
 
-      {/* Tee Time Reservations — cards added in T-24 */}
+      {/* Tee Time Reservations */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold">Tee Time Reservations</h2>
           {authState.isEditor && (
-            <Button size="sm" onClick={() => setAddReservationOpen(true)}>
+            <Button size="sm" onClick={openAddReservation}>
               <Plus className="w-4 h-4 mr-1" /> Add reservation
             </Button>
           )}
         </div>
-        {reservations.length === 0 && (
+        {reservations.length === 0 ? (
           <p className="text-sm text-muted-foreground">No reservations yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {reservations.map((item) => (
+              <ReservationCard
+                key={item.id}
+                item={item}
+                isEditor={authState.isEditor}
+                onEdit={openEditReservation}
+                onDeleted={handleReservationDeleted}
+              />
+            ))}
+          </div>
         )}
       </section>
 
@@ -156,6 +214,16 @@ export function DayViewClient({
         venueTypes={venueTypes}
         editItem={editEntry}
         onSuccess={handleEntrySaved}
+      />
+
+      <AddReservationModal
+        isOpen={reservationModalOpen}
+        onClose={() => setReservationModalOpen(false)}
+        dayId={dayId}
+        hotelBookings={hotelBookings}
+        programItems={programItems}
+        editItem={editReservation}
+        onSuccess={handleReservationSaved}
       />
     </div>
   );

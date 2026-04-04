@@ -118,3 +118,9 @@ export type ProgramItemWithRelations = ProgramItem & {
   venue_type: VenueType | null;
   point_of_contact: PointOfContact | null;
 };
+
+/** Reservation with joined hotel_booking and program_item relations */
+export type ReservationWithRelations = Reservation & {
+  hotel_booking: HotelBooking | null;
+  program_item: ProgramItem | null;
+};
