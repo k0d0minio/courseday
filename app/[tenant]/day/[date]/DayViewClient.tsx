@@ -5,8 +5,9 @@ import { Plus } from 'lucide-react';
 import { DayNav } from '@/components/day-nav';
 import { DaySummaryCard } from '@/components/day-summary-card';
 import { AddEntryModal } from '@/components/add-entry-modal';
+import { EntryCard } from '@/components/entry-card';
 import { Button } from '@/components/ui/button';
-import type { ProgramItem } from '@/types/index';
+import type { ProgramItem, ProgramItemWithRelations } from '@/types/index';
 import type { DayViewProps } from './page';
 
 export function DayViewClient({
@@ -21,12 +22,14 @@ export function DayViewClient({
   venueTypes,
   authState,
 }: DayViewProps) {
-  const [programItems, setProgramItems] = useState(initialProgramItems);
+  const [programItems, setProgramItems] = useState(
+    initialProgramItems as ProgramItemWithRelations[]
+  );
 
   // Entry modal state
   const [entryModalOpen, setEntryModalOpen] = useState(false);
   const [entryType, setEntryType] = useState<'golf' | 'event'>('golf');
-  const [editEntry, setEditEntry] = useState<ProgramItem | null>(null);
+  const [editEntry, setEditEntry] = useState<ProgramItemWithRelations | null>(null);
 
   // Placeholder modal state for T-24 / T-27
   const [_addReservationOpen, setAddReservationOpen] = useState(false);
@@ -38,7 +41,7 @@ export function DayViewClient({
     setEntryModalOpen(true);
   }
 
-  function openEditEntry(item: ProgramItem) {
+  function openEditEntry(item: ProgramItemWithRelations) {
     setEntryType(item.type);
     setEditEntry(item);
     setEntryModalOpen(true);
@@ -49,13 +52,24 @@ export function DayViewClient({
       const idx = prev.findIndex((p) => p.id === item.id);
       if (idx >= 0) {
         const next = [...prev];
-        next[idx] = item;
+        next[idx] = item as ProgramItemWithRelations;
         return next;
       }
-      return [...prev, item].sort((a, b) =>
+      return [...prev, item as ProgramItemWithRelations].sort((a, b) =>
         (a.start_time ?? '').localeCompare(b.start_time ?? '')
       );
     });
+  }
+
+  function handleEntryDeleted(id: string, mode: 'single' | 'all') {
+    if (mode === 'all') {
+      const groupId = programItems.find((p) => p.id === id)?.recurrence_group_id;
+      setProgramItems((prev) =>
+        groupId ? prev.filter((p) => p.recurrence_group_id !== groupId) : prev.filter((p) => p.id !== id)
+      );
+    } else {
+      setProgramItems((prev) => prev.filter((p) => p.id !== id));
+    }
   }
 
   return (
@@ -69,7 +83,7 @@ export function DayViewClient({
         breakfastConfigs={breakfastConfigs}
       />
 
-      {/* Golf & Events — entry cards added in T-22 */}
+      {/* Golf & Events */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold">Golf &amp; Events</h2>
@@ -84,12 +98,25 @@ export function DayViewClient({
             </div>
           )}
         </div>
-        {programItems.length === 0 && (
+
+        {programItems.length === 0 ? (
           <p className="text-sm text-muted-foreground">No entries yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {programItems.map((item) => (
+              <EntryCard
+                key={item.id}
+                item={item}
+                isEditor={authState.isEditor}
+                onEdit={openEditEntry}
+                onDeleted={handleEntryDeleted}
+              />
+            ))}
+          </div>
         )}
       </section>
 
-      {/* Tee Time Reservations — reservation cards added in T-24 */}
+      {/* Tee Time Reservations — cards added in T-24 */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold">Tee Time Reservations</h2>

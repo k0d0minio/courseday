@@ -107,3 +107,9 @@ export type PointOfContactUpdate = TablesUpdate<'point_of_contact'>;
 export type VenueType = Tables<'venue_type'>;
 export type VenueTypeInsert = TablesInsert<'venue_type'>;
 export type VenueTypeUpdate = TablesUpdate<'venue_type'>;
+
+/** ProgramItem with joined venue_type and point_of_contact relations */
+export type ProgramItemWithRelations = ProgramItem & {
+  venue_type: VenueType | null;
+  point_of_contact: PointOfContact | null;
+};

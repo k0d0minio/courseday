@@ -10,7 +10,7 @@ export async function getProgramItemsForDay(
 ): Promise<ProgramItem[]> {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
-    .from('program_items')
+    .from('program_item')
     .select('*, point_of_contact(*), venue_type(*)')
     .eq('tenant_id', tenantId)
     .eq('day_id', dayId)
