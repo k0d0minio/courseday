@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Platforms Starter Kit',
-  description: 'Next.js template for building a multi-tenant SaaS.',
+  title: 'Courseday',
+  description: 'Daily operations and team communication for golf venues, private clubs, and resorts.',
 };
 
 export default function RootLayout({
