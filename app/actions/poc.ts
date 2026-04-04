@@ -1,0 +1,148 @@
+'use server';
+
+import { z } from 'zod';
+import { createTenantClient } from '@/lib/supabase-server';
+import { getTenantId } from '@/lib/tenant';
+import { getUserRole, requireEditor } from '@/lib/membership';
+import type { ActionResponse } from '@/types/actions';
+import type { PointOfContact } from '@/types/index';
+
+// ---------------------------------------------------------------------------
+// Validation schema (shared with client for form validation)
+// ---------------------------------------------------------------------------
+export const pocSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  email: z
+    .string()
+    .email('Invalid email address')
+    .optional()
+    .or(z.literal('')),
+  phone: z.string().optional().or(z.literal('')),
+});
+
+export type PocFormData = z.infer<typeof pocSchema>;
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function normaliseEmpty(s: string | undefined | null): string | null {
+  return s && s.trim() !== '' ? s.trim() : null;
+}
+
+// ---------------------------------------------------------------------------
+// Actions
+// ---------------------------------------------------------------------------
+
+export async function getAllPOCs(): Promise<ActionResponse<PointOfContact[]>> {
+  const tenantId = await getTenantId();
+  const role = await getUserRole(tenantId);
+  if (!role) return { success: false, error: 'Not authorized.' };
+
+  const { supabase } = await createTenantClient();
+  const { data, error } = await supabase
+    .from('point_of_contact')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .order('name');
+
+  if (error) return { success: false, error: error.message };
+  return { success: true, data: data as PointOfContact[] };
+}
+
+export async function createPOC(
+  raw: PocFormData
+): Promise<ActionResponse<PointOfContact>> {
+  const parsed = pocSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0].message };
+  }
+
+  const tenantId = await getTenantId();
+  await requireEditor(tenantId);
+
+  const { supabase } = await createTenantClient();
+  const { data, error } = await supabase
+    .from('point_of_contact')
+    .insert({
+      tenant_id: tenantId,
+      name: parsed.data.name.trim(),
+      email: normaliseEmpty(parsed.data.email),
+      phone: normaliseEmpty(parsed.data.phone),
+    })
+    .select()
+    .single();
+
+  if (error) {
+    const isDupe = error.code === '23505';
+    return {
+      success: false,
+      error: isDupe
+        ? 'A contact with that name, email, or phone already exists.'
+        : error.message,
+    };
+  }
+
+  return { success: true, data: data as PointOfContact };
+}
+
+export async function updatePOC(
+  id: string,
+  raw: PocFormData
+): Promise<ActionResponse<PointOfContact>> {
+  const parsed = pocSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0].message };
+  }
+
+  const tenantId = await getTenantId();
+  await requireEditor(tenantId);
+
+  const { supabase } = await createTenantClient();
+  const { data, error } = await supabase
+    .from('point_of_contact')
+    .update({
+      name: parsed.data.name.trim(),
+      email: normaliseEmpty(parsed.data.email),
+      phone: normaliseEmpty(parsed.data.phone),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .eq('tenant_id', tenantId)
+    .select()
+    .single();
+
+  if (error) {
+    const isDupe = error.code === '23505';
+    return {
+      success: false,
+      error: isDupe
+        ? 'A contact with that name, email, or phone already exists.'
+        : error.message,
+    };
+  }
+
+  return { success: true, data: data as PointOfContact };
+}
+
+export async function deletePOC(id: string): Promise<ActionResponse> {
+  const tenantId = await getTenantId();
+  await requireEditor(tenantId);
+
+  const { supabase } = await createTenantClient();
+
+  // TODO (T-16+): check if referenced by any program_item before deleting
+  // const { count } = await supabase.from('program_items')
+  //   .select('id', { count: 'exact', head: true })
+  //   .eq('point_of_contact_id', id);
+  // if (count && count > 0) return { success: false, error: 'Contact is in use by a programme item.' };
+
+  const { error } = await supabase
+    .from('point_of_contact')
+    .delete()
+    .eq('id', id)
+    .eq('tenant_id', tenantId);
+
+  if (error) return { success: false, error: error.message };
+  return { success: true, data: undefined };
+}

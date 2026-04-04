@@ -86,19 +86,9 @@ export type BreakfastConfiguration = {
 export type BreakfastConfigurationInsert = Omit<BreakfastConfiguration, 'id' | 'created_at' | 'updated_at'>;
 export type BreakfastConfigurationUpdate = Partial<BreakfastConfigurationInsert>;
 
-/** @todo Replace with Tables<'points_of_contact'> */
-export type PointOfContact = {
-  id: string;
-  tenant_id: string;
-  name: string;
-  role: string | null;
-  phone: string | null;
-  email: string | null;
-  created_at: string;
-  updated_at: string;
-};
-export type PointOfContactInsert = Omit<PointOfContact, 'id' | 'created_at' | 'updated_at'>;
-export type PointOfContactUpdate = Partial<PointOfContactInsert>;
+export type PointOfContact = Tables<'point_of_contact'>;
+export type PointOfContactInsert = TablesInsert<'point_of_contact'>;
+export type PointOfContactUpdate = TablesUpdate<'point_of_contact'>;
 
 /** @todo Replace with Tables<'venue_types'> */
 export type VenueType = {
