@@ -37,10 +37,22 @@ export default async function TenantLayout({
     getTenantFromHeaders(),
   ]);
 
+  const supabase = await createSupabaseServerClient();
+  const { data: tenantRow } = await supabase
+    .from('tenants')
+    .select('accent_color')
+    .eq('id', tenant.id)
+    .single();
+
+  const accentColor = (tenantRow as { accent_color?: string | null } | null)?.accent_color;
+  const accentStyle = accentColor
+    ? ({ '--tenant-accent': accentColor } as React.CSSProperties)
+    : undefined;
+
   return (
     <TenantProvider tenantId={tenant.id} tenantSlug={tenant.slug}>
       <AuthProvider>
-        <div className="min-h-screen flex flex-col">
+        <div className="min-h-screen flex flex-col" style={accentStyle}>
           <header className="border-b px-6 h-14 flex items-center justify-between">
             <Logo />
             {user && <UserMenu user={user} />}

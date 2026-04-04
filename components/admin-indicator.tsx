@@ -1,17 +1,40 @@
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
-import { Settings, LogOut, ChevronUp } from 'lucide-react';
+import { Settings, LogOut, ChevronUp, Sun, Moon, Monitor } from 'lucide-react';
 import Link from 'next/link';
+import { useTheme } from 'next-themes';
 import { signOut } from '@/app/actions/auth';
 import { useAuth } from '@/lib/AuthProvider';
 import { cn } from '@/lib/utils';
 
+const THEMES = ['system', 'light', 'dark'] as const;
+type ThemeValue = (typeof THEMES)[number];
+
+const themeIcon: Record<ThemeValue, React.ReactNode> = {
+  system: <Monitor className="h-4 w-4 shrink-0" />,
+  light: <Sun className="h-4 w-4 shrink-0" />,
+  dark: <Moon className="h-4 w-4 shrink-0" />,
+};
+
+const themeLabel: Record<ThemeValue, string> = {
+  system: 'System',
+  light: 'Light',
+  dark: 'Dark',
+};
+
 export function AdminIndicator() {
   const { user, isEditor, isLoading } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const ref = useRef<HTMLDivElement>(null);
+
+  const currentTheme = (theme as ThemeValue | undefined) ?? 'system';
+  function cycleTheme() {
+    const idx = THEMES.indexOf(currentTheme);
+    setTheme(THEMES[(idx + 1) % THEMES.length]);
+  }
 
   // Close on outside click
   useEffect(() => {
@@ -45,6 +68,16 @@ export function AdminIndicator() {
             <Settings className="h-4 w-4 shrink-0" />
             Settings
           </Link>
+
+          <div className="h-px bg-border" />
+
+          <button
+            onClick={cycleTheme}
+            className="flex w-full items-center gap-2 px-3 py-2.5 text-sm hover:bg-accent transition-colors"
+          >
+            {themeIcon[currentTheme]}
+            {themeLabel[currentTheme]}
+          </button>
 
           <div className="h-px bg-border" />
 
