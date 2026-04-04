@@ -104,6 +104,25 @@ export async function deleteBreakfastConfiguration(id: string): Promise<ActionRe
   return { success: true, data: undefined };
 }
 
+export async function getBreakfastConfigurationsForBooking(
+  bookingId: string
+): Promise<ActionResponse<BreakfastConfiguration[]>> {
+  const tenantId = await getTenantId();
+  const role = await getUserRole(tenantId);
+  if (!role) return { success: false, error: 'Not authorized.' };
+
+  const { supabase } = await createTenantClient();
+  const { data, error } = await supabase
+    .from('breakfast_configuration')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .eq('hotel_booking_id', bookingId)
+    .order('breakfast_date');
+
+  if (error) return { success: false, error: error.message };
+  return { success: true, data: data as BreakfastConfiguration[] };
+}
+
 export async function getBreakfastConfigurationsForDay(
   dateIso: string
 ): Promise<ActionResponse<BreakfastConfiguration[]>> {
