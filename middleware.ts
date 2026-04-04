@@ -75,16 +75,16 @@ export async function middleware(request: NextRequest) {
 
   // -------------------------------------------------------------------------
   // 4. Auth guard for tenant routes.
-  //    Public paths (no login required): /auth/*, /day/*
+  //    Public paths (no login required): /auth/*
   // -------------------------------------------------------------------------
   const isPublicPath =
     pathname === '/auth/sign-in' ||
     pathname === '/auth/sign-up' ||
-    pathname.startsWith('/auth/') ||
-    pathname.startsWith('/day/');
+    pathname.startsWith('/auth/');
 
   if (!user && !isPublicPath) {
     const signInUrl = new URL('/auth/sign-in', request.url);
+    signInUrl.searchParams.set('redirectTo', pathname);
     return applyAuthCookies(NextResponse.redirect(signInUrl));
   }
 

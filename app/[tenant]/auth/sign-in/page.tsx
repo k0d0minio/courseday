@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { signIn } from '@/app/actions/auth';
 import { Logo } from '@/components/logo';
@@ -11,6 +12,8 @@ import { Label } from '@/components/ui/label';
 
 export default function SignInPage() {
   const [state, action, isPending] = useActionState(signIn, null);
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirectTo') ?? '/';
 
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center p-4">
@@ -27,6 +30,7 @@ export default function SignInPage() {
           </CardHeader>
 
           <form action={action}>
+            <input type="hidden" name="redirectTo" value={redirectTo} />
             <CardContent className="space-y-4">
               {state?.error && (
                 <p className="text-sm text-destructive">{state.error}</p>

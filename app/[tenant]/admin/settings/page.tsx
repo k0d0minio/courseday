@@ -1,10 +1,8 @@
-import { getTenantFromHeaders } from '@/lib/tenant';
-import { requireEditor } from '@/lib/membership';
+import { requireTenantEditor } from '@/lib/guards';
 import { SettingsClient } from './client';
 
 export default async function SettingsPage() {
-  const tenant = await getTenantFromHeaders();
-  await requireEditor(tenant.id);
+  await requireTenantEditor();
 
   return <SettingsClient />;
 }

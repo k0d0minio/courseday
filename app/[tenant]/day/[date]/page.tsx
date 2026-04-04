@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { getTenantFromHeaders } from '@/lib/tenant';
+import { requireTenantMember } from '@/lib/guards';
 import { getAuthState } from '@/app/actions/auth';
 import { ensureDayExists } from '@/app/actions/days';
 import { getAllPOCs } from '@/app/actions/poc';
@@ -44,6 +45,7 @@ export default async function DayPage({
   params: Promise<{ date: string }>;
 }) {
   const { date } = await params;
+  await requireTenantMember();
   const tenant = await getTenantFromHeaders();
 
   // Fetch tenant timezone

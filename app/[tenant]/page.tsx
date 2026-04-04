@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { getTenantFromHeaders } from '@/lib/tenant';
-import { getAuthState } from '@/app/actions/auth';
+import { requireTenantMember } from '@/lib/guards';
 import { ensureDaysRange } from '@/app/actions/days';
 import { getTenantToday, getMonthDateRange } from '@/lib/day-utils';
 import {
@@ -22,7 +22,7 @@ export default async function TenantHomePage({
   searchParams: Promise<{ month?: string }>;
 }) {
   const tenant = await getTenantFromHeaders();
-  const authState = await getAuthState();
+  const { role } = await requireTenantMember();
 
   // Fetch tenant timezone
   const supabase = await createSupabaseServerClient();
@@ -36,7 +36,7 @@ export default async function TenantHomePage({
   const today = getTenantToday(timezone);
 
   // Viewers see the day view; calendar is editor-only
-  if (!authState.isEditor) {
+  if (role !== 'editor') {
     redirect(`/day/${today}`);
   }
 
