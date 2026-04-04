@@ -1,8 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { format, getDay } from 'date-fns';
+import { format, getDay, addMonths, subMonths } from 'date-fns';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { CalendarDaySidebar } from '@/components/CalendarDaySidebar';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 // ---------------------------------------------------------------------------
@@ -33,6 +36,7 @@ const DOW_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 // ---------------------------------------------------------------------------
 
 export function HomeClient({ month, today, days: initialDays }: Props) {
+  const router = useRouter();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [days, setDays] = useState<DaySummary[]>(initialDays);
 
@@ -52,14 +56,56 @@ export function HomeClient({ month, today, days: initialDays }: Props) {
   // Monday-start: Mon=0, Tue=1, ..., Sun=6
   const startPadding = (getDay(firstOfMonth) + 6) % 7;
 
+  // Month navigation
+  const todayMonth = today.slice(0, 7); // YYYY-MM
+  const maxMonth = format(addMonths(new Date(`${todayMonth}-01`), 12), 'yyyy-MM');
+  const prevMonthStr = format(subMonths(firstOfMonth, 1), 'yyyy-MM');
+  const nextMonthStr = format(addMonths(firstOfMonth, 1), 'yyyy-MM');
+  const isPrevDisabled = month <= todayMonth;
+  const isNextDisabled = nextMonthStr > maxMonth;
+  const isCurrentMonth = month === todayMonth;
+
+  function navigate(target: string) {
+    setSelectedDate(null);
+    router.push(`?month=${target}`);
+  }
+
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
-      {/* Month heading */}
+      {/* Month heading + navigation */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-semibold">
           {format(firstOfMonth, 'MMMM yyyy')}
         </h1>
-        {/* Month navigation placeholder — filled by T-30 */}
+        <div className="flex items-center gap-1">
+          {!isCurrentMonth && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(todayMonth)}
+            >
+              Today
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled={isPrevDisabled}
+            onClick={() => navigate(prevMonthStr)}
+            aria-label="Previous month"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled={isNextDisabled}
+            onClick={() => navigate(nextMonthStr)}
+            aria-label="Next month"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       <div className={cn('flex gap-6', selectedDate && 'lg:gap-8')}>
