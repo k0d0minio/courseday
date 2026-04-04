@@ -1,11 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { format, parseISO, getDay } from 'date-fns';
-import { ArrowRight } from 'lucide-react';
-import Link from 'next/link';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { format, getDay } from 'date-fns';
+import { CalendarDaySidebar } from '@/components/CalendarDaySidebar';
 import { cn } from '@/lib/utils';
 
 // ---------------------------------------------------------------------------
@@ -35,10 +32,17 @@ const DOW_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 // Component
 // ---------------------------------------------------------------------------
 
-export function HomeClient({ month, today, days }: Props) {
+export function HomeClient({ month, today, days: initialDays }: Props) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [days, setDays] = useState<DaySummary[]>(initialDays);
 
   const dayMap = new Map(days.map((d) => [d.date, d]));
+
+  function handleSummaryChanged(date: string, patch: Partial<DaySummary>) {
+    setDays((prev) =>
+      prev.map((d) => (d.date === date ? { ...d, ...patch } : d))
+    );
+  }
 
   // Compute grid layout
   const [year, monthNum] = month.split('-').map(Number);
@@ -47,8 +51,6 @@ export function HomeClient({ month, today, days }: Props) {
 
   // Monday-start: Mon=0, Tue=1, ..., Sun=6
   const startPadding = (getDay(firstOfMonth) + 6) % 7;
-
-  const selectedSummary = selectedDate ? dayMap.get(selectedDate) ?? null : null;
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
@@ -138,66 +140,13 @@ export function HomeClient({ month, today, days }: Props) {
           </div>
         </div>
 
-        {/* Day sidebar — expanded by T-29 */}
-        {selectedDate && selectedSummary && (
-          <aside className="w-64 shrink-0">
-            <div className="sticky top-6 space-y-4">
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                  Selected
-                </p>
-                <p className="text-lg font-semibold">
-                  {format(parseISO(selectedDate), 'EEEE d MMMM')}
-                </p>
-              </div>
-
-              {/* Summary counts */}
-              <div className="space-y-2 text-sm">
-                {selectedSummary.golfCount > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Golf</span>
-                    <span>{selectedSummary.golfCount}</span>
-                  </div>
-                )}
-                {selectedSummary.eventCount > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Events</span>
-                    <span>{selectedSummary.eventCount}</span>
-                  </div>
-                )}
-                {selectedSummary.reservationCount > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Reservations</span>
-                    <span>{selectedSummary.reservationCount}</span>
-                  </div>
-                )}
-                {selectedSummary.hotelGuestCount > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Hotel guests</span>
-                    <span>{selectedSummary.hotelGuestCount}</span>
-                  </div>
-                )}
-                {selectedSummary.breakfastCount > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Breakfasts</span>
-                    <span>{selectedSummary.breakfastCount}</span>
-                  </div>
-                )}
-                {!selectedSummary.golfCount &&
-                  !selectedSummary.eventCount &&
-                  !selectedSummary.reservationCount &&
-                  !selectedSummary.hotelGuestCount && (
-                    <p className="text-muted-foreground">Nothing scheduled.</p>
-                  )}
-              </div>
-
-              <Button asChild size="sm" className="w-full">
-                <Link href={`/day/${selectedDate}`}>
-                  View day <ArrowRight className="ml-1 h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-          </aside>
+        {/* Day sidebar */}
+        {selectedDate && (
+          <CalendarDaySidebar
+            date={selectedDate}
+            onClose={() => setSelectedDate(null)}
+            onSummaryChanged={handleSummaryChanged}
+          />
         )}
       </div>
 
