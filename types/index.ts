@@ -90,12 +90,6 @@ export type PointOfContact = Tables<'point_of_contact'>;
 export type PointOfContactInsert = TablesInsert<'point_of_contact'>;
 export type PointOfContactUpdate = TablesUpdate<'point_of_contact'>;
 
-/** @todo Replace with Tables<'venue_types'> */
-export type VenueType = {
-  id: string;
-  tenant_id: string;
-  name: string;
-  created_at: string;
-};
-export type VenueTypeInsert = Omit<VenueType, 'id' | 'created_at'>;
-export type VenueTypeUpdate = Partial<VenueTypeInsert>;
+export type VenueType = Tables<'venue_type'>;
+export type VenueTypeInsert = TablesInsert<'venue_type'>;
+export type VenueTypeUpdate = TablesUpdate<'venue_type'>;
