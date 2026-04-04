@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { programItemSchema, parseTableBreakdown } from '@/app/actions/program-items';
+import { programItemSchema } from '@/lib/program-item-schema';
+import { parseTableBreakdown } from '@/lib/day-utils';
 import { generateRecurrenceDates } from '@/lib/day-utils';
 
 // ---------------------------------------------------------------------------
@@ -34,8 +35,8 @@ describe('parseTableBreakdown', () => {
     expect(parseTableBreakdown('   ')).toBeNull();
   });
 
-  it('handles "0" as a valid seat count', () => {
-    expect(parseTableBreakdown('0+4')).toEqual([0, 4]);
+  it('returns null for "0+4" (zero is not a valid seat count)', () => {
+    expect(parseTableBreakdown('0+4')).toBeNull();
   });
 });
 

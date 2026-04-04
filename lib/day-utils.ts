@@ -129,6 +129,24 @@ export function datesInRange(startDate: string, endDate: string): Ymd[] {
   return dates;
 }
 
+// ---------------------------------------------------------------------------
+// Program item helpers (pure, usable on both client and server)
+// ---------------------------------------------------------------------------
+
+/**
+ * Parses a "3+2+1" string into a positive-integer array [3, 2, 1].
+ * Returns null for empty / null / undefined input.
+ * Each segment must be a positive integer (>0).
+ */
+export function parseTableBreakdown(input: string | null | undefined): number[] | null {
+  if (!input || input.trim() === '') return null;
+  const parts = input
+    .split('+')
+    .map((s) => parseInt(s.trim(), 10));
+  if (parts.some((n) => isNaN(n) || n <= 0)) return null;
+  return parts;
+}
+
 function nextOccurrence(date: Date, frequency: Frequency): Date {
   switch (frequency) {
     case 'weekly':

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { venueTypeSchema } from '@/app/actions/venue-type';
+import { venueTypeSchema } from '@/lib/venue-type-schema';
 
 describe('venueTypeSchema', () => {
   it('accepts a valid name and code', () => {

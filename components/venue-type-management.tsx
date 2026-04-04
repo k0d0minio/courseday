@@ -5,14 +5,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { Pencil, Trash2, Plus } from 'lucide-react';
-import {
-  getAllVenueTypes,
-  createVenueType,
-  updateVenueType,
-  deleteVenueType,
-  venueTypeSchema,
-  type VenueTypeFormData,
-} from '@/app/actions/venue-type';
+import { getAllVenueTypes, createVenueType, updateVenueType, deleteVenueType } from '@/app/actions/venue-type';
+import { venueTypeSchema, type VenueTypeFormData } from '@/lib/venue-type-schema';
 import type { VenueType } from '@/types/index';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

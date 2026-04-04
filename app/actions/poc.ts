@@ -1,38 +1,16 @@
 'use server';
 
-import { z } from 'zod';
 import { createTenantClient } from '@/lib/supabase-server';
 import { getTenantId } from '@/lib/tenant';
 import { getUserRole, requireEditor } from '@/lib/membership';
+import { pocSchema } from '@/lib/poc-schema';
+import type { PocFormData } from '@/lib/poc-schema';
 import type { ActionResponse } from '@/types/actions';
 import type { PointOfContact } from '@/types/index';
-
-// ---------------------------------------------------------------------------
-// Validation schema (shared with client for form validation)
-// ---------------------------------------------------------------------------
-export const pocSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  email: z
-    .string()
-    .email('Invalid email address')
-    .optional()
-    .or(z.literal('')),
-  phone: z.string().optional().or(z.literal('')),
-});
-
-export type PocFormData = z.infer<typeof pocSchema>;
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 function normaliseEmpty(s: string | undefined | null): string | null {
   return s && s.trim() !== '' ? s.trim() : null;
 }
-
-// ---------------------------------------------------------------------------
-// Actions
-// ---------------------------------------------------------------------------
 
 export async function getAllPOCs(): Promise<ActionResponse<PointOfContact[]>> {
   const tenantId = await getTenantId();
@@ -130,12 +108,6 @@ export async function deletePOC(id: string): Promise<ActionResponse> {
   await requireEditor(tenantId);
 
   const { supabase } = await createTenantClient();
-
-  // TODO (T-16+): check if referenced by any program_item before deleting
-  // const { count } = await supabase.from('program_items')
-  //   .select('id', { count: 'exact', head: true })
-  //   .eq('point_of_contact_id', id);
-  // if (count && count > 0) return { success: false, error: 'Contact is in use by a programme item.' };
 
   const { error } = await supabase
     .from('point_of_contact')

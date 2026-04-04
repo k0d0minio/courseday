@@ -1,29 +1,16 @@
 'use server';
 
-import { z } from 'zod';
 import { createTenantClient } from '@/lib/supabase-server';
 import { getTenantId } from '@/lib/tenant';
 import { getUserRole, requireEditor } from '@/lib/membership';
+import { venueTypeSchema } from '@/lib/venue-type-schema';
+import type { VenueTypeFormData } from '@/lib/venue-type-schema';
 import type { ActionResponse } from '@/types/actions';
 import type { VenueType } from '@/types/index';
-
-// ---------------------------------------------------------------------------
-// Validation schema
-// ---------------------------------------------------------------------------
-export const venueTypeSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  code: z.string().optional().or(z.literal('')),
-});
-
-export type VenueTypeFormData = z.infer<typeof venueTypeSchema>;
 
 function normaliseEmpty(s: string | undefined | null): string | null {
   return s && s.trim() !== '' ? s.trim() : null;
 }
-
-// ---------------------------------------------------------------------------
-// Actions
-// ---------------------------------------------------------------------------
 
 export async function getAllVenueTypes(): Promise<ActionResponse<VenueType[]>> {
   const tenantId = await getTenantId();
@@ -119,8 +106,6 @@ export async function deleteVenueType(id: string): Promise<ActionResponse> {
   await requireEditor(tenantId);
 
   const { supabase } = await createTenantClient();
-
-  // TODO (T-16+): check if referenced by any program_item before deleting
 
   const { error } = await supabase
     .from('venue_type')

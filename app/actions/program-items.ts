@@ -1,57 +1,16 @@
 'use server';
 
-import { z } from 'zod';
 import { randomUUID } from 'crypto';
 import { createTenantClient } from '@/lib/supabase-server';
 import { getTenantId } from '@/lib/tenant';
 import { getUserRole, requireEditor } from '@/lib/membership';
-import { generateRecurrenceDates } from '@/lib/day-utils';
+import { generateRecurrenceDates, parseTableBreakdown } from '@/lib/day-utils';
+import { programItemSchema } from '@/lib/program-item-schema';
 import { ensureDayExists } from '@/app/actions/days';
 import type { ActionResponse } from '@/types/actions';
 import type { ProgramItem } from '@/types/index';
+import type { ProgramItemFormData } from '@/lib/program-item-schema';
 
-// ---------------------------------------------------------------------------
-// Schema
-// ---------------------------------------------------------------------------
-
-export const programItemSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  type: z.enum(['golf', 'event']),
-  dayId: z.string().uuid('Day ID is required'),
-  description: z.string().optional(),
-  startTime: z.string().optional(),
-  endTime: z.string().optional(),
-  guestCount: z.number().int().min(0).optional(),
-  capacity: z.number().int().min(0).optional(),
-  venueTypeId: z.string().uuid().optional().nullable(),
-  pocId: z.string().uuid().optional().nullable(),
-  tableBreakdown: z.array(z.number().int().min(0)).optional().nullable(),
-  isTourOperator: z.boolean().optional(),
-  notes: z.string().optional(),
-  isRecurring: z.boolean().optional(),
-  recurrenceFrequency: z
-    .enum(['weekly', 'biweekly', 'monthly', 'yearly'])
-    .optional()
-    .nullable(),
-});
-
-export type ProgramItemFormData = z.infer<typeof programItemSchema>;
-
-// ---------------------------------------------------------------------------
-// Table breakdown helper
-// ---------------------------------------------------------------------------
-
-/**
- * Parses a "3+2+1" string into an integer array [3, 2, 1].
- * Returns null for empty / null input.
- */
-export function parseTableBreakdown(input: string | null | undefined): number[] | null {
-  if (!input || input.trim() === '') return null;
-  return input
-    .split('+')
-    .map((s) => parseInt(s.trim(), 10))
-    .filter((n) => !isNaN(n) && n >= 0);
-}
 
 // ---------------------------------------------------------------------------
 // Internal row builder

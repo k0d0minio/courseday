@@ -3,6 +3,8 @@ import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { getTenantFromHeaders } from '@/lib/tenant';
 import { getAuthState } from '@/app/actions/auth';
 import { ensureDayExists } from '@/app/actions/days';
+import { getAllPOCs } from '@/app/actions/poc';
+import { getAllVenueTypes } from '@/app/actions/venue-type';
 import { isPastDate, isDateWithinOneYear, getTenantToday } from '@/lib/day-utils';
 import {
   getProgramItemsForDay,
@@ -11,16 +13,26 @@ import {
   getBreakfastConfigsForDay,
 } from './queries';
 import { DayViewClient } from './DayViewClient';
-import type { ProgramItem, Reservation, HotelBooking, BreakfastConfiguration } from '@/types/index';
+import type {
+  ProgramItem,
+  Reservation,
+  HotelBooking,
+  BreakfastConfiguration,
+  PointOfContact,
+  VenueType,
+} from '@/types/index';
 import type { AuthState } from '@/types/actions';
 
 export type DayViewProps = {
   date: string;
+  dayId: string;
   today: string;
   programItems: ProgramItem[];
   reservations: Reservation[];
   hotelBookings: HotelBooking[];
   breakfastConfigs: BreakfastConfiguration[];
+  pocs: PointOfContact[];
+  venueTypes: VenueType[];
   authState: AuthState;
 };
 
@@ -59,24 +71,36 @@ export default async function DayPage({
   if (!dayResult.success) redirect(`/day/${today}`);
   const day = dayResult.data;
 
-  // Load all day data + auth state in parallel
-  const [programItems, reservations, hotelBookings, breakfastConfigs, authState] =
-    await Promise.all([
-      getProgramItemsForDay(tenant.id, day.id),
-      getReservationsForDay(tenant.id, day.id),
-      getHotelBookingsForDate(tenant.id, date),
-      getBreakfastConfigsForDay(tenant.id, date),
-      getAuthState(),
-    ]);
+  // Load all day data + supporting lists + auth state in parallel
+  const [
+    programItems,
+    reservations,
+    hotelBookings,
+    breakfastConfigs,
+    pocsResult,
+    venueTypesResult,
+    authState,
+  ] = await Promise.all([
+    getProgramItemsForDay(tenant.id, day.id),
+    getReservationsForDay(tenant.id, day.id),
+    getHotelBookingsForDate(tenant.id, date),
+    getBreakfastConfigsForDay(tenant.id, date),
+    getAllPOCs(),
+    getAllVenueTypes(),
+    getAuthState(),
+  ]);
 
   return (
     <DayViewClient
       date={date}
+      dayId={day.id}
       today={today}
       programItems={programItems}
       reservations={reservations}
       hotelBookings={hotelBookings}
       breakfastConfigs={breakfastConfigs}
+      pocs={pocsResult.success ? pocsResult.data : []}
+      venueTypes={venueTypesResult.success ? venueTypesResult.data : []}
       authState={authState}
     />
   );

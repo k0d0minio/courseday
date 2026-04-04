@@ -5,14 +5,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { Pencil, Trash2, Plus } from 'lucide-react';
-import {
-  getAllPOCs,
-  createPOC,
-  updatePOC,
-  deletePOC,
-  pocSchema,
-  type PocFormData,
-} from '@/app/actions/poc';
+import { getAllPOCs, createPOC, updatePOC, deletePOC } from '@/app/actions/poc';
+import { pocSchema, type PocFormData } from '@/lib/poc-schema';
 import type { PointOfContact } from '@/types/index';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { pocSchema } from '@/app/actions/poc';
+import { pocSchema } from '@/lib/poc-schema';
 
 describe('pocSchema', () => {
   it('accepts a valid full record', () => {
