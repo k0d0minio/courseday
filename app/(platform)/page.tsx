@@ -10,7 +10,7 @@ export default function LandingPage() {
       <p className="text-lg text-muted-foreground max-w-md">
         Manage your tee sheet, reservations, and daily programme — all in one place.
       </p>
-      <Link href="/new">
+      <Link href="/auth/sign-up?next=/new">
         <Button size="lg">Create your course</Button>
       </Link>
     </div>
