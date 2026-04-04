@@ -8,12 +8,17 @@ import { AddEntryModal } from '@/components/add-entry-modal';
 import { EntryCard } from '@/components/entry-card';
 import { AddReservationModal } from '@/components/add-reservation-modal';
 import { ReservationCard } from '@/components/reservation-card';
+import { HotelBookingCard } from '@/components/hotel-booking-card';
+import { AddHotelBookingDrawer } from '@/components/add-hotel-booking-drawer';
+import { AddBreakfastModal } from '@/components/add-breakfast-modal';
 import { Button } from '@/components/ui/button';
 import type {
   ProgramItem,
   ProgramItemWithRelations,
   Reservation,
   ReservationWithRelations,
+  HotelBooking,
+  BreakfastConfiguration,
 } from '@/types/index';
 import type { DayViewProps } from './page';
 
@@ -23,8 +28,8 @@ export function DayViewClient({
   today,
   programItems: initialProgramItems,
   reservations: initialReservations,
-  hotelBookings,
-  breakfastConfigs,
+  hotelBookings: initialHotelBookings,
+  breakfastConfigs: initialBreakfastConfigs,
   pocs,
   venueTypes,
   authState,
@@ -34,6 +39,10 @@ export function DayViewClient({
   );
   const [reservations, setReservations] = useState(
     initialReservations as ReservationWithRelations[]
+  );
+  const [hotelBookings, setHotelBookings] = useState<HotelBooking[]>(initialHotelBookings);
+  const [breakfastConfigs, setBreakfastConfigs] = useState<BreakfastConfiguration[]>(
+    initialBreakfastConfigs
   );
 
   // Entry modal state
@@ -45,8 +54,13 @@ export function DayViewClient({
   const [reservationModalOpen, setReservationModalOpen] = useState(false);
   const [editReservation, setEditReservation] = useState<ReservationWithRelations | null>(null);
 
-  // Placeholder for T-27
-  const [_addHotelBookingOpen, setAddHotelBookingOpen] = useState(false);
+  // Hotel booking drawer state
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editBooking, setEditBooking] = useState<HotelBooking | null>(null);
+
+  // Breakfast modal state
+  const [breakfastModalOpen, setBreakfastModalOpen] = useState(false);
+  const [editBreakfast, setEditBreakfast] = useState<BreakfastConfiguration | null>(null);
 
   // ---------- Entry handlers ----------
 
@@ -119,6 +133,63 @@ export function DayViewClient({
     setReservations((prev) => prev.filter((r) => r.id !== id));
   }
 
+  // ---------- Hotel booking handlers ----------
+
+  function openAddBooking() {
+    setEditBooking(null);
+    setDrawerOpen(true);
+  }
+
+  function openEditBooking(item: HotelBooking) {
+    setEditBooking(item);
+    setDrawerOpen(true);
+  }
+
+  function handleBookingSaved(booking: HotelBooking, configs: BreakfastConfiguration[]) {
+    // Update hotel bookings list
+    setHotelBookings((prev) => {
+      const idx = prev.findIndex((b) => b.id === booking.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = booking;
+        return next;
+      }
+      return [...prev, booking].sort((a, b) => a.guest_name.localeCompare(b.guest_name));
+    });
+
+    // Update breakfast configs for the current date from the returned configs
+    const configsForDate = configs.filter((c) => c.breakfast_date === date);
+    setBreakfastConfigs((prev) => {
+      // Remove old configs for this booking, then add updated ones for today
+      const withoutBooking = prev.filter((c) => c.hotel_booking_id !== booking.id);
+      return [...withoutBooking, ...configsForDate];
+    });
+  }
+
+  function handleBookingDeleted(id: string) {
+    setHotelBookings((prev) => prev.filter((b) => b.id !== id));
+    setBreakfastConfigs((prev) => prev.filter((c) => c.hotel_booking_id !== id));
+  }
+
+  // ---------- Breakfast handlers ----------
+
+  function openEditBreakfast(config: BreakfastConfiguration) {
+    setEditBreakfast(config);
+    setBreakfastModalOpen(true);
+  }
+
+  function handleBreakfastSaved(config: BreakfastConfiguration) {
+    setBreakfastConfigs((prev) => {
+      const idx = prev.findIndex((c) => c.id === config.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = config;
+        return next;
+      }
+      return prev;
+    });
+  }
+
   return (
     <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
       <DayNav date={date} today={today} />
@@ -189,17 +260,36 @@ export function DayViewClient({
         )}
       </section>
 
-      {/* Hotel Bookings — editor-only, drawer added in T-27 */}
+      {/* Hotel Bookings — editor-only */}
       {authState.isEditor && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold">Hotel Bookings</h2>
-            <Button size="sm" onClick={() => setAddHotelBookingOpen(true)}>
+            <Button size="sm" onClick={openAddBooking}>
               <Plus className="w-4 h-4 mr-1" /> Add booking
             </Button>
           </div>
-          {hotelBookings.length === 0 && (
+          {hotelBookings.length === 0 ? (
             <p className="text-sm text-muted-foreground">No hotel bookings yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {hotelBookings.map((booking) => {
+                const bfConfig = breakfastConfigs.find(
+                  (c) => c.hotel_booking_id === booking.id
+                ) ?? null;
+                return (
+                  <HotelBookingCard
+                    key={booking.id}
+                    item={booking}
+                    breakfastConfig={bfConfig}
+                    isEditor={authState.isEditor}
+                    onEdit={openEditBooking}
+                    onDeleted={handleBookingDeleted}
+                    onEditBreakfast={openEditBreakfast}
+                  />
+                );
+              })}
+            </div>
           )}
         </section>
       )}
@@ -225,6 +315,23 @@ export function DayViewClient({
         editItem={editReservation}
         onSuccess={handleReservationSaved}
       />
+
+      <AddHotelBookingDrawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        date={date}
+        editItem={editBooking}
+        onSuccess={handleBookingSaved}
+      />
+
+      {editBreakfast && (
+        <AddBreakfastModal
+          isOpen={breakfastModalOpen}
+          onClose={() => setBreakfastModalOpen(false)}
+          editItem={editBreakfast}
+          onSuccess={handleBreakfastSaved}
+        />
+      )}
     </div>
   );
 }
