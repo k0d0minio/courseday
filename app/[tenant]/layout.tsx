@@ -1,16 +1,15 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import { Toaster } from 'sonner';
-import { Settings } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { UserMenu } from '@/components/user-menu';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { SettingsDropdown } from '@/components/settings-dropdown';
 import { getUser } from '@/app/actions/auth';
 import { getTenantFromHeaders } from '@/lib/tenant';
 import { TenantProvider } from '@/lib/tenant-context';
 import { AuthProvider } from '@/lib/AuthProvider';
-import { AdminIndicator } from '@/components/admin-indicator';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { isEditor } from '@/lib/membership';
 import { PwaRegister } from '@/components/pwa-register';
@@ -112,15 +111,14 @@ export default async function TenantLayout({
           <div className="min-h-screen flex flex-col" dir={dir} style={accentStyle}>
             <header className="border-b px-6 h-14 flex items-center justify-between">
               <Logo logoUrl={row?.logo_url} tenantName={row?.name} />
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                {/* Theme toggle — visible to all signed-in users */}
+                {user && <ThemeToggle />}
+                {/* Settings dropdown — editors only, desktop */}
                 {editor && (
-                  <Link
-                    href="/admin/settings?tab=branding"
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label="Branding settings"
-                  >
-                    <Settings className="h-4 w-4" />
-                  </Link>
+                  <span className="hidden sm:inline-flex">
+                    <SettingsDropdown />
+                  </span>
                 )}
                 <NotificationBell initialCount={unreadCount} />
                 {user && <UserMenu user={user} signOutLabel={t('signOut')} />}
@@ -129,7 +127,6 @@ export default async function TenantLayout({
             <main id="main-content" className="flex-1 pb-16 sm:pb-0">{children}</main>
           </div>
           <MobileNav today={today} isEditor={editor} />
-          <AdminIndicator />
           <Toaster richColors closeButton />
           <PwaRegister />
           <PwaInstallPrompt />

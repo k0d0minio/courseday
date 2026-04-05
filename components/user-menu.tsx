@@ -1,23 +1,26 @@
 'use client';
 
 import type { User } from '@supabase/supabase-js';
+import { LogOut } from 'lucide-react';
 import { signOut } from '@/app/actions/auth';
-import { Button } from '@/components/ui/button';
 
 interface UserMenuProps {
+  // user kept for potential future avatar/tooltip use
   user: User;
   signOutLabel?: string;
 }
 
-export function UserMenu({ user, signOutLabel = 'Sign out' }: UserMenuProps) {
+export function UserMenu({ user: _user, signOutLabel = 'Sign out' }: UserMenuProps) {
   return (
-    <div className="flex items-center gap-3">
-      <span className="text-sm text-muted-foreground">{user.email}</span>
-      <form action={signOut}>
-        <Button type="submit" variant="outline" size="sm">
-          {signOutLabel}
-        </Button>
-      </form>
-    </div>
+    <form action={signOut}>
+      <button
+        type="submit"
+        className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+        aria-label={signOutLabel}
+        title={signOutLabel}
+      >
+        <LogOut className="h-4 w-4" />
+      </button>
+    </form>
   );
 }
