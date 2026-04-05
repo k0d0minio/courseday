@@ -87,11 +87,11 @@ export function ReservationCard({ item, isEditor, onEdit, onDeleted }: Props) {
 
             {isEditor && (
               <div className="flex gap-1 shrink-0">
-                <Button variant="ghost" size="icon" onClick={() => onEdit(item)}>
-                  <Pencil className="h-4 w-4" />
+                <Button variant="ghost" size="icon" onClick={() => onEdit(item)} aria-label={`Edit: ${item.guest_name ?? t('fallbackName')}`}>
+                  <Pencil className="h-4 w-4" aria-hidden="true" />
                 </Button>
-                <Button variant="ghost" size="icon" onClick={() => setDeleteOpen(true)}>
-                  <Trash2 className="h-4 w-4" />
+                <Button variant="ghost" size="icon" onClick={() => setDeleteOpen(true)} aria-label={`Delete: ${item.guest_name ?? t('fallbackName')}`}>
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />
                 </Button>
               </div>
             )}

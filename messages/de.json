@@ -58,7 +58,8 @@
   },
   "Tenant": {
     "nav": {
-      "signOut": "Abmelden"
+      "signOut": "Abmelden",
+      "skipToContent": "Zum Hauptinhalt springen"
     },
     "home": {
       "today": "Heute",
@@ -113,7 +114,8 @@
       "activityCount": "{count, plural, one {# Aktivität} other {# Aktivitäten}}",
       "reservationCount": "{count, plural, one {# Reservierung} other {# Reservierungen}}",
       "breakfastCoverCount": "{count, plural, one {# Frühstücksgedeck} other {# Frühstücksgedecke}}",
-      "loading": "Laden\u2026"
+      "loading": "Laden\u2026",
+      "close": "Schlie\u00dfen"
     },
     "entry": {
       "deleteTitle": "Aktivität löschen?",

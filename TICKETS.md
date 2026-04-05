@@ -1183,7 +1183,7 @@ SDK setup, `withSentryConfig`, context in `[tenant]` layout and actions, error b
 
 ## Ticket 32: Accessibility Audit & Fixes
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** pending — set to `[x]` when done.
 
 **Priority:** P3  
 **Scope:** `components/`, `app/[tenant]/layout.tsx`, `app/globals.css`  
