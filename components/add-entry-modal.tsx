@@ -7,9 +7,9 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { Plus } from 'lucide-react';
 import {
-  createProgramItem,
-  updateProgramItem,
-} from '@/app/actions/program-items';
+  createActivity,
+  updateActivity,
+} from '@/app/actions/activities';
 import { createPOC } from '@/app/actions/poc';
 import { createVenueType } from '@/app/actions/venue-type';
 import { generateRecurrenceDates } from '@/lib/day-utils';
@@ -180,8 +180,8 @@ export function AddEntryModal({
       };
 
       const result = isEditing
-        ? await updateProgramItem(editItem!.id, payload)
-        : await createProgramItem(payload);
+        ? await updateActivity(editItem!.id, payload)
+        : await createActivity(payload);
 
       if (!result.success) {
         toast.error(result.error);

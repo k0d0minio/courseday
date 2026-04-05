@@ -7,6 +7,7 @@ export const reservationSchema = z.object({
   startTime: z.string().optional(),
   endTime: z.string().optional(),
   notes: z.string().optional(),
+  tableBreakdown: z.array(z.number().int().min(1)).optional(),
 });
 
 export type ReservationFormData = z.infer<typeof reservationSchema>;

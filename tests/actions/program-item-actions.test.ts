@@ -11,12 +11,12 @@ vi.mock('@/app/actions/days', () => ({ ensureDayExists: vi.fn().mockResolvedValu
 
 import { createTenantClient } from '@/lib/supabase-server';
 import {
-  createProgramItem,
-  updateProgramItem,
-  deleteProgramItem,
-  deleteRecurrenceGroup,
-  getProgramItemsForDay,
-} from '@/app/actions/program-items';
+  createActivity,
+  updateActivity,
+  deleteActivity,
+  deleteActivityRecurrenceGroup,
+  getActivitiesForDay,
+} from '@/app/actions/activities';
 
 type QueryResult = { data: unknown; error: { message: string } | null };
 
@@ -35,7 +35,6 @@ function makeChain(result: QueryResult = { data: null, error: null }) {
 
 const VALID_ITEM = {
   title: 'Morning Round',
-  type: 'golf' as const,
   dayId: '123e4567-e89b-12d3-a456-426614174000',
 };
 
@@ -43,54 +42,49 @@ const ITEM_ROW = {
   id: 'item-1',
   tenant_id: 'tenant-1',
   day_id: VALID_ITEM.dayId,
-  type: 'golf',
   title: 'Morning Round',
   is_recurring: false,
 };
 
-// ── createProgramItem ─────────────────────────────────────────────────────────
+// ── createActivity ────────────────────────────────────────────────────────────
 
-describe('createProgramItem (non-recurring)', () => {
+describe('createActivity (non-recurring)', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('returns error on schema validation failure', async () => {
-    const result = await createProgramItem({ ...VALID_ITEM, title: '' });
+    const result = await createActivity({ ...VALID_ITEM, title: '' });
     expect(result.success).toBe(false);
     expect(result.error).toBe('Title is required');
   });
 
-  it('inserts a golf item and returns it', async () => {
-    const from = vi.fn().mockReturnValue(makeChain({ data: ITEM_ROW, error: null }));
+  it('inserts an activity and returns it', async () => {
+    const chain = makeChain({ data: ITEM_ROW, error: null });
+    const from = vi.fn().mockReturnValue(chain);
     vi.mocked(createTenantClient).mockResolvedValue({ supabase: { from } as never, tenantId: 'tenant-1' });
 
-    const result = await createProgramItem(VALID_ITEM);
+    const result = await createActivity(VALID_ITEM);
 
     expect(result.success).toBe(true);
-    expect(result.data).toMatchObject({ type: 'golf', title: 'Morning Round' });
-    expect(from).toHaveBeenCalledWith('program_item');
+    expect(result.data).toMatchObject({ title: 'Morning Round' });
+    expect(from).toHaveBeenCalledWith('activity');
   });
 
   it('returns error when Supabase insert fails', async () => {
     const from = vi.fn().mockReturnValue(makeChain({ data: null, error: { message: 'db error' } }));
     vi.mocked(createTenantClient).mockResolvedValue({ supabase: { from } as never, tenantId: 'tenant-1' });
 
-    const result = await createProgramItem(VALID_ITEM);
+    const result = await createActivity(VALID_ITEM);
     expect(result.success).toBe(false);
     expect(result.error).toBe('db error');
   });
 });
 
-// ── createProgramItem (recurring) ────────────────────────────────────────────
+// ── createActivity (recurring) ────────────────────────────────────────────────
 
-describe('createProgramItem (recurring)', () => {
+describe('createActivity (recurring)', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('fans out to multiple day records and returns the first-day item', async () => {
-    // Call sequence:
-    // 1. from('day').select().eq().single() → date_iso
-    // 2. from('day').select().eq().in() → all day rows (thenable)
-    // 3. from('program_item').insert().select().eq().single() → inserted item
-
     const dayRow = { date_iso: '2024-06-01' };
     const allDayRows = [
       { id: 'day-1', date_iso: '2024-06-01' },
@@ -98,20 +92,19 @@ describe('createProgramItem (recurring)', () => {
     ];
 
     const from = vi.fn()
-      .mockReturnValueOnce(makeChain({ data: dayRow, error: null }))          // fetch date_iso
-      .mockReturnValueOnce(makeChain({ data: allDayRows, error: null }))      // fetch day IDs
-      .mockReturnValue(makeChain({ data: ITEM_ROW, error: null }));           // insert items
+      .mockReturnValueOnce(makeChain({ data: dayRow, error: null }))
+      .mockReturnValueOnce(makeChain({ data: allDayRows, error: null }))
+      .mockReturnValue(makeChain({ data: ITEM_ROW, error: null }));
 
     vi.mocked(createTenantClient).mockResolvedValue({ supabase: { from } as never, tenantId: 'tenant-1' });
 
-    const result = await createProgramItem({
+    const result = await createActivity({
       ...VALID_ITEM,
       isRecurring: true,
       recurrenceFrequency: 'weekly',
     });
 
     expect(result.success).toBe(true);
-    // insert should be called with an array of rows (one per occurrence)
     const insertFn = (from.mock.results[2].value as ReturnType<typeof makeChain>)
       .insert as ReturnType<typeof vi.fn>;
     const insertedRows = insertFn.mock.calls[0][0] as unknown[];
@@ -120,31 +113,32 @@ describe('createProgramItem (recurring)', () => {
   });
 });
 
-// ── updateProgramItem ─────────────────────────────────────────────────────────
+// ── updateActivity ────────────────────────────────────────────────────────────
 
-describe('updateProgramItem', () => {
+describe('updateActivity', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('updates the item and returns it', async () => {
     const updated = { ...ITEM_ROW, title: 'Afternoon Round' };
-    const from = vi.fn().mockReturnValue(makeChain({ data: updated, error: null }));
+    const chain = makeChain({ data: updated, error: null });
+    const from = vi.fn().mockReturnValue(chain);
     vi.mocked(createTenantClient).mockResolvedValue({ supabase: { from } as never, tenantId: 'tenant-1' });
 
-    const result = await updateProgramItem('item-1', { ...VALID_ITEM, title: 'Afternoon Round' });
+    const result = await updateActivity('item-1', { ...VALID_ITEM, title: 'Afternoon Round' });
 
     expect(result.success).toBe(true);
     expect(result.data).toMatchObject({ title: 'Afternoon Round' });
   });
 
   it('returns error on schema validation failure', async () => {
-    const result = await updateProgramItem('item-1', { ...VALID_ITEM, title: '' });
+    const result = await updateActivity('item-1', { ...VALID_ITEM, title: '' });
     expect(result.success).toBe(false);
   });
 });
 
-// ── deleteProgramItem ─────────────────────────────────────────────────────────
+// ── deleteActivity ────────────────────────────────────────────────────────────
 
-describe('deleteProgramItem', () => {
+describe('deleteActivity', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('deletes by id and tenant and returns success', async () => {
@@ -152,9 +146,9 @@ describe('deleteProgramItem', () => {
     const from = vi.fn().mockReturnValue(chain);
     vi.mocked(createTenantClient).mockResolvedValue({ supabase: { from } as never, tenantId: 'tenant-1' });
 
-    const result = await deleteProgramItem('item-1');
+    const result = await deleteActivity('item-1');
     expect(result.success).toBe(true);
-    expect(from).toHaveBeenCalledWith('program_item');
+    expect(from).toHaveBeenCalledWith('activity');
     expect((chain.delete as ReturnType<typeof vi.fn>)).toHaveBeenCalled();
   });
 
@@ -162,15 +156,15 @@ describe('deleteProgramItem', () => {
     const from = vi.fn().mockReturnValue(makeChain({ data: null, error: { message: 'delete error' } }));
     vi.mocked(createTenantClient).mockResolvedValue({ supabase: { from } as never, tenantId: 'tenant-1' });
 
-    const result = await deleteProgramItem('item-1');
+    const result = await deleteActivity('item-1');
     expect(result.success).toBe(false);
     expect(result.error).toBe('delete error');
   });
 });
 
-// ── deleteRecurrenceGroup ─────────────────────────────────────────────────────
+// ── deleteActivityRecurrenceGroup ─────────────────────────────────────────────
 
-describe('deleteRecurrenceGroup', () => {
+describe('deleteActivityRecurrenceGroup', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('deletes all items in the recurrence group', async () => {
@@ -178,18 +172,17 @@ describe('deleteRecurrenceGroup', () => {
     const from = vi.fn().mockReturnValue(chain);
     vi.mocked(createTenantClient).mockResolvedValue({ supabase: { from } as never, tenantId: 'tenant-1' });
 
-    const result = await deleteRecurrenceGroup('group-abc');
+    const result = await deleteActivityRecurrenceGroup('group-abc');
     expect(result.success).toBe(true);
 
-    // Must filter by recurrence_group_id
     const eqCalls = (chain.eq as ReturnType<typeof vi.fn>).mock.calls;
     expect(eqCalls).toContainEqual(['recurrence_group_id', 'group-abc']);
   });
 });
 
-// ── getProgramItemsForDay ─────────────────────────────────────────────────────
+// ── getActivitiesForDay ───────────────────────────────────────────────────────
 
-describe('getProgramItemsForDay', () => {
+describe('getActivitiesForDay', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('returns items for the given day', async () => {
@@ -197,7 +190,7 @@ describe('getProgramItemsForDay', () => {
     const from = vi.fn().mockReturnValue(makeChain({ data: items, error: null }));
     vi.mocked(createTenantClient).mockResolvedValue({ supabase: { from } as never, tenantId: 'tenant-1' });
 
-    const result = await getProgramItemsForDay('day-1');
+    const result = await getActivitiesForDay('day-1');
     expect(result.success).toBe(true);
     expect(result.data).toHaveLength(2);
   });
@@ -206,7 +199,7 @@ describe('getProgramItemsForDay', () => {
     const { getUserRole } = await import('@/lib/membership');
     vi.mocked(getUserRole).mockResolvedValue(null);
 
-    const result = await getProgramItemsForDay('day-1');
+    const result = await getActivitiesForDay('day-1');
     expect(result.success).toBe(false);
     expect(result.error).toBe('Not authorized.');
   });

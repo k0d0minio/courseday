@@ -6,7 +6,7 @@ import { X, Plus, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { ensureDayExists } from '@/app/actions/days';
-import { getProgramItemsForDay } from '@/app/actions/program-items';
+import { getActivitiesForDay } from '@/app/actions/activities';
 import { getReservationsForDay } from '@/app/actions/reservations';
 import { getAllPOCs } from '@/app/actions/poc';
 import { getAllVenueTypes } from '@/app/actions/venue-type';
@@ -66,7 +66,7 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
 
       const [itemsResult, resResult, pocsResult, venuesResult] =
         await Promise.all([
-          getProgramItemsForDay(dayId),
+          getActivitiesForDay(dayId),
           getReservationsForDay(dayId),
           getAllPOCs(),
           getAllVenueTypes(),

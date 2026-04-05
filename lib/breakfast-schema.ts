@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 export const createBreakfastSchema = z.object({
-  hotelBookingId: z.string().uuid('Hotel booking ID is required'),
-  breakfastDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
+  dayId: z.string().uuid('Day ID is required'),
+  groupName: z.string().optional(),
   tableBreakdown: z.string().optional(),
   startTime: z.string().optional(),
   notes: z.string().optional(),

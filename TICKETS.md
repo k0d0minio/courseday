@@ -200,7 +200,7 @@ The database migration in Ticket 1 renames `program_item` to `activity`, drops `
 
 ## Ticket 4: Server Actions Refactor
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** completed.
 
 **Priority:** P0  
 **Scope:** `app/actions/program-items.ts`, `app/actions/hotel-bookings.ts`, `app/actions/reservations.ts`, `app/actions/breakfast.ts`, `lib/reservation-schema.ts`, new `app/actions/activities.ts`, new `app/actions/activity-tags.ts`  
