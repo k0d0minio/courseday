@@ -11,6 +11,8 @@ import { AuthProvider } from '@/lib/AuthProvider';
 import { AdminIndicator } from '@/components/admin-indicator';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { isEditor } from '@/lib/membership';
+import { PwaRegister } from '@/components/pwa-register';
+import { PwaInstallPrompt } from '@/components/pwa-install-prompt';
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -24,9 +26,29 @@ export async function generateMetadata(): Promise<Metadata> {
     const name = data?.name as string | undefined;
     return {
       title: name ? `${name} · Golf Schedule` : 'Golf Schedule',
+      manifest: '/manifest.webmanifest',
+      appleWebApp: {
+        capable: true,
+        statusBarStyle: 'default',
+        title: name ?? 'Golf Schedule',
+      },
+      icons: {
+        apple: '/icon.svg',
+      },
     };
   } catch {
-    return { title: 'Golf Schedule' };
+    return {
+      title: 'Golf Schedule',
+      manifest: '/manifest.webmanifest',
+      appleWebApp: {
+        capable: true,
+        statusBarStyle: 'default',
+        title: 'Golf Schedule',
+      },
+      icons: {
+        apple: '/icon.svg',
+      },
+    };
   }
 }
 
@@ -78,6 +100,8 @@ export default async function TenantLayout({
         </div>
         <AdminIndicator />
         <Toaster richColors closeButton />
+        <PwaRegister />
+        <PwaInstallPrompt />
       </AuthProvider>
     </TenantProvider>
   );
