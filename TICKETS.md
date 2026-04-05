@@ -1052,7 +1052,7 @@ Day-level internal notes.
 
 ## Ticket 25: Weather Integration
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** done.
 
 **Priority:** P2  
 **Scope:** `app/[tenant]/day/[date]/DayViewClient.tsx`, `app/actions/weather.ts` (new), `supabase/migrations/`, `app/[tenant]/admin/settings/`  

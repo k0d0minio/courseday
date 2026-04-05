@@ -10,19 +10,25 @@ export default async function SettingsPage() {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from('tenants')
-    .select('accent_color, logo_url')
+    .select('accent_color, logo_url, latitude, longitude')
     .eq('id', tenant.id)
     .single();
 
-  const accentColor = (data as { accent_color?: string | null } | null)?.accent_color ?? null;
-  const logoUrl = (data as { logo_url?: string | null } | null)?.logo_url ?? null;
+  const row = data as {
+    accent_color?: string | null;
+    logo_url?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+  } | null;
 
   return (
     <SettingsClient
       tenantId={tenant.id}
       currentUserId={user.id}
-      initialAccentColor={accentColor}
-      initialLogoUrl={logoUrl}
+      initialAccentColor={row?.accent_color ?? null}
+      initialLogoUrl={row?.logo_url ?? null}
+      initialLatitude={row?.latitude ?? null}
+      initialLongitude={row?.longitude ?? null}
     />
   );
 }

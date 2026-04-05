@@ -3,9 +3,11 @@
 import { useTranslations } from 'next-intl';
 import { DayNav } from '@/components/day-nav';
 import { DayNotes } from '@/components/day-notes';
+import { WeatherCard } from '@/components/weather-card';
 import { TableBreakdownDisplay } from '@/components/table-breakdown-display';
 import type { ActivityWithRelations, Reservation, BreakfastConfiguration } from '@/types/index';
 import type { DayNote } from '@/app/actions/day-notes';
+import type { WeatherData } from '@/app/actions/weather';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -18,6 +20,7 @@ type Props = {
   reservations: Reservation[];
   breakfastConfigs: BreakfastConfiguration[];
   dayNotes: DayNote[];
+  weather: WeatherData | null;
 };
 
 // ---------------------------------------------------------------------------
@@ -31,6 +34,7 @@ export function ViewerDayDashboard({
   reservations,
   breakfastConfigs,
   dayNotes,
+  weather,
 }: Props) {
   const td = useTranslations('Tenant.day');
   const ts = useTranslations('Tenant.summary');
@@ -44,6 +48,8 @@ export function ViewerDayDashboard({
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-6">
       <DayNav date={date} today={today} />
+
+      {weather && <WeatherCard weather={weather} />}
 
       <DayNotes
         dayId={date}

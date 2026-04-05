@@ -129,7 +129,7 @@ export async function getTenantBySlug(
 // ---------------------------------------------------------------------------
 export async function updateTenant(
   id: string,
-  data: { name?: string; slug?: string; logo_url?: string | null; accent_color?: string | null; timezone?: string; language?: string }
+  data: { name?: string; slug?: string; logo_url?: string | null; accent_color?: string | null; timezone?: string; language?: string; latitude?: number | null; longitude?: number | null; onboarding_completed?: boolean }
 ): Promise<ActionResponse<TenantRedisData>> {
   const serviceClient = createSupabaseServiceClient();
 

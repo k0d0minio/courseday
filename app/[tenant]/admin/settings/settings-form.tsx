@@ -14,11 +14,15 @@ interface SettingsFormProps {
   tenantId: string;
   initialAccentColor: string | null;
   initialLogoUrl: string | null;
+  initialLatitude: number | null;
+  initialLongitude: number | null;
 }
 
-export function SettingsForm({ tenantId, initialAccentColor, initialLogoUrl }: SettingsFormProps) {
+export function SettingsForm({ tenantId, initialAccentColor, initialLogoUrl, initialLatitude, initialLongitude }: SettingsFormProps) {
   const [accentColor, setAccentColor] = useState(initialAccentColor ?? '#1a1a1a');
   const [logoUrl, setLogoUrl] = useState(initialLogoUrl ?? '');
+  const [latitude, setLatitude] = useState(initialLatitude != null ? String(initialLatitude) : '');
+  const [longitude, setLongitude] = useState(initialLongitude != null ? String(initialLongitude) : '');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -66,9 +70,14 @@ export function SettingsForm({ tenantId, initialAccentColor, initialLogoUrl }: S
   async function handleSave() {
     setSaving(true);
     try {
+      const lat = latitude.trim() ? parseFloat(latitude) : null;
+      const lon = longitude.trim() ? parseFloat(longitude) : null;
+
       const result = await updateTenant(tenantId, {
         accent_color: accentColor || null,
         logo_url: logoUrl || null,
+        latitude: lat != null && !isNaN(lat) ? lat : null,
+        longitude: lon != null && !isNaN(lon) ? lon : null,
       });
 
       if (!result.success) {
@@ -166,6 +175,50 @@ export function SettingsForm({ tenantId, initialAccentColor, initialLogoUrl }: S
               {uploading ? 'Uploading…' : logoUrl ? 'Replace logo' : 'Upload logo'}
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Location */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Location</CardTitle>
+          <CardDescription>
+            Used to show weather forecasts on the day view.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="latitude">Latitude</Label>
+              <Input
+                id="latitude"
+                type="number"
+                step="any"
+                min={-90}
+                max={90}
+                placeholder="51.5074"
+                value={latitude}
+                onChange={(e) => setLatitude(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="longitude">Longitude</Label>
+              <Input
+                id="longitude"
+                type="number"
+                step="any"
+                min={-180}
+                max={180}
+                placeholder="-0.1278"
+                value={longitude}
+                onChange={(e) => setLongitude(e.target.value)}
+              />
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Decimal degrees. Find your coordinates at{' '}
+            <span className="font-mono">maps.google.com</span> → right-click → &ldquo;What&rsquo;s here?&rdquo;
+          </p>
         </CardContent>
       </Card>
 
