@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Plus } from 'lucide-react';
 import { DayNav } from '@/components/day-nav';
 import { DaySummaryCard } from '@/components/day-summary-card';
-import { AddEntryModal } from '@/components/add-entry-modal';
+import { ActivityForm } from '@/components/activity-form';
 import { EntryCard } from '@/components/entry-card';
 import { AddReservationModal } from '@/components/add-reservation-modal';
 import { ReservationCard } from '@/components/reservation-card';
@@ -204,7 +204,7 @@ export function DayViewClient({
         )}
       </section>
 
-      <AddEntryModal
+      <ActivityForm
         isOpen={entryModalOpen}
         onClose={() => setEntryModalOpen(false)}
         date={date}

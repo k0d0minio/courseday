@@ -10,7 +10,7 @@ import { getActivitiesForDay } from '@/app/actions/activities';
 import { getReservationsForDay } from '@/app/actions/reservations';
 import { getAllPOCs } from '@/app/actions/poc';
 import { getAllVenueTypes } from '@/app/actions/venue-type';
-import { AddEntryModal } from '@/components/add-entry-modal';
+import { ActivityForm } from '@/components/activity-form';
 import { AddReservationModal } from '@/components/add-reservation-modal';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -198,7 +198,7 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
 
       {data && (
         <>
-          <AddEntryModal
+          <ActivityForm
             isOpen={entryModalOpen}
             onClose={() => setEntryModalOpen(false)}
             date={date}
