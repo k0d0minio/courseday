@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { programItemSchema } from '@/lib/program-item-schema';
+import { activitySchema } from '@/lib/program-item-schema';
 import { parseTableBreakdown } from '@/lib/day-utils';
 import { generateRecurrenceDates } from '@/lib/day-utils';
 
@@ -41,62 +41,49 @@ describe('parseTableBreakdown', () => {
 });
 
 // ---------------------------------------------------------------------------
-// programItemSchema validation
+// activitySchema validation
 // ---------------------------------------------------------------------------
-describe('programItemSchema', () => {
-  const validGolf = {
+describe('activitySchema', () => {
+  const validActivity = {
     title: 'Morning Round',
-    type: 'golf' as const,
     dayId: '123e4567-e89b-12d3-a456-426614174000',
   };
 
-  it('accepts a minimal valid golf item', () => {
-    expect(programItemSchema.safeParse(validGolf).success).toBe(true);
-  });
-
-  it('accepts a minimal valid event item', () => {
-    const result = programItemSchema.safeParse({ ...validGolf, type: 'event' });
-    expect(result.success).toBe(true);
+  it('accepts a minimal valid activity', () => {
+    expect(activitySchema.safeParse(validActivity).success).toBe(true);
   });
 
   it('rejects empty title', () => {
-    const result = programItemSchema.safeParse({ ...validGolf, title: '' });
+    const result = activitySchema.safeParse({ ...validActivity, title: '' });
     expect(result.success).toBe(false);
     expect(result.error?.issues[0].message).toBe('Title is required');
   });
 
   it('rejects missing title', () => {
-    const { title: _, ...noTitle } = validGolf;
-    expect(programItemSchema.safeParse(noTitle).success).toBe(false);
-  });
-
-  it('rejects invalid type', () => {
-    const result = programItemSchema.safeParse({ ...validGolf, type: 'lesson' });
-    expect(result.success).toBe(false);
+    const { title: _, ...noTitle } = validActivity;
+    expect(activitySchema.safeParse(noTitle).success).toBe(false);
   });
 
   it('rejects missing dayId', () => {
-    const { dayId: _, ...noDayId } = validGolf;
-    expect(programItemSchema.safeParse(noDayId).success).toBe(false);
+    const { dayId: _, ...noDayId } = validActivity;
+    expect(activitySchema.safeParse(noDayId).success).toBe(false);
   });
 
   it('accepts optional fields', () => {
-    const result = programItemSchema.safeParse({
-      ...validGolf,
+    const result = activitySchema.safeParse({
+      ...validActivity,
       description: 'Full round',
       startTime: '09:00',
       endTime: '13:00',
-      guestCount: 12,
-      capacity: 20,
-      isTourOperator: true,
+      expectedCovers: 12,
       notes: 'Bring rain gear',
     });
     expect(result.success).toBe(true);
   });
 
-  it('accepts a recurring item with frequency', () => {
-    const result = programItemSchema.safeParse({
-      ...validGolf,
+  it('accepts a recurring activity with frequency', () => {
+    const result = activitySchema.safeParse({
+      ...validActivity,
       isRecurring: true,
       recurrenceFrequency: 'weekly',
     });
@@ -104,25 +91,17 @@ describe('programItemSchema', () => {
   });
 
   it('rejects invalid recurrenceFrequency', () => {
-    const result = programItemSchema.safeParse({
-      ...validGolf,
+    const result = activitySchema.safeParse({
+      ...validActivity,
       isRecurring: true,
       recurrenceFrequency: 'daily',
     });
     expect(result.success).toBe(false);
   });
 
-  it('rejects negative guestCount', () => {
-    const result = programItemSchema.safeParse({ ...validGolf, guestCount: -1 });
+  it('rejects negative expectedCovers', () => {
+    const result = activitySchema.safeParse({ ...validActivity, expectedCovers: -1 });
     expect(result.success).toBe(false);
-  });
-
-  it('accepts tableBreakdown as an array of integers', () => {
-    const result = programItemSchema.safeParse({
-      ...validGolf,
-      tableBreakdown: [3, 2, 1],
-    });
-    expect(result.success).toBe(true);
   });
 });
 
@@ -133,7 +112,6 @@ describe('recurrence fanout (generateRecurrenceDates integration)', () => {
   it('weekly from 2024-06-01 for 4 weeks generates 4 future dates', () => {
     const futureDates = generateRecurrenceDates('2024-06-01', 'weekly', '2024-06-29');
     expect(futureDates).toEqual(['2024-06-08', '2024-06-15', '2024-06-22', '2024-06-29']);
-    // Including the start date, 5 items are created
     expect([' 2024-06-01', ...futureDates]).toHaveLength(5);
   });
 

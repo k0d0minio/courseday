@@ -12,8 +12,8 @@ import {
 } from '@/app/actions/program-items';
 import { createPOC } from '@/app/actions/poc';
 import { createVenueType } from '@/app/actions/venue-type';
-import { generateRecurrenceDates, parseTableBreakdown } from '@/lib/day-utils';
-import type { ProgramItem, PointOfContact, VenueType } from '@/types/index';
+import { generateRecurrenceDates } from '@/lib/day-utils';
+import type { Activity, PointOfContact, VenueType } from '@/types/index';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -35,28 +35,17 @@ import {
 import { Separator } from '@/components/ui/separator';
 
 // ---------------------------------------------------------------------------
-// Local form schema (string-based inputs, transformed before API call)
+// Local form schema
 // ---------------------------------------------------------------------------
-
-const TABLE_BREAKDOWN_REGEX = /^[1-9]\d*(\+[1-9]\d*)*$/;
 
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().optional(),
   startTime: z.string().optional(),
   endTime: z.string().optional(),
-  guestCount: z.string().optional(),
-  capacity: z.string().optional(),
+  expectedCovers: z.string().optional(),
   venueTypeId: z.string().optional(),
   pocId: z.string().optional(),
-  tableBreakdown: z
-    .string()
-    .optional()
-    .refine(
-      (val) => !val || TABLE_BREAKDOWN_REGEX.test(val.replace(/\s+/g, '')),
-      { message: 'Use format 3+2+1 (positive integers only)' }
-    ),
-  isTourOperator: z.boolean().optional(),
   notes: z.string().optional(),
   isRecurring: z.boolean().optional(),
   recurrenceFrequency: z
@@ -75,16 +64,12 @@ const NEW_VALUE = '__new__';
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  /** YYYY-MM-DD of the day being viewed */
   date: string;
-  /** ID of the Day row for this date */
   dayId: string;
-  type: 'golf' | 'event';
   pocs: PointOfContact[];
   venueTypes: VenueType[];
-  /** When provided the form is pre-filled and submit calls updateProgramItem */
-  editItem?: ProgramItem | null;
-  onSuccess: (item: ProgramItem) => void;
+  editItem?: Activity | null;
+  onSuccess: (item: Activity) => void;
 };
 
 // ---------------------------------------------------------------------------
@@ -96,7 +81,6 @@ export function AddEntryModal({
   onClose,
   date,
   dayId,
-  type,
   pocs: initialPocs,
   venueTypes: initialVenueTypes,
   editItem,
@@ -120,9 +104,7 @@ export function AddEntryModal({
   const [isSavingVt, startVtTransition] = useTransition();
 
   const isEditing = !!editItem;
-  const title = isEditing
-    ? `Edit ${type}`
-    : `Add ${type === 'golf' ? 'golf' : 'event'}`;
+  const title = isEditing ? 'Edit activity' : 'Add activity';
 
   const {
     register,
@@ -136,11 +118,9 @@ export function AddEntryModal({
     defaultValues: defaultValues(editItem),
   });
 
-  // Sync initial lists when props change
   useEffect(() => { setPocs(initialPocs); }, [initialPocs]);
   useEffect(() => { setVenueTypes(initialVenueTypes); }, [initialVenueTypes]);
 
-  // Reset form when dialog opens/closes or editItem changes
   useEffect(() => {
     reset(defaultValues(editItem));
     setShowNewPoc(false);
@@ -157,9 +137,6 @@ export function AddEntryModal({
     return 1 + generateRecurrenceDates(date, watchFrequency).length;
   }, [date, watchIsRecurring, watchFrequency]);
 
-  // -------------------------------------------------------------------------
-  // Inline POC save
-  // -------------------------------------------------------------------------
   function handleSavePoc() {
     if (!newPocName.trim()) return;
     startPocTransition(async () => {
@@ -173,9 +150,6 @@ export function AddEntryModal({
     });
   }
 
-  // -------------------------------------------------------------------------
-  // Inline venue type save
-  // -------------------------------------------------------------------------
   function handleSaveVenueType() {
     if (!newVtName.trim()) return;
     startVtTransition(async () => {
@@ -189,26 +163,17 @@ export function AddEntryModal({
     });
   }
 
-  // -------------------------------------------------------------------------
-  // Form submit
-  // -------------------------------------------------------------------------
   function onSubmit(data: FormData) {
     startTransition(async () => {
       const payload = {
         title: data.title,
-        type,
         dayId,
         description: data.description || undefined,
         startTime: data.startTime || undefined,
         endTime: data.endTime || undefined,
-        guestCount: data.guestCount ? parseInt(data.guestCount, 10) : undefined,
-        capacity: data.capacity ? parseInt(data.capacity, 10) : undefined,
+        expectedCovers: data.expectedCovers ? parseInt(data.expectedCovers, 10) : undefined,
         venueTypeId: data.venueTypeId || null,
         pocId: data.pocId || null,
-        tableBreakdown: data.tableBreakdown
-          ? parseTableBreakdown(data.tableBreakdown)
-          : null,
-        isTourOperator: data.isTourOperator ?? false,
         notes: data.notes || undefined,
         isRecurring: data.isRecurring ?? false,
         recurrenceFrequency: data.recurrenceFrequency ?? null,
@@ -223,7 +188,7 @@ export function AddEntryModal({
         return;
       }
 
-      toast.success(isEditing ? `${type === 'golf' ? 'Golf' : 'Event'} updated.` : `${type === 'golf' ? 'Golf' : 'Event'} added.`);
+      toast.success(isEditing ? 'Activity updated.' : 'Activity added.');
       onSuccess(result.data);
       onClose();
     });
@@ -233,7 +198,7 @@ export function AddEntryModal({
     <Dialog open={isOpen} onOpenChange={(v) => { if (!v) onClose(); }}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="capitalize">{title}</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -262,16 +227,10 @@ export function AddEntryModal({
             </div>
           </div>
 
-          {/* Guest count + Capacity */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label htmlFor="ae-guests">Guest count</Label>
-              <Input id="ae-guests" type="number" min={1} {...register('guestCount')} />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="ae-capacity">Capacity</Label>
-              <Input id="ae-capacity" type="number" min={1} {...register('capacity')} />
-            </div>
+          {/* Expected covers */}
+          <div className="space-y-1">
+            <Label htmlFor="ae-covers">Expected covers</Label>
+            <Input id="ae-covers" type="number" min={0} {...register('expectedCovers')} />
           </div>
 
           {/* Venue type */}
@@ -307,16 +266,8 @@ export function AddEntryModal({
             {showNewVt && (
               <div className="mt-2 rounded-md border p-3 space-y-2">
                 <p className="text-xs font-medium text-muted-foreground">New venue type</p>
-                <Input
-                  placeholder="Name *"
-                  value={newVtName}
-                  onChange={(e) => setNewVtName(e.target.value)}
-                />
-                <Input
-                  placeholder="Code (optional)"
-                  value={newVtCode}
-                  onChange={(e) => setNewVtCode(e.target.value)}
-                />
+                <Input placeholder="Name *" value={newVtName} onChange={(e) => setNewVtName(e.target.value)} />
+                <Input placeholder="Code (optional)" value={newVtCode} onChange={(e) => setNewVtCode(e.target.value)} />
                 <div className="flex gap-2 justify-end">
                   <Button type="button" size="sm" variant="outline" onClick={() => setShowNewVt(false)}>Cancel</Button>
                   <Button type="button" size="sm" onClick={handleSaveVenueType} disabled={isSavingVt || !newVtName.trim()}>
@@ -360,22 +311,9 @@ export function AddEntryModal({
             {showNewPoc && (
               <div className="mt-2 rounded-md border p-3 space-y-2">
                 <p className="text-xs font-medium text-muted-foreground">New point of contact</p>
-                <Input
-                  placeholder="Name *"
-                  value={newPocName}
-                  onChange={(e) => setNewPocName(e.target.value)}
-                />
-                <Input
-                  placeholder="Email (optional)"
-                  type="email"
-                  value={newPocEmail}
-                  onChange={(e) => setNewPocEmail(e.target.value)}
-                />
-                <Input
-                  placeholder="Phone (optional)"
-                  value={newPocPhone}
-                  onChange={(e) => setNewPocPhone(e.target.value)}
-                />
+                <Input placeholder="Name *" value={newPocName} onChange={(e) => setNewPocName(e.target.value)} />
+                <Input placeholder="Email (optional)" type="email" value={newPocEmail} onChange={(e) => setNewPocEmail(e.target.value)} />
+                <Input placeholder="Phone (optional)" value={newPocPhone} onChange={(e) => setNewPocPhone(e.target.value)} />
                 <div className="flex gap-2 justify-end">
                   <Button type="button" size="sm" variant="outline" onClick={() => setShowNewPoc(false)}>Cancel</Button>
                   <Button type="button" size="sm" onClick={handleSavePoc} disabled={isSavingPoc || !newPocName.trim()}>
@@ -384,25 +322,6 @@ export function AddEntryModal({
                 </div>
               </div>
             )}
-          </div>
-
-          {/* Table breakdown */}
-          <div className="space-y-1">
-            <Label htmlFor="ae-breakdown">Table breakdown</Label>
-            <Input id="ae-breakdown" placeholder="e.g. 3+2+1" {...register('tableBreakdown')} />
-            {errors.tableBreakdown && (
-              <p className="text-sm text-destructive">{errors.tableBreakdown.message}</p>
-            )}
-          </div>
-
-          {/* Tour operator */}
-          <div className="flex items-center justify-between">
-            <Label htmlFor="ae-tour">Tour operator</Label>
-            <Switch
-              id="ae-tour"
-              checked={watch('isTourOperator') ?? false}
-              onCheckedChange={(v) => setValue('isTourOperator', v)}
-            />
           </div>
 
           {/* Notes */}
@@ -469,19 +388,16 @@ export function AddEntryModal({
 // Helpers
 // ---------------------------------------------------------------------------
 
-function defaultValues(editItem?: ProgramItem | null): FormData {
+function defaultValues(editItem?: Activity | null): FormData {
   if (!editItem) {
     return {
       title: '',
       description: '',
       startTime: '',
       endTime: '',
-      guestCount: '',
-      capacity: '',
+      expectedCovers: '',
       venueTypeId: '',
       pocId: '',
-      tableBreakdown: '',
-      isTourOperator: false,
       notes: '',
       isRecurring: false,
       recurrenceFrequency: undefined,
@@ -492,14 +408,9 @@ function defaultValues(editItem?: ProgramItem | null): FormData {
     description: editItem.description ?? '',
     startTime: editItem.start_time ?? '',
     endTime: editItem.end_time ?? '',
-    guestCount: editItem.guest_count != null ? String(editItem.guest_count) : '',
-    capacity: editItem.capacity != null ? String(editItem.capacity) : '',
+    expectedCovers: editItem.expected_covers != null ? String(editItem.expected_covers) : '',
     venueTypeId: editItem.venue_type_id ?? '',
     pocId: editItem.poc_id ?? '',
-    tableBreakdown: editItem.table_breakdown
-      ? editItem.table_breakdown.join('+')
-      : '',
-    isTourOperator: editItem.is_tour_operator,
     notes: editItem.notes ?? '',
     isRecurring: false,
     recurrenceFrequency: undefined,

@@ -10,14 +10,12 @@ import { isPastDate, isDateWithinOneYear, getTenantToday } from '@/lib/day-utils
 import {
   getProgramItemsForDay,
   getReservationsForDay,
-  getHotelBookingsForDate,
   getBreakfastConfigsForDay,
 } from './queries';
 import { DayViewClient } from './DayViewClient';
 import type {
-  ProgramItem,
+  Activity,
   Reservation,
-  HotelBooking,
   BreakfastConfiguration,
   PointOfContact,
   VenueType,
@@ -28,9 +26,8 @@ export type DayViewProps = {
   date: string;
   dayId: string;
   today: string;
-  programItems: ProgramItem[];
+  activities: Activity[];
   reservations: Reservation[];
-  hotelBookings: HotelBooking[];
   breakfastConfigs: BreakfastConfiguration[];
   pocs: PointOfContact[];
   venueTypes: VenueType[];
@@ -73,11 +70,10 @@ export default async function DayPage({
   if (!dayResult.success) redirect(`/day/${today}`);
   const day = dayResult.data;
 
-  // Load all day data + supporting lists + auth state in parallel
+  // Load all day data in parallel
   const [
-    programItems,
+    activities,
     reservations,
-    hotelBookings,
     breakfastConfigs,
     pocsResult,
     venueTypesResult,
@@ -85,8 +81,7 @@ export default async function DayPage({
   ] = await Promise.all([
     getProgramItemsForDay(tenant.id, day.id),
     getReservationsForDay(tenant.id, day.id),
-    getHotelBookingsForDate(tenant.id, date),
-    getBreakfastConfigsForDay(tenant.id, date),
+    getBreakfastConfigsForDay(tenant.id, day.id),
     getAllPOCs(),
     getAllVenueTypes(),
     getAuthState(),
@@ -97,9 +92,8 @@ export default async function DayPage({
       date={date}
       dayId={day.id}
       today={today}
-      programItems={programItems}
+      activities={activities}
       reservations={reservations}
-      hotelBookings={hotelBookings}
       breakfastConfigs={breakfastConfigs}
       pocs={pocsResult.success ? pocsResult.data : []}
       venueTypes={venueTypesResult.success ? venueTypesResult.data : []}

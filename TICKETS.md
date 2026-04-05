@@ -148,7 +148,7 @@ The database migration in Ticket 1 renames `program_item` to `activity`, drops `
 
 ## Ticket 3: TypeScript Types Regeneration & Alias Updates
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** completed.
 
 **Priority:** P0  
 **Scope:** `types/supabase.ts`, `types/index.ts`, all files importing from `types/`  

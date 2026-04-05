@@ -7,7 +7,6 @@ import { getTenantToday, getMonthDateRange } from '@/lib/day-utils';
 import {
   getProgramItemsForMonth,
   getReservationsForMonth,
-  getHotelBookingsForMonth,
   getBreakfastConfigsForMonth,
 } from './month-queries';
 import { HomeClient } from '@/components/HomeClient';
@@ -57,11 +56,10 @@ export default async function TenantHomePage({
   const dayDateMap = new Map(monthDays.map((d) => [d.id, d.date_iso]));
 
   // Load all month data in parallel
-  const [programItems, reservations, hotelBookings, breakfastConfigs] =
+  const [activities, reservations, breakfastConfigs] =
     await Promise.all([
       getProgramItemsForMonth(tenant.id, dayIds),
       getReservationsForMonth(tenant.id, dayIds),
-      getHotelBookingsForMonth(tenant.id, start, end),
       getBreakfastConfigsForMonth(tenant.id, start, end),
     ]);
 
@@ -80,13 +78,11 @@ export default async function TenantHomePage({
     });
   }
 
-  for (const item of programItems) {
+  for (const item of activities) {
     const date = dayDateMap.get(item.day_id);
     if (!date) continue;
     const s = summaryMap.get(date);
-    if (!s) continue;
-    if (item.type === 'golf') s.golfCount++;
-    else s.eventCount++;
+    if (s) s.golfCount++;
   }
 
   for (const res of reservations) {
@@ -94,14 +90,6 @@ export default async function TenantHomePage({
     if (!date) continue;
     const s = summaryMap.get(date);
     if (s) s.reservationCount++;
-  }
-
-  for (const booking of hotelBookings) {
-    for (const [date, s] of summaryMap) {
-      if (booking.check_in <= date && date < booking.check_out) {
-        s.hotelGuestCount += booking.guest_count;
-      }
-    }
   }
 
   for (const config of breakfastConfigs) {
