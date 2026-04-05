@@ -1089,7 +1089,7 @@ Copy day and save/apply templates for **activities**.
 
 ## Ticket 27: Dark Mode Refinement
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** done.
 
 **Priority:** P3  
 **Scope:** `app/globals.css`, `components/`, `app/[tenant]/day/[date]/DayViewClient.tsx`, `components/HomeClient.tsx`  

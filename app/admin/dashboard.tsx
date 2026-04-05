@@ -53,7 +53,7 @@ function TenantCard({
             size="icon"
             disabled={isDeleting}
             onClick={() => onDelete(tenant.id)}
-            className="text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+            className="text-muted-foreground hover:text-foreground hover:bg-muted/50"
           >
             {isDeleting ? (
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -64,9 +64,9 @@ function TenantCard({
         </div>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-gray-500">{tenant.slug}</p>
-        <p className="text-sm text-gray-500">Language: {tenant.language}</p>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-muted-foreground">{tenant.slug}</p>
+        <p className="text-sm text-muted-foreground">Language: {tenant.language}</p>
+        <p className="text-sm text-muted-foreground mt-1">
           Created: {new Date(tenant.created_at).toLocaleDateString()}
         </p>
         <div className="mt-3">
@@ -74,7 +74,7 @@ function TenantCard({
             href={`${protocol}://${tenant.slug}.${rootDomain}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-500 hover:underline text-sm"
+            className="text-primary hover:underline text-sm"
           >
             Visit tenant →
           </a>
@@ -84,7 +84,7 @@ function TenantCard({
         <div className="mt-4 border-t pt-3">
           <button
             type="button"
-            className="flex items-center gap-1 text-sm font-medium text-gray-600 hover:text-gray-900"
+            className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground"
             onClick={() => setExpanded((v) => !v)}
           >
             Feature Flags
@@ -146,7 +146,7 @@ export function AdminDashboard({
         <h1 className="text-3xl font-bold">Tenant Management</h1>
         <Link
           href={`${protocol}://${rootDomain}`}
-          className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           {rootDomain}
         </Link>
@@ -155,7 +155,7 @@ export function AdminDashboard({
       {list.length === 0 ? (
         <Card>
           <CardContent className="py-8 text-center">
-            <p className="text-gray-500">No tenants yet.</p>
+            <p className="text-muted-foreground">No tenants yet.</p>
           </CardContent>
         </Card>
       ) : (
