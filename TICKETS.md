@@ -1070,7 +1070,7 @@ Forecast in day view via Open-Meteo; Redis cache.
 
 ## Ticket 26: Copy & Template Day Schedules
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** done.
 
 **Priority:** P2  
 **Scope:** `supabase/migrations/`, `app/actions/schedule-templates.ts` (new), `app/[tenant]/day/[date]/DayViewClient.tsx`  

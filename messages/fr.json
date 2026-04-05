@@ -90,7 +90,9 @@
       "noReservations": "Aucune réservation pour l'instant.",
       "addBreakfast": "Ajouter petit-déjeuner",
       "addActivity": "Activité",
-      "addReservation": "Ajouter une réservation"
+      "addReservation": "Ajouter une réservation",
+      "copyDay": "Copier",
+      "templates": "Modèles"
     },
     "summary": {
       "breakfast": "Petits-déjeuners",
@@ -241,6 +243,7 @@
       "tabBranding": "Image de marque",
       "tabLanguage": "Langue",
       "tabMembers": "Équipe",
+      "tabTemplates": "Modèles",
       "tabFeedback": "Retours",
       "languageTitle": "Langue de l'établissement",
       "languageDescription": "Cette langue sera utilisée pour tous les membres de votre établissement.",

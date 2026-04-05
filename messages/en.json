@@ -90,7 +90,9 @@
       "noReservations": "No reservations yet.",
       "addBreakfast": "Add breakfast",
       "addActivity": "Activity",
-      "addReservation": "Add reservation"
+      "addReservation": "Add reservation",
+      "copyDay": "Copy",
+      "templates": "Templates"
     },
     "summary": {
       "breakfast": "Breakfasts",
@@ -241,6 +243,7 @@
       "tabBranding": "Branding",
       "tabLanguage": "Language",
       "tabMembers": "Team",
+      "tabTemplates": "Templates",
       "tabFeedback": "Feedback",
       "languageTitle": "Venue language",
       "languageDescription": "This language will be used for all members of your venue.",
