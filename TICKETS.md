@@ -1219,7 +1219,7 @@ Suspend/reactivate/archive; deletion cleanup (Redis, storage, cascades).
 
 ## Ticket 34: Automated E2E Test Suite
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** pending — set to `[x]` when done.
 
 **Priority:** P3  
 **Scope:** `playwright.config.ts` (new), `tests/e2e/` (new), `package.json`  
