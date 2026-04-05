@@ -39,13 +39,14 @@ export function DayNav({ date, today }: Props) {
         onClick={() => navigate(prevYmd)}
         disabled={prevYmd < today}
         aria-label={t('previousDay')}
+        className="h-11 w-11 sm:h-9 sm:w-9"
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
 
       <Popover open={calOpen} onOpenChange={setCalOpen}>
         <PopoverTrigger asChild>
-          <Button variant="outline" className="min-w-44 justify-start gap-2 font-normal">
+          <Button variant="outline" className="flex-1 sm:flex-none sm:min-w-44 justify-start gap-2 font-normal">
             <CalendarIcon className="h-4 w-4 text-muted-foreground" />
             {format(currentDate, 'EEE, d MMM yyyy')}
           </Button>
@@ -74,6 +75,7 @@ export function DayNav({ date, today }: Props) {
         onClick={() => navigate(nextYmd)}
         disabled={nextYmd > maxYmd}
         aria-label={t('nextDay')}
+        className="h-11 w-11 sm:h-9 sm:w-9"
       >
         <ChevronRight className="h-4 w-4" />
       </Button>
