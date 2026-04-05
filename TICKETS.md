@@ -1032,7 +1032,7 @@ Stronger recurrence for **activities** (formerly program items).
 
 ## Ticket 24: Day Notes & Comments
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** completed.
 
 **Priority:** P2  
 **Scope:** `supabase/migrations/`, `app/actions/day-notes.ts` (new), `app/[tenant]/day/[date]/DayViewClient.tsx`, `app/[tenant]/day/[date]/queries.ts`  

@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import type { Activity, Reservation, BreakfastConfiguration } from '@/types/index';
+import type { DayNote } from '@/app/actions/day-notes';
 
 export async function getProgramItemsForDay(
   tenantId: string,
@@ -41,4 +42,18 @@ export async function getBreakfastConfigsForDay(
     .eq('day_id', dayId)
     .order('start_time', { nullsFirst: true });
   return (data ?? []) as unknown as BreakfastConfiguration[];
+}
+
+export async function getDayNotesForDay(
+  tenantId: string,
+  dayId: string
+): Promise<DayNote[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from('day_notes')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .eq('day_id', dayId)
+    .order('created_at', { ascending: true });
+  return (data ?? []) as unknown as DayNote[];
 }

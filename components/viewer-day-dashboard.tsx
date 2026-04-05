@@ -2,8 +2,10 @@
 
 import { useTranslations } from 'next-intl';
 import { DayNav } from '@/components/day-nav';
+import { DayNotes } from '@/components/day-notes';
 import { TableBreakdownDisplay } from '@/components/table-breakdown-display';
 import type { ActivityWithRelations, Reservation, BreakfastConfiguration } from '@/types/index';
+import type { DayNote } from '@/app/actions/day-notes';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -15,6 +17,7 @@ type Props = {
   activities: ActivityWithRelations[];
   reservations: Reservation[];
   breakfastConfigs: BreakfastConfiguration[];
+  dayNotes: DayNote[];
 };
 
 // ---------------------------------------------------------------------------
@@ -27,6 +30,7 @@ export function ViewerDayDashboard({
   activities,
   reservations,
   breakfastConfigs,
+  dayNotes,
 }: Props) {
   const td = useTranslations('Tenant.day');
   const ts = useTranslations('Tenant.summary');
@@ -40,6 +44,13 @@ export function ViewerDayDashboard({
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-6">
       <DayNav date={date} today={today} />
+
+      <DayNotes
+        dayId={date}
+        initialNotes={dayNotes}
+        isEditor={false}
+        currentUserId={undefined}
+      />
 
       {/* Summary — large numbers for at-a-glance reading */}
       <div className="grid grid-cols-3 gap-3">
