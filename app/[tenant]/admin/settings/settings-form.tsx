@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { CitySearch } from '@/components/city-search';
 
 interface SettingsFormProps {
   tenantId: string;
@@ -186,39 +187,20 @@ export function SettingsForm({ tenantId, initialAccentColor, initialLogoUrl, ini
             Used to show weather forecasts on the day view.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label htmlFor="latitude">Latitude</Label>
-              <Input
-                id="latitude"
-                type="number"
-                step="any"
-                min={-90}
-                max={90}
-                placeholder="51.5074"
-                value={latitude}
-                onChange={(e) => setLatitude(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="longitude">Longitude</Label>
-              <Input
-                id="longitude"
-                type="number"
-                step="any"
-                min={-180}
-                max={180}
-                placeholder="-0.1278"
-                value={longitude}
-                onChange={(e) => setLongitude(e.target.value)}
-              />
-            </div>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Decimal degrees. Find your coordinates at{' '}
-            <span className="font-mono">maps.google.com</span> → right-click → &ldquo;What&rsquo;s here?&rdquo;
-          </p>
+        <CardContent>
+          {/* City search replaces manual lat/lon inputs */}
+          <CitySearch
+            initialLatitude={latitude ? parseFloat(latitude) : null}
+            initialLongitude={longitude ? parseFloat(longitude) : null}
+            onSelect={(lat, lon) => {
+              setLatitude(String(lat));
+              setLongitude(String(lon));
+            }}
+            onClear={() => {
+              setLatitude('');
+              setLongitude('');
+            }}
+          />
         </CardContent>
       </Card>
 
