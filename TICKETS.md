@@ -1126,7 +1126,7 @@ Workbox/serwist-style SW; manifest; icons from `icon.svg`; install banner; offli
 
 ## Ticket 29: Internationalization Hardening
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** done.
 
 **Priority:** P3  
 **Scope:** `messages/en.json`, `messages/fr.json`, `messages/es.json` (new), `messages/de.json` (new), components, `lib/day-utils.ts`, `app/layout.tsx`  

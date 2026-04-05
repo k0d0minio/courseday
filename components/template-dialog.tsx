@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { getTemplates, saveTemplate, applyTemplate } from '@/app/actions/schedule-templates';
 import type { ScheduleTemplate, TemplateItem } from '@/app/actions/schedule-templates';
@@ -42,6 +43,7 @@ interface Props {
 }
 
 export function TemplateDialog({ isOpen, onClose, dayId, currentItems, onApplied }: Props) {
+  const t = useTranslations('Tenant.templates');
   const isMobile = useIsMobile();
   const [templates, setTemplates] = useState<ScheduleTemplate[]>([]);
   const [loading, setLoading] = useState(false);
@@ -73,7 +75,7 @@ export function TemplateDialog({ isOpen, onClose, dayId, currentItems, onApplied
         toast.error(result.error);
         return;
       }
-      toast.success('Template saved.');
+      toast.success(t('saved'));
       setSaveName('');
       onClose();
     } finally {
@@ -90,7 +92,7 @@ export function TemplateDialog({ isOpen, onClose, dayId, currentItems, onApplied
         toast.error(result.error);
         return;
       }
-      toast.success('Template applied.');
+      toast.success(t('applied'));
       onApplied();
       onClose();
     } finally {
@@ -101,35 +103,35 @@ export function TemplateDialog({ isOpen, onClose, dayId, currentItems, onApplied
   const inner = (
     <Tabs defaultValue="apply" className="mt-4">
       <TabsList className="w-full">
-        <TabsTrigger value="apply" className="flex-1">Apply template</TabsTrigger>
-        <TabsTrigger value="save" className="flex-1">Save as template</TabsTrigger>
+        <TabsTrigger value="apply" className="flex-1">{t('tabApply')}</TabsTrigger>
+        <TabsTrigger value="save" className="flex-1">{t('tabSave')}</TabsTrigger>
       </TabsList>
 
       <TabsContent value="apply" className="space-y-4 pt-4">
         {loading ? (
-          <p className="text-sm text-muted-foreground">Loading…</p>
+          <p className="text-sm text-muted-foreground">{t('loading')}</p>
         ) : templates.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No saved templates yet.</p>
+          <p className="text-sm text-muted-foreground">{t('noTemplates')}</p>
         ) : (
           <>
             <div className="space-y-1.5">
-              <Label>Template</Label>
+              <Label>{t('templateLabel')}</Label>
               <select
                 value={selectedId}
                 onChange={(e) => setSelectedId(e.target.value)}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
-                <option value="">Select a template…</option>
-                {templates.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name} ({t.items.length} {t.items.length === 1 ? 'activity' : 'activities'})
+                <option value="">{t('selectTemplate')}</option>
+                {templates.map((tmpl) => (
+                  <option key={tmpl.id} value={tmpl.id}>
+                    {tmpl.name} ({t('activityCount', { count: tmpl.items.length })})
                   </option>
                 ))}
               </select>
             </div>
 
             <div className="space-y-1.5">
-              <Label>Mode</Label>
+              <Label>{t('modeLabel')}</Label>
               <div className="flex gap-3">
                 <label className="flex items-center gap-1.5 text-sm cursor-pointer">
                   <input
@@ -138,7 +140,7 @@ export function TemplateDialog({ isOpen, onClose, dayId, currentItems, onApplied
                     checked={applyMode === 'merge'}
                     onChange={() => setApplyMode('merge')}
                   />
-                  Merge (add to existing)
+                  {t('modeMerge')}
                 </label>
                 <label className="flex items-center gap-1.5 text-sm cursor-pointer">
                   <input
@@ -147,15 +149,15 @@ export function TemplateDialog({ isOpen, onClose, dayId, currentItems, onApplied
                     checked={applyMode === 'replace'}
                     onChange={() => setApplyMode('replace')}
                   />
-                  Replace all
+                  {t('modeReplace')}
                 </label>
               </div>
             </div>
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={onClose} disabled={applying}>Cancel</Button>
+              <Button variant="outline" onClick={onClose} disabled={applying}>{t('cancel')}</Button>
               <Button onClick={handleApply} disabled={applying || !selectedId}>
-                {applying ? 'Applying…' : 'Apply'}
+                {applying ? t('applying') : t('apply')}
               </Button>
             </div>
           </>
@@ -164,25 +166,25 @@ export function TemplateDialog({ isOpen, onClose, dayId, currentItems, onApplied
 
       <TabsContent value="save" className="space-y-4 pt-4">
         {currentItems.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No activities to save as template.</p>
+          <p className="text-sm text-muted-foreground">{t('noActivities')}</p>
         ) : (
           <>
             <p className="text-sm text-muted-foreground">
-              Saving {currentItems.length} {currentItems.length === 1 ? 'activity' : 'activities'} as a template.
+              {t('saveCount', { count: currentItems.length })}
             </p>
             <div className="space-y-1.5">
-              <Label htmlFor="template-name">Template name</Label>
+              <Label htmlFor="template-name">{t('nameLabel')}</Label>
               <Input
                 id="template-name"
                 value={saveName}
                 onChange={(e) => setSaveName(e.target.value)}
-                placeholder="e.g. Weekend schedule"
+                placeholder={t('namePlaceholder')}
               />
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+              <Button variant="outline" onClick={onClose} disabled={saving}>{t('cancel')}</Button>
               <Button onClick={handleSave} disabled={saving || !saveName.trim()}>
-                {saving ? 'Saving…' : 'Save template'}
+                {saving ? t('saving') : t('saveButton')}
               </Button>
             </div>
           </>
@@ -196,7 +198,7 @@ export function TemplateDialog({ isOpen, onClose, dayId, currentItems, onApplied
       <Drawer open={isOpen} onOpenChange={(o) => !o && onClose()}>
         <DrawerContent>
           <DrawerHeader>
-            <DrawerTitle>Schedule templates</DrawerTitle>
+            <DrawerTitle>{t('dialogTitle')}</DrawerTitle>
           </DrawerHeader>
           <div className="px-4 pb-6">{inner}</div>
         </DrawerContent>
@@ -208,7 +210,7 @@ export function TemplateDialog({ isOpen, onClose, dayId, currentItems, onApplied
     <Dialog open={isOpen} onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Schedule templates</DialogTitle>
+          <DialogTitle>{t('dialogTitle')}</DialogTitle>
         </DialogHeader>
         {inner}
       </DialogContent>

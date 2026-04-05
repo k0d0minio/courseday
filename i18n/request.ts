@@ -1,7 +1,7 @@
 import { getRequestConfig } from 'next-intl/server';
 import { headers } from 'next/headers';
 
-const SUPPORTED = ['en', 'fr'] as const;
+const SUPPORTED = ['en', 'fr', 'es', 'de'] as const;
 type Locale = (typeof SUPPORTED)[number];
 
 function isSupportedLocale(v: string | null | undefined): v is Locale {

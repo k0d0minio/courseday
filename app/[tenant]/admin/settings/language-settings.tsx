@@ -54,6 +54,8 @@ export function LanguageSettings() {
           <SelectContent>
             <SelectItem value="en">{t('languageEn')}</SelectItem>
             <SelectItem value="fr">{t('languageFr')}</SelectItem>
+            <SelectItem value="es">{t('languageEs')}</SelectItem>
+            <SelectItem value="de">{t('languageDe')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
