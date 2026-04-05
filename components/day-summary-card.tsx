@@ -15,14 +15,15 @@ export function DaySummaryCard({ activities, reservations, breakfastConfigs }: P
 
   const totalActivityCovers = activities.reduce((sum, a) => sum + (a.expected_covers ?? 0), 0);
   const totalBreakfastGuests = breakfastConfigs.reduce((sum, b) => sum + b.total_guests, 0);
+  const totalReservationCovers = reservations.reduce((sum, r) => sum + (r.guest_count ?? 0), 0);
 
   return (
     <Card>
       <CardContent className="py-4">
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          <SummaryItem label={t('golfEvents')} value={totalActivityCovers} />
-          <SummaryItem label={t('breakfasts')} value={totalBreakfastGuests} />
-          <SummaryItem label={t('teeTimes')} value={reservations.length} />
+        <div className="grid grid-cols-3 gap-4">
+          <SummaryItem label={t('breakfast')} value={totalBreakfastGuests} />
+          <SummaryItem label={t('activities')} value={totalActivityCovers} />
+          <SummaryItem label={t('reservations')} value={totalReservationCovers} />
         </div>
       </CardContent>
     </Card>

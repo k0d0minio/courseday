@@ -167,10 +167,13 @@ export function HomeClient({ month, today, days: initialDays }: Props) {
                   {summary && (
                     <div className="flex flex-col gap-0.5">
                       {summary.golfCount > 0 && (
-                        <SummaryPip label={`${summary.golfCount}G`} color="emerald" />
+                        <SummaryPip label={`${summary.golfCount}A`} color="emerald" />
                       )}
                       {summary.reservationCount > 0 && (
                         <SummaryPip label={`${summary.reservationCount}R`} color="amber" />
+                      )}
+                      {summary.breakfastCount > 0 && (
+                        <SummaryPip label={`${summary.breakfastCount}B`} color="blue" />
                       )}
                     </div>
                   )}
@@ -192,9 +195,9 @@ export function HomeClient({ month, today, days: initialDays }: Props) {
 
       {/* Legend */}
       <div className="mt-4 flex flex-wrap gap-3 text-xs text-muted-foreground">
-        <LegendItem color="emerald" label={t('legendGolf')} />
-        <LegendItem color="blue" label={t('legendEvent')} />
+        <LegendItem color="emerald" label={t('legendActivity')} />
         <LegendItem color="amber" label={t('legendReservation')} />
+        <LegendItem color="blue" label={t('legendBreakfast')} />
       </div>
     </div>
   );

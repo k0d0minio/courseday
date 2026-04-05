@@ -8,10 +8,12 @@ import { useTranslations } from 'next-intl';
 import { ensureDayExists } from '@/app/actions/days';
 import { getActivitiesForDay } from '@/app/actions/activities';
 import { getReservationsForDay } from '@/app/actions/reservations';
+import { getBreakfastConfigurationsForDay } from '@/app/actions/breakfast';
 import { getAllPOCs } from '@/app/actions/poc';
 import { getAllVenueTypes } from '@/app/actions/venue-type';
 import { ActivityForm } from '@/components/activity-form';
 import { ReservationForm } from '@/components/reservation-form';
+import { BreakfastForm } from '@/components/breakfast-form';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
@@ -19,6 +21,7 @@ import type {
   Activity,
   ActivityWithRelations,
   Reservation,
+  BreakfastConfiguration,
   PointOfContact,
   VenueType,
 } from '@/types/index';
@@ -38,6 +41,7 @@ type DayData = {
   dayId: string;
   activities: ActivityWithRelations[];
   reservations: Reservation[];
+  breakfastConfigs: BreakfastConfiguration[];
   pocs: PointOfContact[];
   venueTypes: VenueType[];
 };
@@ -51,11 +55,10 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
   const [data, setData] = useState<DayData | null>(null);
   const [loading, startLoading] = useTransition();
 
-  // Entry modal state
-  const [entryModalOpen, setEntryModalOpen] = useState(false);
-
-  // Reservation modal state
+  // Modal state
+  const [activityModalOpen, setActivityModalOpen] = useState(false);
   const [reservationModalOpen, setReservationModalOpen] = useState(false);
+  const [breakfastModalOpen, setBreakfastModalOpen] = useState(false);
 
   useEffect(() => {
     setData(null);
@@ -64,10 +67,11 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
       if (!dayResult.success) return;
       const dayId = dayResult.data.id;
 
-      const [itemsResult, resResult, pocsResult, venuesResult] =
+      const [itemsResult, resResult, bfResult, pocsResult, venuesResult] =
         await Promise.all([
           getActivitiesForDay(dayId),
           getReservationsForDay(dayId),
+          getBreakfastConfigurationsForDay(dayId),
           getAllPOCs(),
           getAllVenueTypes(),
         ]);
@@ -76,22 +80,20 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
         dayId,
         activities: (itemsResult.success ? itemsResult.data : []) as ActivityWithRelations[],
         reservations: resResult.success ? resResult.data : [],
+        breakfastConfigs: bfResult.success ? bfResult.data : [],
         pocs: pocsResult.success ? pocsResult.data : [],
         venueTypes: venuesResult.success ? venuesResult.data : [],
       });
     });
   }, [date]);
 
-  function handleEntrySaved(item: Activity) {
+  function handleActivitySaved(item: Activity) {
     if (!data) return;
     const updated = [...data.activities, item as ActivityWithRelations].sort(
       (a, b) => (a.start_time ?? '').localeCompare(b.start_time ?? '')
     );
-    const next = { ...data, activities: updated };
-    setData(next);
-    onSummaryChanged(date, {
-      golfCount: updated.length,
-    });
+    setData({ ...data, activities: updated });
+    onSummaryChanged(date, { golfCount: updated.length });
   }
 
   function handleReservationSaved(res: Reservation) {
@@ -105,6 +107,18 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
           );
     setData({ ...data, reservations: updated });
     onSummaryChanged(date, { reservationCount: updated.length });
+  }
+
+  function handleBreakfastSaved(config: BreakfastConfiguration) {
+    if (!data) return;
+    const existing = data.breakfastConfigs.findIndex((c) => c.id === config.id);
+    const updated =
+      existing >= 0
+        ? data.breakfastConfigs.map((c) => (c.id === config.id ? config : c))
+        : [...data.breakfastConfigs, config];
+    setData({ ...data, breakfastConfigs: updated });
+    const totalGuests = updated.reduce((s, c) => s + c.total_guests, 0);
+    onSummaryChanged(date, { breakfastCount: totalGuests });
   }
 
   const formattedDate = format(parseISO(date), 'EEEE d MMMM');
@@ -133,9 +147,9 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
                 size="sm"
                 variant="outline"
                 className="h-7 text-xs"
-                onClick={() => setEntryModalOpen(true)}
+                onClick={() => setActivityModalOpen(true)}
               >
-                <Plus className="h-3 w-3 mr-1" /> {t('golf')}
+                <Plus className="h-3 w-3 mr-1" /> {t('activity')}
               </Button>
               <Button
                 size="sm"
@@ -145,13 +159,41 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
               >
                 <Plus className="h-3 w-3 mr-1" /> {t('reservation')}
               </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs"
+                onClick={() => setBreakfastModalOpen(true)}
+              >
+                <Plus className="h-3 w-3 mr-1" /> {t('breakfast')}
+              </Button>
             </div>
 
             <Separator />
 
+            {/* Breakfast */}
+            <SidebarSection
+              title={t('breakfast')}
+              empty={data.breakfastConfigs.length === 0}
+              emptyLabel={t('none')}
+            >
+              {data.breakfastConfigs.map((item) => (
+                <div key={item.id} className="flex items-baseline justify-between gap-2">
+                  <span className="text-sm truncate flex-1">
+                    {item.group_name ?? 'Unnamed'}
+                  </span>
+                  {item.total_guests > 0 && (
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      {item.total_guests} guests
+                    </span>
+                  )}
+                </div>
+              ))}
+            </SidebarSection>
+
             {/* Activities */}
             <SidebarSection
-              title={t('golfEvents')}
+              title={t('activities')}
               empty={data.activities.length === 0}
               emptyLabel={t('none')}
             >
@@ -199,14 +241,14 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
       {data && (
         <>
           <ActivityForm
-            isOpen={entryModalOpen}
-            onClose={() => setEntryModalOpen(false)}
+            isOpen={activityModalOpen}
+            onClose={() => setActivityModalOpen(false)}
             date={date}
             dayId={data.dayId}
             pocs={data.pocs}
             venueTypes={data.venueTypes}
             editItem={null}
-            onSuccess={handleEntrySaved}
+            onSuccess={handleActivitySaved}
           />
           <ReservationForm
             isOpen={reservationModalOpen}
@@ -214,6 +256,13 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
             dayId={data.dayId}
             editItem={null}
             onSuccess={handleReservationSaved}
+          />
+          <BreakfastForm
+            isOpen={breakfastModalOpen}
+            onClose={() => setBreakfastModalOpen(false)}
+            dayId={data.dayId}
+            editItem={null}
+            onSuccess={handleBreakfastSaved}
           />
         </>
       )}
