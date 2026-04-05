@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { toast } from 'sonner';
 import { Pencil, Trash2, Plus } from 'lucide-react';
 import {
@@ -59,7 +59,7 @@ function ActivityTagDialog({
     reset,
     formState: { errors },
   } = useForm<ActivityTagFormData>({
-    resolver: zodResolver(activityTagSchema),
+    resolver: standardSchemaResolver(activityTagSchema),
     defaultValues: { name: '' },
   });
 

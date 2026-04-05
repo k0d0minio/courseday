@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import {
@@ -54,7 +54,7 @@ export function FeatureRequestManagement() {
     reset,
     formState: { errors },
   } = useForm<FeatureRequestFormData>({
-    resolver: zodResolver(featureRequestSchema),
+    resolver: standardSchemaResolver(featureRequestSchema),
     defaultValues: { title: '', description: '' },
   });
 
