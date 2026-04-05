@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { toast } from 'sonner';
 import { Pencil, Trash2, Plus } from 'lucide-react';
 import { getAllVenueTypes, createVenueType, updateVenueType, deleteVenueType } from '@/app/actions/venue-type';
@@ -54,7 +54,7 @@ function VenueTypeDialog({
     reset,
     formState: { errors },
   } = useForm<VenueTypeFormData>({
-    resolver: zodResolver(venueTypeSchema),
+    resolver: standardSchemaResolver(venueTypeSchema),
     defaultValues: { name: '', code: '' },
   });
 

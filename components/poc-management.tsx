@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { toast } from 'sonner';
 import { Pencil, Trash2, Plus } from 'lucide-react';
 import { getAllPOCs, createPOC, updatePOC, deletePOC } from '@/app/actions/poc';
@@ -58,7 +58,7 @@ function PocDialog({
     reset,
     formState: { errors },
   } = useForm<PocFormData>({
-    resolver: zodResolver(pocSchema),
+    resolver: standardSchemaResolver(pocSchema),
     defaultValues: { name: '', email: '', phone: '' },
   });
 

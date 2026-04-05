@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { Check, Plus } from 'lucide-react';
@@ -134,7 +134,7 @@ export function ActivityForm({
   const modalTitle = isEditing ? t('editTitle') : t('addTitle');
 
   const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(formSchema),
+    resolver: standardSchemaResolver(formSchema),
     defaultValues: defaultValues(editItem),
   });
 

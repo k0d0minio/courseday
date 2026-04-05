@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
@@ -78,7 +78,7 @@ export function BreakfastForm({ isOpen, onClose, dayId, editItem, onSuccess }: P
   const isEditing = !!editItem;
 
   const { register, handleSubmit, reset } = useForm<FormData>({
-    resolver: zodResolver(formSchema),
+    resolver: standardSchemaResolver(formSchema),
     defaultValues: defaultValues(editItem),
   });
 
