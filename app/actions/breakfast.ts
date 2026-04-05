@@ -23,28 +23,27 @@ export async function createBreakfastConfiguration(
   const { supabase } = await createTenantClient();
   const d = parsed.data;
 
-  // Validate breakfast_date falls within the booking window
-  const { data: booking, error: bookingError } = await supabase
-    .from('hotel_booking')
-    .select('check_in, check_out')
-    .eq('id', d.hotelBookingId)
+  // Resolve the day's date_iso (needed for the breakfast_date column)
+  const { data: dayRow, error: dayErr } = await supabase
+    .from('day')
+    .select('date_iso')
+    .eq('id', d.dayId)
     .eq('tenant_id', tenantId)
     .single();
-
-  if (bookingError) return { success: false, error: bookingError.message };
-  if (d.breakfastDate < booking.check_in || d.breakfastDate >= booking.check_out) {
-    return { success: false, error: 'Breakfast date must fall within the booking window.' };
-  }
+  if (dayErr || !dayRow) return { success: false, error: 'Day not found.' };
 
   const tableBreakdown = parseTableBreakdown(d.tableBreakdown ?? null);
+  const totalGuests = tableBreakdown ? tableBreakdown.reduce((s, n) => s + n, 0) : 0;
 
   const { data, error } = await supabase
     .from('breakfast_configuration')
     .insert({
       tenant_id: tenantId,
-      hotel_booking_id: d.hotelBookingId,
-      breakfast_date: d.breakfastDate,
+      day_id: d.dayId,
+      breakfast_date: (dayRow as { date_iso: string }).date_iso,
+      group_name: d.groupName || null,
       table_breakdown: tableBreakdown,
+      total_guests: totalGuests,
       start_time: d.startTime || null,
       notes: d.notes || null,
     })
@@ -71,11 +70,13 @@ export async function updateBreakfastConfiguration(
   const d = parsed.data;
 
   const tableBreakdown = parseTableBreakdown(d.tableBreakdown ?? null);
+  const totalGuests = tableBreakdown ? tableBreakdown.reduce((s, n) => s + n, 0) : 0;
 
   const { data, error } = await supabase
     .from('breakfast_configuration')
     .update({
       table_breakdown: tableBreakdown,
+      total_guests: totalGuests,
       start_time: d.startTime || null,
       notes: d.notes || null,
       updated_at: new Date().toISOString(),
@@ -104,27 +105,8 @@ export async function deleteBreakfastConfiguration(id: string): Promise<ActionRe
   return { success: true, data: undefined };
 }
 
-export async function getBreakfastConfigurationsForBooking(
-  bookingId: string
-): Promise<ActionResponse<BreakfastConfiguration[]>> {
-  const tenantId = await getTenantId();
-  const role = await getUserRole(tenantId);
-  if (!role) return { success: false, error: 'Not authorized.' };
-
-  const { supabase } = await createTenantClient();
-  const { data, error } = await supabase
-    .from('breakfast_configuration')
-    .select('*')
-    .eq('tenant_id', tenantId)
-    .eq('hotel_booking_id', bookingId)
-    .order('breakfast_date');
-
-  if (error) return { success: false, error: error.message };
-  return { success: true, data: data as BreakfastConfiguration[] };
-}
-
 export async function getBreakfastConfigurationsForDay(
-  dateIso: string
+  dayId: string
 ): Promise<ActionResponse<BreakfastConfiguration[]>> {
   const tenantId = await getTenantId();
   const role = await getUserRole(tenantId);
@@ -135,8 +117,8 @@ export async function getBreakfastConfigurationsForDay(
     .from('breakfast_configuration')
     .select('*')
     .eq('tenant_id', tenantId)
-    .eq('breakfast_date', dateIso)
-    .order('created_at');
+    .eq('day_id', dayId)
+    .order('start_time', { nullsFirst: true });
 
   if (error) return { success: false, error: error.message };
   return { success: true, data: data as BreakfastConfiguration[] };

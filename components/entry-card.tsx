@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import { Pencil, Trash2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
-import { deleteProgramItem, deleteRecurrenceGroup } from '@/app/actions/program-items';
+import { deleteActivity, deleteActivityRecurrenceGroup } from '@/app/actions/activities';
 import type { ActivityWithRelations } from '@/types/index';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -34,8 +34,8 @@ export function EntryCard({ item, isEditor, onEdit, onDeleted }: Props) {
     startDeleteTransition(async () => {
       const result =
         mode === 'all' && item.recurrence_group_id
-          ? await deleteRecurrenceGroup(item.recurrence_group_id)
-          : await deleteProgramItem(item.id);
+          ? await deleteActivityRecurrenceGroup(item.recurrence_group_id)
+          : await deleteActivity(item.id);
 
       if (!result.success) {
         toast.error(result.error);

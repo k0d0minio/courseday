@@ -8,12 +8,11 @@ import { generateRecurrenceDates } from '@/lib/day-utils';
 import { activitySchema } from '@/lib/program-item-schema';
 import { ensureDayExists } from '@/app/actions/days';
 import type { ActionResponse } from '@/types/actions';
-import type { Activity } from '@/types/index';
+import type { Activity, ActivityWithRelations } from '@/types/index';
 import type { ActivityFormData } from '@/lib/program-item-schema';
 
-
 // ---------------------------------------------------------------------------
-// Internal row builder
+// Internal helpers
 // ---------------------------------------------------------------------------
 
 function toRow(
@@ -38,11 +37,29 @@ function toRow(
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function assignTags(supabase: any, activityId: string, tagIds: string[]): Promise<string | null> {
+  const { error: delErr } = await supabase
+    .from('activity_tag_assignment')
+    .delete()
+    .eq('activity_id', activityId);
+  if (delErr) return delErr.message;
+
+  if (tagIds.length === 0) return null;
+
+  const { error: insErr } = await supabase
+    .from('activity_tag_assignment')
+    .insert(tagIds.map((tagId) => ({ activity_id: activityId, tag_id: tagId })));
+  if (insErr) return insErr.message;
+
+  return null;
+}
+
 // ---------------------------------------------------------------------------
 // Actions
 // ---------------------------------------------------------------------------
 
-export async function createProgramItem(
+export async function createActivity(
   raw: ActivityFormData
 ): Promise<ActionResponse<Activity>> {
   const parsed = activitySchema.safeParse(raw);
@@ -56,6 +73,7 @@ export async function createProgramItem(
   const { supabase } = await createTenantClient();
   const data = parsed.data;
   const isRecurring = data.isRecurring && !!data.recurrenceFrequency;
+  const tagIds = data.tagIds ?? [];
 
   if (!isRecurring) {
     const { data: row, error } = await supabase
@@ -65,6 +83,12 @@ export async function createProgramItem(
       .single();
 
     if (error) return { success: false, error: error.message };
+
+    if (tagIds.length > 0) {
+      const tagErr = await assignTags(supabase, (row as Activity).id, tagIds);
+      if (tagErr) return { success: false, error: tagErr };
+    }
+
     return { success: true, data: row as Activity };
   }
 
@@ -79,7 +103,7 @@ export async function createProgramItem(
     return { success: false, error: 'Could not find the day record.' };
   }
 
-  const startDate = dayRow.date_iso;
+  const startDate = (dayRow as { date_iso: string }).date_iso;
   const futureDates = generateRecurrenceDates(startDate, data.recurrenceFrequency!);
   const allDates = [startDate, ...futureDates];
 
@@ -97,7 +121,7 @@ export async function createProgramItem(
     return { success: false, error: 'Could not resolve day records for recurrence.' };
   }
 
-  const dateToId = new Map(dayRows.map((d) => [d.date_iso, d.id]));
+  const dateToId = new Map((dayRows as { id: string; date_iso: string }[]).map((d) => [d.date_iso, d.id]));
   const rows = allDates
     .map((d) => dateToId.get(d))
     .filter((id): id is string => !!id)
@@ -117,10 +141,16 @@ export async function createProgramItem(
     .single();
 
   if (insertErr) return { success: false, error: insertErr.message };
+
+  if (tagIds.length > 0) {
+    const tagErr = await assignTags(supabase, (inserted as Activity).id, tagIds);
+    if (tagErr) return { success: false, error: tagErr };
+  }
+
   return { success: true, data: inserted as Activity };
 }
 
-export async function updateProgramItem(
+export async function updateActivity(
   id: string,
   raw: ActivityFormData
 ): Promise<ActionResponse<Activity>> {
@@ -154,10 +184,14 @@ export async function updateProgramItem(
     .single();
 
   if (error) return { success: false, error: error.message };
+
+  const tagErr = await assignTags(supabase, id, data.tagIds ?? []);
+  if (tagErr) return { success: false, error: tagErr };
+
   return { success: true, data: row as Activity };
 }
 
-export async function deleteProgramItem(id: string): Promise<ActionResponse> {
+export async function deleteActivity(id: string): Promise<ActionResponse> {
   const tenantId = await getTenantId();
   await requireEditor(tenantId);
 
@@ -172,7 +206,7 @@ export async function deleteProgramItem(id: string): Promise<ActionResponse> {
   return { success: true, data: undefined };
 }
 
-export async function deleteRecurrenceGroup(groupId: string): Promise<ActionResponse> {
+export async function deleteActivityRecurrenceGroup(groupId: string): Promise<ActionResponse> {
   const tenantId = await getTenantId();
   await requireEditor(tenantId);
 
@@ -187,9 +221,9 @@ export async function deleteRecurrenceGroup(groupId: string): Promise<ActionResp
   return { success: true, data: undefined };
 }
 
-export async function getProgramItemsForDay(
+export async function getActivitiesForDay(
   dayId: string
-): Promise<ActionResponse<Activity[]>> {
+): Promise<ActionResponse<ActivityWithRelations[]>> {
   const tenantId = await getTenantId();
   const role = await getUserRole(tenantId);
   if (!role) return { success: false, error: 'Not authorized.' };
@@ -197,11 +231,19 @@ export async function getProgramItemsForDay(
   const { supabase } = await createTenantClient();
   const { data, error } = await supabase
     .from('activity')
-    .select('*, venue_type(*), point_of_contact(*)')
+    .select('*, venue_type(*), point_of_contact(*), activity_tag_assignment(activity_tag(*))')
     .eq('tenant_id', tenantId)
     .eq('day_id', dayId)
     .order('start_time', { nullsFirst: true });
 
   if (error) return { success: false, error: error.message };
-  return { success: true, data: data as unknown as Activity[] };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const items = (data as any[]).map((row) => ({
+    ...row,
+    tags: (row.activity_tag_assignment ?? []).map((a: { activity_tag: unknown }) => a.activity_tag),
+    activity_tag_assignment: undefined,
+  }));
+
+  return { success: true, data: items as ActivityWithRelations[] };
 }

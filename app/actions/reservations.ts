@@ -32,6 +32,7 @@ export async function createReservation(
       start_time: d.startTime || null,
       end_time: d.endTime || null,
       notes: d.notes || null,
+      table_breakdown: d.tableBreakdown ?? null,
     })
     .select()
     .single();
@@ -63,6 +64,7 @@ export async function updateReservation(
       start_time: d.startTime || null,
       end_time: d.endTime || null,
       notes: d.notes || null,
+      table_breakdown: d.tableBreakdown ?? null,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
