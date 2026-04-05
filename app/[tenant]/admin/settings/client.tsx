@@ -5,10 +5,11 @@ import { useTranslations } from 'next-intl';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PocManagement } from '@/components/poc-management';
 import { VenueTypeManagement } from '@/components/venue-type-management';
+import { ActivityTagManagement } from '@/components/activity-tag-management';
 import { SettingsForm } from './settings-form';
 import { LanguageSettings } from './language-settings';
 
-const TABS = ['poc', 'venue-types', 'branding', 'language'] as const;
+const TABS = ['poc', 'venue-types', 'activity-tags', 'branding', 'language'] as const;
 type Tab = (typeof TABS)[number];
 
 function isValidTab(v: string | null): v is Tab {
@@ -43,6 +44,7 @@ export function SettingsClient({ tenantId, initialAccentColor, initialLogoUrl }:
         <TabsList className="mb-6">
           <TabsTrigger value="poc">{t('tabPoc')}</TabsTrigger>
           <TabsTrigger value="venue-types">{t('tabVenueTypes')}</TabsTrigger>
+          <TabsTrigger value="activity-tags">{t('tabActivityTags')}</TabsTrigger>
           <TabsTrigger value="branding">{t('tabBranding')}</TabsTrigger>
           <TabsTrigger value="language">{t('tabLanguage')}</TabsTrigger>
         </TabsList>
@@ -53,6 +55,10 @@ export function SettingsClient({ tenantId, initialAccentColor, initialLogoUrl }:
 
         <TabsContent value="venue-types">
           <VenueTypeManagement />
+        </TabsContent>
+
+        <TabsContent value="activity-tags">
+          <ActivityTagManagement />
         </TabsContent>
 
         <TabsContent value="branding">

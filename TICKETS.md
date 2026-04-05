@@ -327,7 +327,7 @@ type TableBreakdownBuilderProps = {
 
 ## Ticket 6: Activity Tag Management in Settings
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** completed.
 
 **Priority:** P1  
 **Scope:** New `components/activity-tag-management.tsx`, `app/[tenant]/admin/settings/` (settings page)  
