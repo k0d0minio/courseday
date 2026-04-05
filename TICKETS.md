@@ -270,7 +270,7 @@ Server actions reference old table names (`program_item`), old column names (`gu
 
 ## Ticket 5: Visual Table Breakdown Builder Component
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** completed.
 
 **Priority:** P1  
 **Scope:** New `components/table-breakdown-builder.tsx`  
