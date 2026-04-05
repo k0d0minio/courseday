@@ -793,7 +793,7 @@ The following tickets assume **Phase A is complete** (activities, reservations, 
 
 ## Ticket 15: Legacy Code Cleanup
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** complete
 
 **Priority:** P0  
 **Scope:** `app/actions.ts`, `app/s/[subdomain]/page.tsx`, `lib/subdomains.ts`, `CLAUDE.md`  
