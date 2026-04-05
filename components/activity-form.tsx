@@ -158,7 +158,7 @@ export function ActivityForm({
 
   const occurrenceCount = useMemo(() => {
     if (!watchIsRecurring || !watchFrequency) return 0;
-    return 1 + generateRecurrenceDates(date, watchFrequency).length;
+    return Math.min(52, 1 + generateRecurrenceDates(date, watchFrequency).length);
   }, [date, watchIsRecurring, watchFrequency]);
 
   function handleSavePoc() {

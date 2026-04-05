@@ -84,7 +84,7 @@ export function DayViewClient({
     });
   }
 
-  function handleActivityDeleted(id: string, mode: 'single' | 'all') {
+  function handleActivityDeleted(id: string, mode: 'single' | 'all' | 'from-here') {
     if (mode === 'all') {
       const groupId = activities.find((p) => p.id === id)?.recurrence_group_id;
       setActivities((prev) =>

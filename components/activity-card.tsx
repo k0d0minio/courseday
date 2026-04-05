@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react';
 import { Pencil, Trash2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
-import { deleteActivity, deleteActivityRecurrenceGroup } from '@/app/actions/activities';
+import { deleteActivity, deleteActivityRecurrenceGroup, deleteActivityFromHere } from '@/app/actions/activities';
 import type { ActivityWithRelations } from '@/types/index';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -23,7 +23,7 @@ type Props = {
   item: ActivityWithRelations;
   isEditor: boolean;
   onEdit: (item: ActivityWithRelations) => void;
-  onDeleted: (id: string, mode: 'single' | 'all') => void;
+  onDeleted: (id: string, mode: 'single' | 'all' | 'from-here') => void;
 };
 
 export function ActivityCard({ item, isEditor, onEdit, onDeleted }: Props) {
@@ -32,19 +32,23 @@ export function ActivityCard({ item, isEditor, onEdit, onDeleted }: Props) {
   const [isDeleting, startDeleteTransition] = useTransition();
   const isRecurring = !!item.recurrence_group_id;
 
-  function handleDelete(mode: 'single' | 'all') {
+  function handleDelete(mode: 'single' | 'all' | 'from-here') {
     startDeleteTransition(async () => {
-      const result =
-        mode === 'all' && item.recurrence_group_id
-          ? await deleteActivityRecurrenceGroup(item.recurrence_group_id)
-          : await deleteActivity(item.id);
+      let result;
+      if (mode === 'all' && item.recurrence_group_id) {
+        result = await deleteActivityRecurrenceGroup(item.recurrence_group_id);
+      } else if (mode === 'from-here' && item.recurrence_group_id) {
+        result = await deleteActivityFromHere(item.id, item.recurrence_group_id);
+      } else {
+        result = await deleteActivity(item.id);
+      }
 
       if (!result.success) {
         toast.error(result.error);
         return;
       }
 
-      toast.success(mode === 'all' ? t('allDeleted') : t('deleted'));
+      toast.success(mode === 'all' ? t('allDeleted') : mode === 'from-here' ? t('fromHereDeleted') : t('deleted'));
       setDeleteOpen(false);
       onDeleted(item.id, mode);
     });
@@ -145,6 +149,13 @@ export function ActivityCard({ item, isEditor, onEdit, onDeleted }: Props) {
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
                   {isDeleting ? t('deleting') : t('deleteThisOnly')}
+                </AlertDialogAction>
+                <AlertDialogAction
+                  onClick={() => handleDelete('from-here')}
+                  disabled={isDeleting}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {isDeleting ? t('deleting') : t('deleteFromHere')}
                 </AlertDialogAction>
                 <AlertDialogAction
                   onClick={() => handleDelete('all')}
