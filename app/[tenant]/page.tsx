@@ -21,19 +21,26 @@ export default async function TenantHomePage({
 }: {
   searchParams: Promise<{ month?: string }>;
 }) {
+  // Get tenant from headers first (fast — headers only), then run auth check
+  // and tenant DB query in parallel since they are independent.
   const tenant = await getTenantFromHeaders();
-  const { role } = await requireTenantMember();
-
-  // Fetch tenant timezone + onboarding status
   const supabase = await createSupabaseServerClient();
-  const { data: tenantRow } = await supabase
-    .from('tenants')
-    .select('timezone, onboarding_completed')
-    .eq('id', tenant.id)
-    .single();
-  const timezone = (tenantRow as { timezone?: string | null } | null)?.timezone ?? 'UTC';
-  const onboardingCompleted =
-    (tenantRow as { onboarding_completed?: boolean | null } | null)?.onboarding_completed ?? true;
+
+  const [{ role }, tenantData] = await Promise.all([
+    requireTenantMember(),
+    supabase
+      .from('tenants')
+      .select('timezone, onboarding_completed')
+      .eq('id', tenant.id)
+      .single(),
+  ]);
+
+  const tenantRow = tenantData.data as {
+    timezone?: string | null;
+    onboarding_completed?: boolean | null;
+  } | null;
+  const timezone = tenantRow?.timezone ?? 'UTC';
+  const onboardingCompleted = tenantRow?.onboarding_completed ?? true;
 
   const today = getTenantToday(timezone);
 

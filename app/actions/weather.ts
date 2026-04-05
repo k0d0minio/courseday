@@ -16,23 +16,51 @@ export interface WeatherData {
   emoji: string;
 }
 
-export async function getWeatherForDay(date: string): Promise<WeatherData | null> {
+interface WeatherCoords {
+  latitude: number;
+  longitude: number;
+  timezone: string;
+}
+
+/**
+ * Fetch weather for a given date.
+ *
+ * If `coords` are supplied by the caller (e.g. already fetched from the DB in
+ * the page), the internal DB query is skipped — saving one round-trip per
+ * day-page load.
+ */
+export async function getWeatherForDay(
+  date: string,
+  coords?: WeatherCoords
+): Promise<WeatherData | null> {
   const tenant = await getTenantFromHeaders();
 
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
-    .from('tenants')
-    .select('latitude, longitude, timezone')
-    .eq('id', tenant.id)
-    .single();
+  let row: WeatherCoords | null = coords ?? null;
 
-  const row = data as {
-    latitude?: number | null;
-    longitude?: number | null;
-    timezone?: string | null;
-  } | null;
+  if (!row) {
+    // Fall back to fetching coordinates from DB when not provided by caller.
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase
+      .from('tenants')
+      .select('latitude, longitude, timezone')
+      .eq('id', tenant.id)
+      .single();
 
-  if (!row?.latitude || !row?.longitude) return null;
+    const fetched = data as {
+      latitude?: number | null;
+      longitude?: number | null;
+      timezone?: string | null;
+    } | null;
+
+    if (!fetched?.latitude || !fetched?.longitude) return null;
+    row = {
+      latitude: fetched.latitude,
+      longitude: fetched.longitude,
+      timezone: fetched.timezone ?? 'UTC',
+    };
+  }
+
+  if (!row.latitude || !row.longitude) return null;
 
   const cacheKey = `weather:${tenant.id}:${date}`;
 
