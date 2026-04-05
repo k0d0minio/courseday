@@ -5,8 +5,12 @@ import { createSupabaseServerClient, createSupabaseServiceClient } from '@/lib/s
 import { getTenantId } from '@/lib/tenant';
 import { getUserRole } from '@/lib/membership';
 import { protocol, rootDomain } from '@/lib/utils';
+import { authRateLimit } from '@/lib/rate-limit';
 
 export async function signIn(_prevState: unknown, formData: FormData) {
+  const rl = await authRateLimit();
+  if (!rl.success) return { error: 'Too many attempts. Please wait and try again.' };
+
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
   const redirectTo = (formData.get('redirectTo') as string) || '/';
@@ -22,6 +26,9 @@ export async function signIn(_prevState: unknown, formData: FormData) {
 }
 
 export async function signUp(_prevState: unknown, formData: FormData) {
+  const rl = await authRateLimit();
+  if (!rl.success) return { error: 'Too many attempts. Please wait and try again.' };
+
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
 
@@ -67,6 +74,9 @@ export async function requireUser() {
  * and redirects to their course subdomain.
  */
 export async function platformSignIn(_prevState: unknown, formData: FormData) {
+  const rl = await authRateLimit();
+  if (!rl.success) return { error: 'Too many attempts. Please wait and try again.' };
+
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
 
