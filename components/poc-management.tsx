@@ -149,7 +149,11 @@ export function PocManagement() {
 
   useEffect(() => {
     getAllPOCs().then((result) => {
-      if (result.success) setPocs(result.data);
+      if (result.success) {
+        setPocs(result.data);
+      } else {
+        toast.error(result.error);
+      }
       setLoading(false);
     });
   }, []);

@@ -129,7 +129,11 @@ export function VenueTypeManagement() {
 
   useEffect(() => {
     getAllVenueTypes().then((result) => {
-      if (result.success) setVenueTypes(result.data);
+      if (result.success) {
+        setVenueTypes(result.data);
+      } else {
+        toast.error(result.error);
+      }
       setLoading(false);
     });
   }, []);

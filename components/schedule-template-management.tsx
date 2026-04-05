@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { getTemplates, deleteTemplate } from '@/app/actions/schedule-templates';
@@ -27,7 +28,11 @@ export function ScheduleTemplateManagement() {
   const load = useCallback(async () => {
     setLoading(true);
     const result = await getTemplates();
-    if (result.success) setTemplates(result.data);
+    if (result.success) {
+      setTemplates(result.data);
+    } else {
+      toast.error(result.error);
+    }
     setLoading(false);
   }, []);
 
@@ -48,7 +53,16 @@ export function ScheduleTemplateManagement() {
   if (loading) return <p className="text-sm text-muted-foreground">{t('loading')}</p>;
 
   if (templates.length === 0) {
-    return <p className="text-sm text-muted-foreground">{t('settingsEmpty')}</p>;
+    // Templates are created from the day view — link there so users know where to go.
+    const today = new Date().toISOString().split('T')[0];
+    return (
+      <div className="space-y-3">
+        <p className="text-sm text-muted-foreground">{t('settingsEmpty')}</p>
+        <Button asChild variant="outline" size="sm">
+          <Link href={`/day/${today}`}>{t('goToDayView')}</Link>
+        </Button>
+      </div>
+    );
   }
 
   return (
