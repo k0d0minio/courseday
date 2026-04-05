@@ -11,7 +11,7 @@ import { getReservationsForDay } from '@/app/actions/reservations';
 import { getAllPOCs } from '@/app/actions/poc';
 import { getAllVenueTypes } from '@/app/actions/venue-type';
 import { ActivityForm } from '@/components/activity-form';
-import { AddReservationModal } from '@/components/add-reservation-modal';
+import { ReservationForm } from '@/components/reservation-form';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
@@ -208,7 +208,7 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
             editItem={null}
             onSuccess={handleEntrySaved}
           />
-          <AddReservationModal
+          <ReservationForm
             isOpen={reservationModalOpen}
             onClose={() => setReservationModalOpen(false)}
             dayId={data.dayId}
