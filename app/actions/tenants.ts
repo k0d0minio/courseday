@@ -7,6 +7,7 @@ import {
 } from '@/lib/supabase-server';
 import { isValidSlug } from '@/lib/tenant-validation';
 import { getUser } from '@/app/actions/auth';
+import { isEditor } from '@/lib/membership';
 import type { ActionResponse } from '@/types/actions';
 
 export type TenantStatus = 'active' | 'suspended' | 'archived';
@@ -136,6 +137,12 @@ export async function updateTenant(
   id: string,
   data: { name?: string; slug?: string; logo_url?: string | null; accent_color?: string | null; timezone?: string; language?: string; latitude?: number | null; longitude?: number | null; onboarding_completed?: boolean }
 ): Promise<ActionResponse<TenantRedisData>> {
+  // Authorization: only editors may update tenant settings.
+  const authorized = await isEditor(id);
+  if (!authorized) {
+    return { success: false, error: 'Not authorized.' };
+  }
+
   const serviceClient = createSupabaseServiceClient();
 
   if (data.slug !== undefined && !isValidSlug(data.slug)) {
