@@ -4,6 +4,7 @@ import { createTenantClient } from '@/lib/supabase-server';
 import { getTenantId } from '@/lib/tenant';
 import { getUserRole, requireEditor } from '@/lib/membership';
 import { reservationSchema } from '@/lib/reservation-schema';
+import { notifyTenantMembers, getDayDate } from '@/lib/notifications';
 import type { ReservationFormData } from '@/lib/reservation-schema';
 import type { ActionResponse } from '@/types/actions';
 import type { Reservation } from '@/types/index';
@@ -17,7 +18,7 @@ export async function createReservation(
   }
 
   const tenantId = await getTenantId();
-  await requireEditor(tenantId);
+  const user = await requireEditor(tenantId);
 
   const { supabase } = await createTenantClient();
   const d = parsed.data;
@@ -38,6 +39,14 @@ export async function createReservation(
     .single();
 
   if (error) return { success: false, error: error.message };
+
+  const name = d.guestName?.trim() || 'Guest';
+  Promise.allSettled([
+    getDayDate(d.dayId).then((date) =>
+      notifyTenantMembers(tenantId, user.id, `Reservation added: ${name}`, undefined, date ? `/day/${date}` : undefined)
+    ),
+  ]);
+
   return { success: true, data: data as Reservation };
 }
 
@@ -51,7 +60,7 @@ export async function updateReservation(
   }
 
   const tenantId = await getTenantId();
-  await requireEditor(tenantId);
+  const user = await requireEditor(tenantId);
 
   const { supabase } = await createTenantClient();
   const d = parsed.data;
@@ -73,14 +82,30 @@ export async function updateReservation(
     .single();
 
   if (error) return { success: false, error: error.message };
+
+  const name = d.guestName?.trim() || 'Guest';
+  Promise.allSettled([
+    getDayDate(d.dayId).then((date) =>
+      notifyTenantMembers(tenantId, user.id, `Reservation updated: ${name}`, undefined, date ? `/day/${date}` : undefined)
+    ),
+  ]);
+
   return { success: true, data: data as Reservation };
 }
 
 export async function deleteReservation(id: string): Promise<ActionResponse> {
   const tenantId = await getTenantId();
-  await requireEditor(tenantId);
+  const user = await requireEditor(tenantId);
 
   const { supabase } = await createTenantClient();
+
+  const { data: existing } = await supabase
+    .from('reservation')
+    .select('guest_name, day_id')
+    .eq('id', id)
+    .eq('tenant_id', tenantId)
+    .maybeSingle();
+
   const { error } = await supabase
     .from('reservation')
     .delete()
@@ -88,6 +113,17 @@ export async function deleteReservation(id: string): Promise<ActionResponse> {
     .eq('tenant_id', tenantId);
 
   if (error) return { success: false, error: error.message };
+
+  if (existing) {
+    const { guest_name, day_id } = existing as { guest_name: string | null; day_id: string };
+    const name = guest_name?.trim() || 'Guest';
+    Promise.allSettled([
+      getDayDate(day_id).then((date) =>
+        notifyTenantMembers(tenantId, user.id, `Reservation removed: ${name}`, undefined, date ? `/day/${date}` : undefined)
+      ),
+    ]);
+  }
+
   return { success: true, data: undefined };
 }
 

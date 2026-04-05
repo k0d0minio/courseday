@@ -981,7 +981,7 @@ In-app feature requests for tenants and triage for superadmins.
 
 ## Ticket 22: Notifications System
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** completed.
 
 **Priority:** P2  
 **Scope:** `supabase/migrations/`, `app/actions/notifications.ts` (new), `lib/notifications.ts` (new), `components/notification-bell.tsx` (new), `app/[tenant]/layout.tsx`  
