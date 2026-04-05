@@ -29,7 +29,7 @@ Reframes the platform from a golf tee-time model to **restaurant & bar schedulin
 
 ## Ticket 1: Database Migration — Drop Hotel Bookings, Rename Program Items, Restructure Schema
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** completed.
 
 **Priority:** P0  
 **Scope:** `supabase/migrations/`, `supabase/seed.sql`  
