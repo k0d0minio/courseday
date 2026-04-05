@@ -180,6 +180,22 @@ export async function updateTenant(
 }
 
 // ---------------------------------------------------------------------------
+// completeOnboarding
+// ---------------------------------------------------------------------------
+export async function completeOnboarding(tenantId: string): Promise<ActionResponse> {
+  const serviceClient = createSupabaseServiceClient();
+  const { error } = await serviceClient
+    .from('tenants')
+    .update({ onboarding_completed: true } as Record<string, unknown>)
+    .eq('id', tenantId);
+
+  if (error) {
+    return { success: false, error: 'Failed to complete onboarding.' };
+  }
+  return { success: true, data: undefined };
+}
+
+// ---------------------------------------------------------------------------
 // deleteTenant
 // ---------------------------------------------------------------------------
 export async function deleteTenant(id: string): Promise<ActionResponse> {

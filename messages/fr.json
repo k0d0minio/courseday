@@ -312,6 +312,24 @@
       "statusRejected": "Refusée",
       "statusShipped": "Livrée"
     },
+    "onboarding": {
+      "title": "Configurer votre établissement",
+      "subtitle": "Suivez ces étapes pour préparer votre équipe. Vous pourrez toujours modifier ces paramètres plus tard dans les réglages.",
+      "stepBranding": "Identité",
+      "stepLanguage": "Langue",
+      "stepVenueTypes": "Types de lieu",
+      "stepPoc": "Contacts",
+      "stepTeam": "Équipe",
+      "stepOf": "Étape {current} sur {total}",
+      "back": "Retour",
+      "next": "Suivant",
+      "done": "Terminer la configuration",
+      "finishing": "Finalisation\u2026",
+      "skipAll": "Passer la configuration",
+      "bannerText": "Votre établissement n\u2019est pas encore entièrement configuré.",
+      "bannerLink": "Terminer la configuration",
+      "bannerDismiss": "Ignorer"
+    },
     "venueType": {
       "title": "Types de lieu",
       "add": "Ajouter",

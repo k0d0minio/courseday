@@ -10,6 +10,7 @@ import {
   getBreakfastConfigsForMonth,
 } from './month-queries';
 import { HomeClient } from '@/components/HomeClient';
+import { OnboardingBanner } from '@/components/onboarding-banner';
 import type { DaySummary } from '@/components/HomeClient';
 import type { Day } from '@/types/index';
 
@@ -23,14 +24,16 @@ export default async function TenantHomePage({
   const tenant = await getTenantFromHeaders();
   const { role } = await requireTenantMember();
 
-  // Fetch tenant timezone
+  // Fetch tenant timezone + onboarding status
   const supabase = await createSupabaseServerClient();
   const { data: tenantRow } = await supabase
     .from('tenants')
-    .select('timezone')
+    .select('timezone, onboarding_completed')
     .eq('id', tenant.id)
     .single();
-  const timezone = tenantRow?.timezone ?? 'UTC';
+  const timezone = (tenantRow as { timezone?: string | null } | null)?.timezone ?? 'UTC';
+  const onboardingCompleted =
+    (tenantRow as { onboarding_completed?: boolean | null } | null)?.onboarding_completed ?? true;
 
   const today = getTenantToday(timezone);
 
@@ -98,10 +101,13 @@ export default async function TenantHomePage({
   const days = [...summaryMap.values()].sort((a, b) => a.date.localeCompare(b.date));
 
   return (
-    <HomeClient
-      month={month}
-      today={today}
-      days={days}
-    />
+    <>
+      {!onboardingCompleted && <OnboardingBanner />}
+      <HomeClient
+        month={month}
+        today={today}
+        days={days}
+      />
+    </>
   );
 }

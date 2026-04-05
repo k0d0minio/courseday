@@ -905,7 +905,7 @@ Enable/disable features per tenant for tiered rollout.
 
 ## Ticket 19: Tenant Onboarding Wizard
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** completed.
 
 **Priority:** P1  
 **Scope:** `app/[tenant]/admin/onboarding/page.tsx` (new), `supabase/migrations/`, `app/actions/tenants.ts`, `app/[tenant]/page.tsx`  

@@ -312,6 +312,24 @@
       "statusRejected": "Rejected",
       "statusShipped": "Shipped"
     },
+    "onboarding": {
+      "title": "Set up your venue",
+      "subtitle": "Complete these steps to get your team up and running. You can always change these later in settings.",
+      "stepBranding": "Branding",
+      "stepLanguage": "Language",
+      "stepVenueTypes": "Venue Types",
+      "stepPoc": "Contacts",
+      "stepTeam": "Team",
+      "stepOf": "Step {current} of {total}",
+      "back": "Back",
+      "next": "Next",
+      "done": "Finish setup",
+      "finishing": "Finishing\u2026",
+      "skipAll": "Skip setup",
+      "bannerText": "Your venue isn\u2019t fully set up yet.",
+      "bannerLink": "Complete setup",
+      "bannerDismiss": "Dismiss"
+    },
     "venueType": {
       "title": "Venue Types",
       "add": "Add",
