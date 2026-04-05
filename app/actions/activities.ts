@@ -1,7 +1,7 @@
 'use server';
 
 import { randomUUID } from 'crypto';
-import { createTenantClient } from '@/lib/supabase-server';
+import { createTenantClient, createSupabaseServiceClient } from '@/lib/supabase-server';
 import { getTenantId } from '@/lib/tenant';
 import { getUserRole, requireEditor } from '@/lib/membership';
 import { generateRecurrenceDates } from '@/lib/day-utils';
@@ -11,6 +11,8 @@ import { notifyTenantMembers, getDayDate } from '@/lib/notifications';
 import type { ActionResponse } from '@/types/actions';
 import type { Activity, ActivityWithRelations } from '@/types/index';
 import type { ActivityFormData } from '@/lib/program-item-schema';
+
+const MAX_RECURRENCE_OCCURRENCES = 52;
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -111,7 +113,7 @@ export async function createActivity(
   }
 
   const startDate = (dayRow as { date_iso: string }).date_iso;
-  const futureDates = generateRecurrenceDates(startDate, data.recurrenceFrequency!);
+  const futureDates = generateRecurrenceDates(startDate, data.recurrenceFrequency!).slice(0, MAX_RECURRENCE_OCCURRENCES - 1);
   const allDates = [startDate, ...futureDates];
 
   const recurrenceGroupId = randomUUID();
@@ -255,6 +257,87 @@ export async function deleteActivityRecurrenceGroup(groupId: string): Promise<Ac
     .eq('tenant_id', tenantId);
 
   if (error) return { success: false, error: error.message };
+  return { success: true, data: undefined };
+}
+
+export async function deleteActivityFromHere(
+  id: string,
+  groupId: string
+): Promise<ActionResponse> {
+  const tenantId = await getTenantId();
+  const user = await requireEditor(tenantId);
+
+  const { supabase } = await createTenantClient();
+  const serviceClient = createSupabaseServiceClient();
+
+  // Get the current activity's day_id and title
+  const { data: curr } = await supabase
+    .from('activity')
+    .select('day_id, title')
+    .eq('id', id)
+    .eq('tenant_id', tenantId)
+    .maybeSingle();
+
+  if (!curr) return { success: false, error: 'Activity not found.' };
+
+  const { day_id, title } = curr as { day_id: string; title: string };
+
+  // Resolve the date of this activity's day
+  const { data: dayRow } = await serviceClient
+    .from('day')
+    .select('date_iso')
+    .eq('id', day_id)
+    .maybeSingle();
+
+  if (!dayRow) return { success: false, error: 'Day not found.' };
+  const currentDate = (dayRow as { date_iso: string }).date_iso;
+
+  // Get all activities in the recurrence group
+  const { data: groupActivities } = await supabase
+    .from('activity')
+    .select('id, day_id')
+    .eq('recurrence_group_id', groupId)
+    .eq('tenant_id', tenantId);
+
+  if (!groupActivities?.length) return { success: true, data: undefined };
+
+  // Resolve their day dates via service client
+  const dayIds = [...new Set(groupActivities.map((a) => (a as { day_id: string }).day_id))];
+  const { data: days } = await serviceClient
+    .from('day')
+    .select('id, date_iso')
+    .in('id', dayIds);
+
+  const futureDayIds = new Set(
+    (days ?? [])
+      .filter((d) => (d as { date_iso: string }).date_iso >= currentDate)
+      .map((d) => (d as { id: string }).id)
+  );
+
+  const toDeleteIds = (groupActivities as { id: string; day_id: string }[])
+    .filter((a) => futureDayIds.has(a.day_id))
+    .map((a) => a.id);
+
+  if (toDeleteIds.length === 0) return { success: true, data: undefined };
+
+  const { error } = await supabase
+    .from('activity')
+    .delete()
+    .in('id', toDeleteIds)
+    .eq('tenant_id', tenantId);
+
+  if (error) return { success: false, error: error.message };
+
+  Promise.allSettled([
+    notifyTenantMembers(
+      tenantId,
+      user.id,
+      `Recurring activity removed from ${currentDate}: ${title}`,
+      undefined,
+      `/day/${currentDate}`
+    ),
+  ]);
+
   return { success: true, data: undefined };
 }
 

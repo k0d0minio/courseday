@@ -1007,7 +1007,7 @@ Notify members when schedule data changes.
 
 ## Ticket 23: Recurring Events Enhancement
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** completed.
 
 **Priority:** P2  
 **Scope:** `supabase/migrations/`, `app/actions/activities.ts`, `components/activity-form.tsx`, `components/activity-card.tsx`  
