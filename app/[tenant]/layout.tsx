@@ -108,7 +108,7 @@ export default async function TenantLayout({
           >
             {t('skipToContent')}
           </a>
-          <div className="min-h-screen flex flex-col" dir={dir} style={accentStyle}>
+          <div className="tenant-themed min-h-screen flex flex-col" dir={dir} style={accentStyle}>
             <header className="border-b px-6 h-14 flex items-center justify-between">
               <Logo logoUrl={row?.logo_url} tenantName={row?.name} />
               <div className="flex items-center gap-1">
