@@ -13,12 +13,11 @@ describe('reservationSchema', () => {
     const result = reservationSchema.safeParse({
       dayId: VALID_DAY_ID,
       guestName: 'Jane Smith',
-      guestEmail: 'jane@example.com',
-      guestPhone: '+32 123 456 789',
       guestCount: 4,
       startTime: '19:00',
       endTime: '21:00',
       notes: 'Window seat requested',
+      tableBreakdown: [2, 2],
     });
     expect(result.success).toBe(true);
   });
@@ -28,21 +27,9 @@ describe('reservationSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('rejects invalid email', () => {
-    const result = reservationSchema.safeParse({
-      dayId: VALID_DAY_ID,
-      guestEmail: 'not-an-email',
-    });
+  it('rejects invalid dayId (not a UUID)', () => {
+    const result = reservationSchema.safeParse({ dayId: 'not-a-uuid' });
     expect(result.success).toBe(false);
-    expect(result.error?.issues[0].message).toBe('Invalid email address');
-  });
-
-  it('accepts empty string for email (treated as absent)', () => {
-    const result = reservationSchema.safeParse({
-      dayId: VALID_DAY_ID,
-      guestEmail: '',
-    });
-    expect(result.success).toBe(true);
   });
 
   it('rejects guestCount less than 1', () => {
@@ -53,23 +40,29 @@ describe('reservationSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('accepts optional hotel and program item links', () => {
+  it('accepts tableBreakdown as an array of positive integers', () => {
     const result = reservationSchema.safeParse({
       dayId: VALID_DAY_ID,
-      hotelBookingId: '123e4567-e89b-12d3-a456-426614174001',
-      programItemId: '123e4567-e89b-12d3-a456-426614174002',
-      tableIndex: 2,
+      tableBreakdown: [4, 2, 1],
     });
     expect(result.success).toBe(true);
   });
 
-  it('accepts null for optional link fields', () => {
+  it('rejects tableBreakdown with a zero entry', () => {
     const result = reservationSchema.safeParse({
       dayId: VALID_DAY_ID,
-      hotelBookingId: null,
-      programItemId: null,
-      tableIndex: null,
+      tableBreakdown: [4, 0],
     });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts omitted optional fields', () => {
+    const result = reservationSchema.safeParse({ dayId: VALID_DAY_ID });
     expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.guestName).toBeUndefined();
+      expect(result.data.guestCount).toBeUndefined();
+      expect(result.data.tableBreakdown).toBeUndefined();
+    }
   });
 });

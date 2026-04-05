@@ -73,8 +73,7 @@
       "dowSun": "Dim",
       "legendGolf": "Golf (G)",
       "legendEvent": "Événement (E)",
-      "legendReservation": "Réservation (R)",
-      "legendHotel": "Clients hôtel (H)"
+      "legendReservation": "Réservation (R)"
     },
     "day": {
       "previousDay": "Jour précédent",
@@ -82,17 +81,13 @@
       "today": "Aujourd'hui",
       "golfEvents": "Golf et événements",
       "teeTimeReservations": "Réservations de départs",
-      "hotelBookings": "Réservations hôtel",
       "noEntries": "Aucune entrée pour l'instant.",
       "noReservations": "Aucune réservation pour l'instant.",
-      "noBookings": "Aucune réservation hôtel pour l'instant.",
       "addEvent": "Événement",
       "addGolf": "Golf",
-      "addReservation": "Ajouter une réservation",
-      "addBooking": "Ajouter une réservation"
+      "addReservation": "Ajouter une réservation"
     },
     "summary": {
-      "hotelGuests": "Clients hôtel",
       "breakfasts": "Petits-déjeuners",
       "golfEvents": "Golf / événements",
       "teeTimes": "Réservations de départs",
@@ -105,7 +100,6 @@
       "reservation": "Réservation",
       "golfEvents": "Golf et événements",
       "reservations": "Réservations",
-      "hotelBookings": "Réservations hôtel",
       "none": "Aucun.",
       "openDayView": "Ouvrir la vue du jour",
       "guests": "{count, plural, one {# client} other {# clients}}"
@@ -139,13 +133,6 @@
     },
     "reservation": {
       "deleteTitle": "Supprimer la réservation ?",
-      "deleteDescription": "Cette action est irréversible.",
-      "cancel": "Annuler",
-      "delete": "Supprimer",
-      "deleted": "Réservation supprimée."
-    },
-    "booking": {
-      "deleteTitle": "Supprimer la réservation hôtel ?",
       "deleteDescription": "Cette action est irréversible.",
       "cancel": "Annuler",
       "delete": "Supprimer",
