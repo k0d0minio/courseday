@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { deleteReservation } from '@/app/actions/reservations';
 import { TableBreakdownDisplay } from '@/components/table-breakdown-display';
 import type { Reservation } from '@/types/index';
@@ -27,6 +28,7 @@ type Props = {
 };
 
 export function ReservationCard({ item, isEditor, onEdit, onDeleted }: Props) {
+  const t = useTranslations('Tenant.reservation');
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDeleting, startDeleteTransition] = useTransition();
 
@@ -41,7 +43,7 @@ export function ReservationCard({ item, isEditor, onEdit, onDeleted }: Props) {
         toast.error(result.error);
         return;
       }
-      toast.success('Reservation deleted.');
+      toast.success(t('deleted'));
       setDeleteOpen(false);
       onDeleted(item.id);
     });
@@ -56,11 +58,11 @@ export function ReservationCard({ item, isEditor, onEdit, onDeleted }: Props) {
               {/* Name + count */}
               <div className="flex items-baseline gap-2">
                 <p className="font-medium">
-                  {item.guest_name ?? 'Guest'}
+                  {item.guest_name ?? t('fallbackName')}
                 </p>
                 {item.guest_count != null && (
                   <span className="text-sm text-muted-foreground">
-                    {item.guest_count} {item.guest_count === 1 ? 'guest' : 'guests'}
+                    {t('guests', { count: item.guest_count })}
                   </span>
                 )}
               </div>
@@ -100,20 +102,17 @@ export function ReservationCard({ item, isEditor, onEdit, onDeleted }: Props) {
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete reservation?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the reservation
-              {item.guest_name ? <> for <strong>{item.guest_name}</strong></> : ''}.
-            </AlertDialogDescription>
+            <AlertDialogTitle>{t('deleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('deleteDescription')}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{t('cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? 'Deleting…' : 'Delete'}
+              {isDeleting ? t('deleting') : t('delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -123,8 +122,9 @@ export function ReservationCard({ item, isEditor, onEdit, onDeleted }: Props) {
 }
 
 function formatTimeRange(start: string | null, end: string | null): string {
-  if (start && end) return `${start} – ${end}`;
-  if (start) return `From ${start}`;
-  if (end) return `Until ${end}`;
+  const fmt = (s: string) => s.slice(0, 5);
+  if (start && end) return `${fmt(start)} \u2013 ${fmt(end)}`;
+  if (start) return fmt(start);
+  if (end) return fmt(end);
   return '';
 }

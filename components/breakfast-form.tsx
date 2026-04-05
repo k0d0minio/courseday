@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import {
   createBreakfastConfiguration,
   updateBreakfastConfiguration,
@@ -70,6 +71,7 @@ type Props = {
 // ---------------------------------------------------------------------------
 
 export function BreakfastForm({ isOpen, onClose, dayId, editItem, onSuccess }: Props) {
+  const t = useTranslations('Tenant.breakfastForm');
   const isMobile = useIsMobile();
   const [isPending, startTransition] = useTransition();
   const [tableBreakdown, setTableBreakdown] = useState<number[]>([]);
@@ -109,44 +111,44 @@ export function BreakfastForm({ isOpen, onClose, dayId, editItem, onSuccess }: P
 
       if (!result.success) { toast.error(result.error); return; }
 
-      toast.success(isEditing ? 'Breakfast updated.' : 'Breakfast added.');
+      toast.success(isEditing ? t('updated') : t('saved'));
       onSuccess(result.data);
       onClose();
     });
   }
 
-  const title = isEditing ? 'Edit breakfast' : 'Add breakfast';
+  const title = isEditing ? t('editTitle') : t('addTitle');
 
   const formBody = (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-1">
-        <Label htmlFor="bf-group">Group name</Label>
-        <Input id="bf-group" placeholder="e.g. Smith party" {...register('groupName')} />
+        <Label htmlFor="bf-group">{t('groupNameLabel')}</Label>
+        <Input id="bf-group" placeholder={t('groupNamePlaceholder')} {...register('groupName')} />
       </div>
 
       <div className="space-y-1">
-        <Label htmlFor="bf-count">Guest count</Label>
-        <Input id="bf-count" type="number" min={1} placeholder="Overridden by table layout" {...register('guestCount')} />
+        <Label htmlFor="bf-count">{t('guestCountLabel')}</Label>
+        <Input id="bf-count" type="number" min={1} placeholder={t('guestCountHint')} {...register('guestCount')} />
       </div>
 
       <div className="space-y-1">
-        <Label>Table layout</Label>
+        <Label>{t('tableLayoutLabel')}</Label>
         <TableBreakdownBuilder value={tableBreakdown} onChange={setTableBreakdown} />
       </div>
 
       <div className="space-y-1">
-        <Label htmlFor="bf-time">Service time</Label>
+        <Label htmlFor="bf-time">{t('serviceTimeLabel')}</Label>
         <Input id="bf-time" type="time" {...register('startTime')} />
       </div>
 
       <div className="space-y-1">
-        <Label htmlFor="bf-notes">Notes</Label>
+        <Label htmlFor="bf-notes">{t('notesLabel')}</Label>
         <Textarea id="bf-notes" rows={2} {...register('notes')} />
       </div>
 
       <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-        <Button type="submit" disabled={isPending}>{isPending ? 'Saving…' : 'Save'}</Button>
+        <Button type="button" variant="outline" onClick={onClose}>{t('cancel')}</Button>
+        <Button type="submit" disabled={isPending}>{isPending ? t('saving') : t('save')}</Button>
       </div>
     </form>
   );

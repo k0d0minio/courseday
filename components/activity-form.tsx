@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { Check, Plus } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { createActivity, updateActivity } from '@/app/actions/activities';
 import { createPOC } from '@/app/actions/poc';
 import { createVenueType } from '@/app/actions/venue-type';
@@ -106,6 +107,7 @@ export function ActivityForm({
   editItem,
   onSuccess,
 }: Props) {
+  const t = useTranslations('Tenant.activityForm');
   const isMobile = useIsMobile();
   const [isPending, startTransition] = useTransition();
 
@@ -129,7 +131,7 @@ export function ActivityForm({
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
   const isEditing = !!editItem;
-  const modalTitle = isEditing ? 'Edit activity' : 'Add activity';
+  const modalTitle = isEditing ? t('editTitle') : t('addTitle');
 
   const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -168,7 +170,7 @@ export function ActivityForm({
       setValue('pocId', result.data.id);
       setShowNewPoc(false);
       setNewPocName(''); setNewPocEmail(''); setNewPocPhone('');
-      toast.success('Point of contact added.');
+      toast.success(t('pocAdded'));
     });
   }
 
@@ -181,7 +183,7 @@ export function ActivityForm({
       setValue('venueTypeId', result.data.id);
       setShowNewVt(false);
       setNewVtName(''); setNewVtCode('');
-      toast.success('Venue type added.');
+      toast.success(t('venueTypeAdded'));
     });
   }
 
@@ -208,7 +210,7 @@ export function ActivityForm({
 
       if (!result.success) { toast.error(result.error); return; }
 
-      toast.success(isEditing ? 'Activity updated.' : 'Activity added.');
+      toast.success(isEditing ? t('updated') : t('saved'));
       onSuccess(result.data);
       onClose();
     });
@@ -218,14 +220,14 @@ export function ActivityForm({
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {/* Title */}
       <div className="space-y-1">
-        <Label htmlFor="af-title">Title *</Label>
+        <Label htmlFor="af-title">{t('titleLabel')} *</Label>
         <Input id="af-title" {...register('title')} />
         {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
       </div>
 
       {/* Tags */}
       <div className="space-y-1">
-        <Label>Tags</Label>
+        <Label>{t('tagsLabel')}</Label>
         <TagSelector
           tags={allTags}
           selectedIds={selectedTagIds}
@@ -234,30 +236,36 @@ export function ActivityForm({
             setAllTags((prev) => [...prev, tag].sort((a, b) => a.name.localeCompare(b.name)));
             setSelectedTagIds((prev) => [...prev, tag.id]);
           }}
+          placeholder={t('tagsPlaceholder')}
+          addNewTagLabel={t('addNewTag')}
+          tagNamePlaceholder={t('tagNamePlaceholder')}
+          cancelLabel={t('cancel')}
+          saveLabel={t('save')}
+          savingLabel={t('saving')}
         />
       </div>
 
       {/* Times */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
-          <Label htmlFor="af-start">Start time</Label>
+          <Label htmlFor="af-start">{t('startTimeLabel')}</Label>
           <Input id="af-start" type="time" {...register('startTime')} />
         </div>
         <div className="space-y-1">
-          <Label htmlFor="af-end">End time</Label>
+          <Label htmlFor="af-end">{t('endTimeLabel')}</Label>
           <Input id="af-end" type="time" {...register('endTime')} />
         </div>
       </div>
 
       {/* Expected covers */}
       <div className="space-y-1">
-        <Label htmlFor="af-covers">Expected covers</Label>
+        <Label htmlFor="af-covers">{t('expectedCoversLabel')}</Label>
         <Input id="af-covers" type="number" min={0} {...register('expectedCovers')} />
       </div>
 
       {/* Venue type */}
       <div className="space-y-1">
-        <Label>Venue type</Label>
+        <Label>{t('venueTypeLabel')}</Label>
         <Select
           value={watch('venueTypeId') ?? ''}
           onValueChange={(v) => {
@@ -265,23 +273,23 @@ export function ActivityForm({
             else { setValue('venueTypeId', v); setShowNewVt(false); }
           }}
         >
-          <SelectTrigger><SelectValue placeholder="Select venue type" /></SelectTrigger>
+          <SelectTrigger><SelectValue placeholder={t('selectVenueType')} /></SelectTrigger>
           <SelectContent>
             {venueTypes.map((vt) => <SelectItem key={vt.id} value={vt.id}>{vt.name}</SelectItem>)}
             <SelectItem value={NEW_VALUE}>
-              <span className="flex items-center gap-1 text-muted-foreground"><Plus className="w-3 h-3" /> Add new…</span>
+              <span className="flex items-center gap-1 text-muted-foreground"><Plus className="w-3 h-3" /> {t('addNew')}</span>
             </SelectItem>
           </SelectContent>
         </Select>
         {showNewVt && (
           <div className="mt-2 rounded-md border p-3 space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">New venue type</p>
-            <Input placeholder="Name *" value={newVtName} onChange={(e) => setNewVtName(e.target.value)} />
-            <Input placeholder="Code (optional)" value={newVtCode} onChange={(e) => setNewVtCode(e.target.value)} />
+            <p className="text-xs font-medium text-muted-foreground">{t('newVenueType')}</p>
+            <Input placeholder={t('namePlaceholder')} value={newVtName} onChange={(e) => setNewVtName(e.target.value)} />
+            <Input placeholder={t('codePlaceholder')} value={newVtCode} onChange={(e) => setNewVtCode(e.target.value)} />
             <div className="flex gap-2 justify-end">
-              <Button type="button" size="sm" variant="outline" onClick={() => setShowNewVt(false)}>Cancel</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => setShowNewVt(false)}>{t('cancel')}</Button>
               <Button type="button" size="sm" onClick={handleSaveVenueType} disabled={isSavingVt || !newVtName.trim()}>
-                {isSavingVt ? 'Saving…' : 'Save'}
+                {isSavingVt ? t('saving') : t('save')}
               </Button>
             </div>
           </div>
@@ -290,7 +298,7 @@ export function ActivityForm({
 
       {/* Point of contact */}
       <div className="space-y-1">
-        <Label>Point of contact</Label>
+        <Label>{t('pocLabel')}</Label>
         <Select
           value={watch('pocId') ?? ''}
           onValueChange={(v) => {
@@ -298,24 +306,24 @@ export function ActivityForm({
             else { setValue('pocId', v); setShowNewPoc(false); }
           }}
         >
-          <SelectTrigger><SelectValue placeholder="Select point of contact" /></SelectTrigger>
+          <SelectTrigger><SelectValue placeholder={t('selectPoc')} /></SelectTrigger>
           <SelectContent>
             {pocs.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
             <SelectItem value={NEW_VALUE}>
-              <span className="flex items-center gap-1 text-muted-foreground"><Plus className="w-3 h-3" /> Add new…</span>
+              <span className="flex items-center gap-1 text-muted-foreground"><Plus className="w-3 h-3" /> {t('addNew')}</span>
             </SelectItem>
           </SelectContent>
         </Select>
         {showNewPoc && (
           <div className="mt-2 rounded-md border p-3 space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">New point of contact</p>
-            <Input placeholder="Name *" value={newPocName} onChange={(e) => setNewPocName(e.target.value)} />
-            <Input placeholder="Email (optional)" type="email" value={newPocEmail} onChange={(e) => setNewPocEmail(e.target.value)} />
-            <Input placeholder="Phone (optional)" value={newPocPhone} onChange={(e) => setNewPocPhone(e.target.value)} />
+            <p className="text-xs font-medium text-muted-foreground">{t('newPoc')}</p>
+            <Input placeholder={t('namePlaceholder')} value={newPocName} onChange={(e) => setNewPocName(e.target.value)} />
+            <Input placeholder={t('emailPlaceholder')} type="email" value={newPocEmail} onChange={(e) => setNewPocEmail(e.target.value)} />
+            <Input placeholder={t('phonePlaceholder')} value={newPocPhone} onChange={(e) => setNewPocPhone(e.target.value)} />
             <div className="flex gap-2 justify-end">
-              <Button type="button" size="sm" variant="outline" onClick={() => setShowNewPoc(false)}>Cancel</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => setShowNewPoc(false)}>{t('cancel')}</Button>
               <Button type="button" size="sm" onClick={handleSavePoc} disabled={isSavingPoc || !newPocName.trim()}>
-                {isSavingPoc ? 'Saving…' : 'Save'}
+                {isSavingPoc ? t('saving') : t('save')}
               </Button>
             </div>
           </div>
@@ -324,7 +332,7 @@ export function ActivityForm({
 
       {/* Notes */}
       <div className="space-y-1">
-        <Label htmlFor="af-notes">Notes</Label>
+        <Label htmlFor="af-notes">{t('notesLabel')}</Label>
         <Textarea id="af-notes" rows={2} {...register('notes')} />
       </div>
 
@@ -333,7 +341,7 @@ export function ActivityForm({
         <>
           <Separator />
           <div className="flex items-center justify-between">
-            <Label htmlFor="af-recurring">Recurring</Label>
+            <Label htmlFor="af-recurring">{t('recurringLabel')}</Label>
             <Switch
               id="af-recurring"
               checked={watch('isRecurring') ?? false}
@@ -346,18 +354,24 @@ export function ActivityForm({
                 value={watchFrequency ?? ''}
                 onValueChange={(v) => setValue('recurrenceFrequency', v as FormData['recurrenceFrequency'])}
               >
-                <SelectTrigger><SelectValue placeholder="Select frequency" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t('selectFrequency')} /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="biweekly">Bi-weekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                  <SelectItem value="yearly">Yearly</SelectItem>
+                  <SelectItem value="weekly">{t('weekly')}</SelectItem>
+                  <SelectItem value="biweekly">{t('biweekly')}</SelectItem>
+                  <SelectItem value="monthly">{t('monthly')}</SelectItem>
+                  <SelectItem value="yearly">{t('yearly')}</SelectItem>
                 </SelectContent>
               </Select>
               {occurrenceCount > 0 && (
-                <p className="text-sm text-muted-foreground">
-                  This will create <strong>{occurrenceCount}</strong> occurrence{occurrenceCount !== 1 ? 's' : ''}.
-                </p>
+                <p
+                  className="text-sm text-muted-foreground"
+                  dangerouslySetInnerHTML={{
+                    __html: t.rich('occurrences', {
+                      count: occurrenceCount,
+                      strong: (chunks) => `<strong>${chunks}</strong>`,
+                    }) as string,
+                  }}
+                />
               )}
             </div>
           )}
@@ -365,8 +379,8 @@ export function ActivityForm({
       )}
 
       <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-        <Button type="submit" disabled={isPending}>{isPending ? 'Saving…' : 'Save'}</Button>
+        <Button type="button" variant="outline" onClick={onClose}>{t('cancel')}</Button>
+        <Button type="submit" disabled={isPending}>{isPending ? t('saving') : t('save')}</Button>
       </div>
     </form>
   );
@@ -405,11 +419,23 @@ function TagSelector({
   selectedIds,
   onChange,
   onTagCreated,
+  placeholder,
+  addNewTagLabel,
+  tagNamePlaceholder,
+  cancelLabel,
+  saveLabel,
+  savingLabel,
 }: {
   tags: ActivityTag[];
   selectedIds: string[];
   onChange: (ids: string[]) => void;
   onTagCreated: (tag: ActivityTag) => void;
+  placeholder: string;
+  addNewTagLabel: string;
+  tagNamePlaceholder: string;
+  cancelLabel: string;
+  saveLabel: string;
+  savingLabel: string;
 }) {
   const [open, setOpen] = useState(false);
   const [showNew, setShowNew] = useState(false);
@@ -438,7 +464,7 @@ function TagSelector({
       <PopoverTrigger asChild>
         <Button type="button" variant="outline" className="w-full justify-start min-h-9 h-auto">
           {selectedTags.length === 0 ? (
-            <span className="text-muted-foreground text-sm">Select tags…</span>
+            <span className="text-muted-foreground text-sm">{placeholder}</span>
           ) : (
             <div className="flex flex-wrap gap-1">
               {selectedTags.map((t) => (
@@ -472,16 +498,16 @@ function TagSelector({
         {showNew ? (
           <div className="space-y-2 pt-2 border-t">
             <Input
-              placeholder="Tag name"
+              placeholder={tagNamePlaceholder}
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSave(); } }}
               autoFocus
             />
             <div className="flex gap-1 justify-end">
-              <Button type="button" size="sm" variant="outline" onClick={() => { setShowNew(false); setNewName(''); }}>Cancel</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => { setShowNew(false); setNewName(''); }}>{cancelLabel}</Button>
               <Button type="button" size="sm" onClick={handleSave} disabled={isSaving || !newName.trim()}>
-                {isSaving ? 'Saving…' : 'Save'}
+                {isSaving ? savingLabel : saveLabel}
               </Button>
             </div>
           </div>
@@ -494,7 +520,7 @@ function TagSelector({
               tags.length > 0 && 'border-t pt-2 mt-0.5'
             )}
           >
-            <Plus className="h-3 w-3" /> Add new tag
+            <Plus className="h-3 w-3" /> {addNewTagLabel}
           </button>
         )}
       </PopoverContent>

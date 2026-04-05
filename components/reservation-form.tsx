@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { createReservation, updateReservation } from '@/app/actions/reservations';
 import { TableBreakdownBuilder } from '@/components/table-breakdown-builder';
 import type { Reservation } from '@/types/index';
@@ -68,6 +69,7 @@ type Props = {
 // ---------------------------------------------------------------------------
 
 export function ReservationForm({ isOpen, onClose, dayId, editItem, onSuccess }: Props) {
+  const t = useTranslations('Tenant.reservationForm');
   const isMobile = useIsMobile();
   const [isPending, startTransition] = useTransition();
   const [tableBreakdown, setTableBreakdown] = useState<number[]>([]);
@@ -102,7 +104,7 @@ export function ReservationForm({ isOpen, onClose, dayId, editItem, onSuccess }:
 
       if (!result.success) { toast.error(result.error); return; }
 
-      toast.success(isEditing ? 'Reservation updated.' : 'Reservation added.');
+      toast.success(isEditing ? t('updated') : t('saved'));
       onSuccess(result.data);
       onClose();
     });
@@ -111,44 +113,44 @@ export function ReservationForm({ isOpen, onClose, dayId, editItem, onSuccess }:
   const formBody = (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-1">
-        <Label htmlFor="rf-name">Guest name</Label>
+        <Label htmlFor="rf-name">{t('guestNameLabel')}</Label>
         <Input id="rf-name" {...register('guestName')} />
       </div>
 
       <div className="space-y-1">
-        <Label htmlFor="rf-count">Party size</Label>
+        <Label htmlFor="rf-count">{t('partySizeLabel')}</Label>
         <Input id="rf-count" type="number" min={1} {...register('guestCount')} />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
-          <Label htmlFor="rf-start">Start time</Label>
+          <Label htmlFor="rf-start">{t('startTimeLabel')}</Label>
           <Input id="rf-start" type="time" {...register('startTime')} />
         </div>
         <div className="space-y-1">
-          <Label htmlFor="rf-end">End time</Label>
+          <Label htmlFor="rf-end">{t('endTimeLabel')}</Label>
           <Input id="rf-end" type="time" {...register('endTime')} />
         </div>
       </div>
 
       <div className="space-y-1">
-        <Label>Table layout</Label>
+        <Label>{t('tableLayoutLabel')}</Label>
         <TableBreakdownBuilder value={tableBreakdown} onChange={setTableBreakdown} />
       </div>
 
       <div className="space-y-1">
-        <Label htmlFor="rf-notes">Notes</Label>
+        <Label htmlFor="rf-notes">{t('notesLabel')}</Label>
         <Textarea id="rf-notes" rows={2} {...register('notes')} />
       </div>
 
       <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-        <Button type="submit" disabled={isPending}>{isPending ? 'Saving…' : 'Save'}</Button>
+        <Button type="button" variant="outline" onClick={onClose}>{t('cancel')}</Button>
+        <Button type="submit" disabled={isPending}>{isPending ? t('saving') : t('save')}</Button>
       </div>
     </form>
   );
 
-  const title = isEditing ? 'Edit reservation' : 'Add reservation';
+  const title = isEditing ? t('editTitle') : t('addTitle');
 
   if (isMobile) {
     return (

@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { deleteBreakfastConfiguration } from '@/app/actions/breakfast';
 import { TableBreakdownDisplay } from '@/components/table-breakdown-display';
 import type { BreakfastConfiguration } from '@/types/index';
@@ -27,6 +28,7 @@ type Props = {
 };
 
 export function BreakfastCard({ item, isEditor, onEdit, onDeleted }: Props) {
+  const t = useTranslations('Tenant.breakfastCard');
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDeleting, startDeleteTransition] = useTransition();
 
@@ -41,7 +43,7 @@ export function BreakfastCard({ item, isEditor, onEdit, onDeleted }: Props) {
         toast.error(result.error);
         return;
       }
-      toast.success('Breakfast deleted.');
+      toast.success(t('deleted'));
       setDeleteOpen(false);
       onDeleted(item.id);
     });
@@ -56,11 +58,11 @@ export function BreakfastCard({ item, isEditor, onEdit, onDeleted }: Props) {
               {/* Group name + guest count */}
               <div className="flex items-baseline gap-2">
                 <p className="font-medium">
-                  {item.group_name ?? 'Unnamed group'}
+                  {item.group_name ?? t('unnamedGroup')}
                 </p>
                 {item.total_guests > 0 && (
                   <span className="text-sm text-muted-foreground">
-                    {item.total_guests} {item.total_guests === 1 ? 'guest' : 'guests'}
+                    {t('guests', { count: item.total_guests })}
                   </span>
                 )}
               </div>
@@ -68,7 +70,7 @@ export function BreakfastCard({ item, isEditor, onEdit, onDeleted }: Props) {
               {/* Service time */}
               {item.start_time && (
                 <p className="text-sm text-muted-foreground">
-                  Service at {item.start_time.slice(0, 5)}
+                  {t('serviceAt', { time: item.start_time.slice(0, 5) })}
                 </p>
               )}
 
@@ -100,20 +102,17 @@ export function BreakfastCard({ item, isEditor, onEdit, onDeleted }: Props) {
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete breakfast?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the breakfast configuration
-              {item.group_name ? <> for <strong>{item.group_name}</strong></> : ''}.
-            </AlertDialogDescription>
+            <AlertDialogTitle>{t('deleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('deleteDescription')}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{t('cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? 'Deleting…' : 'Delete'}
+              {isDeleting ? t('deleting') : t('delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

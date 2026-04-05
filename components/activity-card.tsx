@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { Pencil, Trash2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { deleteActivity, deleteActivityRecurrenceGroup } from '@/app/actions/activities';
 import type { ActivityWithRelations } from '@/types/index';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,7 @@ type Props = {
 };
 
 export function ActivityCard({ item, isEditor, onEdit, onDeleted }: Props) {
+  const t = useTranslations('Tenant.entry');
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDeleting, startDeleteTransition] = useTransition();
   const isRecurring = !!item.recurrence_group_id;
@@ -42,7 +44,7 @@ export function ActivityCard({ item, isEditor, onEdit, onDeleted }: Props) {
         return;
       }
 
-      toast.success(mode === 'all' ? 'All occurrences deleted.' : 'Activity deleted.');
+      toast.success(mode === 'all' ? t('allDeleted') : t('deleted'));
       setDeleteOpen(false);
       onDeleted(item.id, mode);
     });
@@ -57,7 +59,7 @@ export function ActivityCard({ item, isEditor, onEdit, onDeleted }: Props) {
             <div className="flex-1 min-w-0 space-y-1.5">
               {isRecurring && (
                 <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                  <RefreshCw className="h-3 w-3" /> Recurring
+                  <RefreshCw className="h-3 w-3" /> {t('recurring')}
                 </span>
               )}
 
@@ -81,14 +83,14 @@ export function ActivityCard({ item, isEditor, onEdit, onDeleted }: Props) {
               {/* Time range */}
               {(item.start_time || item.end_time) && (
                 <p className="text-sm text-muted-foreground">
-                  {formatTimeRange(item.start_time, item.end_time)}
+                  {formatTimeRange(item.start_time, item.end_time, t)}
                 </p>
               )}
 
               {/* Expected covers */}
               {item.expected_covers != null && (
                 <p className="text-sm text-muted-foreground">
-                  {item.expected_covers} covers
+                  {t('covers', { count: item.expected_covers })}
                 </p>
               )}
 
@@ -126,15 +128,15 @@ export function ActivityCard({ item, isEditor, onEdit, onDeleted }: Props) {
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete activity?</AlertDialogTitle>
+            <AlertDialogTitle>{isRecurring ? t('deleteRecurringTitle') : t('deleteTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
               {isRecurring
-                ? 'This is a recurring activity. Choose what to delete.'
-                : <>This will permanently delete <strong>{item.title}</strong>.</>}
+                ? t('deleteRecurringDescription')
+                : t('deleteDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className={isRecurring ? 'flex-col sm:flex-row gap-2' : undefined}>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{t('cancel')}</AlertDialogCancel>
             {isRecurring ? (
               <>
                 <AlertDialogAction
@@ -142,14 +144,14 @@ export function ActivityCard({ item, isEditor, onEdit, onDeleted }: Props) {
                   disabled={isDeleting}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
-                  {isDeleting ? 'Deleting…' : 'Delete this occurrence'}
+                  {isDeleting ? t('deleting') : t('deleteThisOnly')}
                 </AlertDialogAction>
                 <AlertDialogAction
                   onClick={() => handleDelete('all')}
                   disabled={isDeleting}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
-                  {isDeleting ? 'Deleting…' : 'Delete all occurrences'}
+                  {isDeleting ? t('deleting') : t('deleteAllOccurrences')}
                 </AlertDialogAction>
               </>
             ) : (
@@ -158,7 +160,7 @@ export function ActivityCard({ item, isEditor, onEdit, onDeleted }: Props) {
                 disabled={isDeleting}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
-                {isDeleting ? 'Deleting…' : 'Delete'}
+                {isDeleting ? t('deleting') : t('delete')}
               </AlertDialogAction>
             )}
           </AlertDialogFooter>
@@ -168,9 +170,14 @@ export function ActivityCard({ item, isEditor, onEdit, onDeleted }: Props) {
   );
 }
 
-function formatTimeRange(start: string | null, end: string | null): string {
-  if (start && end) return `${start} – ${end}`;
-  if (start) return `From ${start}`;
-  if (end) return `Until ${end}`;
+function formatTimeRange(
+  start: string | null,
+  end: string | null,
+  t: ReturnType<typeof useTranslations<'Tenant.entry'>>
+): string {
+  const fmt = (s: string) => s.slice(0, 5);
+  if (start && end) return t('timeRange', { start: fmt(start), end: fmt(end) });
+  if (start) return t('timeFrom', { time: fmt(start) });
+  if (end) return t('timeUntil', { time: fmt(end) });
   return '';
 }
