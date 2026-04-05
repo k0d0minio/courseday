@@ -1,4 +1,7 @@
-const CACHE_NAME = 'golf-schedule-v1';
+const CACHE_NAME = 'courseday-v2';
+
+// Never cache these paths
+const SKIP_PREFIXES = ['/auth/', '/api/'];
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -19,6 +22,9 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
+
+  // Never cache auth routes or API calls
+  if (SKIP_PREFIXES.some((p) => url.pathname.startsWith(p))) return;
 
   // Cache-first for Next.js static assets (immutable, content-hashed)
   if (url.pathname.startsWith('/_next/static/')) {

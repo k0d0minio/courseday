@@ -34,27 +34,27 @@ export async function generateMetadata(): Promise<Metadata> {
     const name = data?.name as string | undefined;
     return {
       title: name ? `${name} · Courseday` : 'Courseday',
-      manifest: '/manifest.webmanifest',
+      manifest: '/pwa/manifest',
       appleWebApp: {
         capable: true,
         statusBarStyle: 'default',
         title: name ?? 'Courseday',
       },
       icons: {
-        apple: '/icon.svg',
+        apple: '/pwa/icon',
       },
     };
   } catch {
     return {
       title: 'Courseday',
-      manifest: '/manifest.webmanifest',
+      manifest: '/pwa/manifest',
       appleWebApp: {
         capable: true,
         statusBarStyle: 'default',
         title: 'Courseday',
       },
       icons: {
-        apple: '/icon.svg',
+        apple: '/pwa/icon',
       },
     };
   }

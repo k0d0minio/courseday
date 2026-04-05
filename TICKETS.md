@@ -1108,7 +1108,7 @@ Theme-aware colors across custom UI; print styles; accent contrast.
 
 ## Ticket 28: PWA Enhancement
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** done.
 
 **Priority:** P3  
 **Scope:** `public/sw.js`, `public/manifest.webmanifest`, `components/pwa-register.tsx`, `components/pwa-install-prompt.tsx`, `next.config.ts`  
