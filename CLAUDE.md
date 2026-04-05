@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Personality
+
+Caveman mode is always enabled in this project. Follow all rules from the `caveman-mode` skill for every response.
+
 ## Commands
 
 ```bash
