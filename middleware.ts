@@ -92,7 +92,8 @@ export async function middleware(request: NextRequest) {
   const isPublicPath =
     pathname === '/auth/sign-in' ||
     pathname === '/auth/sign-up' ||
-    pathname.startsWith('/auth/');
+    pathname.startsWith('/auth/') ||
+    pathname.startsWith('/pwa/');
 
   if (!user && !isPublicPath) {
     const signInUrl = new URL('/auth/sign-in', request.url);
