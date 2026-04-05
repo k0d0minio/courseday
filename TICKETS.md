@@ -820,7 +820,7 @@ The codebase may still contain remnants from the original Vercel Platforms Start
 
 ## Ticket 16: Superadmin Role & Auth for /admin
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** complete
 
 **Priority:** P0  
 **Scope:** `supabase/migrations/`, `app/admin/page.tsx`, `app/admin/dashboard.tsx`, `middleware.ts`, `app/actions/tenants.ts`  

@@ -66,6 +66,15 @@ export async function middleware(request: NextRequest) {
     return applyAuthCookies(NextResponse.redirect(url));
   }
 
+  // Block /admin (exactly) on tenant subdomains — platform admin is root-domain only.
+  // Note: /admin/settings is the tenant settings path and must not be blocked.
+  if (pathname === '/admin') {
+    const url = request.nextUrl.clone();
+    url.host = rootDomain;
+    url.pathname = '/';
+    return applyAuthCookies(NextResponse.redirect(url));
+  }
+
   // -------------------------------------------------------------------------
   // 3. Tenant resolution via Redis.
   // -------------------------------------------------------------------------

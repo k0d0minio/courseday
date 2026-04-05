@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { createSupabaseServiceClient } from '@/lib/supabase-server';
+import { requireSuperadmin } from '@/lib/superadmin';
 import { AdminDashboard } from './dashboard';
 import { rootDomain } from '@/lib/utils';
 
@@ -8,6 +9,8 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminPage() {
+  await requireSuperadmin();
+
   const serviceClient = createSupabaseServiceClient();
   const { data: tenants } = await serviceClient
     .from('tenants')

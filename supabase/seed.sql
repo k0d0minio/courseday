@@ -11,3 +11,13 @@ VALUES (
   'Europe/Brussels'
 )
 ON CONFLICT (slug) DO NOTHING;
+
+-- Seed: superadmin
+-- To grant superadmin access in local dev, first create a user via
+--   supabase/auth (sign up at localhost:3000), then find the user UUID
+--   in the Supabase Studio (Authentication → Users) and replace the
+--   placeholder below.
+--
+-- INSERT INTO superadmins (user_id)
+-- VALUES ('your-user-uuid-here')
+-- ON CONFLICT (user_id) DO NOTHING;
