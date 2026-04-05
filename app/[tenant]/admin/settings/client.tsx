@@ -6,10 +6,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PocManagement } from '@/components/poc-management';
 import { VenueTypeManagement } from '@/components/venue-type-management';
 import { ActivityTagManagement } from '@/components/activity-tag-management';
+import { MemberManagement } from '@/components/member-management';
 import { SettingsForm } from './settings-form';
 import { LanguageSettings } from './language-settings';
 
-const TABS = ['poc', 'venue-types', 'activity-tags', 'branding', 'language'] as const;
+const TABS = ['poc', 'venue-types', 'activity-tags', 'branding', 'language', 'members'] as const;
 type Tab = (typeof TABS)[number];
 
 function isValidTab(v: string | null): v is Tab {
@@ -18,11 +19,12 @@ function isValidTab(v: string | null): v is Tab {
 
 interface SettingsClientProps {
   tenantId: string;
+  currentUserId: string;
   initialAccentColor: string | null;
   initialLogoUrl: string | null;
 }
 
-export function SettingsClient({ tenantId, initialAccentColor, initialLogoUrl }: SettingsClientProps) {
+export function SettingsClient({ tenantId, currentUserId, initialAccentColor, initialLogoUrl }: SettingsClientProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const t = useTranslations('Tenant.settings');
@@ -47,6 +49,7 @@ export function SettingsClient({ tenantId, initialAccentColor, initialLogoUrl }:
           <TabsTrigger value="activity-tags">{t('tabActivityTags')}</TabsTrigger>
           <TabsTrigger value="branding">{t('tabBranding')}</TabsTrigger>
           <TabsTrigger value="language">{t('tabLanguage')}</TabsTrigger>
+          <TabsTrigger value="members">{t('tabMembers')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="poc">
@@ -71,6 +74,10 @@ export function SettingsClient({ tenantId, initialAccentColor, initialLogoUrl }:
 
         <TabsContent value="language">
           <LanguageSettings />
+        </TabsContent>
+
+        <TabsContent value="members">
+          <MemberManagement currentUserId={currentUserId} />
         </TabsContent>
       </Tabs>
     </div>
