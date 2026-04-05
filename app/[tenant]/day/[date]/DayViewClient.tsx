@@ -6,10 +6,11 @@ import { Plus } from 'lucide-react';
 import { DayNav } from '@/components/day-nav';
 import { DaySummaryCard } from '@/components/day-summary-card';
 import { ActivityForm } from '@/components/activity-form';
-import { EntryCard } from '@/components/entry-card';
+import { ActivityCard } from '@/components/activity-card';
 import { ReservationForm } from '@/components/reservation-form';
 import { ReservationCard } from '@/components/reservation-card';
 import { BreakfastForm } from '@/components/breakfast-form';
+import { BreakfastCard } from '@/components/breakfast-card';
 import { Button } from '@/components/ui/button';
 import type {
   Activity,
@@ -40,9 +41,9 @@ export function DayViewClient({
     initialBreakfastConfigs
   );
 
-  // Entry modal state
-  const [entryModalOpen, setEntryModalOpen] = useState(false);
-  const [editEntry, setEditEntry] = useState<ActivityWithRelations | null>(null);
+  // Activity modal state
+  const [activityModalOpen, setActivityModalOpen] = useState(false);
+  const [editActivity, setEditActivity] = useState<ActivityWithRelations | null>(null);
 
   // Reservation modal state
   const [reservationModalOpen, setReservationModalOpen] = useState(false);
@@ -54,17 +55,17 @@ export function DayViewClient({
 
   // ---------- Activity handlers ----------
 
-  function openAddEntry() {
-    setEditEntry(null);
-    setEntryModalOpen(true);
+  function openAddActivity() {
+    setEditActivity(null);
+    setActivityModalOpen(true);
   }
 
-  function openEditEntry(item: ActivityWithRelations) {
-    setEditEntry(item);
-    setEntryModalOpen(true);
+  function openEditActivity(item: ActivityWithRelations) {
+    setEditActivity(item);
+    setActivityModalOpen(true);
   }
 
-  function handleEntrySaved(item: Activity) {
+  function handleActivitySaved(item: Activity) {
     setActivities((prev) => {
       const idx = prev.findIndex((p) => p.id === item.id);
       if (idx >= 0) {
@@ -78,7 +79,7 @@ export function DayViewClient({
     });
   }
 
-  function handleEntryDeleted(id: string, mode: 'single' | 'all') {
+  function handleActivityDeleted(id: string, mode: 'single' | 'all') {
     if (mode === 'all') {
       const groupId = activities.find((p) => p.id === id)?.recurrence_group_id;
       setActivities((prev) =>
@@ -123,6 +124,11 @@ export function DayViewClient({
 
   // ---------- Breakfast handlers ----------
 
+  function openAddBreakfast() {
+    setEditBreakfast(null);
+    setBreakfastModalOpen(true);
+  }
+
   function openEditBreakfast(config: BreakfastConfiguration) {
     setEditBreakfast(config);
     setBreakfastModalOpen(true);
@@ -140,6 +146,10 @@ export function DayViewClient({
     });
   }
 
+  function handleBreakfastDeleted(id: string) {
+    setBreakfastConfigs((prev) => prev.filter((c) => c.id !== id));
+  }
+
   return (
     <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
       <DayNav date={date} today={today} />
@@ -150,13 +160,40 @@ export function DayViewClient({
         breakfastConfigs={breakfastConfigs}
       />
 
+      {/* Breakfast */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold">{t('breakfast')}</h2>
+          {authState.isEditor && (
+            <Button size="sm" onClick={openAddBreakfast}>
+              <Plus className="w-4 h-4 mr-1" /> {t('addBreakfast')}
+            </Button>
+          )}
+        </div>
+        {breakfastConfigs.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t('noBreakfasts')}</p>
+        ) : (
+          <div className="space-y-2">
+            {breakfastConfigs.map((item) => (
+              <BreakfastCard
+                key={item.id}
+                item={item}
+                isEditor={authState.isEditor}
+                onEdit={openEditBreakfast}
+                onDeleted={handleBreakfastDeleted}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
       {/* Activities */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold">{t('golfEvents')}</h2>
+          <h2 className="font-semibold">{t('activities')}</h2>
           {authState.isEditor && (
-            <Button size="sm" onClick={openAddEntry}>
-              <Plus className="w-4 h-4 mr-1" /> {t('addEvent')}
+            <Button size="sm" onClick={openAddActivity}>
+              <Plus className="w-4 h-4 mr-1" /> {t('addActivity')}
             </Button>
           )}
         </div>
@@ -165,12 +202,12 @@ export function DayViewClient({
         ) : (
           <div className="space-y-2">
             {activities.map((item) => (
-              <EntryCard
+              <ActivityCard
                 key={item.id}
                 item={item}
                 isEditor={authState.isEditor}
-                onEdit={openEditEntry}
-                onDeleted={handleEntryDeleted}
+                onEdit={openEditActivity}
+                onDeleted={handleActivityDeleted}
               />
             ))}
           </div>
@@ -180,7 +217,7 @@ export function DayViewClient({
       {/* Reservations */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold">{t('teeTimeReservations')}</h2>
+          <h2 className="font-semibold">{t('reservations')}</h2>
           {authState.isEditor && (
             <Button size="sm" onClick={openAddReservation}>
               <Plus className="w-4 h-4 mr-1" /> {t('addReservation')}
@@ -205,14 +242,14 @@ export function DayViewClient({
       </section>
 
       <ActivityForm
-        isOpen={entryModalOpen}
-        onClose={() => setEntryModalOpen(false)}
+        isOpen={activityModalOpen}
+        onClose={() => setActivityModalOpen(false)}
         date={date}
         dayId={dayId}
         pocs={pocs}
         venueTypes={venueTypes}
-        editItem={editEntry}
-        onSuccess={handleEntrySaved}
+        editItem={editActivity}
+        onSuccess={handleActivitySaved}
       />
 
       <ReservationForm

@@ -3,9 +3,9 @@
 import { useState, useTransition } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { deleteReservation } from '@/app/actions/reservations';
+import { deleteBreakfastConfiguration } from '@/app/actions/breakfast';
 import { TableBreakdownDisplay } from '@/components/table-breakdown-display';
-import type { Reservation } from '@/types/index';
+import type { BreakfastConfiguration } from '@/types/index';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -20,13 +20,13 @@ import {
 } from '@/components/ui/alert-dialog';
 
 type Props = {
-  item: Reservation;
+  item: BreakfastConfiguration;
   isEditor: boolean;
-  onEdit: (item: Reservation) => void;
+  onEdit: (item: BreakfastConfiguration) => void;
   onDeleted: (id: string) => void;
 };
 
-export function ReservationCard({ item, isEditor, onEdit, onDeleted }: Props) {
+export function BreakfastCard({ item, isEditor, onEdit, onDeleted }: Props) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDeleting, startDeleteTransition] = useTransition();
 
@@ -36,12 +36,12 @@ export function ReservationCard({ item, isEditor, onEdit, onDeleted }: Props) {
 
   function handleDelete() {
     startDeleteTransition(async () => {
-      const result = await deleteReservation(item.id);
+      const result = await deleteBreakfastConfiguration(item.id);
       if (!result.success) {
         toast.error(result.error);
         return;
       }
-      toast.success('Reservation deleted.');
+      toast.success('Breakfast deleted.');
       setDeleteOpen(false);
       onDeleted(item.id);
     });
@@ -53,22 +53,22 @@ export function ReservationCard({ item, isEditor, onEdit, onDeleted }: Props) {
         <CardContent className="py-3 px-4">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0 space-y-1.5">
-              {/* Name + count */}
+              {/* Group name + guest count */}
               <div className="flex items-baseline gap-2">
                 <p className="font-medium">
-                  {item.guest_name ?? 'Guest'}
+                  {item.group_name ?? 'Unnamed group'}
                 </p>
-                {item.guest_count != null && (
+                {item.total_guests > 0 && (
                   <span className="text-sm text-muted-foreground">
-                    {item.guest_count} {item.guest_count === 1 ? 'guest' : 'guests'}
+                    {item.total_guests} {item.total_guests === 1 ? 'guest' : 'guests'}
                   </span>
                 )}
               </div>
 
-              {/* Time range */}
-              {(item.start_time || item.end_time) && (
+              {/* Service time */}
+              {item.start_time && (
                 <p className="text-sm text-muted-foreground">
-                  {formatTimeRange(item.start_time, item.end_time)}
+                  Service at {item.start_time.slice(0, 5)}
                 </p>
               )}
 
@@ -100,10 +100,10 @@ export function ReservationCard({ item, isEditor, onEdit, onDeleted }: Props) {
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete reservation?</AlertDialogTitle>
+            <AlertDialogTitle>Delete breakfast?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the reservation
-              {item.guest_name ? <> for <strong>{item.guest_name}</strong></> : ''}.
+              This will permanently delete the breakfast configuration
+              {item.group_name ? <> for <strong>{item.group_name}</strong></> : ''}.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -120,11 +120,4 @@ export function ReservationCard({ item, isEditor, onEdit, onDeleted }: Props) {
       </AlertDialog>
     </>
   );
-}
-
-function formatTimeRange(start: string | null, end: string | null): string {
-  if (start && end) return `${start} – ${end}`;
-  if (start) return `From ${start}`;
-  if (end) return `Until ${end}`;
-  return '';
 }

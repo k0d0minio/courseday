@@ -25,7 +25,7 @@ type Props = {
   onDeleted: (id: string, mode: 'single' | 'all') => void;
 };
 
-export function EntryCard({ item, isEditor, onEdit, onDeleted }: Props) {
+export function ActivityCard({ item, isEditor, onEdit, onDeleted }: Props) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDeleting, startDeleteTransition] = useTransition();
   const isRecurring = !!item.recurrence_group_id;
@@ -42,7 +42,7 @@ export function EntryCard({ item, isEditor, onEdit, onDeleted }: Props) {
         return;
       }
 
-      toast.success(mode === 'all' ? 'All occurrences deleted.' : 'Entry deleted.');
+      toast.success(mode === 'all' ? 'All occurrences deleted.' : 'Activity deleted.');
       setDeleteOpen(false);
       onDeleted(item.id, mode);
     });
@@ -55,7 +55,6 @@ export function EntryCard({ item, isEditor, onEdit, onDeleted }: Props) {
           <div className="flex items-start justify-between gap-3">
             {/* Left: details */}
             <div className="flex-1 min-w-0 space-y-1.5">
-              {/* Recurring indicator */}
               {isRecurring && (
                 <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                   <RefreshCw className="h-3 w-3" /> Recurring
@@ -95,16 +94,12 @@ export function EntryCard({ item, isEditor, onEdit, onDeleted }: Props) {
 
               {/* Venue type */}
               {item.venue_type && (
-                <p className="text-sm text-muted-foreground">
-                  {item.venue_type.name}
-                </p>
+                <p className="text-sm text-muted-foreground">{item.venue_type.name}</p>
               )}
 
               {/* Point of contact */}
               {item.point_of_contact && (
-                <p className="text-sm text-muted-foreground">
-                  {item.point_of_contact.name}
-                </p>
+                <p className="text-sm text-muted-foreground">{item.point_of_contact.name}</p>
               )}
 
               {/* Notes */}
@@ -119,11 +114,7 @@ export function EntryCard({ item, isEditor, onEdit, onDeleted }: Props) {
                 <Button variant="ghost" size="icon" onClick={() => onEdit(item)}>
                   <Pencil className="h-4 w-4" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setDeleteOpen(true)}
-                >
+                <Button variant="ghost" size="icon" onClick={() => setDeleteOpen(true)}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
@@ -132,14 +123,13 @@ export function EntryCard({ item, isEditor, onEdit, onDeleted }: Props) {
         </CardContent>
       </Card>
 
-      {/* Delete dialog */}
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete entry?</AlertDialogTitle>
+            <AlertDialogTitle>Delete activity?</AlertDialogTitle>
             <AlertDialogDescription>
               {isRecurring
-                ? 'This is a recurring entry. Choose what to delete.'
+                ? 'This is a recurring activity. Choose what to delete.'
                 : <>This will permanently delete <strong>{item.title}</strong>.</>}
             </AlertDialogDescription>
           </AlertDialogHeader>

@@ -565,7 +565,7 @@ With hotel bookings removed from the domain model (Ticket 1), breakfast promoted
 
 ## Ticket 11: Updated Day View for Editors
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** completed.
 
 **Priority:** P1  
 **Scope:** `app/[tenant]/day/[date]/DayViewClient.tsx`, `app/[tenant]/day/[date]/page.tsx`, `components/entry-card.tsx` (replace), `components/reservation-card.tsx`, `components/day-summary-card.tsx`, `components/CalendarDaySidebar.tsx`, `components/HomeClient.tsx`, new `components/activity-card.tsx`, new `components/breakfast-card.tsx`  
