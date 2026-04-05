@@ -5,13 +5,25 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Trash2, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
+import { Trash2, Loader2, ChevronDown, ChevronUp, PauseCircle, PlayCircle, Archive } from 'lucide-react';
 import Link from 'next/link';
-import { deleteTenant } from '@/app/actions/tenants';
+import { deleteTenant, suspendTenant, reactivateTenant, archiveTenant } from '@/app/actions/tenants';
 import { setFeatureFlag } from '@/app/actions/feature-flags';
 import { KNOWN_FLAGS, FLAG_LABELS } from '@/lib/feature-flags';
 import type { FlagMap } from '@/lib/feature-flags';
 import { rootDomain, protocol } from '@/lib/utils';
+import type { TenantStatus } from '@/app/actions/tenants';
 
 type Tenant = {
   id: string;
@@ -19,10 +31,64 @@ type Tenant = {
   slug: string;
   language: string;
   created_at: string;
+  status: TenantStatus;
 };
 
-function TenantCard({
+const STATUS_BADGE: Record<TenantStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+  active: { label: 'Active', variant: 'default' },
+  suspended: { label: 'Suspended', variant: 'destructive' },
+  archived: { label: 'Archived', variant: 'secondary' },
+};
+
+function DeleteConfirmDialog({
   tenant,
+  open,
+  onOpenChange,
+  onConfirm,
+  isDeleting,
+}: {
+  tenant: Tenant;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onConfirm: () => void;
+  isDeleting: boolean;
+}) {
+  const [typed, setTyped] = useState('');
+  const canDelete = typed === tenant.slug;
+
+  return (
+    <AlertDialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) setTyped(''); }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete {tenant.name}?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This permanently deletes the tenant and all associated data. This cannot be undone.
+            Type <strong>{tenant.slug}</strong> to confirm.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <Input
+          value={typed}
+          onChange={(e) => setTyped(e.target.value)}
+          placeholder={tenant.slug}
+          autoComplete="off"
+        />
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+          <Button
+            variant="destructive"
+            disabled={!canDelete || isDeleting}
+            onClick={onConfirm}
+          >
+            {isDeleting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Deleting…</> : 'Delete permanently'}
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+function TenantCard({
+  tenant: initialTenant,
   initialFlags,
   onDelete,
   isDeleting,
@@ -32,9 +98,14 @@ function TenantCard({
   onDelete: (id: string) => void;
   isDeleting: boolean;
 }) {
+  const [tenant, setTenant] = useState(initialTenant);
   const [flags, setFlags] = useState(initialFlags);
   const [expanded, setExpanded] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [isStatusPending, startStatusTransition] = useTransition();
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
+  const { label: statusLabel, variant: statusVariant } = STATUS_BADGE[tenant.status];
 
   function handleFlagChange(key: (typeof KNOWN_FLAGS)[number], enabled: boolean) {
     setFlags((prev) => ({ ...prev, [key]: enabled }));
@@ -43,78 +114,149 @@ function TenantCard({
     });
   }
 
+  function handleStatusChange(action: 'suspend' | 'reactivate' | 'archive') {
+    startStatusTransition(async () => {
+      const fn = action === 'suspend' ? suspendTenant : action === 'reactivate' ? reactivateTenant : archiveTenant;
+      const result = await fn(tenant.id);
+      if (result.success) {
+        const next: TenantStatus = action === 'suspend' ? 'suspended' : action === 'reactivate' ? 'active' : 'archived';
+        setTenant((t) => ({ ...t, status: next }));
+      }
+    });
+  }
+
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-xl">{tenant.name}</CardTitle>
-          <Button
-            variant="ghost"
-            size="icon"
-            disabled={isDeleting}
-            onClick={() => onDelete(tenant.id)}
-            className="text-muted-foreground hover:text-foreground hover:bg-muted/50"
-          >
-            {isDeleting ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <Trash2 className="h-5 w-5" />
-            )}
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <p className="text-sm text-muted-foreground">{tenant.slug}</p>
-        <p className="text-sm text-muted-foreground">Language: {tenant.language}</p>
-        <p className="text-sm text-muted-foreground mt-1">
-          Created: {new Date(tenant.created_at).toLocaleDateString()}
-        </p>
-        <div className="mt-3">
-          <a
-            href={`${protocol}://${tenant.slug}.${rootDomain}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary hover:underline text-sm"
-          >
-            Visit tenant →
-          </a>
-        </div>
+    <>
+      <Card className={tenant.status === 'archived' ? 'opacity-60' : undefined}>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <CardTitle className="text-xl truncate">{tenant.name}</CardTitle>
+              <Badge variant={statusVariant}>{statusLabel}</Badge>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled={isDeleting || isStatusPending}
+              onClick={() => setDeleteOpen(true)}
+              aria-label={`Delete ${tenant.name}`}
+              className="text-muted-foreground hover:text-foreground hover:bg-muted/50 shrink-0"
+            >
+              {isDeleting ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Trash2 className="h-5 w-5" />
+              )}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">{tenant.slug}</p>
+          <p className="text-sm text-muted-foreground">Language: {tenant.language}</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Created: {new Date(tenant.created_at).toLocaleDateString()}
+          </p>
+          <div className="mt-3">
+            <a
+              href={`${protocol}://${tenant.slug}.${rootDomain}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline text-sm"
+            >
+              Visit tenant →
+            </a>
+          </div>
 
-        {/* Feature flags */}
-        <div className="mt-4 border-t pt-3">
-          <button
-            type="button"
-            className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground"
-            onClick={() => setExpanded((v) => !v)}
-          >
-            Feature Flags
-            {expanded ? (
-              <ChevronUp className="w-4 h-4" />
-            ) : (
-              <ChevronDown className="w-4 h-4" />
-            )}
-          </button>
-
-          {expanded && (
-            <div className="mt-3 space-y-2">
-              {KNOWN_FLAGS.map((key) => (
-                <div key={key} className="flex items-center justify-between">
-                  <Label htmlFor={`flag-${tenant.id}-${key}`} className="text-sm">
-                    {FLAG_LABELS[key]}
-                  </Label>
-                  <Switch
-                    id={`flag-${tenant.id}-${key}`}
-                    checked={flags[key]}
-                    disabled={isPending}
-                    onCheckedChange={(checked) => handleFlagChange(key, checked)}
-                  />
-                </div>
-              ))}
+          {/* Lifecycle actions */}
+          {tenant.status !== 'archived' && (
+            <div className="mt-3 flex gap-2">
+              {tenant.status === 'active' && (
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={isStatusPending}
+                    onClick={() => handleStatusChange('suspend')}
+                  >
+                    <PauseCircle className="h-4 w-4 mr-1" /> Suspend
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={isStatusPending}
+                    onClick={() => handleStatusChange('archive')}
+                  >
+                    <Archive className="h-4 w-4 mr-1" /> Archive
+                  </Button>
+                </>
+              )}
+              {tenant.status === 'suspended' && (
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={isStatusPending}
+                    onClick={() => handleStatusChange('reactivate')}
+                  >
+                    <PlayCircle className="h-4 w-4 mr-1" /> Reactivate
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={isStatusPending}
+                    onClick={() => handleStatusChange('archive')}
+                  >
+                    <Archive className="h-4 w-4 mr-1" /> Archive
+                  </Button>
+                </>
+              )}
             </div>
           )}
-        </div>
-      </CardContent>
-    </Card>
+
+          {/* Feature flags */}
+          <div className="mt-4 border-t pt-3">
+            <button
+              type="button"
+              className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground"
+              onClick={() => setExpanded((v) => !v)}
+            >
+              Feature Flags
+              {expanded ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
+            </button>
+
+            {expanded && (
+              <div className="mt-3 space-y-2">
+                {KNOWN_FLAGS.map((key) => (
+                  <div key={key} className="flex items-center justify-between">
+                    <Label htmlFor={`flag-${tenant.id}-${key}`} className="text-sm">
+                      {FLAG_LABELS[key]}
+                    </Label>
+                    <Switch
+                      id={`flag-${tenant.id}-${key}`}
+                      checked={flags[key]}
+                      disabled={isPending}
+                      onCheckedChange={(checked) => handleFlagChange(key, checked)}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <DeleteConfirmDialog
+        tenant={tenant}
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        onConfirm={() => { setDeleteOpen(false); onDelete(tenant.id); }}
+        isDeleting={isDeleting}
+      />
+    </>
   );
 }
 

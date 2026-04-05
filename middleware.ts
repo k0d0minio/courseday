@@ -86,6 +86,37 @@ export async function middleware(request: NextRequest) {
   const tenant = JSON.parse(cached) as TenantRedisData;
 
   // -------------------------------------------------------------------------
+  // 3b. Suspended / archived tenants — show a branded gate page.
+  // -------------------------------------------------------------------------
+  if (tenant.status === 'suspended' || tenant.status === 'archived') {
+    const isSuspended = tenant.status === 'suspended';
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${tenant.name} · Courseday</title>
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; background: #f9fafb; color: #111; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .card { background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 2.5rem 3rem; max-width: 420px; width: 90%; text-align: center; }
+    h1 { font-size: 1.5rem; font-weight: 700; margin: 0 0 0.5rem; }
+    p { color: #6b7280; margin: 0; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>${tenant.name}</h1>
+    <p>${isSuspended ? 'This venue has been temporarily suspended.' : 'This venue is no longer active.'}</p>
+  </div>
+</body>
+</html>`;
+    return new NextResponse(html, {
+      status: 403,
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    });
+  }
+
+  // -------------------------------------------------------------------------
   // 4. Auth guard for tenant routes.
   //    Public paths (no login required): /auth/*
   // -------------------------------------------------------------------------
