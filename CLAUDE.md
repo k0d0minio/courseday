@@ -61,4 +61,4 @@ Admin routes (`/admin`) are blocked from subdomain access and redirected to `/`.
 
 ### Planned Work (TICKETS.md)
 
-The `TICKETS.md` file contains the full backlog of AI-executable tickets. Upcoming phases add Supabase (Postgres + Auth) alongside Redis — Redis is kept for subdomain routing, Supabase handles all application data and authentication.
+The `TICKETS.md` file contains the full backlog of AI-executable tickets. Follow its **How Claude Code should use this file** section — including **Supabase migrations**: implement SQL in `supabase/migrations/`, update seeds when needed, and verify with the Supabase CLI locally; do not defer migration work to the user when the toolchain is available.
