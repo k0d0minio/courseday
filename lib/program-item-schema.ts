@@ -1,16 +1,16 @@
 import { z } from 'zod';
 
 export const activitySchema = z.object({
-  title: z.string().min(1, 'Title is required'),
+  title: z.string().min(1, 'Title is required').max(200),
   dayId: z.string().uuid('Day ID is required'),
-  description: z.string().optional(),
+  description: z.string().max(2000).optional(),
   startTime: z.string().optional(),
   endTime: z.string().optional(),
-  expectedCovers: z.number().int().min(0).optional(),
+  expectedCovers: z.number().int().min(0).max(9999).optional(),
   venueTypeId: z.string().uuid().optional().nullable(),
   pocId: z.string().uuid().optional().nullable(),
-  tagIds: z.array(z.string().uuid()).optional(),
-  notes: z.string().optional(),
+  tagIds: z.array(z.string().uuid()).max(20).optional(),
+  notes: z.string().max(2000).optional(),
   isRecurring: z.boolean().optional(),
   recurrenceFrequency: z
     .enum(['weekly', 'biweekly', 'monthly', 'yearly'])

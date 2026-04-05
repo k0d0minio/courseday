@@ -8,6 +8,7 @@ import { generateRecurrenceDates } from '@/lib/day-utils';
 import { activitySchema } from '@/lib/program-item-schema';
 import { ensureDayExists } from '@/app/actions/days';
 import { notifyTenantMembers, getDayDate } from '@/lib/notifications';
+import { mutationRateLimit } from '@/lib/rate-limit';
 import type { ActionResponse } from '@/types/actions';
 import type { Activity, ActivityWithRelations } from '@/types/index';
 import type { ActivityFormData } from '@/lib/program-item-schema';
@@ -72,6 +73,9 @@ export async function createActivity(
 
   const tenantId = await getTenantId();
   const user = await requireEditor(tenantId);
+
+  const rl = await mutationRateLimit(user.id);
+  if (!rl.success) return { success: false, error: 'Too many requests. Please slow down.' };
 
   const { supabase } = await createTenantClient();
   const data = parsed.data;

@@ -1147,7 +1147,7 @@ Full audit + **es**/**de** locales after overhaul strings (Ticket 14).
 
 ## Ticket 30: Rate Limiting & Security
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** pending — set to `[x]` when done.
 
 **Priority:** P3  
 **Scope:** `app/actions/auth.ts`, `app/actions/`, `middleware.ts`, `next.config.ts`  
