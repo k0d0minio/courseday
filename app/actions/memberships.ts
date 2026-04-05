@@ -39,19 +39,27 @@ export async function getMembers(): Promise<ActionResponse<Member[]>> {
   if (!memberships?.length) return { success: true, data: [] };
 
   const serviceClient = createSupabaseServiceClient();
-  const emailResults = await Promise.all(
+  // Use allSettled so one failed lookup doesn't crash the whole list.
+  const emailResults = await Promise.allSettled(
     memberships.map((m) => serviceClient.auth.admin.getUserById(m.user_id))
   );
 
   return {
     success: true,
-    data: memberships.map((m, i) => ({
-      id: m.id,
-      user_id: m.user_id,
-      email: emailResults[i].data.user?.email ?? '',
-      role: m.role as MemberRole,
-      created_at: m.created_at,
-    })),
+    data: memberships.map((m, i) => {
+      const settled = emailResults[i];
+      const email =
+        settled.status === 'fulfilled'
+          ? (settled.value.data.user?.email ?? '')
+          : '';
+      return {
+        id: m.id,
+        user_id: m.user_id,
+        email,
+        role: m.role as MemberRole,
+        created_at: m.created_at,
+      };
+    }),
   };
 }
 
@@ -90,11 +98,17 @@ export async function inviteMember(
   const serviceClient = createSupabaseServiceClient();
 
   // Look up whether the email belongs to an existing auth user.
-  const { data: existingUserId } = await serviceClient.rpc('get_user_id_by_email', {
-    p_email: trimmedEmail,
-  });
+  const { data: existingUserId, error: rpcError } = await serviceClient.rpc(
+    'get_user_id_by_email',
+    { p_email: trimmedEmail }
+  );
 
-  if (existingUserId) {
+  if (rpcError) {
+    // RPC unavailable or failed — log server-side, fall through to pending invitation.
+    console.error('[inviteMember] get_user_id_by_email RPC error:', rpcError.message);
+  }
+
+  if (!rpcError && existingUserId) {
     // User already exists — check if already a member of this tenant.
     const { data: existingMembership } = await serviceClient
       .from('memberships')
