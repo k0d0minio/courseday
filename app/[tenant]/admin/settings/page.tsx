@@ -4,7 +4,7 @@ import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { SettingsClient } from './client';
 
 export default async function SettingsPage() {
-  await requireTenantEditor();
+  const { user } = await requireTenantEditor();
   const tenant = await getTenantFromHeaders();
 
   const supabase = await createSupabaseServerClient();
@@ -20,6 +20,7 @@ export default async function SettingsPage() {
   return (
     <SettingsClient
       tenantId={tenant.id}
+      currentUserId={user.id}
       initialAccentColor={accentColor}
       initialLogoUrl={logoUrl}
     />

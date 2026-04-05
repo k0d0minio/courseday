@@ -877,7 +877,7 @@ Enable/disable features per tenant for tiered rollout.
 
 ## Ticket 18: Member Invitation & Role Management
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** completed.
 
 **Priority:** P1  
 **Scope:** `app/[tenant]/admin/members/page.tsx` (new), `app/actions/memberships.ts` (new), `supabase/migrations/`  
