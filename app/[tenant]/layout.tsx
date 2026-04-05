@@ -94,12 +94,16 @@ export default async function TenantLayout({
     getUnreadCount(),
   ]);
 
+  // RTL locales — extend when adding Arabic, Hebrew, etc.
+  const RTL_LOCALES = new Set<string>([]);
+  const dir = RTL_LOCALES.has(locale) ? 'rtl' : 'ltr';
+
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
       <FeatureFlagProvider flags={featureFlags}>
       <TenantProvider tenantId={tenant.id} tenantSlug={tenant.slug}>
         <AuthProvider>
-          <div className="min-h-screen flex flex-col" style={accentStyle}>
+          <div className="min-h-screen flex flex-col" dir={dir} style={accentStyle}>
             <header className="border-b px-6 h-14 flex items-center justify-between">
               <Logo logoUrl={row?.logo_url} tenantName={row?.name} />
               <div className="flex items-center gap-2">

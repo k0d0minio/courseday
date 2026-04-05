@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { getTemplates, deleteTemplate } from '@/app/actions/schedule-templates';
 import type { ScheduleTemplate } from '@/app/actions/schedule-templates';
@@ -18,6 +19,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export function ScheduleTemplateManagement() {
+  const t = useTranslations('Tenant.templates');
   const [templates, setTemplates] = useState<ScheduleTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -37,52 +39,48 @@ export function ScheduleTemplateManagement() {
     if (!result.success) {
       toast.error(result.error);
     } else {
-      toast.success('Template deleted.');
-      setTemplates((prev) => prev.filter((t) => t.id !== id));
+      toast.success(t('deleted'));
+      setTemplates((prev) => prev.filter((tmpl) => tmpl.id !== id));
     }
     setDeleting(null);
   }
 
-  if (loading) return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (loading) return <p className="text-sm text-muted-foreground">{t('loading')}</p>;
 
   if (templates.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        No templates yet. Save a day&rsquo;s activities as a template from the day view.
-      </p>
-    );
+    return <p className="text-sm text-muted-foreground">{t('settingsEmpty')}</p>;
   }
 
   return (
     <div className="space-y-2">
-      {templates.map((t) => (
+      {templates.map((tmpl) => (
         <div
-          key={t.id}
+          key={tmpl.id}
           className="flex items-center justify-between rounded-lg border bg-card px-4 py-3"
         >
           <div>
-            <p className="font-medium">{t.name}</p>
+            <p className="font-medium">{tmpl.name}</p>
             <p className="text-xs text-muted-foreground">
-              {t.items.length} {t.items.length === 1 ? 'activity' : 'activities'}
+              {t('activityCount', { count: tmpl.items.length })}
             </p>
           </div>
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="sm" disabled={deleting === t.id}>
-                {deleting === t.id ? 'Deleting…' : 'Delete'}
+              <Button variant="ghost" size="sm" disabled={deleting === tmpl.id}>
+                {deleting === tmpl.id ? t('deleting') : t('delete')}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Delete template?</AlertDialogTitle>
+                <AlertDialogTitle>{t('deleteTitle')}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  &ldquo;{t.name}&rdquo; will be permanently deleted.
+                  {t('deleteDescription', { name: tmpl.name })}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => handleDelete(t.id)}>Delete</AlertDialogAction>
+                <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                <AlertDialogAction onClick={() => handleDelete(tmpl.id)}>{t('delete')}</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>

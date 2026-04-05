@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { copyDayActivities } from '@/app/actions/schedule-templates';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,7 @@ interface Props {
 }
 
 export function CopyDayDialog({ isOpen, onClose, sourceDayId, today }: Props) {
+  const t = useTranslations('Tenant.copyDay');
   const isMobile = useIsMobile();
   const router = useRouter();
   const [targetDate, setTargetDate] = useState('');
@@ -56,7 +58,7 @@ export function CopyDayDialog({ isOpen, onClose, sourceDayId, today }: Props) {
         toast.error(result.error);
         return;
       }
-      toast.success('Activities copied.');
+      toast.success(t('copied'));
       onClose();
       router.push(`/day/${targetDate}`);
     } finally {
@@ -67,7 +69,7 @@ export function CopyDayDialog({ isOpen, onClose, sourceDayId, today }: Props) {
   const body = (
     <div className="space-y-4 py-2">
       <div className="space-y-1.5">
-        <Label htmlFor="copy-target-date">Target date</Label>
+        <Label htmlFor="copy-target-date">{t('targetDate')}</Label>
         <Input
           id="copy-target-date"
           type="date"
@@ -82,10 +84,10 @@ export function CopyDayDialog({ isOpen, onClose, sourceDayId, today }: Props) {
   const footer = (
     <>
       <Button variant="outline" onClick={onClose} disabled={saving}>
-        Cancel
+        {t('cancel')}
       </Button>
       <Button onClick={handleSubmit} disabled={saving || !targetDate}>
-        {saving ? 'Copying…' : 'Copy'}
+        {saving ? t('copying') : t('copy')}
       </Button>
     </>
   );
@@ -95,7 +97,7 @@ export function CopyDayDialog({ isOpen, onClose, sourceDayId, today }: Props) {
       <Drawer open={isOpen} onOpenChange={(o) => !o && onClose()}>
         <DrawerContent>
           <DrawerHeader>
-            <DrawerTitle>Copy activities to another day</DrawerTitle>
+            <DrawerTitle>{t('title')}</DrawerTitle>
           </DrawerHeader>
           <div className="px-4">{body}</div>
           <DrawerFooter className="flex-row justify-end gap-2">{footer}</DrawerFooter>
@@ -108,7 +110,7 @@ export function CopyDayDialog({ isOpen, onClose, sourceDayId, today }: Props) {
     <Dialog open={isOpen} onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Copy activities to another day</DialogTitle>
+          <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>
         {body}
         <DialogFooter>{footer}</DialogFooter>
