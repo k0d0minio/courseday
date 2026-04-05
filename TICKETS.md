@@ -422,7 +422,7 @@ Activity tags are tenant-specific and configurable. They need a management UI in
 
 ## Ticket 8: Reservation Form
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** completed.
 
 **Priority:** P1  
 **Scope:** New `components/reservation-form.tsx`, delete `components/add-reservation-modal.tsx`, update all imports  

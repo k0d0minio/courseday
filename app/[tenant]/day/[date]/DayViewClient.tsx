@@ -7,7 +7,7 @@ import { DayNav } from '@/components/day-nav';
 import { DaySummaryCard } from '@/components/day-summary-card';
 import { ActivityForm } from '@/components/activity-form';
 import { EntryCard } from '@/components/entry-card';
-import { AddReservationModal } from '@/components/add-reservation-modal';
+import { ReservationForm } from '@/components/reservation-form';
 import { ReservationCard } from '@/components/reservation-card';
 import { AddBreakfastModal } from '@/components/add-breakfast-modal';
 import { Button } from '@/components/ui/button';
@@ -215,7 +215,7 @@ export function DayViewClient({
         onSuccess={handleEntrySaved}
       />
 
-      <AddReservationModal
+      <ReservationForm
         isOpen={reservationModalOpen}
         onClose={() => setReservationModalOpen(false)}
         dayId={dayId}
