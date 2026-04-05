@@ -4,15 +4,22 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PocManagement } from '@/components/poc-management';
 import { VenueTypeManagement } from '@/components/venue-type-management';
+import { SettingsForm } from './settings-form';
 
-const TABS = ['poc', 'venue-types'] as const;
+const TABS = ['poc', 'venue-types', 'branding'] as const;
 type Tab = (typeof TABS)[number];
 
 function isValidTab(v: string | null): v is Tab {
   return TABS.includes(v as Tab);
 }
 
-export function SettingsClient() {
+interface SettingsClientProps {
+  tenantId: string;
+  initialAccentColor: string | null;
+  initialLogoUrl: string | null;
+}
+
+export function SettingsClient({ tenantId, initialAccentColor, initialLogoUrl }: SettingsClientProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -33,6 +40,7 @@ export function SettingsClient() {
         <TabsList className="mb-6">
           <TabsTrigger value="poc">Points of Contact</TabsTrigger>
           <TabsTrigger value="venue-types">Venue Types</TabsTrigger>
+          <TabsTrigger value="branding">Branding</TabsTrigger>
         </TabsList>
 
         <TabsContent value="poc">
@@ -41,6 +49,14 @@ export function SettingsClient() {
 
         <TabsContent value="venue-types">
           <VenueTypeManagement />
+        </TabsContent>
+
+        <TabsContent value="branding">
+          <SettingsForm
+            tenantId={tenantId}
+            initialAccentColor={initialAccentColor}
+            initialLogoUrl={initialLogoUrl}
+          />
         </TabsContent>
       </Tabs>
     </div>
