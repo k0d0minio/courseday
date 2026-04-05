@@ -1165,7 +1165,7 @@ Upstash ratelimit (or adapter to Redis), auth + mutation limits, `ActionResponse
 
 ## Ticket 31: Error Monitoring Integration
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** pending — set to `[x]` when done.
 
 **Priority:** P3  
 **Scope:** `next.config.ts`, `app/error.tsx`, `app/[tenant]/not-found.tsx`, `app/layout.tsx`, `app/actions/`  

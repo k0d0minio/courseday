@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import { Toaster } from 'sonner';
 import { Settings } from 'lucide-react';
+import * as Sentry from '@sentry/nextjs';
 import { Logo } from '@/components/logo';
 import { UserMenu } from '@/components/user-menu';
 import { getUser } from '@/app/actions/auth';
@@ -71,6 +72,12 @@ export default async function TenantLayout({
     getLocale(),
     getMessages(),
   ]);
+
+  Sentry.setTag('tenant_id', tenant.id);
+  Sentry.setTag('tenant_slug', tenant.slug);
+  if (user) {
+    Sentry.setUser({ id: user.id, email: user.email });
+  }
 
   const featureFlags = await getFeatureFlags(tenant.id);
 
