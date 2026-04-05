@@ -239,6 +239,7 @@
       "tabBranding": "Branding",
       "tabLanguage": "Language",
       "tabMembers": "Team",
+      "tabFeedback": "Feedback",
       "languageTitle": "Venue language",
       "languageDescription": "This language will be used for all members of your venue.",
       "languageLabel": "Language",
@@ -292,6 +293,24 @@
       "removed": "Member removed.",
       "roleUpdated": "Role updated.",
       "loading": "Loading\u2026"
+    },
+    "featureRequests": {
+      "title": "Your requests",
+      "new": "Submit a feature request",
+      "titleLabel": "Title",
+      "titlePlaceholder": "What feature would you like?",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "More details (optional)",
+      "submit": "Submit",
+      "submitting": "Submitting\u2026",
+      "submitted": "Request submitted. Thank you!",
+      "noRequests": "No feature requests yet.",
+      "loading": "Loading\u2026",
+      "statusPending": "Pending",
+      "statusReviewing": "Reviewing",
+      "statusAccepted": "Accepted",
+      "statusRejected": "Rejected",
+      "statusShipped": "Shipped"
     },
     "venueType": {
       "title": "Venue Types",

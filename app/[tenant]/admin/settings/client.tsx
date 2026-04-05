@@ -7,10 +7,11 @@ import { PocManagement } from '@/components/poc-management';
 import { VenueTypeManagement } from '@/components/venue-type-management';
 import { ActivityTagManagement } from '@/components/activity-tag-management';
 import { MemberManagement } from '@/components/member-management';
+import { FeatureRequestManagement } from '@/components/feature-request-management';
 import { SettingsForm } from './settings-form';
 import { LanguageSettings } from './language-settings';
 
-const TABS = ['poc', 'venue-types', 'activity-tags', 'branding', 'language', 'members'] as const;
+const TABS = ['poc', 'venue-types', 'activity-tags', 'branding', 'language', 'members', 'feedback'] as const;
 type Tab = (typeof TABS)[number];
 
 function isValidTab(v: string | null): v is Tab {
@@ -51,6 +52,7 @@ export function SettingsClient({ tenantId, currentUserId, initialAccentColor, in
             <TabsTrigger value="branding">{t('tabBranding')}</TabsTrigger>
             <TabsTrigger value="language">{t('tabLanguage')}</TabsTrigger>
             <TabsTrigger value="members">{t('tabMembers')}</TabsTrigger>
+            <TabsTrigger value="feedback">{t('tabFeedback')}</TabsTrigger>
           </TabsList>
         </div>
 
@@ -80,6 +82,10 @@ export function SettingsClient({ tenantId, currentUserId, initialAccentColor, in
 
         <TabsContent value="members">
           <MemberManagement currentUserId={currentUserId} />
+        </TabsContent>
+
+        <TabsContent value="feedback">
+          <FeatureRequestManagement />
         </TabsContent>
       </Tabs>
     </div>

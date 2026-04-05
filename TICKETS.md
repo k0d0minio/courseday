@@ -960,7 +960,7 @@ Staff use phones on the floor; desktop-first UI is hard to use.
 
 ## Ticket 21: Feature Request Form
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** completed.
 
 **Priority:** P2  
 **Scope:** `supabase/migrations/`, `app/actions/feature-requests.ts` (new), `app/[tenant]/admin/settings/`, `app/admin/`  
