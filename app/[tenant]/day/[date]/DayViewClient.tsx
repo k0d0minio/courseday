@@ -13,6 +13,7 @@ import { ReservationCard } from '@/components/reservation-card';
 import { BreakfastForm } from '@/components/breakfast-form';
 import { BreakfastCard } from '@/components/breakfast-card';
 import { DayNotes } from '@/components/day-notes';
+import { WeatherCard } from '@/components/weather-card';
 import { Button } from '@/components/ui/button';
 import { useFeatureFlag } from '@/lib/feature-flags-context';
 import type {
@@ -31,6 +32,7 @@ export function DayViewClient({
   reservations: initialReservations,
   breakfastConfigs: initialBreakfastConfigs,
   dayNotes,
+  weather,
   pocs,
   venueTypes,
   authState,
@@ -167,6 +169,7 @@ export function DayViewClient({
         reservations={reservations}
         breakfastConfigs={breakfastConfigs}
         dayNotes={dayNotes}
+        weather={weather}
       />
     );
   }
@@ -174,6 +177,8 @@ export function DayViewClient({
   return (
     <div className="max-w-3xl mx-auto px-3 sm:px-6 py-4 sm:py-8 space-y-6">
       <DayNav date={date} today={today} />
+
+      {weather && <WeatherCard weather={weather} />}
 
       <DayNotes
         dayId={dayId}

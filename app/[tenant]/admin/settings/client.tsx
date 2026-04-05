@@ -23,9 +23,11 @@ interface SettingsClientProps {
   currentUserId: string;
   initialAccentColor: string | null;
   initialLogoUrl: string | null;
+  initialLatitude: number | null;
+  initialLongitude: number | null;
 }
 
-export function SettingsClient({ tenantId, currentUserId, initialAccentColor, initialLogoUrl }: SettingsClientProps) {
+export function SettingsClient({ tenantId, currentUserId, initialAccentColor, initialLogoUrl, initialLatitude, initialLongitude }: SettingsClientProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const t = useTranslations('Tenant.settings');
@@ -73,6 +75,8 @@ export function SettingsClient({ tenantId, currentUserId, initialAccentColor, in
             tenantId={tenantId}
             initialAccentColor={initialAccentColor}
             initialLogoUrl={initialLogoUrl}
+            initialLatitude={initialLatitude}
+            initialLongitude={initialLongitude}
           />
         </TabsContent>
 

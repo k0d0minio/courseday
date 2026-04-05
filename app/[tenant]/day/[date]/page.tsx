@@ -23,6 +23,8 @@ import type {
 } from '@/types/index';
 import type { AuthState } from '@/types/actions';
 import type { DayNote } from '@/app/actions/day-notes';
+import { getWeatherForDay } from '@/app/actions/weather';
+import type { WeatherData } from '@/app/actions/weather';
 
 export type DayViewProps = {
   date: string;
@@ -32,6 +34,7 @@ export type DayViewProps = {
   reservations: Reservation[];
   breakfastConfigs: BreakfastConfiguration[];
   dayNotes: DayNote[];
+  weather: WeatherData | null;
   pocs: PointOfContact[];
   venueTypes: VenueType[];
   authState: AuthState;
@@ -79,6 +82,7 @@ export default async function DayPage({
     reservations,
     breakfastConfigs,
     dayNotes,
+    weather,
     pocsResult,
     venueTypesResult,
     authState,
@@ -87,6 +91,7 @@ export default async function DayPage({
     getReservationsForDay(tenant.id, day.id),
     getBreakfastConfigsForDay(tenant.id, day.id),
     getDayNotesForDay(tenant.id, day.id),
+    getWeatherForDay(date),
     getAllPOCs(),
     getAllVenueTypes(),
     getAuthState(),
@@ -101,6 +106,7 @@ export default async function DayPage({
       reservations={reservations}
       breakfastConfigs={breakfastConfigs}
       dayNotes={dayNotes}
+      weather={weather}
       pocs={pocsResult.success ? pocsResult.data : []}
       venueTypes={venueTypesResult.success ? venueTypesResult.data : []}
       authState={authState}

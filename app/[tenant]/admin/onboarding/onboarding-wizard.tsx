@@ -124,6 +124,8 @@ export function OnboardingWizard({
             tenantId={tenantId}
             initialAccentColor={initialAccentColor}
             initialLogoUrl={initialLogoUrl}
+            initialLatitude={null}
+            initialLongitude={null}
           />
         )}
         {STEPS[currentStep] === 'language' && <LanguageSettings />}
