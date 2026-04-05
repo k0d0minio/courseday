@@ -2,6 +2,7 @@
 
 import { useRef } from 'react';
 import { Plus, Minus, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 
 // ---------------------------------------------------------------------------
@@ -19,6 +20,7 @@ type TableBreakdownBuilderProps = {
 // ---------------------------------------------------------------------------
 
 export function TableBreakdownBuilder({ value, onChange, disabled = false }: TableBreakdownBuilderProps) {
+  const t = useTranslations('Tenant.tableBreakdown');
   const addBtnRef = useRef<HTMLButtonElement>(null);
 
   const totalCovers = value.reduce((s, n) => s + n, 0);
@@ -57,7 +59,7 @@ export function TableBreakdownBuilder({ value, onChange, disabled = false }: Tab
   if (value.length === 0) {
     return (
       <div className="space-y-2">
-        <p className="text-xs text-muted-foreground">Add tables to define the seating layout</p>
+        <p className="text-xs text-muted-foreground">{t('emptyLabel')}</p>
         <Button
           ref={addBtnRef}
           type="button"
@@ -65,9 +67,9 @@ export function TableBreakdownBuilder({ value, onChange, disabled = false }: Tab
           variant="outline"
           onClick={addTable}
           disabled={disabled}
-          aria-label="Add table"
+          aria-label={t('addTable')}
         >
-          <Plus className="h-3 w-3 mr-1" /> Add table
+          <Plus className="h-3 w-3 mr-1" /> {t('addTable')}
         </Button>
       </div>
     );
@@ -86,6 +88,7 @@ export function TableBreakdownBuilder({ value, onChange, disabled = false }: Tab
             onAdjust={(delta) => adjustSeats(index, delta)}
             onRemove={() => removeTable(index)}
             onKeyDown={(e) => handleKeyDown(e, index)}
+            seatsLabel={t('seats')}
           />
         ))}
 
@@ -97,15 +100,15 @@ export function TableBreakdownBuilder({ value, onChange, disabled = false }: Tab
           onClick={addTable}
           disabled={disabled}
           className="h-auto self-start"
-          aria-label="Add table"
+          aria-label={t('addTable')}
         >
-          <Plus className="h-3 w-3 mr-1" /> Add table
+          <Plus className="h-3 w-3 mr-1" /> {t('addTable')}
         </Button>
       </div>
 
       {/* Summary */}
       <p className="text-xs text-muted-foreground">
-        {value.length} {value.length === 1 ? 'table' : 'tables'} · {totalCovers} total covers
+        {t('summary', { count: value.length, covers: totalCovers })}
       </p>
     </div>
   );
@@ -122,9 +125,10 @@ type TableBlockProps = {
   onAdjust: (delta: number) => void;
   onRemove: () => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void;
+  seatsLabel: string;
 };
 
-function TableBlock({ index, seats, disabled, onAdjust, onRemove, onKeyDown }: TableBlockProps) {
+function TableBlock({ index, seats, disabled, onAdjust, onRemove, onKeyDown, seatsLabel }: TableBlockProps) {
   const tableNumber = index + 1;
 
   return (
@@ -178,7 +182,7 @@ function TableBlock({ index, seats, disabled, onAdjust, onRemove, onKeyDown }: T
         <Minus className="h-3 w-3" />
       </Button>
 
-      <span className="text-[10px] text-muted-foreground leading-none">seats</span>
+      <span className="text-[10px] text-muted-foreground leading-none">{seatsLabel}</span>
     </div>
   );
 }

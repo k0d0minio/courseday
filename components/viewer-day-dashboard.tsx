@@ -30,6 +30,8 @@ export function ViewerDayDashboard({
 }: Props) {
   const td = useTranslations('Tenant.day');
   const ts = useTranslations('Tenant.summary');
+  const te = useTranslations('Tenant.entry');
+  const tb = useTranslations('Tenant.breakfastCard');
 
   const totalBreakfastCovers = breakfastConfigs.reduce((s, b) => s + b.total_guests, 0);
   const totalActivityCovers = activities.reduce((s, a) => s + (a.expected_covers ?? 0), 0);
@@ -53,7 +55,7 @@ export function ViewerDayDashboard({
         emptyLabel={td('noBreakfasts')}
       >
         {breakfastConfigs.map((item) => (
-          <BreakfastRow key={item.id} item={item} />
+          <BreakfastRow key={item.id} item={item} t={tb} />
         ))}
       </ViewerSection>
 
@@ -64,7 +66,7 @@ export function ViewerDayDashboard({
         emptyLabel={td('noEntries')}
       >
         {activities.map((item) => (
-          <ActivityRow key={item.id} item={item} />
+          <ActivityRow key={item.id} item={item} t={te} />
         ))}
       </ViewerSection>
 
@@ -120,7 +122,13 @@ function ViewerSection({
   );
 }
 
-function BreakfastRow({ item }: { item: BreakfastConfiguration }) {
+function BreakfastRow({
+  item,
+  t,
+}: {
+  item: BreakfastConfiguration;
+  t: ReturnType<typeof useTranslations<'Tenant.breakfastCard'>>;
+}) {
   const breakdown = Array.isArray(item.table_breakdown)
     ? (item.table_breakdown as number[])
     : [];
@@ -128,14 +136,14 @@ function BreakfastRow({ item }: { item: BreakfastConfiguration }) {
   return (
     <div className="rounded-lg border bg-card p-4 space-y-2">
       <div className="flex items-start justify-between gap-3">
-        <p className="font-semibold">{item.group_name ?? 'Unnamed group'}</p>
+        <p className="font-semibold">{item.group_name ?? t('unnamedGroup')}</p>
         <div className="flex items-center gap-3 shrink-0 text-sm">
           {item.start_time && (
             <span className="text-muted-foreground">{item.start_time.slice(0, 5)}</span>
           )}
           {item.total_guests > 0 && (
             <span className="font-medium">
-              {item.total_guests} {item.total_guests === 1 ? 'guest' : 'guests'}
+              {t('guests', { count: item.total_guests })}
             </span>
           )}
         </div>
@@ -148,7 +156,13 @@ function BreakfastRow({ item }: { item: BreakfastConfiguration }) {
   );
 }
 
-function ActivityRow({ item }: { item: ActivityWithRelations }) {
+function ActivityRow({
+  item,
+  t,
+}: {
+  item: ActivityWithRelations;
+  t: ReturnType<typeof useTranslations<'Tenant.entry'>>;
+}) {
   return (
     <div className="rounded-lg border bg-card p-4 space-y-1.5">
       {item.tags && item.tags.length > 0 && (
@@ -166,10 +180,10 @@ function ActivityRow({ item }: { item: ActivityWithRelations }) {
       <p className="font-semibold">{item.title}</p>
       <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-sm text-muted-foreground">
         {(item.start_time || item.end_time) && (
-          <span>{formatTimeRange(item.start_time, item.end_time)}</span>
+          <span>{formatTimeRange(item.start_time, item.end_time, t)}</span>
         )}
         {item.expected_covers != null && (
-          <span>{item.expected_covers} covers</span>
+          <span>{t('covers', { count: item.expected_covers })}</span>
         )}
         {item.venue_type && <span>{item.venue_type.name}</span>}
         {item.point_of_contact && <span>{item.point_of_contact.name}</span>}
@@ -182,6 +196,7 @@ function ActivityRow({ item }: { item: ActivityWithRelations }) {
 }
 
 function ReservationRow({ item }: { item: Reservation }) {
+  const tr = useTranslations('Tenant.reservation');
   const breakdown = Array.isArray(item.table_breakdown)
     ? (item.table_breakdown as number[])
     : [];
@@ -189,16 +204,16 @@ function ReservationRow({ item }: { item: Reservation }) {
   return (
     <div className="rounded-lg border bg-card p-4 space-y-2">
       <div className="flex items-start justify-between gap-3">
-        <p className="font-semibold">{item.guest_name ?? 'Guest'}</p>
+        <p className="font-semibold">{item.guest_name ?? tr('fallbackName')}</p>
         <div className="flex items-center gap-3 shrink-0 text-sm">
           {(item.start_time || item.end_time) && (
             <span className="text-muted-foreground">
-              {formatTimeRange(item.start_time, item.end_time)}
+              {formatTimeRange(item.start_time, item.end_time, null)}
             </span>
           )}
           {item.guest_count != null && (
             <span className="font-medium">
-              {item.guest_count} {item.guest_count === 1 ? 'guest' : 'guests'}
+              {tr('guests', { count: item.guest_count })}
             </span>
           )}
         </div>
@@ -211,10 +226,16 @@ function ReservationRow({ item }: { item: Reservation }) {
   );
 }
 
-function formatTimeRange(start: string | null, end: string | null): string {
-  const fmt = (t: string) => t.slice(0, 5);
-  if (start && end) return `${fmt(start)} – ${fmt(end)}`;
-  if (start) return `From ${fmt(start)}`;
-  if (end) return `Until ${fmt(end)}`;
+function formatTimeRange(
+  start: string | null,
+  end: string | null,
+  t: ReturnType<typeof useTranslations<'Tenant.entry'>> | null
+): string {
+  const fmt = (s: string) => s.slice(0, 5);
+  if (start && end) {
+    return t ? t('timeRange', { start: fmt(start), end: fmt(end) }) : `${fmt(start)} \u2013 ${fmt(end)}`;
+  }
+  if (start) return t ? t('timeFrom', { time: fmt(start) }) : fmt(start);
+  if (end) return t ? t('timeUntil', { time: fmt(end) }) : fmt(end);
   return '';
 }

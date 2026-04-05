@@ -1,8 +1,13 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
+
 type Props = {
   breakdown: number[];
 };
 
 export function TableBreakdownDisplay({ breakdown }: Props) {
+  const t = useTranslations('Tenant.tableBreakdown');
   if (breakdown.length === 0) return null;
   const total = breakdown.reduce((s, n) => s + n, 0);
   return (
@@ -18,7 +23,7 @@ export function TableBreakdownDisplay({ breakdown }: Props) {
         ))}
       </div>
       <p className="text-xs text-muted-foreground">
-        {breakdown.length} {breakdown.length === 1 ? 'table' : 'tables'} · {total} covers
+        {t('summary', { count: breakdown.length, covers: total })}
       </p>
     </div>
   );

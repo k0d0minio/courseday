@@ -735,7 +735,7 @@ The month calendar works well for navigating to specific dates but doesn't give 
 
 ## Ticket 14: i18n Key Updates (overhaul terminology)
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** complete
 
 **Priority:** P2  
 **Scope:** `messages/en.json`, `messages/fr.json`, all components using `useTranslations()`  

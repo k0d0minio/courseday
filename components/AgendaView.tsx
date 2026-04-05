@@ -52,6 +52,7 @@ const PAGE_SIZE = 14;
 
 export function AgendaView({ today }: Props) {
   const t = useTranslations('Tenant.home');
+  const ts = useTranslations('Tenant.sidebar');
   const [summaries, setSummaries] = useState<DaySummary[]>([]);
   const [initialLoading, startInitialLoad] = useTransition();
   const [loadingMore, startLoadMore] = useTransition();
@@ -120,7 +121,7 @@ export function AgendaView({ today }: Props) {
           onClick={loadMore}
           disabled={loadingMore || summaries.length === 0}
         >
-          {loadingMore ? 'Loading…' : t('loadMore')}
+          {loadingMore ? ts('loading') : t('loadMore')}
         </Button>
       </div>
     </div>
@@ -186,17 +187,11 @@ function AgendaDayRow({
 
   const countParts: string[] = [];
   if (summary.golfCount > 0)
-    countParts.push(
-      `${summary.golfCount} ${summary.golfCount === 1 ? 'activity' : 'activities'}`
-    );
+    countParts.push(ts('activityCount', { count: summary.golfCount }));
   if (summary.reservationCount > 0)
-    countParts.push(
-      `${summary.reservationCount} ${summary.reservationCount === 1 ? 'reservation' : 'reservations'}`
-    );
+    countParts.push(ts('reservationCount', { count: summary.reservationCount }));
   if (summary.breakfastCount > 0)
-    countParts.push(
-      `${summary.breakfastCount} breakfast ${summary.breakfastCount === 1 ? 'cover' : 'covers'}`
-    );
+    countParts.push(ts('breakfastCoverCount', { count: summary.breakfastCount }));
 
   return (
     <>
@@ -220,7 +215,7 @@ function AgendaDayRow({
                 {countParts.join(' · ')}
               </p>
             ) : (
-              <p className="text-xs text-muted-foreground mt-0.5">Nothing scheduled</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{ts('nothingScheduled')}</p>
             )}
           </div>
           {isExpanded ? (
