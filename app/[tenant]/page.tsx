@@ -71,9 +71,7 @@ export default async function TenantHomePage({
       date: day.date_iso,
       dayId: day.id,
       golfCount: 0,
-      eventCount: 0,
       reservationCount: 0,
-      hotelGuestCount: 0,
       breakfastCount: 0,
     });
   }

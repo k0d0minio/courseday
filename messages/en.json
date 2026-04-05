@@ -73,8 +73,7 @@
       "dowSun": "Sun",
       "legendGolf": "Golf (G)",
       "legendEvent": "Event (E)",
-      "legendReservation": "Reservation (R)",
-      "legendHotel": "Hotel guests (H)"
+      "legendReservation": "Reservation (R)"
     },
     "day": {
       "previousDay": "Previous day",
@@ -82,17 +81,13 @@
       "today": "Today",
       "golfEvents": "Golf & Events",
       "teeTimeReservations": "Tee Time Reservations",
-      "hotelBookings": "Hotel Bookings",
       "noEntries": "No entries yet.",
       "noReservations": "No reservations yet.",
-      "noBookings": "No hotel bookings yet.",
       "addEvent": "Event",
       "addGolf": "Golf",
-      "addReservation": "Add reservation",
-      "addBooking": "Add booking"
+      "addReservation": "Add reservation"
     },
     "summary": {
-      "hotelGuests": "Hotel guests",
       "breakfasts": "Breakfasts",
       "golfEvents": "Golf / events",
       "teeTimes": "Tee time bookings",
@@ -105,7 +100,6 @@
       "reservation": "Reservation",
       "golfEvents": "Golf & Events",
       "reservations": "Reservations",
-      "hotelBookings": "Hotel Bookings",
       "none": "None.",
       "openDayView": "Open day view",
       "guests": "{count, plural, one {# guest} other {# guests}}"
@@ -143,13 +137,6 @@
       "cancel": "Cancel",
       "delete": "Delete",
       "deleted": "Reservation deleted."
-    },
-    "booking": {
-      "deleteTitle": "Delete booking?",
-      "deleteDescription": "This action cannot be undone.",
-      "cancel": "Cancel",
-      "delete": "Delete",
-      "deleted": "Booking deleted."
     },
     "poc": {
       "title": "Points of Contact",

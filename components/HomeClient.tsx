@@ -17,9 +17,7 @@ export type DaySummary = {
   date: string; // YYYY-MM-DD
   dayId: string;
   golfCount: number;
-  eventCount: number;
   reservationCount: number;
-  hotelGuestCount: number;
   breakfastCount: number;
 };
 
@@ -171,14 +169,8 @@ export function HomeClient({ month, today, days: initialDays }: Props) {
                       {summary.golfCount > 0 && (
                         <SummaryPip label={`${summary.golfCount}G`} color="emerald" />
                       )}
-                      {summary.eventCount > 0 && (
-                        <SummaryPip label={`${summary.eventCount}E`} color="blue" />
-                      )}
                       {summary.reservationCount > 0 && (
                         <SummaryPip label={`${summary.reservationCount}R`} color="amber" />
-                      )}
-                      {summary.hotelGuestCount > 0 && (
-                        <SummaryPip label={`${summary.hotelGuestCount}H`} color="violet" />
                       )}
                     </div>
                   )}
@@ -203,7 +195,6 @@ export function HomeClient({ month, today, days: initialDays }: Props) {
         <LegendItem color="emerald" label={t('legendGolf')} />
         <LegendItem color="blue" label={t('legendEvent')} />
         <LegendItem color="amber" label={t('legendReservation')} />
-        <LegendItem color="violet" label={t('legendHotel')} />
       </div>
     </div>
   );
@@ -213,13 +204,12 @@ export function HomeClient({ month, today, days: initialDays }: Props) {
 // Sub-components
 // ---------------------------------------------------------------------------
 
-type PipColor = 'emerald' | 'blue' | 'amber' | 'violet';
+type PipColor = 'emerald' | 'blue' | 'amber';
 
 const PIP_CLASSES: Record<PipColor, string> = {
   emerald: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400',
   blue: 'bg-blue-500/15 text-blue-700 dark:text-blue-400',
   amber: 'bg-amber-500/15 text-amber-700 dark:text-amber-400',
-  violet: 'bg-violet-500/15 text-violet-700 dark:text-violet-400',
 };
 
 function SummaryPip({ label, color }: { label: string; color: PipColor }) {
