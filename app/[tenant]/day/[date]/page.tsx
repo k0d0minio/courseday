@@ -11,6 +11,7 @@ import {
   getProgramItemsForDay,
   getReservationsForDay,
   getBreakfastConfigsForDay,
+  getDayNotesForDay,
 } from './queries';
 import { DayViewClient } from './DayViewClient';
 import type {
@@ -21,6 +22,7 @@ import type {
   VenueType,
 } from '@/types/index';
 import type { AuthState } from '@/types/actions';
+import type { DayNote } from '@/app/actions/day-notes';
 
 export type DayViewProps = {
   date: string;
@@ -29,6 +31,7 @@ export type DayViewProps = {
   activities: Activity[];
   reservations: Reservation[];
   breakfastConfigs: BreakfastConfiguration[];
+  dayNotes: DayNote[];
   pocs: PointOfContact[];
   venueTypes: VenueType[];
   authState: AuthState;
@@ -75,6 +78,7 @@ export default async function DayPage({
     activities,
     reservations,
     breakfastConfigs,
+    dayNotes,
     pocsResult,
     venueTypesResult,
     authState,
@@ -82,6 +86,7 @@ export default async function DayPage({
     getProgramItemsForDay(tenant.id, day.id),
     getReservationsForDay(tenant.id, day.id),
     getBreakfastConfigsForDay(tenant.id, day.id),
+    getDayNotesForDay(tenant.id, day.id),
     getAllPOCs(),
     getAllVenueTypes(),
     getAuthState(),
@@ -95,6 +100,7 @@ export default async function DayPage({
       activities={activities}
       reservations={reservations}
       breakfastConfigs={breakfastConfigs}
+      dayNotes={dayNotes}
       pocs={pocsResult.success ? pocsResult.data : []}
       venueTypes={venueTypesResult.success ? venueTypesResult.data : []}
       authState={authState}
