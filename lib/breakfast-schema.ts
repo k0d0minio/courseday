@@ -3,13 +3,16 @@ import { z } from 'zod';
 export const createBreakfastSchema = z.object({
   dayId: z.string().uuid('Day ID is required'),
   groupName: z.string().optional(),
-  tableBreakdown: z.string().optional(),
+  guestCount: z.number().int().min(1).optional(),
+  tableBreakdown: z.array(z.number().int().min(1)).optional(),
   startTime: z.string().optional(),
   notes: z.string().optional(),
 });
 
 export const updateBreakfastSchema = z.object({
-  tableBreakdown: z.string().optional(),
+  groupName: z.string().optional(),
+  guestCount: z.number().int().min(1).optional(),
+  tableBreakdown: z.array(z.number().int().min(1)).optional(),
   startTime: z.string().optional(),
   notes: z.string().optional(),
 });

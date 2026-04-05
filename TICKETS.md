@@ -472,7 +472,7 @@ Activity tags are tenant-specific and configurable. They need a management UI in
 
 ## Ticket 9: Breakfast Configuration Form
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** completed.
 
 **Priority:** P1  
 **Scope:** New `components/breakfast-form.tsx`, delete `components/add-breakfast-modal.tsx`, update all imports  

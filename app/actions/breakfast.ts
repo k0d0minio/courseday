@@ -5,9 +5,15 @@ import { getTenantId } from '@/lib/tenant';
 import { requireEditor, getUserRole } from '@/lib/membership';
 import { createBreakfastSchema, updateBreakfastSchema } from '@/lib/breakfast-schema';
 import type { CreateBreakfastFormData, UpdateBreakfastFormData } from '@/lib/breakfast-schema';
-import { parseTableBreakdown } from '@/lib/day-utils';
 import type { ActionResponse } from '@/types/actions';
 import type { BreakfastConfiguration } from '@/types/index';
+
+function totalGuests(tableBreakdown?: number[] | null, guestCount?: number): number {
+  if (tableBreakdown && tableBreakdown.length > 0) {
+    return tableBreakdown.reduce((s, n) => s + n, 0);
+  }
+  return guestCount ?? 0;
+}
 
 export async function createBreakfastConfiguration(
   raw: CreateBreakfastFormData
@@ -32,9 +38,6 @@ export async function createBreakfastConfiguration(
     .single();
   if (dayErr || !dayRow) return { success: false, error: 'Day not found.' };
 
-  const tableBreakdown = parseTableBreakdown(d.tableBreakdown ?? null);
-  const totalGuests = tableBreakdown ? tableBreakdown.reduce((s, n) => s + n, 0) : 0;
-
   const { data, error } = await supabase
     .from('breakfast_configuration')
     .insert({
@@ -42,8 +45,8 @@ export async function createBreakfastConfiguration(
       day_id: d.dayId,
       breakfast_date: (dayRow as { date_iso: string }).date_iso,
       group_name: d.groupName || null,
-      table_breakdown: tableBreakdown,
-      total_guests: totalGuests,
+      table_breakdown: d.tableBreakdown ?? null,
+      total_guests: totalGuests(d.tableBreakdown, d.guestCount),
       start_time: d.startTime || null,
       notes: d.notes || null,
     })
@@ -69,14 +72,12 @@ export async function updateBreakfastConfiguration(
   const { supabase } = await createTenantClient();
   const d = parsed.data;
 
-  const tableBreakdown = parseTableBreakdown(d.tableBreakdown ?? null);
-  const totalGuests = tableBreakdown ? tableBreakdown.reduce((s, n) => s + n, 0) : 0;
-
   const { data, error } = await supabase
     .from('breakfast_configuration')
     .update({
-      table_breakdown: tableBreakdown,
-      total_guests: totalGuests,
+      group_name: d.groupName || null,
+      table_breakdown: d.tableBreakdown ?? null,
+      total_guests: totalGuests(d.tableBreakdown, d.guestCount),
       start_time: d.startTime || null,
       notes: d.notes || null,
       updated_at: new Date().toISOString(),

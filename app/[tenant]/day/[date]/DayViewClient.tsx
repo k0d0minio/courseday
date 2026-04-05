@@ -9,7 +9,7 @@ import { ActivityForm } from '@/components/activity-form';
 import { EntryCard } from '@/components/entry-card';
 import { ReservationForm } from '@/components/reservation-form';
 import { ReservationCard } from '@/components/reservation-card';
-import { AddBreakfastModal } from '@/components/add-breakfast-modal';
+import { BreakfastForm } from '@/components/breakfast-form';
 import { Button } from '@/components/ui/button';
 import type {
   Activity,
@@ -136,7 +136,7 @@ export function DayViewClient({
         next[idx] = config;
         return next;
       }
-      return prev;
+      return [...prev, config];
     });
   }
 
@@ -223,14 +223,13 @@ export function DayViewClient({
         onSuccess={handleReservationSaved}
       />
 
-      {editBreakfast && (
-        <AddBreakfastModal
-          isOpen={breakfastModalOpen}
-          onClose={() => setBreakfastModalOpen(false)}
-          editItem={editBreakfast}
-          onSuccess={handleBreakfastSaved}
-        />
-      )}
+      <BreakfastForm
+        isOpen={breakfastModalOpen}
+        onClose={() => setBreakfastModalOpen(false)}
+        dayId={dayId}
+        editItem={editBreakfast}
+        onSuccess={handleBreakfastSaved}
+      />
     </div>
   );
 }
