@@ -7,6 +7,7 @@ import { getUserRole, requireEditor } from '@/lib/membership';
 import { generateRecurrenceDates } from '@/lib/day-utils';
 import { activitySchema } from '@/lib/program-item-schema';
 import { ensureDayExists } from '@/app/actions/days';
+import { notifyTenantMembers, getDayDate } from '@/lib/notifications';
 import type { ActionResponse } from '@/types/actions';
 import type { Activity, ActivityWithRelations } from '@/types/index';
 import type { ActivityFormData } from '@/lib/program-item-schema';
@@ -68,7 +69,7 @@ export async function createActivity(
   }
 
   const tenantId = await getTenantId();
-  await requireEditor(tenantId);
+  const user = await requireEditor(tenantId);
 
   const { supabase } = await createTenantClient();
   const data = parsed.data;
@@ -88,6 +89,12 @@ export async function createActivity(
       const tagErr = await assignTags(supabase, (row as Activity).id, tagIds);
       if (tagErr) return { success: false, error: tagErr };
     }
+
+    Promise.allSettled([
+      getDayDate(data.dayId).then((date) =>
+        notifyTenantMembers(tenantId, user.id, `Activity added: ${data.title}`, undefined, date ? `/day/${date}` : undefined)
+      ),
+    ]);
 
     return { success: true, data: row as Activity };
   }
@@ -147,6 +154,12 @@ export async function createActivity(
     if (tagErr) return { success: false, error: tagErr };
   }
 
+  Promise.allSettled([
+    getDayDate(data.dayId).then((date) =>
+      notifyTenantMembers(tenantId, user.id, `Activity added: ${data.title}`, undefined, date ? `/day/${date}` : undefined)
+    ),
+  ]);
+
   return { success: true, data: inserted as Activity };
 }
 
@@ -160,7 +173,7 @@ export async function updateActivity(
   }
 
   const tenantId = await getTenantId();
-  await requireEditor(tenantId);
+  const user = await requireEditor(tenantId);
 
   const { supabase } = await createTenantClient();
   const data = parsed.data;
@@ -188,14 +201,28 @@ export async function updateActivity(
   const tagErr = await assignTags(supabase, id, data.tagIds ?? []);
   if (tagErr) return { success: false, error: tagErr };
 
+  Promise.allSettled([
+    getDayDate(data.dayId).then((date) =>
+      notifyTenantMembers(tenantId, user.id, `Activity updated: ${data.title}`, undefined, date ? `/day/${date}` : undefined)
+    ),
+  ]);
+
   return { success: true, data: row as Activity };
 }
 
 export async function deleteActivity(id: string): Promise<ActionResponse> {
   const tenantId = await getTenantId();
-  await requireEditor(tenantId);
+  const user = await requireEditor(tenantId);
 
   const { supabase } = await createTenantClient();
+
+  const { data: existing } = await supabase
+    .from('activity')
+    .select('title, day_id')
+    .eq('id', id)
+    .eq('tenant_id', tenantId)
+    .maybeSingle();
+
   const { error } = await supabase
     .from('activity')
     .delete()
@@ -203,6 +230,16 @@ export async function deleteActivity(id: string): Promise<ActionResponse> {
     .eq('tenant_id', tenantId);
 
   if (error) return { success: false, error: error.message };
+
+  if (existing) {
+    const { title, day_id } = existing as { title: string; day_id: string };
+    Promise.allSettled([
+      getDayDate(day_id).then((date) =>
+        notifyTenantMembers(tenantId, user.id, `Activity removed: ${title}`, undefined, date ? `/day/${date}` : undefined)
+      ),
+    ]);
+  }
+
   return { success: true, data: undefined };
 }
 

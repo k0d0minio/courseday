@@ -18,6 +18,8 @@ import { PwaInstallPrompt } from '@/components/pwa-install-prompt';
 import { FeatureFlagProvider } from '@/lib/feature-flags-context';
 import { getFeatureFlags } from '@/app/actions/feature-flags';
 import { MobileNav } from '@/components/mobile-nav';
+import { NotificationBell } from '@/components/notification-bell';
+import { getUnreadCount } from '@/app/actions/notifications';
 import { getTenantToday } from '@/lib/day-utils';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -86,9 +88,10 @@ export default async function TenantLayout({
     ? ({ '--tenant-accent': accentColor } as React.CSSProperties)
     : undefined;
 
-  const [editor, t] = await Promise.all([
+  const [editor, t, unreadCount] = await Promise.all([
     isEditor(tenant.id),
     getTranslations('Tenant.nav'),
+    getUnreadCount(),
   ]);
 
   return (
@@ -109,6 +112,7 @@ export default async function TenantLayout({
                     <Settings className="h-4 w-4" />
                   </Link>
                 )}
+                <NotificationBell initialCount={unreadCount} />
                 {user && <UserMenu user={user} signOutLabel={t('signOut')} />}
               </div>
             </header>

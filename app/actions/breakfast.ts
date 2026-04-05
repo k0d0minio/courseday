@@ -4,6 +4,7 @@ import { createTenantClient } from '@/lib/supabase-server';
 import { getTenantId } from '@/lib/tenant';
 import { requireEditor, getUserRole } from '@/lib/membership';
 import { createBreakfastSchema, updateBreakfastSchema } from '@/lib/breakfast-schema';
+import { notifyTenantMembers, getDayDate } from '@/lib/notifications';
 import type { CreateBreakfastFormData, UpdateBreakfastFormData } from '@/lib/breakfast-schema';
 import type { ActionResponse } from '@/types/actions';
 import type { BreakfastConfiguration } from '@/types/index';
@@ -24,7 +25,7 @@ export async function createBreakfastConfiguration(
   }
 
   const tenantId = await getTenantId();
-  await requireEditor(tenantId);
+  const user = await requireEditor(tenantId);
 
   const { supabase } = await createTenantClient();
   const d = parsed.data;
@@ -54,6 +55,12 @@ export async function createBreakfastConfiguration(
     .single();
 
   if (error) return { success: false, error: error.message };
+
+  const label = d.groupName?.trim() || 'Unnamed group';
+  Promise.allSettled([
+    notifyTenantMembers(tenantId, user.id, `Breakfast added: ${label}`, undefined, `/day/${(dayRow as { date_iso: string }).date_iso}`),
+  ]);
+
   return { success: true, data: data as BreakfastConfiguration };
 }
 
@@ -67,7 +74,7 @@ export async function updateBreakfastConfiguration(
   }
 
   const tenantId = await getTenantId();
-  await requireEditor(tenantId);
+  const user = await requireEditor(tenantId);
 
   const { supabase } = await createTenantClient();
   const d = parsed.data;
@@ -88,14 +95,31 @@ export async function updateBreakfastConfiguration(
     .single();
 
   if (error) return { success: false, error: error.message };
-  return { success: true, data: data as BreakfastConfiguration };
+
+  const row = data as BreakfastConfiguration;
+  const label = d.groupName?.trim() || 'Unnamed group';
+  Promise.allSettled([
+    getDayDate(row.day_id).then((date) =>
+      notifyTenantMembers(tenantId, user.id, `Breakfast updated: ${label}`, undefined, date ? `/day/${date}` : undefined)
+    ),
+  ]);
+
+  return { success: true, data: row };
 }
 
 export async function deleteBreakfastConfiguration(id: string): Promise<ActionResponse> {
   const tenantId = await getTenantId();
-  await requireEditor(tenantId);
+  const user = await requireEditor(tenantId);
 
   const { supabase } = await createTenantClient();
+
+  const { data: existing } = await supabase
+    .from('breakfast_configuration')
+    .select('group_name, day_id')
+    .eq('id', id)
+    .eq('tenant_id', tenantId)
+    .maybeSingle();
+
   const { error } = await supabase
     .from('breakfast_configuration')
     .delete()
@@ -103,6 +127,17 @@ export async function deleteBreakfastConfiguration(id: string): Promise<ActionRe
     .eq('tenant_id', tenantId);
 
   if (error) return { success: false, error: error.message };
+
+  if (existing) {
+    const { group_name, day_id } = existing as { group_name: string | null; day_id: string };
+    const label = group_name?.trim() || 'Unnamed group';
+    Promise.allSettled([
+      getDayDate(day_id).then((date) =>
+        notifyTenantMembers(tenantId, user.id, `Breakfast removed: ${label}`, undefined, date ? `/day/${date}` : undefined)
+      ),
+    ]);
+  }
+
   return { success: true, data: undefined };
 }
 
