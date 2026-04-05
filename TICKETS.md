@@ -684,7 +684,7 @@ Currently viewers see the same `DayViewClient` but with edit buttons hidden and 
 
 ## Ticket 13: Editor Agenda/Timeline View
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** completed.
 
 **Priority:** P2  
 **Scope:** New `components/AgendaView.tsx`, `components/HomeClient.tsx`  

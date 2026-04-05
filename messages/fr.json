@@ -73,7 +73,10 @@
       "dowSun": "Dim",
       "legendActivity": "Activité (A)",
       "legendReservation": "Réservation (R)",
-      "legendBreakfast": "Petit-déjeuner (B)"
+      "legendBreakfast": "Petit-déjeuner (B)",
+      "calendar": "Calendrier",
+      "agenda": "Agenda",
+      "loadMore": "Charger plus"
     },
     "day": {
       "previousDay": "Jour précédent",
