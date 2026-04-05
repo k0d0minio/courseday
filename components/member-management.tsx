@@ -112,6 +112,7 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
   const [members, setMembers] = useState<Member[]>([]);
   const [pending, setPending] = useState<PendingInvitation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [removeTarget, setRemoveTarget] = useState<Member | null>(null);
   const [isRemoving, startRemoveTransition] = useTransition();
   const [isCancelling, startCancelTransition] = useTransition();
@@ -121,8 +122,17 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
       getMembers(),
       getPendingInvitations(),
     ]);
-    if (membersResult.success) setMembers(membersResult.data);
-    if (pendingResult.success) setPending(pendingResult.data);
+    if (membersResult.success) {
+      setMembers(membersResult.data);
+    } else {
+      toast.error(membersResult.error);
+      setLoadError(membersResult.error);
+    }
+    if (pendingResult.success) {
+      setPending(pendingResult.data);
+    } else {
+      toast.error(pendingResult.error);
+    }
   }
 
   useEffect(() => {
@@ -172,6 +182,10 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
 
   if (loading) {
     return <p className="text-sm text-muted-foreground">{t('loading')}</p>;
+  }
+
+  if (loadError) {
+    return <p className="text-sm text-destructive">{loadError}</p>;
   }
 
   return (
