@@ -8,20 +8,17 @@ import { useTranslations } from 'next-intl';
 import { ensureDayExists } from '@/app/actions/days';
 import { getProgramItemsForDay } from '@/app/actions/program-items';
 import { getReservationsForDay } from '@/app/actions/reservations';
-import { getHotelBookingsForDate } from '@/app/actions/hotel-bookings';
 import { getAllPOCs } from '@/app/actions/poc';
 import { getAllVenueTypes } from '@/app/actions/venue-type';
 import { AddEntryModal } from '@/components/add-entry-modal';
 import { AddReservationModal } from '@/components/add-reservation-modal';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import type {
-  ProgramItem,
-  ProgramItemWithRelations,
+  Activity,
+  ActivityWithRelations,
   Reservation,
-  HotelBooking,
   PointOfContact,
   VenueType,
 } from '@/types/index';
@@ -39,9 +36,8 @@ type Props = {
 
 type DayData = {
   dayId: string;
-  programItems: ProgramItemWithRelations[];
+  activities: ActivityWithRelations[];
   reservations: Reservation[];
-  hotelBookings: HotelBooking[];
   pocs: PointOfContact[];
   venueTypes: VenueType[];
 };
@@ -57,12 +53,10 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
 
   // Entry modal state
   const [entryModalOpen, setEntryModalOpen] = useState(false);
-  const [entryType, setEntryType] = useState<'golf' | 'event'>('golf');
 
   // Reservation modal state
   const [reservationModalOpen, setReservationModalOpen] = useState(false);
 
-  // Fetch all day data when date changes
   useEffect(() => {
     setData(null);
     startLoading(async () => {
@@ -70,36 +64,33 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
       if (!dayResult.success) return;
       const dayId = dayResult.data.id;
 
-      const [itemsResult, resResult, hotelsResult, pocsResult, venuesResult] =
+      const [itemsResult, resResult, pocsResult, venuesResult] =
         await Promise.all([
           getProgramItemsForDay(dayId),
           getReservationsForDay(dayId),
-          getHotelBookingsForDate(date),
           getAllPOCs(),
           getAllVenueTypes(),
         ]);
 
       setData({
         dayId,
-        programItems: (itemsResult.success ? itemsResult.data : []) as ProgramItemWithRelations[],
+        activities: (itemsResult.success ? itemsResult.data : []) as ActivityWithRelations[],
         reservations: resResult.success ? resResult.data : [],
-        hotelBookings: hotelsResult.success ? hotelsResult.data : [],
         pocs: pocsResult.success ? pocsResult.data : [],
         venueTypes: venuesResult.success ? venuesResult.data : [],
       });
     });
   }, [date]);
 
-  function handleEntrySaved(item: ProgramItem) {
+  function handleEntrySaved(item: Activity) {
     if (!data) return;
-    const updated = [...data.programItems, item as ProgramItemWithRelations].sort(
+    const updated = [...data.activities, item as ActivityWithRelations].sort(
       (a, b) => (a.start_time ?? '').localeCompare(b.start_time ?? '')
     );
-    const next = { ...data, programItems: updated };
+    const next = { ...data, activities: updated };
     setData(next);
     onSummaryChanged(date, {
-      golfCount: updated.filter((p) => p.type === 'golf').length,
-      eventCount: updated.filter((p) => p.type === 'event').length,
+      golfCount: updated.length,
     });
   }
 
@@ -142,17 +133,9 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
                 size="sm"
                 variant="outline"
                 className="h-7 text-xs"
-                onClick={() => { setEntryType('golf'); setEntryModalOpen(true); }}
+                onClick={() => setEntryModalOpen(true)}
               >
                 <Plus className="h-3 w-3 mr-1" /> {t('golf')}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-7 text-xs"
-                onClick={() => { setEntryType('event'); setEntryModalOpen(true); }}
-              >
-                <Plus className="h-3 w-3 mr-1" /> {t('event')}
               </Button>
               <Button
                 size="sm"
@@ -166,24 +149,14 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
 
             <Separator />
 
-            {/* Golf & Events */}
+            {/* Activities */}
             <SidebarSection
               title={t('golfEvents')}
-              empty={data.programItems.length === 0}
+              empty={data.activities.length === 0}
               emptyLabel={t('none')}
             >
-              {data.programItems.map((item) => (
+              {data.activities.map((item) => (
                 <div key={item.id} className="flex items-baseline gap-2">
-                  <Badge
-                    variant="secondary"
-                    className={
-                      item.type === 'golf'
-                        ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-[10px] px-1 py-0'
-                        : 'bg-blue-500/15 text-blue-700 dark:text-blue-400 text-[10px] px-1 py-0'
-                    }
-                  >
-                    {item.type === 'golf' ? 'G' : 'E'}
-                  </Badge>
                   <span className="text-sm truncate flex-1">{item.title}</span>
                   {item.start_time && (
                     <span className="text-xs text-muted-foreground shrink-0">
@@ -212,24 +185,6 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
               ))}
             </SidebarSection>
 
-            {/* Hotel Bookings */}
-            <SidebarSection
-              title={t('hotelBookings')}
-              empty={data.hotelBookings.length === 0}
-              emptyLabel={t('none')}
-            >
-              {data.hotelBookings.map((booking) => (
-                <div key={booking.id} className="space-y-0.5">
-                  <p className="text-sm">{booking.guest_name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {format(parseISO(booking.check_in), 'd MMM')} →{' '}
-                    {format(parseISO(booking.check_out), 'd MMM')} ·{' '}
-                    {booking.guest_count} guests
-                  </p>
-                </div>
-              ))}
-            </SidebarSection>
-
             <Separator />
 
             <Button asChild size="sm" className="w-full" variant="outline">
@@ -241,7 +196,6 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
         )}
       </div>
 
-      {/* Modals mounted outside the sidebar card */}
       {data && (
         <>
           <AddEntryModal
@@ -249,7 +203,6 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
             onClose={() => setEntryModalOpen(false)}
             date={date}
             dayId={data.dayId}
-            type={entryType}
             pocs={data.pocs}
             venueTypes={data.venueTypes}
             editItem={null}
@@ -259,8 +212,6 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
             isOpen={reservationModalOpen}
             onClose={() => setReservationModalOpen(false)}
             dayId={data.dayId}
-            hotelBookings={data.hotelBookings}
-            programItems={data.programItems}
             editItem={null}
             onSuccess={handleReservationSaved}
           />

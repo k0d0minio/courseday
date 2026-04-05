@@ -1,18 +1,15 @@
 import { z } from 'zod';
 
-export const programItemSchema = z.object({
+export const activitySchema = z.object({
   title: z.string().min(1, 'Title is required'),
-  type: z.enum(['golf', 'event']),
   dayId: z.string().uuid('Day ID is required'),
   description: z.string().optional(),
   startTime: z.string().optional(),
   endTime: z.string().optional(),
-  guestCount: z.number().int().min(0).optional(),
-  capacity: z.number().int().min(0).optional(),
+  expectedCovers: z.number().int().min(0).optional(),
   venueTypeId: z.string().uuid().optional().nullable(),
   pocId: z.string().uuid().optional().nullable(),
-  tableBreakdown: z.array(z.number().int().min(1)).optional().nullable(),
-  isTourOperator: z.boolean().optional(),
+  tagIds: z.array(z.string().uuid()).optional(),
   notes: z.string().optional(),
   isRecurring: z.boolean().optional(),
   recurrenceFrequency: z
@@ -21,4 +18,4 @@ export const programItemSchema = z.object({
     .nullable(),
 });
 
-export type ProgramItemFormData = z.infer<typeof programItemSchema>;
+export type ActivityFormData = z.infer<typeof activitySchema>;

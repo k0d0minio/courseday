@@ -4,8 +4,7 @@ import { useState, useTransition } from 'react';
 import { Pencil, Trash2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { deleteProgramItem, deleteRecurrenceGroup } from '@/app/actions/program-items';
-import type { ProgramItemWithRelations } from '@/types/index';
-import { Badge } from '@/components/ui/badge';
+import type { ActivityWithRelations } from '@/types/index';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -20,9 +19,9 @@ import {
 } from '@/components/ui/alert-dialog';
 
 type Props = {
-  item: ProgramItemWithRelations;
+  item: ActivityWithRelations;
   isEditor: boolean;
-  onEdit: (item: ProgramItemWithRelations) => void;
+  onEdit: (item: ActivityWithRelations) => void;
   onDeleted: (id: string, mode: 'single' | 'all') => void;
 };
 
@@ -56,20 +55,26 @@ export function EntryCard({ item, isEditor, onEdit, onDeleted }: Props) {
           <div className="flex items-start justify-between gap-3">
             {/* Left: details */}
             <div className="flex-1 min-w-0 space-y-1.5">
-              {/* Badges row */}
-              <div className="flex flex-wrap items-center gap-1.5">
-                <TypeBadge type={item.type} />
-                {item.is_tour_operator && (
-                  <Badge variant="outline" className="text-amber-600 border-amber-300">
-                    Tour operator
-                  </Badge>
-                )}
-                {isRecurring && (
-                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                    <RefreshCw className="h-3 w-3" /> Recurring
-                  </span>
-                )}
-              </div>
+              {/* Recurring indicator */}
+              {isRecurring && (
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                  <RefreshCw className="h-3 w-3" /> Recurring
+                </span>
+              )}
+
+              {/* Tags */}
+              {item.tags && item.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {item.tags.map((tag) => (
+                    <span
+                      key={tag.id}
+                      className="inline-block text-xs bg-muted px-1.5 py-0.5 rounded"
+                    >
+                      {tag.name}
+                    </span>
+                  ))}
+                </div>
+              )}
 
               {/* Title */}
               <p className="font-medium leading-snug truncate">{item.title}</p>
@@ -81,10 +86,10 @@ export function EntryCard({ item, isEditor, onEdit, onDeleted }: Props) {
                 </p>
               )}
 
-              {/* Guest count / capacity */}
-              {(item.guest_count != null || item.capacity != null) && (
+              {/* Expected covers */}
+              {item.expected_covers != null && (
                 <p className="text-sm text-muted-foreground">
-                  {formatGuests(item.guest_count, item.capacity)}
+                  {item.expected_covers} covers
                 </p>
               )}
 
@@ -99,13 +104,6 @@ export function EntryCard({ item, isEditor, onEdit, onDeleted }: Props) {
               {item.point_of_contact && (
                 <p className="text-sm text-muted-foreground">
                   {item.point_of_contact.name}
-                </p>
-              )}
-
-              {/* Table breakdown */}
-              {item.table_breakdown && item.table_breakdown.length > 0 && (
-                <p className="text-sm text-muted-foreground">
-                  {formatTableBreakdown(item.table_breakdown)}
                 </p>
               )}
 
@@ -180,41 +178,9 @@ export function EntryCard({ item, isEditor, onEdit, onDeleted }: Props) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Sub-components / helpers
-// ---------------------------------------------------------------------------
-
-function TypeBadge({ type }: { type: 'golf' | 'event' }) {
-  if (type === 'golf') {
-    return (
-      <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100">
-        Golf
-      </Badge>
-    );
-  }
-  return (
-    <Badge className="bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-100">
-      Event
-    </Badge>
-  );
-}
-
 function formatTimeRange(start: string | null, end: string | null): string {
   if (start && end) return `${start} – ${end}`;
   if (start) return `From ${start}`;
   if (end) return `Until ${end}`;
   return '';
-}
-
-function formatGuests(count: number | null, capacity: number | null): string {
-  if (count != null && capacity != null) return `${count} / ${capacity} guests`;
-  if (count != null) return `${count} guests`;
-  if (capacity != null) return `Capacity: ${capacity}`;
-  return '';
-}
-
-function formatTableBreakdown(breakdown: number[]): string {
-  return breakdown
-    .map((seats, i) => `Table ${i + 1} (${seats})`)
-    .join(' | ');
 }

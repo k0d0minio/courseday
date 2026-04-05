@@ -9,16 +9,12 @@ import { AddEntryModal } from '@/components/add-entry-modal';
 import { EntryCard } from '@/components/entry-card';
 import { AddReservationModal } from '@/components/add-reservation-modal';
 import { ReservationCard } from '@/components/reservation-card';
-import { HotelBookingCard } from '@/components/hotel-booking-card';
-import { AddHotelBookingDrawer } from '@/components/add-hotel-booking-drawer';
 import { AddBreakfastModal } from '@/components/add-breakfast-modal';
 import { Button } from '@/components/ui/button';
 import type {
-  ProgramItem,
-  ProgramItemWithRelations,
+  Activity,
+  ActivityWithRelations,
   Reservation,
-  ReservationWithRelations,
-  HotelBooking,
   BreakfastConfiguration,
 } from '@/types/index';
 import type { DayViewProps } from './page';
@@ -27,9 +23,8 @@ export function DayViewClient({
   date,
   dayId,
   today,
-  programItems: initialProgramItems,
+  activities: initialActivities,
   reservations: initialReservations,
-  hotelBookings: initialHotelBookings,
   breakfastConfigs: initialBreakfastConfigs,
   pocs,
   venueTypes,
@@ -37,57 +32,47 @@ export function DayViewClient({
 }: DayViewProps) {
   const t = useTranslations('Tenant.day');
 
-  const [programItems, setProgramItems] = useState(
-    initialProgramItems as ProgramItemWithRelations[]
+  const [activities, setActivities] = useState(
+    initialActivities as ActivityWithRelations[]
   );
-  const [reservations, setReservations] = useState(
-    initialReservations as ReservationWithRelations[]
-  );
-  const [hotelBookings, setHotelBookings] = useState<HotelBooking[]>(initialHotelBookings);
+  const [reservations, setReservations] = useState<Reservation[]>(initialReservations);
   const [breakfastConfigs, setBreakfastConfigs] = useState<BreakfastConfiguration[]>(
     initialBreakfastConfigs
   );
 
   // Entry modal state
   const [entryModalOpen, setEntryModalOpen] = useState(false);
-  const [entryType, setEntryType] = useState<'golf' | 'event'>('golf');
-  const [editEntry, setEditEntry] = useState<ProgramItemWithRelations | null>(null);
+  const [editEntry, setEditEntry] = useState<ActivityWithRelations | null>(null);
 
   // Reservation modal state
   const [reservationModalOpen, setReservationModalOpen] = useState(false);
-  const [editReservation, setEditReservation] = useState<ReservationWithRelations | null>(null);
-
-  // Hotel booking drawer state
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [editBooking, setEditBooking] = useState<HotelBooking | null>(null);
+  const [editReservation, setEditReservation] = useState<Reservation | null>(null);
 
   // Breakfast modal state
   const [breakfastModalOpen, setBreakfastModalOpen] = useState(false);
   const [editBreakfast, setEditBreakfast] = useState<BreakfastConfiguration | null>(null);
 
-  // ---------- Entry handlers ----------
+  // ---------- Activity handlers ----------
 
-  function openAddEntry(type: 'golf' | 'event') {
-    setEntryType(type);
+  function openAddEntry() {
     setEditEntry(null);
     setEntryModalOpen(true);
   }
 
-  function openEditEntry(item: ProgramItemWithRelations) {
-    setEntryType(item.type);
+  function openEditEntry(item: ActivityWithRelations) {
     setEditEntry(item);
     setEntryModalOpen(true);
   }
 
-  function handleEntrySaved(item: ProgramItem) {
-    setProgramItems((prev) => {
+  function handleEntrySaved(item: Activity) {
+    setActivities((prev) => {
       const idx = prev.findIndex((p) => p.id === item.id);
       if (idx >= 0) {
         const next = [...prev];
-        next[idx] = item as ProgramItemWithRelations;
+        next[idx] = item as ActivityWithRelations;
         return next;
       }
-      return [...prev, item as ProgramItemWithRelations].sort((a, b) =>
+      return [...prev, item as ActivityWithRelations].sort((a, b) =>
         (a.start_time ?? '').localeCompare(b.start_time ?? '')
       );
     });
@@ -95,14 +80,14 @@ export function DayViewClient({
 
   function handleEntryDeleted(id: string, mode: 'single' | 'all') {
     if (mode === 'all') {
-      const groupId = programItems.find((p) => p.id === id)?.recurrence_group_id;
-      setProgramItems((prev) =>
+      const groupId = activities.find((p) => p.id === id)?.recurrence_group_id;
+      setActivities((prev) =>
         groupId
           ? prev.filter((p) => p.recurrence_group_id !== groupId)
           : prev.filter((p) => p.id !== id)
       );
     } else {
-      setProgramItems((prev) => prev.filter((p) => p.id !== id));
+      setActivities((prev) => prev.filter((p) => p.id !== id));
     }
   }
 
@@ -113,7 +98,7 @@ export function DayViewClient({
     setReservationModalOpen(true);
   }
 
-  function openEditReservation(item: ReservationWithRelations) {
+  function openEditReservation(item: Reservation) {
     setEditReservation(item);
     setReservationModalOpen(true);
   }
@@ -123,10 +108,10 @@ export function DayViewClient({
       const idx = prev.findIndex((r) => r.id === item.id);
       if (idx >= 0) {
         const next = [...prev];
-        next[idx] = item as ReservationWithRelations;
+        next[idx] = item;
         return next;
       }
-      return [...prev, item as ReservationWithRelations].sort((a, b) =>
+      return [...prev, item].sort((a, b) =>
         (a.start_time ?? '').localeCompare(b.start_time ?? '')
       );
     });
@@ -134,44 +119,6 @@ export function DayViewClient({
 
   function handleReservationDeleted(id: string) {
     setReservations((prev) => prev.filter((r) => r.id !== id));
-  }
-
-  // ---------- Hotel booking handlers ----------
-
-  function openAddBooking() {
-    setEditBooking(null);
-    setDrawerOpen(true);
-  }
-
-  function openEditBooking(item: HotelBooking) {
-    setEditBooking(item);
-    setDrawerOpen(true);
-  }
-
-  function handleBookingSaved(booking: HotelBooking, configs: BreakfastConfiguration[]) {
-    // Update hotel bookings list
-    setHotelBookings((prev) => {
-      const idx = prev.findIndex((b) => b.id === booking.id);
-      if (idx >= 0) {
-        const next = [...prev];
-        next[idx] = booking;
-        return next;
-      }
-      return [...prev, booking].sort((a, b) => a.guest_name.localeCompare(b.guest_name));
-    });
-
-    // Update breakfast configs for the current date from the returned configs
-    const configsForDate = configs.filter((c) => c.breakfast_date === date);
-    setBreakfastConfigs((prev) => {
-      // Remove old configs for this booking, then add updated ones for today
-      const withoutBooking = prev.filter((c) => c.hotel_booking_id !== booking.id);
-      return [...withoutBooking, ...configsForDate];
-    });
-  }
-
-  function handleBookingDeleted(id: string) {
-    setHotelBookings((prev) => prev.filter((b) => b.id !== id));
-    setBreakfastConfigs((prev) => prev.filter((c) => c.hotel_booking_id !== id));
   }
 
   // ---------- Breakfast handlers ----------
@@ -198,32 +145,26 @@ export function DayViewClient({
       <DayNav date={date} today={today} />
 
       <DaySummaryCard
-        programItems={programItems}
+        activities={activities}
         reservations={reservations}
-        hotelBookings={hotelBookings}
         breakfastConfigs={breakfastConfigs}
       />
 
-      {/* Golf & Events */}
+      {/* Activities */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold">{t('golfEvents')}</h2>
           {authState.isEditor && (
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => openAddEntry('event')}>
-                <Plus className="w-4 h-4 mr-1" /> {t('addEvent')}
-              </Button>
-              <Button size="sm" onClick={() => openAddEntry('golf')}>
-                <Plus className="w-4 h-4 mr-1" /> {t('addGolf')}
-              </Button>
-            </div>
+            <Button size="sm" onClick={openAddEntry}>
+              <Plus className="w-4 h-4 mr-1" /> {t('addEvent')}
+            </Button>
           )}
         </div>
-        {programItems.length === 0 ? (
+        {activities.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t('noEntries')}</p>
         ) : (
           <div className="space-y-2">
-            {programItems.map((item) => (
+            {activities.map((item) => (
               <EntryCard
                 key={item.id}
                 item={item}
@@ -236,7 +177,7 @@ export function DayViewClient({
         )}
       </section>
 
-      {/* Tee Time Reservations */}
+      {/* Reservations */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold">{t('teeTimeReservations')}</h2>
@@ -263,46 +204,11 @@ export function DayViewClient({
         )}
       </section>
 
-      {/* Hotel Bookings — editor-only */}
-      {authState.isEditor && (
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold">{t('hotelBookings')}</h2>
-            <Button size="sm" onClick={openAddBooking}>
-              <Plus className="w-4 h-4 mr-1" /> {t('addBooking')}
-            </Button>
-          </div>
-          {hotelBookings.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t('noBookings')}</p>
-          ) : (
-            <div className="space-y-2">
-              {hotelBookings.map((booking) => {
-                const bfConfig = breakfastConfigs.find(
-                  (c) => c.hotel_booking_id === booking.id
-                ) ?? null;
-                return (
-                  <HotelBookingCard
-                    key={booking.id}
-                    item={booking}
-                    breakfastConfig={bfConfig}
-                    isEditor={authState.isEditor}
-                    onEdit={openEditBooking}
-                    onDeleted={handleBookingDeleted}
-                    onEditBreakfast={openEditBreakfast}
-                  />
-                );
-              })}
-            </div>
-          )}
-        </section>
-      )}
-
       <AddEntryModal
         isOpen={entryModalOpen}
         onClose={() => setEntryModalOpen(false)}
         date={date}
         dayId={dayId}
-        type={entryType}
         pocs={pocs}
         venueTypes={venueTypes}
         editItem={editEntry}
@@ -313,18 +219,8 @@ export function DayViewClient({
         isOpen={reservationModalOpen}
         onClose={() => setReservationModalOpen(false)}
         dayId={dayId}
-        hotelBookings={hotelBookings}
-        programItems={programItems}
         editItem={editReservation}
         onSuccess={handleReservationSaved}
-      />
-
-      <AddHotelBookingDrawer
-        isOpen={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        date={date}
-        editItem={editBooking}
-        onSuccess={handleBookingSaved}
       />
 
       {editBreakfast && (

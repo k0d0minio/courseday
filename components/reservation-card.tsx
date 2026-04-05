@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { deleteReservation } from '@/app/actions/reservations';
-import type { ReservationWithRelations } from '@/types/index';
+import type { Reservation } from '@/types/index';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -19,9 +19,9 @@ import {
 } from '@/components/ui/alert-dialog';
 
 type Props = {
-  item: ReservationWithRelations;
+  item: Reservation;
   isEditor: boolean;
-  onEdit: (item: ReservationWithRelations) => void;
+  onEdit: (item: Reservation) => void;
   onDeleted: (id: string) => void;
 };
 
@@ -41,11 +41,6 @@ export function ReservationCard({ item, isEditor, onEdit, onDeleted }: Props) {
       onDeleted(item.id);
     });
   }
-
-  const linkedTable =
-    item.program_item?.table_breakdown && item.table_index != null
-      ? `Table ${item.table_index + 1} (${item.program_item.table_breakdown[item.table_index]} places)`
-      : null;
 
   return (
     <>
@@ -69,27 +64,6 @@ export function ReservationCard({ item, isEditor, onEdit, onDeleted }: Props) {
               {(item.start_time || item.end_time) && (
                 <p className="text-sm text-muted-foreground">
                   {formatTimeRange(item.start_time, item.end_time)}
-                </p>
-              )}
-
-              {/* Contact */}
-              {(item.guest_email || item.guest_phone) && (
-                <p className="text-sm text-muted-foreground">
-                  {[item.guest_email, item.guest_phone].filter(Boolean).join(' · ')}
-                </p>
-              )}
-
-              {/* Linked hotel booking */}
-              {item.hotel_booking && (
-                <p className="text-sm text-muted-foreground">
-                  Hotel: {item.hotel_booking.guest_name}
-                </p>
-              )}
-
-              {/* Linked table */}
-              {linkedTable && (
-                <p className="text-sm text-muted-foreground">
-                  {linkedTable}
                 </p>
               )}
 

@@ -39,6 +39,240 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity: {
+        Row: {
+          created_at: string
+          day_id: string
+          description: string | null
+          end_time: string | null
+          expected_covers: number | null
+          id: string
+          is_recurring: boolean
+          notes: string | null
+          poc_id: string | null
+          recurrence_frequency: string | null
+          recurrence_group_id: string | null
+          start_time: string | null
+          tenant_id: string
+          title: string
+          updated_at: string
+          venue_type_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          day_id: string
+          description?: string | null
+          end_time?: string | null
+          expected_covers?: number | null
+          id?: string
+          is_recurring?: boolean
+          notes?: string | null
+          poc_id?: string | null
+          recurrence_frequency?: string | null
+          recurrence_group_id?: string | null
+          start_time?: string | null
+          tenant_id: string
+          title: string
+          updated_at?: string
+          venue_type_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          day_id?: string
+          description?: string | null
+          end_time?: string | null
+          expected_covers?: number | null
+          id?: string
+          is_recurring?: boolean
+          notes?: string | null
+          poc_id?: string | null
+          recurrence_frequency?: string | null
+          recurrence_group_id?: string | null
+          start_time?: string | null
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+          venue_type_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "program_item_day_id_fkey"
+            columns: ["day_id"]
+            isOneToOne: false
+            referencedRelation: "day"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "program_item_poc_id_fkey"
+            columns: ["poc_id"]
+            isOneToOne: false
+            referencedRelation: "point_of_contact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "program_item_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "program_item_venue_type_id_fkey"
+            columns: ["venue_type_id"]
+            isOneToOne: false
+            referencedRelation: "venue_type"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      activity_tag: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_tag_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      activity_tag_assignment: {
+        Row: {
+          activity_id: string
+          tag_id: string
+        }
+        Insert: {
+          activity_id: string
+          tag_id: string
+        }
+        Update: {
+          activity_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_tag_assignment_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activity"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_tag_assignment_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "activity_tag"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      breakfast_configuration: {
+        Row: {
+          breakfast_date: string
+          created_at: string
+          day_id: string
+          group_name: string | null
+          id: string
+          notes: string | null
+          start_time: string | null
+          table_breakdown: Json | null
+          tenant_id: string
+          total_guests: number
+          updated_at: string
+        }
+        Insert: {
+          breakfast_date: string
+          created_at?: string
+          day_id: string
+          group_name?: string | null
+          id?: string
+          notes?: string | null
+          start_time?: string | null
+          table_breakdown?: Json | null
+          tenant_id: string
+          total_guests?: number
+          updated_at?: string
+        }
+        Update: {
+          breakfast_date?: string
+          created_at?: string
+          day_id?: string
+          group_name?: string | null
+          id?: string
+          notes?: string | null
+          start_time?: string | null
+          table_breakdown?: Json | null
+          tenant_id?: string
+          total_guests?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "breakfast_configuration_day_id_fkey"
+            columns: ["day_id"]
+            isOneToOne: false
+            referencedRelation: "day"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "breakfast_configuration_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      day: {
+        Row: {
+          created_at: string
+          date_iso: string
+          id: string
+          tenant_id: string
+          weekday: string
+        }
+        Insert: {
+          created_at?: string
+          date_iso: string
+          id?: string
+          tenant_id: string
+          weekday: string
+        }
+        Update: {
+          created_at?: string
+          date_iso?: string
+          id?: string
+          tenant_id?: string
+          weekday?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "day_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memberships: {
         Row: {
           created_at: string
@@ -109,10 +343,69 @@ export type Database = {
           },
         ]
       }
-      tenants: {
+      reservation: {
         Row: {
           created_at: string
+          day_id: string
+          end_time: string | null
+          guest_count: number | null
+          guest_name: string | null
           id: string
+          notes: string | null
+          start_time: string | null
+          table_breakdown: Json | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_id: string
+          end_time?: string | null
+          guest_count?: number | null
+          guest_name?: string | null
+          id?: string
+          notes?: string | null
+          start_time?: string | null
+          table_breakdown?: Json | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_id?: string
+          end_time?: string | null
+          guest_count?: number | null
+          guest_name?: string | null
+          id?: string
+          notes?: string | null
+          start_time?: string | null
+          table_breakdown?: Json | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservation_day_id_fkey"
+            columns: ["day_id"]
+            isOneToOne: false
+            referencedRelation: "day"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservation_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenants: {
+        Row: {
+          accent_color: string | null
+          created_at: string
+          id: string
+          language: string
           logo_url: string | null
           name: string
           slug: string
@@ -120,8 +413,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          accent_color?: string | null
           created_at?: string
           id?: string
+          language?: string
           logo_url?: string | null
           name: string
           slug: string
@@ -129,8 +424,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          accent_color?: string | null
           created_at?: string
           id?: string
+          language?: string
           logo_url?: string | null
           name?: string
           slug?: string

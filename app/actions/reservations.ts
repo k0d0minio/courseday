@@ -28,15 +28,10 @@ export async function createReservation(
       tenant_id: tenantId,
       day_id: d.dayId,
       guest_name: d.guestName || null,
-      guest_email: d.guestEmail || null,
-      guest_phone: d.guestPhone || null,
       guest_count: d.guestCount ?? null,
       start_time: d.startTime || null,
       end_time: d.endTime || null,
       notes: d.notes || null,
-      hotel_booking_id: d.hotelBookingId ?? null,
-      program_item_id: d.programItemId ?? null,
-      table_index: d.tableIndex ?? null,
     })
     .select()
     .single();
@@ -64,15 +59,10 @@ export async function updateReservation(
     .from('reservation')
     .update({
       guest_name: d.guestName || null,
-      guest_email: d.guestEmail || null,
-      guest_phone: d.guestPhone || null,
       guest_count: d.guestCount ?? null,
       start_time: d.startTime || null,
       end_time: d.endTime || null,
       notes: d.notes || null,
-      hotel_booking_id: d.hotelBookingId ?? null,
-      program_item_id: d.programItemId ?? null,
-      table_index: d.tableIndex ?? null,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
@@ -109,11 +99,11 @@ export async function getReservationsForDay(
   const { supabase } = await createTenantClient();
   const { data, error } = await supabase
     .from('reservation')
-    .select('*, hotel_booking(*), program_item(*)')
+    .select('*')
     .eq('tenant_id', tenantId)
     .eq('day_id', dayId)
     .order('start_time', { nullsFirst: true });
 
   if (error) return { success: false, error: error.message };
-  return { success: true, data: data as unknown as Reservation[] };
+  return { success: true, data: data as Reservation[] };
 }

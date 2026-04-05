@@ -1,23 +1,9 @@
-import type {
-  ProgramItem,
-  Reservation,
-  HotelBooking,
-  VenueType,
-  PointOfContact,
-} from './index';
+import type { ActivityWithRelations, Reservation } from './index';
 
-export type ProgramItemWithRelations = ProgramItem & {
-  venue_type: VenueType | null;
-  point_of_contact: PointOfContact | null;
-};
+export type { ActivityWithRelations };
 
-export type ReservationWithRelations = Reservation & {
-  hotel_booking: HotelBooking | null;
-  program_item: ProgramItem | null;
-};
+export type DayEntry = ActivityWithRelations | Reservation;
 
-export type DayEntry = ProgramItemWithRelations | ReservationWithRelations;
-
-export function isProgramItem(entry: DayEntry): entry is ProgramItemWithRelations {
+export function isActivity(entry: DayEntry): entry is ActivityWithRelations {
   return 'title' in entry;
 }

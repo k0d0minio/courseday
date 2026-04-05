@@ -30,7 +30,11 @@ export function AddBreakfastModal({ isOpen, onClose, editItem, onSuccess }: Prop
 
   useEffect(() => {
     if (!isOpen) return;
-    setTableBreakdown(editItem.table_breakdown ? editItem.table_breakdown.join('+') : '');
+    setTableBreakdown(
+      Array.isArray(editItem.table_breakdown)
+        ? (editItem.table_breakdown as number[]).join('+')
+        : ''
+    );
     setStartTime(editItem.start_time ?? '');
     setNotes(editItem.notes ?? '');
   }, [isOpen, editItem]);
