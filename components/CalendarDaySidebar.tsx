@@ -124,7 +124,7 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
   const formattedDate = format(parseISO(date), 'EEEE d MMMM');
 
   return (
-    <aside className="w-72 shrink-0">
+    <aside className="w-72 shrink-0" aria-label={formattedDate}>
       <div className="sticky top-6 space-y-4 rounded-lg border bg-card p-4">
         {/* Header */}
         <div className="flex items-start justify-between gap-2">
@@ -132,8 +132,8 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
             <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('selectedDay')}</p>
             <p className="font-semibold">{formattedDate}</p>
           </div>
-          <Button variant="ghost" size="icon" className="-mr-1 -mt-1 h-7 w-7" onClick={onClose}>
-            <X className="h-4 w-4" />
+          <Button variant="ghost" size="icon" className="-mr-1 -mt-1 h-7 w-7" onClick={onClose} aria-label={t('close')}>
+            <X className="h-4 w-4" aria-hidden="true" />
           </Button>
         </div>
 

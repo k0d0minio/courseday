@@ -22,18 +22,19 @@ export function MobileNav({ today, isEditor }: MobileNavProps) {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background sm:hidden">
+    <nav aria-label="Main navigation" className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background sm:hidden">
       <div className="flex h-16">
         {items.map(({ href, label, icon: Icon, active }) => (
           <Link
             key={href}
             href={href}
+            aria-current={active ? 'page' : undefined}
             className={cn(
               'flex flex-1 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors',
               active ? 'text-foreground' : 'text-muted-foreground'
             )}
           >
-            <Icon className={cn('h-5 w-5', active && 'stroke-[2.5]')} />
+            <Icon className={cn('h-5 w-5', active && 'stroke-[2.5]')} aria-hidden="true" />
             {label}
           </Link>
         ))}

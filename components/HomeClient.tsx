@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { format, getDay, addMonths, subMonths } from 'date-fns';
+import { format, getDay, addMonths, subMonths, parseISO } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -99,12 +99,13 @@ export function HomeClient({ month, today, days: initialDays }: Props) {
         )}
         <div className="flex items-center gap-2">
           {/* View toggle */}
-          <div className="flex rounded-md border overflow-hidden">
+          <div className="flex rounded-md border overflow-hidden" role="group" aria-label="View mode">
             <Button
               variant={viewMode === 'calendar' ? 'secondary' : 'ghost'}
               size="sm"
               className="rounded-none border-0 h-8 px-3"
               onClick={() => changeViewMode('calendar')}
+              aria-pressed={viewMode === 'calendar'}
             >
               {t('calendar')}
             </Button>
@@ -113,6 +114,7 @@ export function HomeClient({ month, today, days: initialDays }: Props) {
               size="sm"
               className="rounded-none border-0 border-l h-8 px-3"
               onClick={() => changeViewMode('agenda')}
+              aria-pressed={viewMode === 'agenda'}
             >
               {t('agenda')}
             </Button>
@@ -162,10 +164,11 @@ export function HomeClient({ month, today, days: initialDays }: Props) {
         {/* Calendar grid */}
         <div className="flex-1 min-w-0">
           {/* Day-of-week header */}
-          <div className="grid grid-cols-7 mb-1">
+          <div className="grid grid-cols-7 mb-1" role="row">
             {DOW_KEYS.map((key) => (
               <div
                 key={key}
+                role="columnheader"
                 className="text-center text-xs font-medium text-muted-foreground py-1"
               >
                 {t(key)}
@@ -174,7 +177,7 @@ export function HomeClient({ month, today, days: initialDays }: Props) {
           </div>
 
           {/* Day cells */}
-          <div className="grid grid-cols-7 border-l border-t">
+          <div className="grid grid-cols-7 border-l border-t" role="grid" aria-label={format(firstOfMonth, 'MMMM yyyy')}>
             {/* Leading empty cells */}
             {Array.from({ length: startPadding }).map((_, i) => (
               <div
@@ -191,10 +194,22 @@ export function HomeClient({ month, today, days: initialDays }: Props) {
               const isToday = dateStr === today;
               const isSelected = dateStr === selectedDate;
 
+              const cellLabel = [
+                format(parseISO(dateStr), 'EEEE, MMMM d'),
+                ...(summary ? [
+                  summary.golfCount > 0 ? `${summary.golfCount} activities` : '',
+                  summary.reservationCount > 0 ? `${summary.reservationCount} reservations` : '',
+                  summary.breakfastCount > 0 ? `${summary.breakfastCount} breakfast covers` : '',
+                ].filter(Boolean) : []),
+              ].join(', ');
+
               return (
                 <button
                   key={dateStr}
                   onClick={() => setSelectedDate(isSelected ? null : dateStr)}
+                  aria-pressed={isSelected}
+                  aria-current={isToday ? 'date' : undefined}
+                  aria-label={cellLabel}
                   className={cn(
                     'border-r border-b min-h-[60px] sm:min-h-[80px] p-1 sm:p-1.5 text-left transition-colors',
                     'hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',

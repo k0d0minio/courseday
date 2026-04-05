@@ -103,6 +103,12 @@ export default async function TenantLayout({
       <FeatureFlagProvider flags={featureFlags}>
       <TenantProvider tenantId={tenant.id} tenantSlug={tenant.slug}>
         <AuthProvider>
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:rounded focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:ring-2 focus:ring-ring"
+          >
+            {t('skipToContent')}
+          </a>
           <div className="min-h-screen flex flex-col" dir={dir} style={accentStyle}>
             <header className="border-b px-6 h-14 flex items-center justify-between">
               <Logo logoUrl={row?.logo_url} tenantName={row?.name} />
@@ -120,7 +126,7 @@ export default async function TenantLayout({
                 {user && <UserMenu user={user} signOutLabel={t('signOut')} />}
               </div>
             </header>
-            <main className="flex-1 pb-16 sm:pb-0">{children}</main>
+            <main id="main-content" className="flex-1 pb-16 sm:pb-0">{children}</main>
           </div>
           <MobileNav today={today} isEditor={editor} />
           <AdminIndicator />
