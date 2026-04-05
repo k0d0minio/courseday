@@ -48,16 +48,26 @@ export default async function DayPage({
   params: Promise<{ date: string }>;
 }) {
   const { date } = await params;
-  await requireTenantMember();
-  const tenant = await getTenantFromHeaders();
 
-  // Fetch tenant timezone
+  // Get tenant from headers first (fast — headers only), then run auth check
+  // and tenant DB query in parallel since they are independent.
+  const tenant = await getTenantFromHeaders();
   const supabase = await createSupabaseServerClient();
-  const { data: tenantRow } = await supabase
-    .from('tenants')
-    .select('timezone')
-    .eq('id', tenant.id)
-    .single();
+
+  const [, tenantData] = await Promise.all([
+    requireTenantMember(),
+    supabase
+      .from('tenants')
+      .select('timezone, latitude, longitude')
+      .eq('id', tenant.id)
+      .single(),
+  ]);
+
+  const tenantRow = tenantData.data as {
+    timezone?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+  } | null;
   const timezone = tenantRow?.timezone ?? 'UTC';
 
   const today = getTenantToday(timezone);
@@ -76,6 +86,17 @@ export default async function DayPage({
   if (!dayResult.success) redirect(`/day/${today}`);
   const day = dayResult.data;
 
+  // Pass coordinates from the already-fetched tenant row so getWeatherForDay
+  // can skip its own DB query (saves one round-trip inside the parallel block).
+  const weatherCoords =
+    tenantRow?.latitude && tenantRow?.longitude
+      ? {
+          latitude: tenantRow.latitude,
+          longitude: tenantRow.longitude,
+          timezone,
+        }
+      : undefined;
+
   // Load all day data in parallel
   const [
     activities,
@@ -91,7 +112,7 @@ export default async function DayPage({
     getReservationsForDay(tenant.id, day.id),
     getBreakfastConfigsForDay(tenant.id, day.id),
     getDayNotesForDay(tenant.id, day.id),
-    getWeatherForDay(date),
+    getWeatherForDay(date, weatherCoords),
     getAllPOCs(),
     getAllVenueTypes(),
     getAuthState(),
