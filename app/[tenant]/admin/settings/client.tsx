@@ -43,14 +43,16 @@ export function SettingsClient({ tenantId, currentUserId, initialAccentColor, in
       <h1 className="text-2xl font-semibold mb-6">{t('title')}</h1>
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="mb-6">
-          <TabsTrigger value="poc">{t('tabPoc')}</TabsTrigger>
-          <TabsTrigger value="venue-types">{t('tabVenueTypes')}</TabsTrigger>
-          <TabsTrigger value="activity-tags">{t('tabActivityTags')}</TabsTrigger>
-          <TabsTrigger value="branding">{t('tabBranding')}</TabsTrigger>
-          <TabsTrigger value="language">{t('tabLanguage')}</TabsTrigger>
-          <TabsTrigger value="members">{t('tabMembers')}</TabsTrigger>
-        </TabsList>
+        <div className="mb-6 overflow-x-auto -mx-6 px-6 sm:mx-0 sm:px-0">
+          <TabsList className="inline-flex w-max sm:w-auto">
+            <TabsTrigger value="poc">{t('tabPoc')}</TabsTrigger>
+            <TabsTrigger value="venue-types">{t('tabVenueTypes')}</TabsTrigger>
+            <TabsTrigger value="activity-tags">{t('tabActivityTags')}</TabsTrigger>
+            <TabsTrigger value="branding">{t('tabBranding')}</TabsTrigger>
+            <TabsTrigger value="language">{t('tabLanguage')}</TabsTrigger>
+            <TabsTrigger value="members">{t('tabMembers')}</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="poc">
           <PocManagement />

@@ -87,7 +87,7 @@ export function HomeClient({ month, today, days: initialDays }: Props) {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8">
+    <div className="max-w-5xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
       {/* Heading row */}
       <div className="flex items-center justify-between mb-6">
         {viewMode === 'calendar' ? (
@@ -136,6 +136,7 @@ export function HomeClient({ month, today, days: initialDays }: Props) {
                 disabled={isPrevDisabled}
                 onClick={() => navigate(prevMonthStr)}
                 aria-label={t('previousMonth')}
+                className="h-11 w-11 sm:h-9 sm:w-9"
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -145,6 +146,7 @@ export function HomeClient({ month, today, days: initialDays }: Props) {
                 disabled={isNextDisabled}
                 onClick={() => navigate(nextMonthStr)}
                 aria-label={t('nextMonth')}
+                className="h-11 w-11 sm:h-9 sm:w-9"
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -177,7 +179,7 @@ export function HomeClient({ month, today, days: initialDays }: Props) {
             {Array.from({ length: startPadding }).map((_, i) => (
               <div
                 key={`pad-${i}`}
-                className="border-r border-b min-h-[80px] bg-muted/20"
+                className="border-r border-b min-h-[60px] sm:min-h-[80px] bg-muted/20"
               />
             ))}
 
@@ -194,7 +196,7 @@ export function HomeClient({ month, today, days: initialDays }: Props) {
                   key={dateStr}
                   onClick={() => setSelectedDate(isSelected ? null : dateStr)}
                   className={cn(
-                    'border-r border-b min-h-[80px] p-1.5 text-left transition-colors',
+                    'border-r border-b min-h-[60px] sm:min-h-[80px] p-1 sm:p-1.5 text-left transition-colors',
                     'hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
                     isSelected && 'bg-accent',
                     !isSelected && 'bg-background'

@@ -17,6 +17,8 @@ import { PwaRegister } from '@/components/pwa-register';
 import { PwaInstallPrompt } from '@/components/pwa-install-prompt';
 import { FeatureFlagProvider } from '@/lib/feature-flags-context';
 import { getFeatureFlags } from '@/app/actions/feature-flags';
+import { MobileNav } from '@/components/mobile-nav';
+import { getTenantToday } from '@/lib/day-utils';
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -73,11 +75,12 @@ export default async function TenantLayout({
   const supabase = await createSupabaseServerClient();
   const { data: tenantRow } = await supabase
     .from('tenants')
-    .select('accent_color, logo_url, name')
+    .select('accent_color, logo_url, name, timezone')
     .eq('id', tenant.id)
     .single();
 
-  const row = tenantRow as { accent_color?: string | null; logo_url?: string | null; name?: string | null } | null;
+  const row = tenantRow as { accent_color?: string | null; logo_url?: string | null; name?: string | null; timezone?: string | null } | null;
+  const today = getTenantToday(row?.timezone ?? 'UTC');
   const accentColor = row?.accent_color;
   const accentStyle = accentColor
     ? ({ '--tenant-accent': accentColor } as React.CSSProperties)
@@ -109,8 +112,9 @@ export default async function TenantLayout({
                 {user && <UserMenu user={user} signOutLabel={t('signOut')} />}
               </div>
             </header>
-            <main className="flex-1">{children}</main>
+            <main className="flex-1 pb-16 sm:pb-0">{children}</main>
           </div>
+          <MobileNav today={today} isEditor={editor} />
           <AdminIndicator />
           <Toaster richColors closeButton />
           <PwaRegister />
