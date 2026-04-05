@@ -123,6 +123,32 @@
   }
 }
 
+/*
+ * Tenant accent color theming.
+ * The tenant layout sets --tenant-accent as an inline style on .tenant-themed
+ * when accent_color is non-null. Fallback values in :root / .dark match the
+ * current primary defaults, so unbranded tenants are visually unchanged.
+ *
+ * Light mode: accent is typically a medium-dark brand color → white foreground.
+ * Dark mode: accent default is a light value → dark foreground.
+ * For custom dark accents in dark mode, consider a future v2 with color-contrast().
+ */
+.tenant-themed {
+  --primary: var(--tenant-accent);
+  --primary-foreground: oklch(1 0 0);
+  --ring: var(--tenant-accent);
+  --sidebar-primary: var(--tenant-accent);
+  --sidebar-primary-foreground: oklch(1 0 0);
+}
+
+.dark .tenant-themed {
+  --primary: var(--tenant-accent);
+  --primary-foreground: oklch(0.141 0.005 285.823);
+  --ring: var(--tenant-accent);
+  --sidebar-primary: var(--tenant-accent);
+  --sidebar-primary-foreground: oklch(0.141 0.005 285.823);
+}
+
 .emoji-picker-container .epr-body::-webkit-scrollbar {
   width: 8px;
 }
