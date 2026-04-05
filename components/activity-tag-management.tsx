@@ -125,7 +125,11 @@ export function ActivityTagManagement() {
 
   useEffect(() => {
     getAllActivityTags().then((result) => {
-      if (result.success) setTags(result.data);
+      if (result.success) {
+        setTags(result.data);
+      } else {
+        toast.error(result.error);
+      }
       setLoading(false);
     });
   }, []);

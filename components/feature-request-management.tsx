@@ -60,7 +60,11 @@ export function FeatureRequestManagement() {
 
   useEffect(() => {
     getTenantFeatureRequests().then((result) => {
-      if (result.success) setRequests(result.data);
+      if (result.success) {
+        setRequests(result.data);
+      } else {
+        toast.error(result.error);
+      }
       setLoading(false);
     });
   }, []);

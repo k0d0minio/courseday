@@ -380,7 +380,8 @@
       "deleteDescription": "« {name} » sera définitivement supprimé.",
       "delete": "Supprimer",
       "deleting": "Suppression…",
-      "deleted": "Modèle supprimé."
+      "deleted": "Modèle supprimé.",
+      "goToDayView": "Ouvrir la vue du jour"
     },
     "venueType": {
       "title": "Types de lieu",

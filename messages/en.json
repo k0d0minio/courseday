@@ -380,7 +380,8 @@
       "deleteDescription": "“{name}” will be permanently deleted.",
       "delete": "Delete",
       "deleting": "Deleting…",
-      "deleted": "Template deleted."
+      "deleted": "Template deleted.",
+      "goToDayView": "Open today's day view"
     },
     "venueType": {
       "title": "Venue Types",
