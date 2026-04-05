@@ -366,7 +366,7 @@ Activity tags are tenant-specific and configurable. They need a management UI in
 
 ## Ticket 7: Activity Form
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** completed.
 
 **Priority:** P1  
 **Scope:** New `components/activity-form.tsx`, delete `components/add-entry-modal.tsx`, update all imports  
