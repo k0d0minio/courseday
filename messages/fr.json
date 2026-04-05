@@ -239,6 +239,7 @@
       "tabBranding": "Image de marque",
       "tabLanguage": "Langue",
       "tabMembers": "Équipe",
+      "tabFeedback": "Retours",
       "languageTitle": "Langue de l'établissement",
       "languageDescription": "Cette langue sera utilisée pour tous les membres de votre établissement.",
       "languageLabel": "Langue",
@@ -292,6 +293,24 @@
       "removed": "Membre retiré.",
       "roleUpdated": "Rôle mis à jour.",
       "loading": "Chargement\u2026"
+    },
+    "featureRequests": {
+      "title": "Vos demandes",
+      "new": "Soumettre une demande",
+      "titleLabel": "Titre",
+      "titlePlaceholder": "Quelle fonctionnalité souhaitez-vous ?",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Plus de détails (optionnel)",
+      "submit": "Envoyer",
+      "submitting": "Envoi\u2026",
+      "submitted": "Demande envoyée. Merci !",
+      "noRequests": "Aucune demande pour l'instant.",
+      "loading": "Chargement\u2026",
+      "statusPending": "En attente",
+      "statusReviewing": "En cours d'examen",
+      "statusAccepted": "Acceptée",
+      "statusRejected": "Refusée",
+      "statusShipped": "Livrée"
     },
     "venueType": {
       "title": "Types de lieu",
