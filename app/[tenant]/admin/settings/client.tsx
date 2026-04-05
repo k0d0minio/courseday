@@ -1,12 +1,14 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PocManagement } from '@/components/poc-management';
 import { VenueTypeManagement } from '@/components/venue-type-management';
 import { SettingsForm } from './settings-form';
+import { LanguageSettings } from './language-settings';
 
-const TABS = ['poc', 'venue-types', 'branding'] as const;
+const TABS = ['poc', 'venue-types', 'branding', 'language'] as const;
 type Tab = (typeof TABS)[number];
 
 function isValidTab(v: string | null): v is Tab {
@@ -22,6 +24,7 @@ interface SettingsClientProps {
 export function SettingsClient({ tenantId, initialAccentColor, initialLogoUrl }: SettingsClientProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const t = useTranslations('Tenant.settings');
 
   const raw = searchParams.get('tab');
   const activeTab: Tab = isValidTab(raw) ? raw : 'poc';
@@ -34,13 +37,14 @@ export function SettingsClient({ tenantId, initialAccentColor, initialLogoUrl }:
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-8">
-      <h1 className="text-2xl font-semibold mb-6">Settings</h1>
+      <h1 className="text-2xl font-semibold mb-6">{t('title')}</h1>
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList className="mb-6">
-          <TabsTrigger value="poc">Points of Contact</TabsTrigger>
-          <TabsTrigger value="venue-types">Venue Types</TabsTrigger>
-          <TabsTrigger value="branding">Branding</TabsTrigger>
+          <TabsTrigger value="poc">{t('tabPoc')}</TabsTrigger>
+          <TabsTrigger value="venue-types">{t('tabVenueTypes')}</TabsTrigger>
+          <TabsTrigger value="branding">{t('tabBranding')}</TabsTrigger>
+          <TabsTrigger value="language">{t('tabLanguage')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="poc">
@@ -57,6 +61,10 @@ export function SettingsClient({ tenantId, initialAccentColor, initialLogoUrl }:
             initialAccentColor={initialAccentColor}
             initialLogoUrl={initialLogoUrl}
           />
+        </TabsContent>
+
+        <TabsContent value="language">
+          <LanguageSettings />
         </TabsContent>
       </Tabs>
     </div>

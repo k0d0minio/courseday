@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from 'react';
 import { format, parseISO } from 'date-fns';
 import { X, Plus, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { ensureDayExists } from '@/app/actions/days';
 import { getProgramItemsForDay } from '@/app/actions/program-items';
 import { getReservationsForDay } from '@/app/actions/reservations';
@@ -50,6 +51,7 @@ type DayData = {
 // ---------------------------------------------------------------------------
 
 export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
+  const t = useTranslations('Tenant.sidebar');
   const [data, setData] = useState<DayData | null>(null);
   const [loading, startLoading] = useTransition();
 
@@ -122,7 +124,7 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
         {/* Header */}
         <div className="flex items-start justify-between gap-2">
           <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Selected day</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('selectedDay')}</p>
             <p className="font-semibold">{formattedDate}</p>
           </div>
           <Button variant="ghost" size="icon" className="-mr-1 -mt-1 h-7 w-7" onClick={onClose}>
@@ -142,7 +144,7 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
                 className="h-7 text-xs"
                 onClick={() => { setEntryType('golf'); setEntryModalOpen(true); }}
               >
-                <Plus className="h-3 w-3 mr-1" /> Golf
+                <Plus className="h-3 w-3 mr-1" /> {t('golf')}
               </Button>
               <Button
                 size="sm"
@@ -150,7 +152,7 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
                 className="h-7 text-xs"
                 onClick={() => { setEntryType('event'); setEntryModalOpen(true); }}
               >
-                <Plus className="h-3 w-3 mr-1" /> Event
+                <Plus className="h-3 w-3 mr-1" /> {t('event')}
               </Button>
               <Button
                 size="sm"
@@ -158,7 +160,7 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
                 className="h-7 text-xs"
                 onClick={() => setReservationModalOpen(true)}
               >
-                <Plus className="h-3 w-3 mr-1" /> Reservation
+                <Plus className="h-3 w-3 mr-1" /> {t('reservation')}
               </Button>
             </div>
 
@@ -166,8 +168,9 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
 
             {/* Golf & Events */}
             <SidebarSection
-              title="Golf & Events"
+              title={t('golfEvents')}
               empty={data.programItems.length === 0}
+              emptyLabel={t('none')}
             >
               {data.programItems.map((item) => (
                 <div key={item.id} className="flex items-baseline gap-2">
@@ -193,8 +196,9 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
 
             {/* Reservations */}
             <SidebarSection
-              title="Reservations"
+              title={t('reservations')}
               empty={data.reservations.length === 0}
+              emptyLabel={t('none')}
             >
               {data.reservations.map((res) => (
                 <div key={res.id} className="flex items-baseline justify-between gap-2">
@@ -210,8 +214,9 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
 
             {/* Hotel Bookings */}
             <SidebarSection
-              title="Hotel Bookings"
+              title={t('hotelBookings')}
               empty={data.hotelBookings.length === 0}
+              emptyLabel={t('none')}
             >
               {data.hotelBookings.map((booking) => (
                 <div key={booking.id} className="space-y-0.5">
@@ -229,7 +234,7 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
 
             <Button asChild size="sm" className="w-full" variant="outline">
               <Link href={`/day/${date}`}>
-                Open day view <ArrowRight className="ml-1 h-4 w-4" />
+                {t('openDayView')} <ArrowRight className="ml-1 h-4 w-4" />
               </Link>
             </Button>
           </>
@@ -272,17 +277,19 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
 function SidebarSection({
   title,
   empty,
+  emptyLabel = 'None.',
   children,
 }: {
   title: string;
   empty: boolean;
+  emptyLabel?: string;
   children?: React.ReactNode;
 }) {
   return (
     <div className="space-y-1.5">
       <p className="text-xs font-medium text-muted-foreground">{title}</p>
       {empty ? (
-        <p className="text-xs text-muted-foreground">None.</p>
+        <p className="text-xs text-muted-foreground">{emptyLabel}</p>
       ) : (
         <div className="space-y-1.5">{children}</div>
       )}

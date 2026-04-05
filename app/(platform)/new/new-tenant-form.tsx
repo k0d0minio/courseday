@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useTranslations } from 'next-intl';
 import { createCourse } from '@/app/actions/courses';
 import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,7 @@ function toSlug(value: string) {
 }
 
 export function NewTenantForm() {
+  const t = useTranslations('Platform.new');
   const [isPending, startTransition] = useTransition();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -63,16 +65,13 @@ export function NewTenantForm() {
           </div>
           <Card>
             <CardContent className="pt-6 text-center space-y-3">
-              <p className="font-medium">Check your email</p>
+              <p className="font-medium">{t('checkEmail')}</p>
               <p className="text-sm text-muted-foreground">
-                We sent a confirmation link to <strong>{email}</strong>.
-                Click it to activate your account.
+                {t('checkEmailBodyPrefix')} <strong>{email}</strong>. {t('checkEmailBodySuffix')}
               </p>
               <p className="text-sm text-muted-foreground">
-                Then sign in at{' '}
-                <strong>
-                  {createdSlug}.{rootDomain}
-                </strong>
+                {t('checkEmailDomainPrefix')}{' '}
+                <strong>{createdSlug}.{rootDomain}</strong>
               </p>
             </CardContent>
           </Card>
@@ -91,7 +90,7 @@ export function NewTenantForm() {
         <Card>
           <CardHeader>
             <h1 className="text-xl font-semibold tracking-tight text-center">
-              Create your course
+              {t('title')}
             </h1>
           </CardHeader>
 
@@ -100,7 +99,7 @@ export function NewTenantForm() {
               {error && <p className="text-sm text-destructive">{error}</p>}
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('emailLabel')}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -112,7 +111,7 @@ export function NewTenantForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t('passwordLabel')}</Label>
                 <Input
                   id="password"
                   type="password"
@@ -125,18 +124,18 @@ export function NewTenantForm() {
 
               <div className="border-t pt-4 space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Course name</Label>
+                  <Label htmlFor="name">{t('nameLabel')}</Label>
                   <Input
                     id="name"
                     value={name}
                     onChange={(e) => handleNameChange(e.target.value)}
-                    placeholder="Pierpont Golf Club"
+                    placeholder={t('namePlaceholder')}
                     required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="slug">Subdomain</Label>
+                  <Label htmlFor="slug">{t('slugLabel')}</Label>
                   <div className="flex items-center rounded-md border bg-background focus-within:ring-1 focus-within:ring-ring overflow-hidden">
                     <input
                       id="slug"
@@ -151,7 +150,7 @@ export function NewTenantForm() {
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Lowercase letters, numbers, and hyphens only.
+                    {t('slugHint')}
                   </p>
                 </div>
               </div>
@@ -163,7 +162,7 @@ export function NewTenantForm() {
                 className="w-full"
                 disabled={isPending || !email || !password || !name.trim() || !slug}
               >
-                {isPending ? 'Creating…' : 'Create course'}
+                {isPending ? t('creating') : t('submitButton')}
               </Button>
             </CardFooter>
           </form>

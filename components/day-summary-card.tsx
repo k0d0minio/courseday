@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
 import { Card, CardContent } from '@/components/ui/card';
 import type { ProgramItem, Reservation, HotelBooking, BreakfastConfiguration } from '@/types/index';
 
@@ -9,6 +12,8 @@ type Props = {
 };
 
 export function DaySummaryCard({ programItems, reservations, hotelBookings, breakfastConfigs }: Props) {
+  const t = useTranslations('Tenant.summary');
+
   const totalHotelGuests = hotelBookings.reduce((sum, b) => sum + b.guest_count, 0);
   const totalBreakfastGuests = breakfastConfigs.reduce((sum, b) => sum + b.total_guests, 0);
   const totalProgramGuests = programItems.reduce((sum, p) => sum + (p.guest_count ?? 0), 0);
@@ -19,15 +24,15 @@ export function DaySummaryCard({ programItems, reservations, hotelBookings, brea
     <Card>
       <CardContent className="py-4">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <SummaryItem label="Hotel guests" value={totalHotelGuests} />
-          <SummaryItem label="Breakfasts" value={totalBreakfastGuests} />
-          <SummaryItem label="Golf / events" value={totalProgramGuests} />
-          <SummaryItem label="Tee time bookings" value={reservations.length} />
+          <SummaryItem label={t('hotelGuests')} value={totalHotelGuests} />
+          <SummaryItem label={t('breakfasts')} value={totalBreakfastGuests} />
+          <SummaryItem label={t('golfEvents')} value={totalProgramGuests} />
+          <SummaryItem label={t('teeTimes')} value={reservations.length} />
         </div>
 
         {breakfastConfigs.length > 0 && (
           <div className="mt-4 border-t pt-3 space-y-1">
-            <p className="text-xs font-medium text-muted-foreground mb-2">Breakfast breakdown</p>
+            <p className="text-xs font-medium text-muted-foreground mb-2">{t('breakfastBreakdown')}</p>
             {breakfastConfigs.map((bc) => (
               <div key={bc.id} className="flex justify-between text-sm">
                 <span>{bookingMap.get(bc.hotel_booking_id) ?? 'Unknown'}</span>

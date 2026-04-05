@@ -13,6 +13,7 @@ export type TenantRedisData = {
   id: string;
   name: string;
   slug: string;
+  language: string;
 };
 
 // ---------------------------------------------------------------------------
@@ -52,7 +53,7 @@ export async function createTenant(data: {
   const { data: tenant, error } = await serviceClient
     .from('tenants')
     .insert({ name: data.name, slug: data.slug })
-    .select('id, name, slug')
+    .select('id, name, slug, language')
     .single();
 
   if (error || !tenant) {
@@ -64,6 +65,7 @@ export async function createTenant(data: {
     id: tenant.id,
     name: tenant.name,
     slug: tenant.slug,
+    language: (tenant as { language?: string }).language ?? 'en',
   };
   await redis.set(`subdomain:${tenant.slug}`, JSON.stringify(redisData));
 
@@ -102,7 +104,7 @@ export async function getTenantBySlug(
   const serviceClient = createSupabaseServiceClient();
   const { data: tenant } = await serviceClient
     .from('tenants')
-    .select('id, name, slug')
+    .select('id, name, slug, language')
     .eq('slug', slug)
     .maybeSingle();
 
@@ -115,6 +117,7 @@ export async function getTenantBySlug(
     id: tenant.id,
     name: tenant.name,
     slug: tenant.slug,
+    language: (tenant as { language?: string }).language ?? 'en',
   };
   await redis.set(`subdomain:${tenant.slug}`, JSON.stringify(redisData));
 
@@ -126,7 +129,7 @@ export async function getTenantBySlug(
 // ---------------------------------------------------------------------------
 export async function updateTenant(
   id: string,
-  data: { name?: string; slug?: string; logo_url?: string | null; accent_color?: string | null; timezone?: string }
+  data: { name?: string; slug?: string; logo_url?: string | null; accent_color?: string | null; timezone?: string; language?: string }
 ): Promise<ActionResponse<TenantRedisData>> {
   const serviceClient = createSupabaseServiceClient();
 
@@ -140,7 +143,7 @@ export async function updateTenant(
   // Get current record so we can clean up Redis if slug changes
   const { data: current } = await serviceClient
     .from('tenants')
-    .select('id, name, slug')
+    .select('id, name, slug, language')
     .eq('id', id)
     .single();
 
@@ -152,7 +155,7 @@ export async function updateTenant(
     .from('tenants')
     .update({ ...data, updated_at: new Date().toISOString() })
     .eq('id', id)
-    .select('id, name, slug')
+    .select('id, name, slug, language')
     .single();
 
   if (error || !updated) {
@@ -169,6 +172,7 @@ export async function updateTenant(
     id: updated.id,
     name: updated.name,
     slug: updated.slug,
+    language: (updated as { language?: string }).language ?? 'en',
   };
   await redis.set(`subdomain:${updated.slug}`, JSON.stringify(redisData));
 

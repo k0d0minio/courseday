@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import { Toaster } from 'sonner';
 import { Settings } from 'lucide-react';
 import { Logo } from '@/components/logo';
@@ -25,12 +27,12 @@ export async function generateMetadata(): Promise<Metadata> {
       .single();
     const name = data?.name as string | undefined;
     return {
-      title: name ? `${name} · Golf Schedule` : 'Golf Schedule',
+      title: name ? `${name} · Courseday` : 'Courseday',
       manifest: '/manifest.webmanifest',
       appleWebApp: {
         capable: true,
         statusBarStyle: 'default',
-        title: name ?? 'Golf Schedule',
+        title: name ?? 'Courseday',
       },
       icons: {
         apple: '/icon.svg',
@@ -38,12 +40,12 @@ export async function generateMetadata(): Promise<Metadata> {
     };
   } catch {
     return {
-      title: 'Golf Schedule',
+      title: 'Courseday',
       manifest: '/manifest.webmanifest',
       appleWebApp: {
         capable: true,
         statusBarStyle: 'default',
-        title: 'Golf Schedule',
+        title: 'Courseday',
       },
       icons: {
         apple: '/icon.svg',
@@ -57,9 +59,11 @@ export default async function TenantLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [user, tenant] = await Promise.all([
+  const [user, tenant, locale, messages] = await Promise.all([
     getUser(),
     getTenantFromHeaders(),
+    getLocale(),
+    getMessages(),
   ]);
 
   const supabase = await createSupabaseServerClient();
@@ -75,34 +79,39 @@ export default async function TenantLayout({
     ? ({ '--tenant-accent': accentColor } as React.CSSProperties)
     : undefined;
 
-  const editor = await isEditor(tenant.id);
+  const [editor, t] = await Promise.all([
+    isEditor(tenant.id),
+    getTranslations('Tenant.nav'),
+  ]);
 
   return (
-    <TenantProvider tenantId={tenant.id} tenantSlug={tenant.slug}>
-      <AuthProvider>
-        <div className="min-h-screen flex flex-col" style={accentStyle}>
-          <header className="border-b px-6 h-14 flex items-center justify-between">
-            <Logo logoUrl={row?.logo_url} tenantName={row?.name} />
-            <div className="flex items-center gap-2">
-              {editor && (
-                <Link
-                  href="/admin/settings?tab=branding"
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label="Branding settings"
-                >
-                  <Settings className="h-4 w-4" />
-                </Link>
-              )}
-              {user && <UserMenu user={user} />}
-            </div>
-          </header>
-          <main className="flex-1">{children}</main>
-        </div>
-        <AdminIndicator />
-        <Toaster richColors closeButton />
-        <PwaRegister />
-        <PwaInstallPrompt />
-      </AuthProvider>
-    </TenantProvider>
+    <NextIntlClientProvider locale={locale} messages={messages}>
+      <TenantProvider tenantId={tenant.id} tenantSlug={tenant.slug}>
+        <AuthProvider>
+          <div className="min-h-screen flex flex-col" style={accentStyle}>
+            <header className="border-b px-6 h-14 flex items-center justify-between">
+              <Logo logoUrl={row?.logo_url} tenantName={row?.name} />
+              <div className="flex items-center gap-2">
+                {editor && (
+                  <Link
+                    href="/admin/settings?tab=branding"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label="Branding settings"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Link>
+                )}
+                {user && <UserMenu user={user} signOutLabel={t('signOut')} />}
+              </div>
+            </header>
+            <main className="flex-1">{children}</main>
+          </div>
+          <AdminIndicator />
+          <Toaster richColors closeButton />
+          <PwaRegister />
+          <PwaInstallPrompt />
+        </AuthProvider>
+      </TenantProvider>
+    </NextIntlClientProvider>
   );
 }
