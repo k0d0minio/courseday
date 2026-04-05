@@ -106,7 +106,7 @@ Migration files 00001 through 00012 exist in `supabase/migrations/`. Two files s
 
 ## Ticket 2: RLS Policy Verification & Fixes (post-migration)
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** completed.
 
 **Priority:** P1  
 **Scope:** `supabase/migrations/` (new migration file)  
