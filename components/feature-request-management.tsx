@@ -23,11 +23,11 @@ import { cn } from '@/lib/utils';
 // ---------------------------------------------------------------------------
 
 const STATUS_CLASSES: Record<FeatureRequestStatus, string> = {
-  pending: 'bg-gray-100 text-gray-700',
-  reviewing: 'bg-blue-100 text-blue-700',
-  accepted: 'bg-green-100 text-green-700',
-  rejected: 'bg-red-100 text-red-700',
-  shipped: 'bg-purple-100 text-purple-700',
+  pending: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+  reviewing: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300',
+  accepted: 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300',
+  rejected: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300',
+  shipped: 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300',
 };
 
 function StatusBadge({ status, label }: { status: FeatureRequestStatus; label: string }) {

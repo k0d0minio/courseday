@@ -23,7 +23,7 @@ export default async function AdminPage() {
   const flagsByTenant = await getFeatureFlagsByTenants(tenantList.map((t) => t.id));
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8 space-y-12">
+    <div className="min-h-screen bg-background p-4 md:p-8 space-y-12">
       <AdminDashboard tenants={tenantList} flagsByTenant={flagsByTenant} />
 
       <div>

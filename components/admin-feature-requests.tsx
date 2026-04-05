@@ -30,11 +30,11 @@ const STATUS_OPTIONS: FeatureRequestStatus[] = [
 ];
 
 const STATUS_CLASSES: Record<FeatureRequestStatus, string> = {
-  pending: 'bg-gray-100 text-gray-700',
-  reviewing: 'bg-blue-100 text-blue-700',
-  accepted: 'bg-green-100 text-green-700',
-  rejected: 'bg-red-100 text-red-700',
-  shipped: 'bg-purple-100 text-purple-700',
+  pending: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+  reviewing: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300',
+  accepted: 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300',
+  rejected: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300',
+  shipped: 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300',
 };
 
 const STATUS_LABELS: Record<FeatureRequestStatus, string> = {
@@ -132,11 +132,11 @@ export function AdminFeatureRequests({
   }, []);
 
   if (loading) {
-    return <p className="text-sm text-gray-500">Loading feature requests…</p>;
+    return <p className="text-sm text-muted-foreground">Loading feature requests…</p>;
   }
 
   if (requests.length === 0) {
-    return <p className="text-sm text-gray-500">No feature requests yet.</p>;
+    return <p className="text-sm text-muted-foreground">No feature requests yet.</p>;
   }
 
   return (

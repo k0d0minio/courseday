@@ -128,16 +128,16 @@
 }
 
 .emoji-picker-container .epr-body::-webkit-scrollbar-track {
-  background: hsl(var(--background));
+  background: var(--background);
 }
 
 .emoji-picker-container .epr-body::-webkit-scrollbar-thumb {
-  background-color: hsl(var(--muted));
+  background-color: var(--muted);
   border-radius: 20px;
 }
 
 .emoji-picker-container .epr-body::-webkit-scrollbar-thumb:hover {
-  background-color: hsl(var(--muted-foreground) / 0.5);
+  background-color: color-mix(in oklch, var(--muted-foreground) 50%, transparent);
 }
 
 .emoji-picker-container .epr-category-nav {
@@ -145,27 +145,27 @@
 }
 
 .emoji-picker-container .epr-header {
-  border-bottom: 1px solid hsl(var(--border));
+  border-bottom: 1px solid var(--border);
 }
 
 .emoji-picker-container .epr-emoji-category-label {
-  background-color: hsl(var(--background));
+  background-color: var(--background);
   font-size: 0.875rem;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   padding: 4px 8px;
 }
 
 .emoji-picker-container .epr-search {
   margin: 8px;
   border-radius: var(--radius);
-  border: 1px solid hsl(var(--input));
-  background-color: hsl(var(--background));
+  border: 1px solid var(--input);
+  background-color: var(--background);
 }
 
 .emoji-picker-container .epr-search input {
   border-radius: var(--radius);
   background-color: transparent;
-  color: hsl(var(--foreground));
+  color: var(--foreground);
 }
 
 .emoji-picker-container .epr-emoji-category-content {
@@ -185,7 +185,7 @@
 }
 
 .emoji-picker-container button.epr-emoji:hover {
-  background-color: hsl(var(--accent));
+  background-color: var(--accent);
 }
 
 .emoji-picker-container .epr-category-nav button {
@@ -198,4 +198,21 @@
 
 .emoji-picker-container .epr-category-nav button:hover {
   opacity: 0.8;
+}
+
+@media print {
+  :root {
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.141 0.005 285.823);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.141 0.005 285.823);
+    --muted: oklch(0.967 0.001 286.375);
+    --muted-foreground: oklch(0.552 0.016 285.938);
+    --border: oklch(0.92 0.004 286.32);
+  }
+
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
 }
