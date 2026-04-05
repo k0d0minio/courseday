@@ -634,7 +634,7 @@ The day view currently has sections tied to the old domain model. With all new f
 
 ## Ticket 12: Viewer Daily Dashboard
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** completed.
 
 **Priority:** P1  
 **Scope:** `app/[tenant]/day/[date]/DayViewClient.tsx`  

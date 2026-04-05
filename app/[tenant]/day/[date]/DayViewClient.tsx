@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Plus } from 'lucide-react';
 import { DayNav } from '@/components/day-nav';
 import { DaySummaryCard } from '@/components/day-summary-card';
+import { ViewerDayDashboard } from '@/components/viewer-day-dashboard';
 import { ActivityForm } from '@/components/activity-form';
 import { ActivityCard } from '@/components/activity-card';
 import { ReservationForm } from '@/components/reservation-form';
@@ -148,6 +149,19 @@ export function DayViewClient({
 
   function handleBreakfastDeleted(id: string) {
     setBreakfastConfigs((prev) => prev.filter((c) => c.id !== id));
+  }
+
+  // Viewer sees a read-only dashboard — no edit controls
+  if (!authState.isEditor) {
+    return (
+      <ViewerDayDashboard
+        date={date}
+        today={today}
+        activities={activities}
+        reservations={reservations}
+        breakfastConfigs={breakfastConfigs}
+      />
+    );
   }
 
   return (
