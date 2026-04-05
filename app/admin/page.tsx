@@ -16,7 +16,7 @@ export default async function AdminPage() {
   const serviceClient = createSupabaseServiceClient();
   const { data: tenants } = await serviceClient
     .from('tenants')
-    .select('id, name, slug, language, created_at')
+    .select('id, name, slug, language, created_at, status')
     .order('created_at', { ascending: false });
 
   const tenantList = tenants ?? [];

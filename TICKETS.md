@@ -1201,7 +1201,7 @@ Skip link, `aria-label`s, focus/aria-live, contrast, labels, keyboard calendar n
 
 ## Ticket 33: Tenant Suspension & Lifecycle Management
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** pending — set to `[x]` when done.
 
 **Priority:** P3  
 **Scope:** `supabase/migrations/`, `middleware.ts`, `app/actions/tenants.ts`, `app/admin/dashboard.tsx`  

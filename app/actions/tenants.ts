@@ -9,11 +9,14 @@ import { isValidSlug } from '@/lib/tenant-validation';
 import { getUser } from '@/app/actions/auth';
 import type { ActionResponse } from '@/types/actions';
 
+export type TenantStatus = 'active' | 'suspended' | 'archived';
+
 export type TenantRedisData = {
   id: string;
   name: string;
   slug: string;
   language: string;
+  status: TenantStatus;
 };
 
 // ---------------------------------------------------------------------------
@@ -53,7 +56,7 @@ export async function createTenant(data: {
   const { data: tenant, error } = await serviceClient
     .from('tenants')
     .insert({ name: data.name, slug: data.slug })
-    .select('id, name, slug, language')
+    .select('id, name, slug, language, status')
     .single();
 
   if (error || !tenant) {
@@ -66,6 +69,7 @@ export async function createTenant(data: {
     name: tenant.name,
     slug: tenant.slug,
     language: (tenant as { language?: string }).language ?? 'en',
+    status: ((tenant as { status?: string }).status ?? 'active') as TenantStatus,
   };
   await redis.set(`subdomain:${tenant.slug}`, JSON.stringify(redisData));
 
@@ -104,7 +108,7 @@ export async function getTenantBySlug(
   const serviceClient = createSupabaseServiceClient();
   const { data: tenant } = await serviceClient
     .from('tenants')
-    .select('id, name, slug, language')
+    .select('id, name, slug, language, status')
     .eq('slug', slug)
     .maybeSingle();
 
@@ -118,6 +122,7 @@ export async function getTenantBySlug(
     name: tenant.name,
     slug: tenant.slug,
     language: (tenant as { language?: string }).language ?? 'en',
+    status: ((tenant as { status?: string }).status ?? 'active') as TenantStatus,
   };
   await redis.set(`subdomain:${tenant.slug}`, JSON.stringify(redisData));
 
@@ -143,7 +148,7 @@ export async function updateTenant(
   // Get current record so we can clean up Redis if slug changes
   const { data: current } = await serviceClient
     .from('tenants')
-    .select('id, name, slug, language')
+    .select('id, name, slug, language, status')
     .eq('id', id)
     .single();
 
@@ -155,7 +160,7 @@ export async function updateTenant(
     .from('tenants')
     .update({ ...data, updated_at: new Date().toISOString() })
     .eq('id', id)
-    .select('id, name, slug, language')
+    .select('id, name, slug, language, status')
     .single();
 
   if (error || !updated) {
@@ -173,6 +178,7 @@ export async function updateTenant(
     name: updated.name,
     slug: updated.slug,
     language: (updated as { language?: string }).language ?? 'en',
+    status: ((updated as { status?: string }).status ?? 'active') as TenantStatus,
   };
   await redis.set(`subdomain:${updated.slug}`, JSON.stringify(redisData));
 
@@ -221,4 +227,46 @@ export async function deleteTenant(id: string): Promise<ActionResponse> {
   await redis.del(`subdomain:${tenant.slug}`);
 
   return { success: true, data: undefined };
+}
+
+// ---------------------------------------------------------------------------
+// setTenantStatus — shared helper for suspend/reactivate/archive
+// ---------------------------------------------------------------------------
+async function setTenantStatus(id: string, status: TenantStatus): Promise<ActionResponse> {
+  const serviceClient = createSupabaseServiceClient();
+
+  const { data: updated, error } = await serviceClient
+    .from('tenants')
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select('id, name, slug, language, status')
+    .single();
+
+  if (error || !updated) {
+    return { success: false, error: `Failed to update tenant status.` };
+  }
+
+  // Refresh Redis so middleware picks up the new status immediately
+  const redisData: TenantRedisData = {
+    id: updated.id,
+    name: updated.name,
+    slug: updated.slug,
+    language: (updated as { language?: string }).language ?? 'en',
+    status: ((updated as { status?: string }).status ?? 'active') as TenantStatus,
+  };
+  await redis.set(`subdomain:${updated.slug}`, JSON.stringify(redisData));
+
+  return { success: true, data: undefined };
+}
+
+export async function suspendTenant(id: string): Promise<ActionResponse> {
+  return setTenantStatus(id, 'suspended');
+}
+
+export async function reactivateTenant(id: string): Promise<ActionResponse> {
+  return setTenantStatus(id, 'active');
+}
+
+export async function archiveTenant(id: string): Promise<ActionResponse> {
+  return setTenantStatus(id, 'archived');
 }
