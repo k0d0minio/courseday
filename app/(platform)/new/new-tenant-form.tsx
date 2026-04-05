@@ -49,7 +49,7 @@ export function NewTenantForm() {
         return;
       }
       if (!result.data.requiresConfirmation) {
-        window.location.href = `${protocol}://${slug}.${rootDomain}/`;
+        window.location.href = `${protocol}://${slug}.${rootDomain}/admin/onboarding`;
       } else {
         setCreatedSlug(slug);
       }
