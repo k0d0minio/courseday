@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Plus } from 'lucide-react';
 import { DayNav } from '@/components/day-nav';
 import { DaySummaryCard } from '@/components/day-summary-card';
@@ -34,6 +35,8 @@ export function DayViewClient({
   venueTypes,
   authState,
 }: DayViewProps) {
+  const t = useTranslations('Tenant.day');
+
   const [programItems, setProgramItems] = useState(
     initialProgramItems as ProgramItemWithRelations[]
   );
@@ -204,20 +207,20 @@ export function DayViewClient({
       {/* Golf & Events */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold">Golf &amp; Events</h2>
+          <h2 className="font-semibold">{t('golfEvents')}</h2>
           {authState.isEditor && (
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={() => openAddEntry('event')}>
-                <Plus className="w-4 h-4 mr-1" /> Event
+                <Plus className="w-4 h-4 mr-1" /> {t('addEvent')}
               </Button>
               <Button size="sm" onClick={() => openAddEntry('golf')}>
-                <Plus className="w-4 h-4 mr-1" /> Golf
+                <Plus className="w-4 h-4 mr-1" /> {t('addGolf')}
               </Button>
             </div>
           )}
         </div>
         {programItems.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No entries yet.</p>
+          <p className="text-sm text-muted-foreground">{t('noEntries')}</p>
         ) : (
           <div className="space-y-2">
             {programItems.map((item) => (
@@ -236,15 +239,15 @@ export function DayViewClient({
       {/* Tee Time Reservations */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold">Tee Time Reservations</h2>
+          <h2 className="font-semibold">{t('teeTimeReservations')}</h2>
           {authState.isEditor && (
             <Button size="sm" onClick={openAddReservation}>
-              <Plus className="w-4 h-4 mr-1" /> Add reservation
+              <Plus className="w-4 h-4 mr-1" /> {t('addReservation')}
             </Button>
           )}
         </div>
         {reservations.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No reservations yet.</p>
+          <p className="text-sm text-muted-foreground">{t('noReservations')}</p>
         ) : (
           <div className="space-y-2">
             {reservations.map((item) => (
@@ -264,13 +267,13 @@ export function DayViewClient({
       {authState.isEditor && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-semibold">Hotel Bookings</h2>
+            <h2 className="font-semibold">{t('hotelBookings')}</h2>
             <Button size="sm" onClick={openAddBooking}>
-              <Plus className="w-4 h-4 mr-1" /> Add booking
+              <Plus className="w-4 h-4 mr-1" /> {t('addBooking')}
             </Button>
           </div>
           {hotelBookings.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No hotel bookings yet.</p>
+            <p className="text-sm text-muted-foreground">{t('noBookings')}</p>
           ) : (
             <div className="space-y-2">
               {hotelBookings.map((booking) => {

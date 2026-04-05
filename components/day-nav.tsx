@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { addDays, parseISO, format } from 'date-fns';
 import { ChevronLeft, ChevronRight, CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ type Props = {
 
 export function DayNav({ date, today }: Props) {
   const router = useRouter();
+  const t = useTranslations('Tenant.day');
   const [calOpen, setCalOpen] = useState(false);
 
   const currentDate = parseISO(date);
@@ -36,7 +38,7 @@ export function DayNav({ date, today }: Props) {
         size="icon"
         onClick={() => navigate(prevYmd)}
         disabled={prevYmd < today}
-        aria-label="Previous day"
+        aria-label={t('previousDay')}
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
@@ -71,14 +73,14 @@ export function DayNav({ date, today }: Props) {
         size="icon"
         onClick={() => navigate(nextYmd)}
         disabled={nextYmd > maxYmd}
-        aria-label="Next day"
+        aria-label={t('nextDay')}
       >
         <ChevronRight className="h-4 w-4" />
       </Button>
 
       {date !== today && (
         <Button variant="outline" size="sm" onClick={() => navigate(today)}>
-          Today
+          {t('today')}
         </Button>
       )}
     </div>

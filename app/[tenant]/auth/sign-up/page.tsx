@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { signUp } from '@/app/actions/auth';
 import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { Label } from '@/components/ui/label';
 
 export default function SignUpPage() {
   const [state, action, isPending] = useActionState(signUp, null);
+  const t = useTranslations('Platform.auth');
 
   if (state?.success) {
     return (
@@ -21,9 +23,9 @@ export default function SignUpPage() {
           </div>
           <Card>
             <CardContent className="pt-6 text-center space-y-2">
-              <p className="font-medium">Check your email</p>
+              <p className="font-medium">{t('checkEmail')}</p>
               <p className="text-sm text-muted-foreground">
-                We sent you a confirmation link. Click it to activate your account.
+                {t('checkEmailBody')}
               </p>
             </CardContent>
           </Card>
@@ -42,7 +44,7 @@ export default function SignUpPage() {
         <Card>
           <CardHeader>
             <h1 className="text-xl font-semibold tracking-tight text-center">
-              Create an account
+              {t('signUpTitle')}
             </h1>
           </CardHeader>
 
@@ -53,7 +55,7 @@ export default function SignUpPage() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('emailLabel')}</Label>
                 <Input
                   id="email"
                   name="email"
@@ -64,7 +66,7 @@ export default function SignUpPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t('passwordLabel')}</Label>
                 <Input
                   id="password"
                   name="password"
@@ -77,12 +79,12 @@ export default function SignUpPage() {
 
             <CardFooter className="flex flex-col gap-3 pt-2">
               <Button type="submit" className="w-full" disabled={isPending}>
-                {isPending ? 'Creating account…' : 'Create account'}
+                {isPending ? t('creatingAccount') : t('signUpButton')}
               </Button>
               <p className="text-sm text-muted-foreground text-center">
-                Already have an account?{' '}
+                {t('haveAccount')}{' '}
                 <Link href="/auth/sign-in" className="underline underline-offset-4">
-                  Sign in
+                  {t('signInLink')}
                 </Link>
               </p>
             </CardFooter>

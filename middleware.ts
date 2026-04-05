@@ -99,6 +99,7 @@ export async function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-tenant-id', tenant.id);
   requestHeaders.set('x-tenant-slug', tenant.slug);
+  requestHeaders.set('x-tenant-language', tenant.language ?? 'en');
 
   return applyAuthCookies(
     NextResponse.rewrite(

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { format, getDay, addMonths, subMonths } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { CalendarDaySidebar } from '@/components/CalendarDaySidebar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -28,8 +29,8 @@ type Props = {
   days: DaySummary[];
 };
 
-// Day-of-week header labels — Monday first
-const DOW_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+// Day-of-week header label keys — Monday first (resolved via translations)
+const DOW_KEYS = ['dowMon', 'dowTue', 'dowWed', 'dowThu', 'dowFri', 'dowSat', 'dowSun'] as const;
 
 // ---------------------------------------------------------------------------
 // Component
@@ -37,6 +38,7 @@ const DOW_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export function HomeClient({ month, today, days: initialDays }: Props) {
   const router = useRouter();
+  const t = useTranslations('Tenant.home');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [days, setDays] = useState<DaySummary[]>(initialDays);
 
@@ -84,7 +86,7 @@ export function HomeClient({ month, today, days: initialDays }: Props) {
               size="sm"
               onClick={() => navigate(todayMonth)}
             >
-              Today
+              {t('today')}
             </Button>
           )}
           <Button
@@ -92,7 +94,7 @@ export function HomeClient({ month, today, days: initialDays }: Props) {
             size="icon"
             disabled={isPrevDisabled}
             onClick={() => navigate(prevMonthStr)}
-            aria-label="Previous month"
+            aria-label={t('previousMonth')}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -101,7 +103,7 @@ export function HomeClient({ month, today, days: initialDays }: Props) {
             size="icon"
             disabled={isNextDisabled}
             onClick={() => navigate(nextMonthStr)}
-            aria-label="Next month"
+            aria-label={t('nextMonth')}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -113,12 +115,12 @@ export function HomeClient({ month, today, days: initialDays }: Props) {
         <div className="flex-1 min-w-0">
           {/* Day-of-week header */}
           <div className="grid grid-cols-7 mb-1">
-            {DOW_LABELS.map((label) => (
+            {DOW_KEYS.map((key) => (
               <div
-                key={label}
+                key={key}
                 className="text-center text-xs font-medium text-muted-foreground py-1"
               >
-                {label}
+                {t(key)}
               </div>
             ))}
           </div>
@@ -198,10 +200,10 @@ export function HomeClient({ month, today, days: initialDays }: Props) {
 
       {/* Legend */}
       <div className="mt-4 flex flex-wrap gap-3 text-xs text-muted-foreground">
-        <LegendItem color="emerald" label="Golf (G)" />
-        <LegendItem color="blue" label="Event (E)" />
-        <LegendItem color="amber" label="Reservation (R)" />
-        <LegendItem color="violet" label="Hotel guests (H)" />
+        <LegendItem color="emerald" label={t('legendGolf')} />
+        <LegendItem color="blue" label={t('legendEvent')} />
+        <LegendItem color="amber" label={t('legendReservation')} />
+        <LegendItem color="violet" label={t('legendHotel')} />
       </div>
     </div>
   );

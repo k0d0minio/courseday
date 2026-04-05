@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { platformSignIn } from '@/app/actions/auth';
 import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { Label } from '@/components/ui/label';
 
 export function SignInForm() {
   const [state, action, isPending] = useActionState(platformSignIn, null);
+  const t = useTranslations('Platform.auth');
 
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center p-4">
@@ -22,7 +24,7 @@ export function SignInForm() {
         <Card>
           <CardHeader>
             <h1 className="text-xl font-semibold tracking-tight text-center">
-              Sign in
+              {t('signInTitle')}
             </h1>
           </CardHeader>
 
@@ -33,7 +35,7 @@ export function SignInForm() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('emailLabel')}</Label>
                 <Input
                   id="email"
                   name="email"
@@ -44,7 +46,7 @@ export function SignInForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t('passwordLabel')}</Label>
                 <Input
                   id="password"
                   name="password"
@@ -57,12 +59,12 @@ export function SignInForm() {
 
             <CardFooter className="flex flex-col gap-3 pt-2">
               <Button type="submit" className="w-full" disabled={isPending}>
-                {isPending ? 'Signing in…' : 'Sign in'}
+                {isPending ? t('signingIn') : t('signInButton')}
               </Button>
               <p className="text-sm text-muted-foreground text-center">
-                Don&apos;t have a course yet?{' '}
+                {t('noAccount')}{' '}
                 <Link href="/new" className="underline underline-offset-4">
-                  Create one
+                  {t('signUpLink')}
                 </Link>
               </p>
             </CardFooter>

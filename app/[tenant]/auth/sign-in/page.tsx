@@ -3,6 +3,7 @@
 import { useActionState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { signIn } from '@/app/actions/auth';
 import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ export default function SignInPage() {
   const [state, action, isPending] = useActionState(signIn, null);
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirectTo') ?? '/';
+  const t = useTranslations('Platform.auth');
 
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center p-4">
@@ -25,7 +27,7 @@ export default function SignInPage() {
         <Card>
           <CardHeader>
             <h1 className="text-xl font-semibold tracking-tight text-center">
-              Sign in
+              {t('signInTitle')}
             </h1>
           </CardHeader>
 
@@ -37,7 +39,7 @@ export default function SignInPage() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('emailLabel')}</Label>
                 <Input
                   id="email"
                   name="email"
@@ -48,7 +50,7 @@ export default function SignInPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t('passwordLabel')}</Label>
                 <Input
                   id="password"
                   name="password"
@@ -61,12 +63,12 @@ export default function SignInPage() {
 
             <CardFooter className="flex flex-col gap-3 pt-2">
               <Button type="submit" className="w-full" disabled={isPending}>
-                {isPending ? 'Signing in…' : 'Sign in'}
+                {isPending ? t('signingIn') : t('signInButton')}
               </Button>
               <p className="text-sm text-muted-foreground text-center">
-                Don&apos;t have an account?{' '}
+                {t('noAccount')}{' '}
                 <Link href="/auth/sign-up" className="underline underline-offset-4">
-                  Sign up
+                  {t('signUpLink')}
                 </Link>
               </p>
             </CardFooter>
