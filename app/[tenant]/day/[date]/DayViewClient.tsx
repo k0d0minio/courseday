@@ -13,6 +13,7 @@ import { ReservationCard } from '@/components/reservation-card';
 import { BreakfastForm } from '@/components/breakfast-form';
 import { BreakfastCard } from '@/components/breakfast-card';
 import { Button } from '@/components/ui/button';
+import { useFeatureFlag } from '@/lib/feature-flags-context';
 import type {
   Activity,
   ActivityWithRelations,
@@ -33,6 +34,9 @@ export function DayViewClient({
   authState,
 }: DayViewProps) {
   const t = useTranslations('Tenant.day');
+  const showActivities = useFeatureFlag('activities');
+  const showReservations = useFeatureFlag('reservations');
+  const showBreakfast = useFeatureFlag('breakfast_config');
 
   const [activities, setActivities] = useState(
     initialActivities as ActivityWithRelations[]
@@ -175,85 +179,91 @@ export function DayViewClient({
       />
 
       {/* Breakfast */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold">{t('breakfast')}</h2>
-          {authState.isEditor && (
-            <Button size="sm" onClick={openAddBreakfast}>
-              <Plus className="w-4 h-4 mr-1" /> {t('addBreakfast')}
-            </Button>
-          )}
-        </div>
-        {breakfastConfigs.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t('noBreakfasts')}</p>
-        ) : (
-          <div className="space-y-2">
-            {breakfastConfigs.map((item) => (
-              <BreakfastCard
-                key={item.id}
-                item={item}
-                isEditor={authState.isEditor}
-                onEdit={openEditBreakfast}
-                onDeleted={handleBreakfastDeleted}
-              />
-            ))}
+      {showBreakfast && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold">{t('breakfast')}</h2>
+            {authState.isEditor && (
+              <Button size="sm" onClick={openAddBreakfast}>
+                <Plus className="w-4 h-4 mr-1" /> {t('addBreakfast')}
+              </Button>
+            )}
           </div>
-        )}
-      </section>
+          {breakfastConfigs.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t('noBreakfasts')}</p>
+          ) : (
+            <div className="space-y-2">
+              {breakfastConfigs.map((item) => (
+                <BreakfastCard
+                  key={item.id}
+                  item={item}
+                  isEditor={authState.isEditor}
+                  onEdit={openEditBreakfast}
+                  onDeleted={handleBreakfastDeleted}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Activities */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold">{t('activities')}</h2>
-          {authState.isEditor && (
-            <Button size="sm" onClick={openAddActivity}>
-              <Plus className="w-4 h-4 mr-1" /> {t('addActivity')}
-            </Button>
-          )}
-        </div>
-        {activities.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t('noEntries')}</p>
-        ) : (
-          <div className="space-y-2">
-            {activities.map((item) => (
-              <ActivityCard
-                key={item.id}
-                item={item}
-                isEditor={authState.isEditor}
-                onEdit={openEditActivity}
-                onDeleted={handleActivityDeleted}
-              />
-            ))}
+      {showActivities && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold">{t('activities')}</h2>
+            {authState.isEditor && (
+              <Button size="sm" onClick={openAddActivity}>
+                <Plus className="w-4 h-4 mr-1" /> {t('addActivity')}
+              </Button>
+            )}
           </div>
-        )}
-      </section>
+          {activities.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t('noEntries')}</p>
+          ) : (
+            <div className="space-y-2">
+              {activities.map((item) => (
+                <ActivityCard
+                  key={item.id}
+                  item={item}
+                  isEditor={authState.isEditor}
+                  onEdit={openEditActivity}
+                  onDeleted={handleActivityDeleted}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Reservations */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold">{t('reservations')}</h2>
-          {authState.isEditor && (
-            <Button size="sm" onClick={openAddReservation}>
-              <Plus className="w-4 h-4 mr-1" /> {t('addReservation')}
-            </Button>
-          )}
-        </div>
-        {reservations.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t('noReservations')}</p>
-        ) : (
-          <div className="space-y-2">
-            {reservations.map((item) => (
-              <ReservationCard
-                key={item.id}
-                item={item}
-                isEditor={authState.isEditor}
-                onEdit={openEditReservation}
-                onDeleted={handleReservationDeleted}
-              />
-            ))}
+      {showReservations && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold">{t('reservations')}</h2>
+            {authState.isEditor && (
+              <Button size="sm" onClick={openAddReservation}>
+                <Plus className="w-4 h-4 mr-1" /> {t('addReservation')}
+              </Button>
+            )}
           </div>
-        )}
-      </section>
+          {reservations.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t('noReservations')}</p>
+          ) : (
+            <div className="space-y-2">
+              {reservations.map((item) => (
+                <ReservationCard
+                  key={item.id}
+                  item={item}
+                  isEditor={authState.isEditor}
+                  onEdit={openEditReservation}
+                  onDeleted={handleReservationDeleted}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       <ActivityForm
         isOpen={activityModalOpen}

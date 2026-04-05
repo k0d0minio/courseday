@@ -15,6 +15,8 @@ import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { isEditor } from '@/lib/membership';
 import { PwaRegister } from '@/components/pwa-register';
 import { PwaInstallPrompt } from '@/components/pwa-install-prompt';
+import { FeatureFlagProvider } from '@/lib/feature-flags-context';
+import { getFeatureFlags } from '@/app/actions/feature-flags';
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -66,6 +68,8 @@ export default async function TenantLayout({
     getMessages(),
   ]);
 
+  const featureFlags = await getFeatureFlags(tenant.id);
+
   const supabase = await createSupabaseServerClient();
   const { data: tenantRow } = await supabase
     .from('tenants')
@@ -86,6 +90,7 @@ export default async function TenantLayout({
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
+      <FeatureFlagProvider flags={featureFlags}>
       <TenantProvider tenantId={tenant.id} tenantSlug={tenant.slug}>
         <AuthProvider>
           <div className="min-h-screen flex flex-col" style={accentStyle}>
@@ -112,6 +117,7 @@ export default async function TenantLayout({
           <PwaInstallPrompt />
         </AuthProvider>
       </TenantProvider>
+      </FeatureFlagProvider>
     </NextIntlClientProvider>
   );
 }

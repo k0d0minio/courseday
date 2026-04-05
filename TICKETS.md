@@ -848,7 +848,7 @@ The `/admin` route must not be public. Protect it with a superadmin role and cur
 
 ## Ticket 17: Feature Flags System
 
-- [ ] **Status:** pending — set to `[x]` when done.
+- [x] **Status:** completed.
 
 **Priority:** P1  
 **Scope:** `supabase/migrations/`, `app/actions/`, `lib/`, `app/[tenant]/`, `app/admin/`  
