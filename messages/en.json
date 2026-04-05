@@ -73,7 +73,10 @@
       "dowSun": "Sun",
       "legendActivity": "Activity (A)",
       "legendReservation": "Reservation (R)",
-      "legendBreakfast": "Breakfast (B)"
+      "legendBreakfast": "Breakfast (B)",
+      "calendar": "Calendar",
+      "agenda": "Agenda",
+      "loadMore": "Load more"
     },
     "day": {
       "previousDay": "Previous day",

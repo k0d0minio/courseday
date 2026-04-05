@@ -1,13 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format, getDay, addMonths, subMonths } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { CalendarDaySidebar } from '@/components/CalendarDaySidebar';
+import { AgendaView } from '@/components/AgendaView';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+
+const VIEW_PREF_KEY = 'editor-home-view-preference';
+type ViewMode = 'calendar' | 'agenda';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -39,6 +43,18 @@ export function HomeClient({ month, today, days: initialDays }: Props) {
   const t = useTranslations('Tenant.home');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [days, setDays] = useState<DaySummary[]>(initialDays);
+  const [viewMode, setViewMode] = useState<ViewMode>('calendar');
+
+  // Restore view preference from localStorage (client-only)
+  useEffect(() => {
+    const saved = localStorage.getItem(VIEW_PREF_KEY);
+    if (saved === 'agenda' || saved === 'calendar') setViewMode(saved);
+  }, []);
+
+  function changeViewMode(mode: ViewMode) {
+    setViewMode(mode);
+    localStorage.setItem(VIEW_PREF_KEY, mode);
+  }
 
   const dayMap = new Map(days.map((d) => [d.date, d]));
 
@@ -72,43 +88,75 @@ export function HomeClient({ month, today, days: initialDays }: Props) {
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
-      {/* Month heading + navigation */}
+      {/* Heading row */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold">
-          {format(firstOfMonth, 'MMMM yyyy')}
-        </h1>
-        <div className="flex items-center gap-1">
-          {!isCurrentMonth && (
+        {viewMode === 'calendar' ? (
+          <h1 className="text-xl font-semibold">
+            {format(firstOfMonth, 'MMMM yyyy')}
+          </h1>
+        ) : (
+          <h1 className="text-xl font-semibold">{t('agenda')}</h1>
+        )}
+        <div className="flex items-center gap-2">
+          {/* View toggle */}
+          <div className="flex rounded-md border overflow-hidden">
             <Button
-              variant="ghost"
+              variant={viewMode === 'calendar' ? 'secondary' : 'ghost'}
               size="sm"
-              onClick={() => navigate(todayMonth)}
+              className="rounded-none border-0 h-8 px-3"
+              onClick={() => changeViewMode('calendar')}
             >
-              {t('today')}
+              {t('calendar')}
             </Button>
+            <Button
+              variant={viewMode === 'agenda' ? 'secondary' : 'ghost'}
+              size="sm"
+              className="rounded-none border-0 border-l h-8 px-3"
+              onClick={() => changeViewMode('agenda')}
+            >
+              {t('agenda')}
+            </Button>
+          </div>
+
+          {/* Calendar navigation — only in calendar mode */}
+          {viewMode === 'calendar' && (
+            <div className="flex items-center gap-1">
+              {!isCurrentMonth && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate(todayMonth)}
+                >
+                  {t('today')}
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled={isPrevDisabled}
+                onClick={() => navigate(prevMonthStr)}
+                aria-label={t('previousMonth')}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled={isNextDisabled}
+                onClick={() => navigate(nextMonthStr)}
+                aria-label={t('nextMonth')}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            disabled={isPrevDisabled}
-            onClick={() => navigate(prevMonthStr)}
-            aria-label={t('previousMonth')}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            disabled={isNextDisabled}
-            onClick={() => navigate(nextMonthStr)}
-            aria-label={t('nextMonth')}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
         </div>
       </div>
 
-      <div className={cn('flex gap-6', selectedDate && 'lg:gap-8')}>
+      {/* Agenda view */}
+      {viewMode === 'agenda' && <AgendaView today={today} />}
+
+      {viewMode === 'calendar' && <div className={cn('flex gap-6', selectedDate && 'lg:gap-8')}>
         {/* Calendar grid */}
         <div className="flex-1 min-w-0">
           {/* Day-of-week header */}
@@ -191,14 +239,16 @@ export function HomeClient({ month, today, days: initialDays }: Props) {
             onSummaryChanged={handleSummaryChanged}
           />
         )}
-      </div>
+      </div>}
 
-      {/* Legend */}
-      <div className="mt-4 flex flex-wrap gap-3 text-xs text-muted-foreground">
-        <LegendItem color="emerald" label={t('legendActivity')} />
-        <LegendItem color="amber" label={t('legendReservation')} />
-        <LegendItem color="blue" label={t('legendBreakfast')} />
-      </div>
+      {/* Legend — calendar mode only */}
+      {viewMode === 'calendar' && (
+        <div className="mt-4 flex flex-wrap gap-3 text-xs text-muted-foreground">
+          <LegendItem color="emerald" label={t('legendActivity')} />
+          <LegendItem color="amber" label={t('legendReservation')} />
+          <LegendItem color="blue" label={t('legendBreakfast')} />
+        </div>
+      )}
     </div>
   );
 }
