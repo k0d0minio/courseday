@@ -44,7 +44,9 @@ export async function GET() {
     return NextResponse.json(manifest, {
       headers: {
         'Content-Type': 'application/manifest+json',
-        'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+        // no-cache: always revalidate — manifest is tiny and must reflect
+        // branding changes (name, theme_color) without delay.
+        'Cache-Control': 'no-cache',
       },
     });
   } catch {
