@@ -27,13 +27,15 @@ export async function generateMetadata(): Promise<Metadata> {
     const supabase = await createSupabaseServerClient();
     const { data } = await supabase
       .from('tenants')
-      .select('name')
+      .select('name, accent_color')
       .eq('id', tenant.id)
       .single();
     const name = data?.name as string | undefined;
+    const accentColor = (data?.accent_color as string | null) ?? '#e5e7eb';
     return {
       title: name ? `${name} · Courseday` : 'Courseday',
       manifest: '/pwa/manifest',
+      themeColor: accentColor,
       appleWebApp: {
         capable: true,
         statusBarStyle: 'default',
