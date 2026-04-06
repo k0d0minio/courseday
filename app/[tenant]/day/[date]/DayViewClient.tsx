@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useDayRealtime } from './useDayRealtime';
 import { useTranslations } from 'next-intl';
 import { Plus, Copy, LayoutTemplate } from 'lucide-react';
 import { DayNav } from '@/components/day-nav';
@@ -51,6 +52,9 @@ export function DayViewClient({
   const [breakfastConfigs, setBreakfastConfigs] = useState<BreakfastConfiguration[]>(
     initialBreakfastConfigs
   );
+
+  // Subscribe to realtime updates for this day — unsubscribes on navigation away.
+  useDayRealtime(dayId, setActivities, setReservations, setBreakfastConfigs);
 
   // Activity modal state
   const [activityModalOpen, setActivityModalOpen] = useState(false);
