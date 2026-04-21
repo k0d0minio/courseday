@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useEffect } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { platformSignIn } from '@/app/actions/auth';
@@ -13,6 +13,14 @@ import { Label } from '@/components/ui/label';
 export function SignInForm() {
   const [state, action, isPending] = useActionState(platformSignIn, null);
   const t = useTranslations('Platform.auth');
+
+  // Invite / magic links sometimes land on Site URL (sign-in) with tokens in the
+  // hash after a failed server-only confirm — forward to client confirm handler.
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash || !hash.includes('access_token')) return;
+    window.location.replace(`${window.location.origin}/auth/confirm${hash}`);
+  }, []);
 
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center p-4">
