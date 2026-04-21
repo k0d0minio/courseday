@@ -6,6 +6,7 @@ import {
   createSupabaseServiceClient,
 } from '@/lib/supabase-server';
 import { isValidSlug } from '@/lib/tenant-validation';
+import { protocol, rootDomain } from '@/lib/utils';
 import type { ActionResponse } from '@/types/actions';
 
 type CourseResult = { slug: string; requiresConfirmation: boolean };
@@ -52,6 +53,9 @@ export async function createCourse(data: {
   const { data: authData, error: authError } = await anonClient.auth.signUp({
     email: data.email,
     password: data.password,
+    options: {
+      emailRedirectTo: `${protocol}://${rootDomain}/auth/confirm?slug=${encodeURIComponent(data.slug)}`,
+    },
   });
 
   if (authError || !authData.user) {
