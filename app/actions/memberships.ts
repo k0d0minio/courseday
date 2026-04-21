@@ -4,6 +4,7 @@ import { createTenantClient, createSupabaseServiceClient } from '@/lib/supabase-
 import { getTenantId } from '@/lib/tenant';
 import { getUserRole } from '@/lib/membership';
 import { getUser } from '@/app/actions/auth';
+import { protocol, rootDomain } from '@/lib/utils';
 import type { ActionResponse } from '@/types/actions';
 
 export type MemberRole = 'editor' | 'viewer';
@@ -82,7 +83,7 @@ export async function getPendingInvitations(): Promise<ActionResponse<PendingInv
 export async function inviteMember(
   email: string,
   role: MemberRole
-): Promise<ActionResponse> {
+): Promise<ActionResponse<{ emailed: boolean }>> {
   const trimmedEmail = email.trim().toLowerCase();
   if (!trimmedEmail || !trimmedEmail.includes('@')) {
     return { success: false, error: 'Invalid email address.' };
@@ -108,13 +109,18 @@ export async function inviteMember(
     console.error('[inviteMember] get_user_id_by_email RPC error:', rpcError.message);
   }
 
-  if (!rpcError && existingUserId) {
+  const existingUserIdStr =
+    existingUserId != null && String(existingUserId).length > 0
+      ? String(existingUserId)
+      : null;
+
+  if (!rpcError && existingUserIdStr) {
     // User already exists — check if already a member of this tenant.
     const { data: existingMembership } = await serviceClient
       .from('memberships')
       .select('id')
       .eq('tenant_id', tenantId)
-      .eq('user_id', existingUserId)
+      .eq('user_id', existingUserIdStr)
       .maybeSingle();
 
     if (existingMembership) {
@@ -124,30 +130,98 @@ export async function inviteMember(
     // Create membership directly.
     const { error } = await serviceClient.from('memberships').insert({
       tenant_id: tenantId,
-      user_id: existingUserId,
+      user_id: existingUserIdStr,
       role,
     });
 
     if (error) return { success: false, error: error.message };
-    return { success: true, data: undefined };
+    return { success: true, data: { emailed: false } };
   }
 
-  // User doesn't exist yet — create a pending invitation.
-  const { supabase } = await createTenantClient();
-  const { error } = await supabase.from('pending_invitations').insert({
+  const { data: tenantRow, error: tenantLookupError } = await serviceClient
+    .from('tenants')
+    .select('slug')
+    .eq('id', tenantId)
+    .maybeSingle();
+
+  if (tenantLookupError || !tenantRow?.slug) {
+    return {
+      success: false,
+      error: tenantLookupError?.message ?? 'Could not resolve venue for invitation.',
+    };
+  }
+
+  const tenantSlug = tenantRow.slug as string;
+  const confirmRedirect = `${protocol}://${rootDomain}/auth/confirm?slug=${encodeURIComponent(tenantSlug)}`;
+
+  const { data: inviteData, error: inviteError } =
+    await serviceClient.auth.admin.inviteUserByEmail(trimmedEmail, {
+      redirectTo: confirmRedirect,
+    });
+
+  if (inviteError) {
+    const msg = inviteError.message.toLowerCase();
+    const alreadyExists =
+      msg.includes('already') ||
+      msg.includes('registered') ||
+      msg.includes('exists');
+
+    if (alreadyExists) {
+      const { data: retryId, error: retryRpcError } = await serviceClient.rpc(
+        'get_user_id_by_email',
+        { p_email: trimmedEmail }
+      );
+      if (!retryRpcError && retryId != null && String(retryId).length > 0) {
+        const uid = String(retryId);
+        const { data: dup } = await serviceClient
+          .from('memberships')
+          .select('id')
+          .eq('tenant_id', tenantId)
+          .eq('user_id', uid)
+          .maybeSingle();
+        if (dup) {
+          return { success: false, error: 'This person is already a member.' };
+        }
+        const { error: insErr } = await serviceClient.from('memberships').insert({
+          tenant_id: tenantId,
+          user_id: uid,
+          role,
+        });
+        if (insErr) return { success: false, error: insErr.message };
+        return { success: true, data: { emailed: false } };
+      }
+    }
+
+    console.error('[inviteMember] inviteUserByEmail:', inviteError.message);
+    return {
+      success: false,
+      error:
+        inviteError.message ||
+        'Could not send invitation email. Check Auth email settings in Supabase.',
+    };
+  }
+
+  const newUserId = inviteData.user?.id;
+  if (!newUserId) {
+    return { success: false, error: 'Invitation did not return a user id.' };
+  }
+
+  const { error: membershipError } = await serviceClient.from('memberships').insert({
     tenant_id: tenantId,
-    email: trimmedEmail,
+    user_id: newUserId,
     role,
   });
 
-  if (error) {
-    if (error.code === '23505') {
-      return { success: false, error: 'An invitation for this email already exists.' };
+  if (membershipError) {
+    try {
+      await serviceClient.auth.admin.deleteUser(newUserId);
+    } catch {
+      // best-effort rollback
     }
-    return { success: false, error: error.message };
+    return { success: false, error: membershipError.message };
   }
 
-  return { success: true, data: undefined };
+  return { success: true, data: { emailed: true } };
 }
 
 export async function updateMemberRole(

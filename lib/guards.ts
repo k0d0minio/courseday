@@ -3,6 +3,7 @@ import { getUser } from '@/app/actions/auth';
 import { getTenantFromHeaders } from '@/lib/tenant';
 import { getUserRole } from '@/lib/membership';
 import { createSupabaseServiceClient } from '@/lib/supabase-server';
+import { normaliseInviteEmail } from '@/lib/pending-invite';
 import type { Role } from '@/lib/membership';
 import type { User } from '@supabase/supabase-js';
 
@@ -27,17 +28,18 @@ export async function requireTenantMember(): Promise<{ user: User; role: Role }>
   const role = await getUserRole(tenant.id);
 
   if (!role) {
+    if (!user) redirect('/auth/sign-in');
     // Check for a pending invitation matching the user's email.
     const serviceClient = createSupabaseServiceClient();
     const { data: authUser } = await serviceClient.auth.admin.getUserById(user.id);
-    const email = authUser.user?.email;
+    const emailNorm = normaliseInviteEmail(authUser.user?.email);
 
-    if (email) {
+    if (emailNorm) {
       const { data: invitation } = await serviceClient
         .from('pending_invitations')
         .select('id, role')
         .eq('tenant_id', tenant.id)
-        .ilike('email', email)
+        .eq('email', emailNorm)
         .maybeSingle();
 
       if (invitation) {

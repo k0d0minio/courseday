@@ -60,7 +60,7 @@ function InviteForm({ onInvited }: { onInvited: () => void }) {
         toast.error(result.error);
         return;
       }
-      toast.success(t('invited'));
+      toast.success(result.data.emailed ? t('invited') : t('invitedExisting'));
       setEmail('');
       setRole('viewer');
       onInvited();

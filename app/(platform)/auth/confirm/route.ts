@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { createSupabaseServiceClient } from '@/lib/supabase-server';
+import { resolvePendingInviteSlugForUser } from '@/lib/pending-invite';
 import { protocol, rootDomain } from '@/lib/utils';
 
 const cookieDomain = '.' + rootDomain.split(':')[0];
@@ -9,10 +10,12 @@ function tenantUrl(slug: string, pathname: string) {
   return `${protocol}://${slug}.${rootDomain}${pathname}`;
 }
 
-async function resolveTenantSlug(
+const ONBOARDING_PATH = '/admin/onboarding';
+
+async function resolveTenantRedirect(
   userId: string,
   slugHint: string | null
-): Promise<string | null> {
+): Promise<{ slug: string; pathname: string } | null> {
   const service = createSupabaseServiceClient();
   const { data: rows } = await service
     .from('memberships')
@@ -24,8 +27,41 @@ async function resolveTenantSlug(
     .filter((s): s is string => Boolean(s));
 
   const trimmed = slugHint?.trim();
-  if (trimmed && slugs.includes(trimmed)) return trimmed;
-  return slugs[0] ?? null;
+  if (slugs.length > 0) {
+    const slug =
+      trimmed && slugs.includes(trimmed) ? trimmed : (slugs[0] ?? null);
+    if (!slug) return null;
+
+    const { data: tenant } = await service
+      .from('tenants')
+      .select('id, onboarding_completed')
+      .eq('slug', slug)
+      .maybeSingle();
+
+    if (!tenant?.id) {
+      return { slug, pathname: '/' };
+    }
+
+    const { data: mem } = await service
+      .from('memberships')
+      .select('role')
+      .eq('user_id', userId)
+      .eq('tenant_id', tenant.id)
+      .maybeSingle();
+
+    const row = tenant as { onboarding_completed?: boolean };
+    const onboardingDone = row.onboarding_completed === true;
+    const isEditor = mem?.role === 'editor';
+    const pathname =
+      isEditor && !onboardingDone ? ONBOARDING_PATH : '/';
+
+    return { slug, pathname };
+  }
+
+  const pendingSlug = await resolvePendingInviteSlugForUser(service, userId, slugHint);
+  if (!pendingSlug) return null;
+  // Invited members have no membership until first visit; skip editor onboarding.
+  return { slug: pendingSlug, pathname: '/' };
 }
 
 export async function GET(request: NextRequest) {
@@ -42,7 +78,6 @@ export async function GET(request: NextRequest) {
     return failRedirect();
   }
 
-  const onboardingPath = '/admin/onboarding';
   // Placeholder Location; session cookies attach to this response, then we
   // swap Location to the tenant subdomain (same response object).
   const response = NextResponse.redirect(new URL('/', request.url));
@@ -77,14 +112,17 @@ export async function GET(request: NextRequest) {
     return failRedirect();
   }
 
-  const tenantSlug = await resolveTenantSlug(user.id, slugHint);
-  if (!tenantSlug) {
+  const tenantRedirect = await resolveTenantRedirect(user.id, slugHint);
+  if (!tenantRedirect) {
     const u = new URL('/auth/sign-in', request.url);
     u.searchParams.set('error', 'no_tenant');
     response.headers.set('Location', u.toString());
     return response;
   }
 
-  response.headers.set('Location', tenantUrl(tenantSlug, onboardingPath));
+  response.headers.set(
+    'Location',
+    tenantUrl(tenantRedirect.slug, tenantRedirect.pathname)
+  );
   return response;
 }

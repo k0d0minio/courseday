@@ -2,9 +2,17 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
+const pendingInviteState = vi.hoisted(() => ({
+  row: null as { id: string; role: string } | null,
+}));
+
 vi.mock('next/navigation', () => ({
-  redirect: vi.fn(),
-  notFound: vi.fn(),
+  redirect: vi.fn(() => {
+    throw new Error('NEXT_REDIRECT');
+  }),
+  notFound: vi.fn(() => {
+    throw new Error('NEXT_NOT_FOUND');
+  }),
 }));
 
 vi.mock('@/app/actions/auth', () => ({
@@ -19,6 +27,40 @@ vi.mock('@/lib/tenant', () => ({
   getTenantFromHeaders: vi.fn().mockResolvedValue({ id: 'tenant-1', slug: 'test' }),
 }));
 
+vi.mock('@/lib/supabase-server', () => ({
+  createSupabaseServiceClient: vi.fn(() => ({
+    auth: {
+      admin: {
+        getUserById: vi.fn().mockResolvedValue({
+          data: { user: { email: 'test@example.com' } },
+        }),
+      },
+    },
+    from(table: string) {
+      if (table === 'pending_invitations') {
+        return {
+          select: () => ({
+            eq: () => ({
+              eq: () => ({
+                maybeSingle: vi
+                  .fn()
+                  .mockResolvedValue({ data: pendingInviteState.row }),
+              }),
+            }),
+          }),
+          delete: vi.fn().mockResolvedValue({ error: null }),
+        };
+      }
+      if (table === 'memberships') {
+        return {
+          insert: vi.fn().mockResolvedValue({ error: null }),
+        };
+      }
+      return {};
+    },
+  })),
+}));
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 import { getUser } from '@/app/actions/auth';
@@ -31,11 +73,16 @@ const MOCK_USER = { id: 'user-1', email: 'test@example.com' };
 // ── requireAuth ───────────────────────────────────────────────────────────────
 
 describe('requireAuth', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(redirect).mockImplementation(() => {
+      throw new Error('NEXT_REDIRECT');
+    });
+  });
 
   it('calls redirect to sign-in when user is not authenticated', async () => {
     vi.mocked(getUser).mockResolvedValue(null);
-    await requireAuth();
+    await expect(requireAuth()).rejects.toThrow('NEXT_REDIRECT');
     expect(redirect).toHaveBeenCalledWith('/auth/sign-in');
   });
 
@@ -50,18 +97,27 @@ describe('requireAuth', () => {
 // ── requireTenantMember ───────────────────────────────────────────────────────
 
 describe('requireTenantMember', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    pendingInviteState.row = null;
+    vi.mocked(redirect).mockImplementation(() => {
+      throw new Error('NEXT_REDIRECT');
+    });
+    vi.mocked(notFound).mockImplementation(() => {
+      throw new Error('NEXT_NOT_FOUND');
+    });
+  });
 
   it('calls redirect to sign-in when unauthenticated', async () => {
     vi.mocked(getUser).mockResolvedValue(null);
-    await requireTenantMember();
+    await expect(requireTenantMember()).rejects.toThrow('NEXT_REDIRECT');
     expect(redirect).toHaveBeenCalledWith('/auth/sign-in');
   });
 
   it('calls notFound when user is not a member of the tenant', async () => {
     vi.mocked(getUser).mockResolvedValue(MOCK_USER as never);
     vi.mocked(getUserRole).mockResolvedValue(null);
-    await requireTenantMember();
+    await expect(requireTenantMember()).rejects.toThrow('NEXT_NOT_FOUND');
     expect(notFound).toHaveBeenCalled();
   });
 
@@ -86,12 +142,17 @@ describe('requireTenantMember', () => {
 // ── requireTenantEditor ───────────────────────────────────────────────────────
 
 describe('requireTenantEditor', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(redirect).mockImplementation(() => {
+      throw new Error('NEXT_REDIRECT');
+    });
+  });
 
   it('calls redirect to / when user is a viewer', async () => {
     vi.mocked(getUser).mockResolvedValue(MOCK_USER as never);
     vi.mocked(getUserRole).mockResolvedValue('viewer');
-    await requireTenantEditor();
+    await expect(requireTenantEditor()).rejects.toThrow('NEXT_REDIRECT');
     expect(redirect).toHaveBeenCalledWith('/');
   });
 
@@ -105,7 +166,7 @@ describe('requireTenantEditor', () => {
 
   it('calls redirect to sign-in when unauthenticated', async () => {
     vi.mocked(getUser).mockResolvedValue(null);
-    await requireTenantEditor();
+    await expect(requireTenantEditor()).rejects.toThrow('NEXT_REDIRECT');
     expect(redirect).toHaveBeenCalledWith('/auth/sign-in');
   });
 });

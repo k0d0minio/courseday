@@ -5,6 +5,7 @@ import { createSupabaseServerClient, createSupabaseServiceClient } from '@/lib/s
 import { getTenantId } from '@/lib/tenant';
 import { getUserRole } from '@/lib/membership';
 import { protocol, rootDomain } from '@/lib/utils';
+import { getPendingInviteTenantSlug, normaliseInviteEmail } from '@/lib/pending-invite';
 import { authRateLimit } from '@/lib/rate-limit';
 
 export async function signIn(_prevState: unknown, formData: FormData) {
@@ -68,15 +69,26 @@ export async function platformSignIn(_prevState: unknown, formData: FormData) {
 
   if (error) return { error: error.message };
 
-  // Look up the user's tenant via service client (bypasses RLS timing issues)
+  // Look up tenant: membership first, else pending invitation (invited viewers
+  // often have no membership row until first tenant visit).
   const serviceClient = createSupabaseServiceClient();
-  const { data: membership } = await serviceClient
+  const { data: membershipRows } = await serviceClient
     .from('memberships')
     .select('tenants(slug)')
     .eq('user_id', data.user.id)
-    .maybeSingle();
+    .limit(1);
 
-  const slug = (membership?.tenants as unknown as { slug: string } | null)?.slug;
+  const slugFromMember = (
+    membershipRows?.[0]?.tenants as unknown as { slug: string } | null
+  )?.slug;
+
+  const emailNorm = normaliseInviteEmail(data.user.email);
+  const slugFromPending =
+    !slugFromMember && emailNorm
+      ? await getPendingInviteTenantSlug(serviceClient, emailNorm)
+      : null;
+
+  const slug = slugFromMember ?? slugFromPending;
   if (!slug) return { error: 'No course found for this account.' };
 
   redirect(`${protocol}://${slug}.${rootDomain}/`);
