@@ -18,7 +18,9 @@ export function SignInForm() {
     <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="flex justify-center">
-          <Logo className="text-2xl" />
+          <Link href="/" className="inline-flex" aria-label="Home">
+            <Logo className="text-2xl" />
+          </Link>
         </div>
 
         <Card>
@@ -62,9 +64,9 @@ export function SignInForm() {
                 {isPending ? t('signingIn') : t('signInButton')}
               </Button>
               <p className="text-sm text-muted-foreground text-center">
-                {t('noAccount')}{' '}
+                {t('createVenuePrompt')}{' '}
                 <Link href="/new" className="underline underline-offset-4">
-                  {t('signUpLink')}
+                  {t('createVenueLink')}
                 </Link>
               </p>
             </CardFooter>

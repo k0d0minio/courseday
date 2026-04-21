@@ -7,7 +7,7 @@ import {
 } from '@/lib/supabase-server';
 import { isValidSlug } from '@/lib/tenant-validation';
 import { getUser } from '@/app/actions/auth';
-import { isEditor } from '@/lib/membership';
+import { getUserRole } from '@/lib/membership';
 import type { ActionResponse } from '@/types/actions';
 
 export type TenantStatus = 'active' | 'suspended' | 'archived';
@@ -137,13 +137,18 @@ export async function updateTenant(
   id: string,
   data: { name?: string; slug?: string; logo_url?: string | null; accent_color?: string | null; timezone?: string; language?: string; latitude?: number | null; longitude?: number | null; onboarding_completed?: boolean }
 ): Promise<ActionResponse<TenantRedisData>> {
-  // Authorization: only editors may update tenant settings.
-  const authorized = await isEditor(id);
-  if (!authorized) {
-    return { success: false, error: 'Not authorized.' };
+  const user = await getUser();
+  if (!user) {
+    return { success: false, error: 'Not authenticated.' };
   }
 
-  const serviceClient = createSupabaseServiceClient();
+  const role = await getUserRole(id);
+  if (role !== 'editor') {
+    return {
+      success: false,
+      error: 'Not authorized to update this tenant.',
+    };
+  }
 
   if (data.slug !== undefined && !isValidSlug(data.slug)) {
     return {
@@ -152,26 +157,38 @@ export async function updateTenant(
     };
   }
 
-  // Get current record so we can clean up Redis if slug changes
-  const { data: current } = await serviceClient
+  const supabase = await createSupabaseServerClient();
+
+  // RLS: editors may read/update their tenant (see migration 00027_tenants_editor_update).
+  const { data: current, error: fetchError } = await supabase
     .from('tenants')
     .select('id, name, slug, language, status')
     .eq('id', id)
     .single();
 
+  if (fetchError) {
+    return {
+      success: false,
+      error: fetchError.message || 'Tenant not found.',
+    };
+  }
+
   if (!current) {
     return { success: false, error: 'Tenant not found.' };
   }
 
-  const { data: updated, error } = await serviceClient
+  const { data: updated, error: updateError } = await supabase
     .from('tenants')
     .update({ ...data, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select('id, name, slug, language, status')
     .single();
 
-  if (error || !updated) {
-    return { success: false, error: 'Failed to update tenant.' };
+  if (updateError || !updated) {
+    return {
+      success: false,
+      error: updateError?.message ?? 'Failed to update tenant.',
+    };
   }
 
   // If slug changed, remove old Redis key

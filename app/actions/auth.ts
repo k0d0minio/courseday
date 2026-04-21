@@ -25,23 +25,6 @@ export async function signIn(_prevState: unknown, formData: FormData) {
   redirect(redirectTo);
 }
 
-export async function signUp(_prevState: unknown, formData: FormData) {
-  const rl = await authRateLimit();
-  if (!rl.success) return { error: 'Too many attempts. Please wait and try again.' };
-
-  const email = formData.get('email') as string;
-  const password = formData.get('password') as string;
-
-  const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.auth.signUp({ email, password });
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  return { success: true };
-}
-
 export async function signOut() {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();

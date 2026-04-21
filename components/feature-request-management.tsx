@@ -5,12 +5,12 @@ import { useForm } from 'react-hook-form';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
+import { createFeatureRequest, getTenantFeatureRequests } from '@/app/actions/feature-requests';
+import type { FeatureRequest, FeatureRequestStatus } from '@/app/actions/feature-requests';
 import {
-  createFeatureRequest,
-  getTenantFeatureRequests,
   featureRequestSchema,
-} from '@/app/actions/feature-requests';
-import type { FeatureRequest, FeatureRequestFormData, FeatureRequestStatus } from '@/app/actions/feature-requests';
+  type FeatureRequestFormData,
+} from '@/lib/feature-request-schema';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

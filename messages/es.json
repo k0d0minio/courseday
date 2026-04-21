@@ -24,19 +24,13 @@
     },
     "auth": {
       "signInTitle": "Iniciar sesión",
-      "signUpTitle": "Crear una cuenta",
       "emailLabel": "Correo electrónico",
       "passwordLabel": "Contraseña",
       "signInButton": "Iniciar sesión",
       "signingIn": "Iniciando sesión\u2026",
-      "signUpButton": "Crear cuenta",
-      "creatingAccount": "Creando cuenta\u2026",
-      "noAccount": "¿No tienes cuenta?",
-      "signUpLink": "Regístrate",
-      "haveAccount": "¿Ya tienes cuenta?",
-      "signInLink": "Iniciar sesión",
-      "checkEmail": "Revisa tu correo",
-      "checkEmailBody": "Te hemos enviado un enlace de confirmación. Haz clic en él para activar tu cuenta."
+      "createVenuePrompt": "¿Nuevo establecimiento?",
+      "createVenueLink": "Crear tu establecimiento",
+      "inviteOnlyHint": "¿Necesitas acceso? Pide a un editor que te invite."
     },
     "new": {
       "title": "Crear tu establecimiento",
@@ -59,7 +53,8 @@
   "Tenant": {
     "nav": {
       "signOut": "Cerrar sesión",
-      "skipToContent": "Saltar al contenido principal"
+      "skipToContent": "Saltar al contenido principal",
+      "today": "Hoy"
     },
     "home": {
       "today": "Hoy",
@@ -256,7 +251,16 @@
       "languageDe": "Alemán",
       "saveLanguage": "Guardar",
       "savingLanguage": "Guardando\u2026",
-      "languageSaved": "Idioma actualizado."
+      "languageSaved": "Idioma actualizado.",
+      "citySearchPlaceholder": "Buscar una ciudad…",
+      "citySearchAria": "Búsqueda de ciudad",
+      "citySearching": "Buscando…",
+      "cityNoResults": "No se encontraron ciudades.",
+      "citySearchFailed": "Error al buscar la ciudad.",
+      "citySearchHttpError": "Error en la búsqueda ({status}).",
+      "cityUnexpectedResponse": "Respuesta inesperada del servicio de geocodificación.",
+      "clearLocationAria": "Borrar ubicación",
+      "locationCoordsHint": "Borra las coordenadas de arriba para buscar una ciudad por nombre."
     },
     "poc": {
       "title": "Puntos de contacto",

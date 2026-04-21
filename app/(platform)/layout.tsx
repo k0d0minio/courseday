@@ -18,7 +18,7 @@ export default async function PlatformLayout({
     <NextIntlClientProvider locale={locale} messages={messages}>
       <div className="min-h-screen flex flex-col">
         <header className="border-b px-6 h-14 flex items-center justify-between">
-          <Link href="/">
+          <Link href="/" className="inline-flex items-center" aria-label="Home">
             <Logo />
           </Link>
           <nav className="flex items-center gap-3">

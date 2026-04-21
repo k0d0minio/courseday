@@ -24,19 +24,13 @@
     },
     "auth": {
       "signInTitle": "Anmelden",
-      "signUpTitle": "Konto erstellen",
       "emailLabel": "E-Mail",
       "passwordLabel": "Passwort",
       "signInButton": "Anmelden",
       "signingIn": "Anmelden\u2026",
-      "signUpButton": "Konto erstellen",
-      "creatingAccount": "Konto wird erstellt\u2026",
-      "noAccount": "Noch kein Konto?",
-      "signUpLink": "Registrieren",
-      "haveAccount": "Bereits ein Konto?",
-      "signInLink": "Anmelden",
-      "checkEmail": "E-Mail prüfen",
-      "checkEmailBody": "Wir haben Ihnen einen Bestätigungslink gesendet. Klicken Sie darauf, um Ihr Konto zu aktivieren."
+      "createVenuePrompt": "Neuen Betrieb starten?",
+      "createVenueLink": "Betrieb erstellen",
+      "inviteOnlyHint": "Brauchen Sie Zugang? Bitten Sie einen Editor um eine Einladung."
     },
     "new": {
       "title": "Betrieb erstellen",
@@ -59,7 +53,8 @@
   "Tenant": {
     "nav": {
       "signOut": "Abmelden",
-      "skipToContent": "Zum Hauptinhalt springen"
+      "skipToContent": "Zum Hauptinhalt springen",
+      "today": "Heute"
     },
     "home": {
       "today": "Heute",
@@ -256,7 +251,16 @@
       "languageDe": "Deutsch",
       "saveLanguage": "Speichern",
       "savingLanguage": "Wird gespeichert\u2026",
-      "languageSaved": "Sprache aktualisiert."
+      "languageSaved": "Sprache aktualisiert.",
+      "citySearchPlaceholder": "Stadt suchen…",
+      "citySearchAria": "Stadtsuche",
+      "citySearching": "Suche…",
+      "cityNoResults": "Keine Stadt gefunden.",
+      "citySearchFailed": "Stadtsuche fehlgeschlagen.",
+      "citySearchHttpError": "Suche fehlgeschlagen ({status}).",
+      "cityUnexpectedResponse": "Unerwartete Antwort vom Geocoding-Dienst.",
+      "clearLocationAria": "Standort löschen",
+      "locationCoordsHint": "Löschen Sie die Koordinaten oben, um nach einer Stadt zu suchen."
     },
     "poc": {
       "title": "Ansprechpartner",

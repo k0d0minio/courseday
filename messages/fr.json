@@ -24,19 +24,13 @@
     },
     "auth": {
       "signInTitle": "Se connecter",
-      "signUpTitle": "Créer un compte",
       "emailLabel": "Adresse e-mail",
       "passwordLabel": "Mot de passe",
       "signInButton": "Se connecter",
       "signingIn": "Connexion en cours…",
-      "signUpButton": "Créer un compte",
-      "creatingAccount": "Création du compte…",
-      "noAccount": "Pas encore de compte ?",
-      "signUpLink": "S'inscrire",
-      "haveAccount": "Vous avez déjà un compte ?",
-      "signInLink": "Se connecter",
-      "checkEmail": "Vérifiez votre e-mail",
-      "checkEmailBody": "Nous vous avons envoyé un lien de confirmation. Cliquez dessus pour activer votre compte."
+      "createVenuePrompt": "Nouvel établissement ?",
+      "createVenueLink": "Créer votre établissement",
+      "inviteOnlyHint": "Besoin d'accès ? Demandez à un éditeur de vous inviter."
     },
     "new": {
       "title": "Créer votre établissement",
@@ -61,6 +55,7 @@
       "signOut": "Se déconnecter",
       "skipToContent": "Aller au contenu principal",
       "home": "Accueil",
+      "today": "Aujourd'hui",
       "settings": "Paramètres",
       "themeSystem": "Système",
       "themeLight": "Clair",
@@ -261,7 +256,16 @@
       "languageDe": "Allemand",
       "saveLanguage": "Enregistrer",
       "savingLanguage": "Enregistrement…",
-      "languageSaved": "Langue mise à jour."
+      "languageSaved": "Langue mise à jour.",
+      "citySearchPlaceholder": "Rechercher une ville…",
+      "citySearchAria": "Recherche de ville",
+      "citySearching": "Recherche…",
+      "cityNoResults": "Aucune ville trouvée.",
+      "citySearchFailed": "Échec de la recherche de ville.",
+      "citySearchHttpError": "Échec de la recherche ({status}).",
+      "cityUnexpectedResponse": "Réponse inattendue du service de géocodage.",
+      "clearLocationAria": "Effacer le lieu",
+      "locationCoordsHint": "Effacez les coordonnées ci-dessus pour rechercher une ville par son nom."
     },
     "poc": {
       "title": "Points de contact",

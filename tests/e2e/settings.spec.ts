@@ -21,6 +21,29 @@ test.describe('Settings', () => {
     await expect(signedInPage.getByRole('heading', { level: 1 })).toBeVisible();
   });
 
+  test('branding city search shows mocked results', async ({ signedInPage, tenantUrl }) => {
+    await signedInPage.route('**/api/geocode**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { name: 'Paris', lat: 48.8566, lon: 2.3522, country: 'FR' },
+        ]),
+      });
+    });
+
+    await signedInPage.goto(`${tenantUrl}/admin/settings/branding`);
+
+    const clearBtn = signedInPage.getByRole('button', { name: /clear location/i });
+    if (await clearBtn.isVisible()) {
+      await clearBtn.click();
+    }
+
+    const searchInput = signedInPage.getByRole('textbox', { name: /city search/i });
+    await searchInput.fill('Pa');
+    await expect(signedInPage.getByRole('option', { name: /Paris/i })).toBeVisible({ timeout: 8000 });
+  });
+
   test('venue name can be updated on branding page', async ({ signedInPage, tenantUrl }) => {
     await signedInPage.goto(`${tenantUrl}/admin/settings/branding`);
 

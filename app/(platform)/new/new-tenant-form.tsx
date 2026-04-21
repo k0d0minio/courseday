@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { createCourse } from '@/app/actions/courses';
 import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
@@ -61,7 +62,9 @@ export function NewTenantForm() {
       <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center p-4">
         <div className="w-full max-w-sm space-y-6">
           <div className="flex justify-center">
-            <Logo className="text-2xl" />
+            <Link href="/" className="inline-flex" aria-label="Home">
+              <Logo className="text-2xl" />
+            </Link>
           </div>
           <Card>
             <CardContent className="pt-6 text-center space-y-3">
@@ -84,7 +87,9 @@ export function NewTenantForm() {
     <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="flex justify-center">
-          <Logo className="text-2xl" />
+          <Link href="/" className="inline-flex" aria-label="Home">
+            <Logo className="text-2xl" />
+          </Link>
         </div>
 
         <Card>

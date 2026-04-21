@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 import { Toaster } from 'sonner';
 import { Logo } from '@/components/logo';
 import { UserMenu } from '@/components/user-menu';
@@ -112,7 +113,13 @@ export default async function TenantLayout({
           </a>
           <div className="tenant-themed min-h-screen flex flex-col" dir={dir} style={accentStyle}>
             <header className="border-b px-6 h-14 flex items-center justify-between">
-              <Logo logoUrl={row?.logo_url} tenantName={row?.name} />
+              <Link
+                href="/"
+                className="inline-flex items-center"
+                aria-label={row?.name ?? 'Home'}
+              >
+                <Logo logoUrl={row?.logo_url} tenantName={row?.name} />
+              </Link>
               <div className="flex items-center gap-1">
                 {/* Theme toggle — visible to all signed-in users */}
                 {user && <ThemeToggle />}

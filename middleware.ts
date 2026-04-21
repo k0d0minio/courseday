@@ -116,13 +116,17 @@ export async function middleware(request: NextRequest) {
     });
   }
 
+  if (pathname === '/auth/sign-up') {
+    const url = new URL('/auth/sign-in', request.url);
+    return applyAuthCookies(NextResponse.redirect(url));
+  }
+
   // -------------------------------------------------------------------------
   // 4. Auth guard for tenant routes.
   //    Public paths (no login required): /auth/*
   // -------------------------------------------------------------------------
   const isPublicPath =
     pathname === '/auth/sign-in' ||
-    pathname === '/auth/sign-up' ||
     pathname.startsWith('/auth/') ||
     pathname.startsWith('/pwa/');
 

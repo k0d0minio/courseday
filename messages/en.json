@@ -24,19 +24,13 @@
     },
     "auth": {
       "signInTitle": "Sign in",
-      "signUpTitle": "Create an account",
       "emailLabel": "Email",
       "passwordLabel": "Password",
       "signInButton": "Sign in",
       "signingIn": "Signing in…",
-      "signUpButton": "Create account",
-      "creatingAccount": "Creating account…",
-      "noAccount": "Don't have an account?",
-      "signUpLink": "Sign up",
-      "haveAccount": "Already have an account?",
-      "signInLink": "Sign in",
-      "checkEmail": "Check your email",
-      "checkEmailBody": "We sent you a confirmation link. Click it to activate your account."
+      "createVenuePrompt": "Starting a new venue?",
+      "createVenueLink": "Create your venue",
+      "inviteOnlyHint": "Need access? Ask a venue editor to invite you."
     },
     "new": {
       "title": "Create your venue",
@@ -61,6 +55,7 @@
       "signOut": "Sign out",
       "skipToContent": "Skip to main content",
       "home": "Home",
+      "today": "Today",
       "settings": "Settings",
       "themeSystem": "System",
       "themeLight": "Light",
@@ -261,7 +256,16 @@
       "languageDe": "German",
       "saveLanguage": "Save",
       "savingLanguage": "Saving…",
-      "languageSaved": "Language updated."
+      "languageSaved": "Language updated.",
+      "citySearchPlaceholder": "Search for a city…",
+      "citySearchAria": "City search",
+      "citySearching": "Searching…",
+      "cityNoResults": "No cities found.",
+      "citySearchFailed": "City search failed.",
+      "citySearchHttpError": "Search failed ({status}).",
+      "cityUnexpectedResponse": "Unexpected response from geocoding service.",
+      "clearLocationAria": "Clear location",
+      "locationCoordsHint": "Clear the coordinates above to search for a city by name."
     },
     "poc": {
       "title": "Points of Contact",

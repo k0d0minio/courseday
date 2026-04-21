@@ -25,7 +25,7 @@ export function Logo({ className, logoUrl, tenantName }: LogoProps) {
   );
 
   return (
-    <Link href="/" aria-label={tenantName ?? 'Home'}>
+    <Link href="/" prefetch={false} aria-label={tenantName ?? 'Home'}>
       {content}
     </Link>
   );
