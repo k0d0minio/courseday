@@ -12,19 +12,26 @@ function tenantUrl(slug: string, pathname: string) {
 
 const ONBOARDING_PATH = '/admin/onboarding';
 
-async function resolveTenantRedirect(
-  userId: string,
-  slugHint: string | null
-): Promise<{ slug: string; pathname: string } | null> {
-  const service = createSupabaseServiceClient();
+async function membershipSlugsForUser(
+  service: ReturnType<typeof createSupabaseServiceClient>,
+  userId: string
+): Promise<string[]> {
   const { data: rows } = await service
     .from('memberships')
     .select('tenants(slug)')
     .eq('user_id', userId);
 
-  const slugs = (rows ?? [])
+  return (rows ?? [])
     .map((r) => (r.tenants as unknown as { slug: string } | null)?.slug)
     .filter((s): s is string => Boolean(s));
+}
+
+async function resolveTenantRedirect(
+  userId: string,
+  slugHint: string | null
+): Promise<{ slug: string; pathname: string } | null> {
+  const service = createSupabaseServiceClient();
+  const slugs = await membershipSlugsForUser(service, userId);
 
   const trimmed = slugHint?.trim();
   if (slugs.length > 0) {
@@ -67,6 +74,7 @@ async function resolveTenantRedirect(
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get('code');
   const slugHint = request.nextUrl.searchParams.get('slug');
+  const flow = request.nextUrl.searchParams.get('flow');
 
   const failRedirect = () => {
     const u = new URL('/auth/sign-in', request.url);
@@ -110,6 +118,18 @@ export async function GET(request: NextRequest) {
   } = await supabase.auth.getUser();
   if (!user) {
     return failRedirect();
+  }
+
+  if (flow === 'invite') {
+    const trimmed = slugHint?.trim();
+    if (trimmed) {
+      const service = createSupabaseServiceClient();
+      const slugs = await membershipSlugsForUser(service, user.id);
+      if (slugs.includes(trimmed)) {
+        response.headers.set('Location', tenantUrl(trimmed, '/auth/join'));
+        return response;
+      }
+    }
   }
 
   const tenantRedirect = await resolveTenantRedirect(user.id, slugHint);

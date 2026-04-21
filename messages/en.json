@@ -61,6 +61,24 @@
       "themeLight": "Light",
       "themeDark": "Dark"
     },
+    "join": {
+      "homeAria": "Home",
+      "title": "Join {venue}",
+      "subtitle": "You were invited to this venue. Choose a password to finish setting up your account.",
+      "venueLabel": "Venue",
+      "emailLabel": "Your email",
+      "passwordLabel": "Password",
+      "confirmLabel": "Confirm password",
+      "submit": "Continue",
+      "submitting": "Saving…",
+      "errors": {
+        "RATE_LIMIT": "Too many attempts. Please wait and try again.",
+        "TOO_SHORT": "Password must be at least 8 characters.",
+        "MISMATCH": "Passwords do not match.",
+        "NOT_SIGNED_IN": "Open the link in your invitation email to continue.",
+        "NO_ACCESS": "You do not have access to this venue."
+      }
+    },
     "home": {
       "today": "Today",
       "previousMonth": "Previous month",

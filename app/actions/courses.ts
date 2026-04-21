@@ -54,7 +54,7 @@ export async function createCourse(data: {
     email: data.email,
     password: data.password,
     options: {
-      emailRedirectTo: `${protocol}://${rootDomain}/auth/confirm?slug=${encodeURIComponent(data.slug)}`,
+      emailRedirectTo: `${protocol}://${rootDomain}/auth/confirm?slug=${encodeURIComponent(data.slug)}&flow=signup`,
     },
   });
 

@@ -7,6 +7,7 @@ import { getUserRole } from '@/lib/membership';
 import { protocol, rootDomain } from '@/lib/utils';
 import { getPendingInviteTenantSlug, normaliseInviteEmail } from '@/lib/pending-invite';
 import { authRateLimit } from '@/lib/rate-limit';
+import { getTenantToday } from '@/lib/day-utils';
 
 export async function signIn(_prevState: unknown, formData: FormData) {
   const rl = await authRateLimit();
@@ -103,4 +104,65 @@ export async function getAuthState() {
 
   const role = await getUserRole(tenantId);
   return { user, role, isEditor: role === 'editor' };
+}
+
+export type InviteJoinErrorCode =
+  | 'RATE_LIMIT'
+  | 'TOO_SHORT'
+  | 'MISMATCH'
+  | 'NOT_SIGNED_IN'
+  | 'NO_ACCESS';
+
+export type InviteJoinState = { error: InviteJoinErrorCode | string } | null;
+
+/**
+ * After invite email link: user has a session on the tenant join page.
+ * Saves password then redirects by role / onboarding state.
+ */
+export async function completeInvitePassword(
+  _prev: InviteJoinState,
+  formData: FormData
+): Promise<InviteJoinState> {
+  const rl = await authRateLimit();
+  if (!rl.success) return { error: 'RATE_LIMIT' };
+
+  const password = String(formData.get('password') ?? '');
+  const confirm = String(formData.get('confirm') ?? '');
+
+  if (password.length < 8) return { error: 'TOO_SHORT' };
+  if (password !== confirm) return { error: 'MISMATCH' };
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'NOT_SIGNED_IN' };
+
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) return { error: error.message };
+
+  const tenantId = await getTenantId();
+  const role = await getUserRole(tenantId);
+  if (!role) return { error: 'NO_ACCESS' };
+
+  const { data: tenant } = await supabase
+    .from('tenants')
+    .select('onboarding_completed, timezone')
+    .eq('id', tenantId)
+    .single();
+
+  const row = tenant as {
+    onboarding_completed?: boolean | null;
+    timezone?: string | null;
+  } | null;
+  const today = getTenantToday(row?.timezone ?? 'UTC');
+  const onboardingDone = row?.onboarding_completed === true;
+
+  if (role === 'editor' && !onboardingDone) {
+    redirect('/admin/onboarding');
+  }
+  if (role !== 'editor') {
+    redirect(`/day/${today}`);
+  }
+  redirect('/');
 }

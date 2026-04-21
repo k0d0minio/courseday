@@ -152,11 +152,12 @@ export async function inviteMember(
   }
 
   const tenantSlug = tenantRow.slug as string;
-  const confirmRedirect = `${protocol}://${rootDomain}/auth/confirm?slug=${encodeURIComponent(tenantSlug)}`;
+  const confirmRedirect = `${protocol}://${rootDomain}/auth/confirm?slug=${encodeURIComponent(tenantSlug)}&flow=invite`;
 
   const { data: inviteData, error: inviteError } =
     await serviceClient.auth.admin.inviteUserByEmail(trimmedEmail, {
       redirectTo: confirmRedirect,
+      data: { invited: true },
     });
 
   if (inviteError) {

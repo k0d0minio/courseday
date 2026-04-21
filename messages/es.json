@@ -56,6 +56,24 @@
       "skipToContent": "Saltar al contenido principal",
       "today": "Hoy"
     },
+    "join": {
+      "homeAria": "Inicio",
+      "title": "Unirse a {venue}",
+      "subtitle": "Has sido invitado a este lugar. Elige una contraseña para terminar de configurar tu cuenta.",
+      "venueLabel": "Lugar",
+      "emailLabel": "Tu correo",
+      "passwordLabel": "Contraseña",
+      "confirmLabel": "Confirmar contraseña",
+      "submit": "Continuar",
+      "submitting": "Guardando…",
+      "errors": {
+        "RATE_LIMIT": "Demasiados intentos. Espera e inténtalo de nuevo.",
+        "TOO_SHORT": "La contraseña debe tener al menos 8 caracteres.",
+        "MISMATCH": "Las contraseñas no coinciden.",
+        "NOT_SIGNED_IN": "Abre el enlace del correo de invitación para continuar.",
+        "NO_ACCESS": "No tienes acceso a este lugar."
+      }
+    },
     "home": {
       "today": "Hoy",
       "previousMonth": "Mes anterior",

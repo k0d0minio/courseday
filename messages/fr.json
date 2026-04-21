@@ -61,6 +61,24 @@
       "themeLight": "Clair",
       "themeDark": "Sombre"
     },
+    "join": {
+      "homeAria": "Accueil",
+      "title": "Rejoindre {venue}",
+      "subtitle": "Vous avez été invité sur ce lieu. Choisissez un mot de passe pour terminer la configuration de votre compte.",
+      "venueLabel": "Lieu",
+      "emailLabel": "Votre e-mail",
+      "passwordLabel": "Mot de passe",
+      "confirmLabel": "Confirmer le mot de passe",
+      "submit": "Continuer",
+      "submitting": "Enregistrement…",
+      "errors": {
+        "RATE_LIMIT": "Trop de tentatives. Veuillez patienter puis réessayer.",
+        "TOO_SHORT": "Le mot de passe doit contenir au moins 8 caractères.",
+        "MISMATCH": "Les mots de passe ne correspondent pas.",
+        "NOT_SIGNED_IN": "Ouvrez le lien dans votre e-mail d'invitation pour continuer.",
+        "NO_ACCESS": "Vous n'avez pas accès à ce lieu."
+      }
+    },
     "home": {
       "today": "Aujourd'hui",
       "previousMonth": "Mois précédent",
