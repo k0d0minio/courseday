@@ -22,7 +22,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -95,37 +94,44 @@ function InviteForm({ onInvited }: { onInvited: () => void }) {
       </CardHeader>
       <CardContent className="px-5 py-5 sm:px-6">
         <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_11rem_auto] md:items-end md:gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="invite-email">{t('emailLabel')}</Label>
-              <Input
-                id="invite-email"
-                type="email"
-                className="h-10"
-                placeholder={t('emailPlaceholder')}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="invite-role">{t('roleLabel')}</Label>
-              <Select value={role} onValueChange={(v) => setRole(v as MemberRole)}>
-                <SelectTrigger id="invite-role" className="h-10 w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent align="start">
-                  <SelectItem value="viewer">{t('roleViewer')}</SelectItem>
-                  <SelectItem value="editor">{t('roleEditor')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex md:block md:pb-0.5">
-              <Button type="submit" className="h-10 w-full md:w-auto" disabled={isPending}>
-                <UserPlus className="mr-2 size-4 shrink-0" aria-hidden />
-                {isPending ? t('inviting') : t('invite')}
-              </Button>
-            </div>
+          <p id="invite-fields-desc" className="sr-only">
+            {t('emailLabel')}, {t('roleLabel')}
+          </p>
+          <div
+            className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3"
+            aria-describedby="invite-fields-desc"
+          >
+            <Input
+              id="invite-email"
+              type="email"
+              className="h-10 min-h-10 w-full flex-1 sm:min-w-0"
+              placeholder={t('emailPlaceholder')}
+              aria-label={t('emailLabel')}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <Select value={role} onValueChange={(v) => setRole(v as MemberRole)}>
+              <SelectTrigger
+                id="invite-role"
+                className="!h-10 min-h-10 w-full shrink-0 sm:w-[10.5rem]"
+                aria-label={t('roleLabel')}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="start">
+                <SelectItem value="viewer">{t('roleViewer')}</SelectItem>
+                <SelectItem value="editor">{t('roleEditor')}</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              type="submit"
+              className="h-10 min-h-10 w-full shrink-0 px-5 sm:w-auto"
+              disabled={isPending}
+            >
+              <UserPlus className="size-4 shrink-0" aria-hidden />
+              {isPending ? t('inviting') : t('invite')}
+            </Button>
           </div>
         </form>
       </CardContent>
@@ -221,9 +227,7 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
   return (
     <div className="space-y-8">
       <Card className="gap-0 overflow-hidden py-0 shadow-sm">
-        <CardHeader className="border-b bg-muted/40 px-5 py-4 sm:px-6">
-          <CardTitle className="text-lg">{t('title')}</CardTitle>
-        </CardHeader>
+        <h2 className="sr-only">{t('title')}</h2>
         <CardContent className="p-0">
           {members.length === 0 ? (
             <p className="px-6 py-10 text-center text-sm text-muted-foreground">
@@ -263,7 +267,7 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
                               onValueChange={(v) => handleRoleChange(member, v as MemberRole)}
                             >
                               <SelectTrigger
-                                className="h-10 w-full min-w-[9rem] max-w-[11rem]"
+                                className="!h-10 min-h-10 w-full min-w-[9rem] max-w-[11rem]"
                                 aria-label={t('roleLabel')}
                               >
                                 <SelectValue />
