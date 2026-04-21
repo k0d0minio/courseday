@@ -13,7 +13,14 @@ import {
   cancelInvitation,
 } from '@/app/actions/memberships';
 import type { Member, PendingInvitation, MemberRole } from '@/app/actions/memberships';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -42,6 +49,20 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
+function RoleBadge({
+  role,
+  label,
+}: {
+  role: MemberRole;
+  label: string;
+}) {
+  return (
+    <Badge variant={role === 'editor' ? 'default' : 'secondary'} className="font-normal">
+      {label}
+    </Badge>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Invite form
 // ---------------------------------------------------------------------------
@@ -68,38 +89,47 @@ function InviteForm({ onInvited }: { onInvited: () => void }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <h3 className="text-base font-medium">{t('inviteTitle')}</h3>
-      <div className="flex gap-2 items-end flex-wrap">
-        <div className="flex-1 min-w-48 space-y-2">
-          <Label htmlFor="invite-email">{t('emailLabel')}</Label>
-          <Input
-            id="invite-email"
-            type="email"
-            placeholder={t('emailPlaceholder')}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="invite-role">{t('roleLabel')}</Label>
-          <Select value={role} onValueChange={(v) => setRole(v as MemberRole)}>
-            <SelectTrigger id="invite-role" className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="viewer">{t('roleViewer')}</SelectItem>
-              <SelectItem value="editor">{t('roleEditor')}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <Button type="submit" disabled={isPending}>
-          <UserPlus className="w-4 h-4 mr-1" />
-          {isPending ? t('inviting') : t('invite')}
-        </Button>
-      </div>
-    </form>
+    <Card className="gap-0 overflow-hidden py-0 shadow-sm">
+      <CardHeader className="border-b bg-muted/40 px-5 py-4 sm:px-6">
+        <CardTitle className="text-base">{t('inviteTitle')}</CardTitle>
+      </CardHeader>
+      <CardContent className="px-5 py-5 sm:px-6">
+        <form onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_11rem_auto] md:items-end md:gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="invite-email">{t('emailLabel')}</Label>
+              <Input
+                id="invite-email"
+                type="email"
+                className="h-10"
+                placeholder={t('emailPlaceholder')}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="invite-role">{t('roleLabel')}</Label>
+              <Select value={role} onValueChange={(v) => setRole(v as MemberRole)}>
+                <SelectTrigger id="invite-role" className="h-10 w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent align="start">
+                  <SelectItem value="viewer">{t('roleViewer')}</SelectItem>
+                  <SelectItem value="editor">{t('roleEditor')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex md:block md:pb-0.5">
+              <Button type="submit" className="h-10 w-full md:w-auto" disabled={isPending}>
+                <UserPlus className="mr-2 size-4 shrink-0" aria-hidden />
+                {isPending ? t('inviting') : t('invite')}
+              </Button>
+            </div>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -190,117 +220,150 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
 
   return (
     <div className="space-y-8">
-      {/* Current members */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold">{t('title')}</h2>
-        {members.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t('noMembers')}</p>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t('email')}</TableHead>
-                <TableHead>{t('role')}</TableHead>
-                <TableHead>{t('joined')}</TableHead>
-                <TableHead className="w-16" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {members.map((member) => {
-                const isSelf = member.user_id === currentUserId;
-                return (
-                  <TableRow key={member.id}>
-                    <TableCell className="font-medium">{member.email}</TableCell>
-                    <TableCell>
-                      {isSelf ? (
-                        <span className="text-sm">{t(`role${member.role.charAt(0).toUpperCase() + member.role.slice(1)}` as 'roleEditor' | 'roleViewer')}</span>
-                      ) : (
-                        <Select
-                          value={member.role}
-                          onValueChange={(v) => handleRoleChange(member, v as MemberRole)}
-                        >
-                          <SelectTrigger className="w-28 h-8">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="viewer">{t('roleViewer')}</SelectItem>
-                            <SelectItem value="editor">{t('roleEditor')}</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
-                      {new Date(member.created_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      {!isSelf && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setRemoveTarget(member)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </TableCell>
+      <Card className="gap-0 overflow-hidden py-0 shadow-sm">
+        <CardHeader className="border-b bg-muted/40 px-5 py-4 sm:px-6">
+          <CardTitle className="text-lg">{t('title')}</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {members.length === 0 ? (
+            <p className="px-6 py-10 text-center text-sm text-muted-foreground">
+              {t('noMembers')}
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-b hover:bg-transparent">
+                    <TableHead className="h-11 min-w-[12rem] pl-6 font-medium">
+                      {t('email')}
+                    </TableHead>
+                    <TableHead className="h-11 w-[10.5rem] min-w-[10.5rem] font-medium">
+                      {t('role')}
+                    </TableHead>
+                    <TableHead className="h-11 w-36 font-medium">{t('joined')}</TableHead>
+                    <TableHead className="h-11 w-14 pr-6" aria-hidden />
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        )}
-      </div>
+                </TableHeader>
+                <TableBody>
+                  {members.map((member) => {
+                    const isSelf = member.user_id === currentUserId;
+                    const roleLabel =
+                      member.role === 'editor' ? t('roleEditor') : t('roleViewer');
+                    return (
+                      <TableRow key={member.id} className="hover:bg-muted/40">
+                        <TableCell className="max-w-[18rem] truncate py-3 pl-6 font-medium">
+                          {member.email}
+                        </TableCell>
+                        <TableCell className="py-3 align-middle">
+                          {isSelf ? (
+                            <RoleBadge role={member.role} label={roleLabel} />
+                          ) : (
+                            <Select
+                              value={member.role}
+                              onValueChange={(v) => handleRoleChange(member, v as MemberRole)}
+                            >
+                              <SelectTrigger
+                                className="h-10 w-full min-w-[9rem] max-w-[11rem]"
+                                aria-label={t('roleLabel')}
+                              >
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent align="start">
+                                <SelectItem value="viewer">{t('roleViewer')}</SelectItem>
+                                <SelectItem value="editor">{t('roleEditor')}</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-3 text-sm text-muted-foreground tabular-nums">
+                          {new Date(member.created_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="py-3 pr-6 text-right">
+                          {!isSelf && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-9 text-muted-foreground hover:text-destructive"
+                              onClick={() => setRemoveTarget(member)}
+                              aria-label={t('removeTitle')}
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-      {/* Invite form */}
       <InviteForm onInvited={refresh} />
 
-      {/* Pending invitations */}
       {pending.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-base font-medium">{t('pendingTitle')}</h3>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t('email')}</TableHead>
-                <TableHead>{t('role')}</TableHead>
-                <TableHead className="w-24" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {pending.map((inv) => (
-                <TableRow key={inv.id}>
-                  <TableCell className="text-muted-foreground">{inv.email}</TableCell>
-                  <TableCell className="text-sm">
-                    {t(`role${inv.role.charAt(0).toUpperCase() + inv.role.slice(1)}` as 'roleEditor' | 'roleViewer')}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={isCancelling}
-                      onClick={() => handleCancelInvitation(inv)}
-                    >
-                      {t('cancel')}
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <Card className="gap-0 overflow-hidden py-0 shadow-sm">
+          <CardHeader className="border-b bg-muted/40 px-5 py-4 sm:px-6">
+            <CardTitle className="text-base">{t('pendingTitle')}</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="h-11 min-w-[12rem] pl-6 font-medium">
+                      {t('email')}
+                    </TableHead>
+                    <TableHead className="h-11 w-36 font-medium">{t('role')}</TableHead>
+                    <TableHead className="h-11 w-32 pr-6 text-right" aria-hidden />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pending.map((inv) => (
+                    <TableRow key={inv.id} className="hover:bg-muted/40">
+                      <TableCell className="max-w-[18rem] truncate py-3 pl-6 text-muted-foreground">
+                        {inv.email}
+                      </TableCell>
+                      <TableCell className="py-3">
+                        <RoleBadge
+                          role={inv.role}
+                          label={
+                            inv.role === 'editor' ? t('roleEditor') : t('roleViewer')
+                          }
+                        />
+                      </TableCell>
+                      <TableCell className="py-3 pr-6 text-right">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-9"
+                          disabled={isCancelling}
+                          onClick={() => handleCancelInvitation(inv)}
+                        >
+                          {t('cancel')}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Remove confirmation */}
       <AlertDialog
         open={!!removeTarget}
-        onOpenChange={(v) => { if (!v) setRemoveTarget(null); }}
+        onOpenChange={(v) => {
+          if (!v) setRemoveTarget(null);
+        }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t('removeTitle')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {removeTarget?.email}
-            </AlertDialogDescription>
+            <AlertDialogDescription>{removeTarget?.email}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('cancelAction')}</AlertDialogCancel>
