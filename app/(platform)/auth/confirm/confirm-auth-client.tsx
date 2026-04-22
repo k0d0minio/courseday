@@ -6,6 +6,29 @@ import { createBrowserClient } from '@supabase/ssr';
 import { rootDomain } from '@/lib/utils';
 import { finalizeEmailAuthRedirect } from '@/app/actions/auth-confirm';
 
+type EmailOtpType =
+  | 'signup'
+  | 'invite'
+  | 'magiclink'
+  | 'recovery'
+  | 'email_change'
+  | 'email';
+
+function toEmailOtpType(value: string | null): EmailOtpType | null {
+  if (!value) return null;
+  switch (value) {
+    case 'signup':
+    case 'invite':
+    case 'magiclink':
+    case 'recovery':
+    case 'email_change':
+    case 'email':
+      return value;
+    default:
+      return null;
+  }
+}
+
 function createAuthConfirmBrowserClient() {
   const cookieDomain = '.' + rootDomain.split(':')[0];
   return createBrowserClient(
@@ -38,7 +61,7 @@ export function ConfirmAuthClient() {
 
     async function run() {
       const supabase = createAuthConfirmBrowserClient();
-      let authType = queryType ?? (flow === 'recovery' ? 'recovery' : null);
+      let authType = toEmailOtpType(queryType ?? (flow === 'recovery' ? 'recovery' : null));
 
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
@@ -61,7 +84,7 @@ export function ConfirmAuthClient() {
         const hash = typeof window !== 'undefined' ? window.location.hash : '';
         const fragment = hash.startsWith('#') ? hash.slice(1) : hash;
         const hp = new URLSearchParams(fragment);
-        authType = hp.get('type') ?? authType;
+        authType = toEmailOtpType(hp.get('type')) ?? authType;
         const access_token = hp.get('access_token');
         const refresh_token = hp.get('refresh_token');
         if (access_token && refresh_token) {
