@@ -150,9 +150,17 @@ export async function middleware(request: NextRequest) {
   requestHeaders.set('x-tenant-slug', tenant.slug);
   requestHeaders.set('x-tenant-language', tenant.language ?? 'en');
 
+  // Avoid App Router static-vs-dynamic collisions on tenant root.
+  // Example: tenant slug "demo" conflicts with platform /demo page.
+  // Use an internal tenant-only root route for "/" while keeping URL unchanged.
+  const internalTenantPath =
+    pathname === '/'
+      ? `/${tenant.slug}/__home`
+      : `/${tenant.slug}${pathname}`;
+
   return applyAuthCookies(
     NextResponse.rewrite(
-      new URL(`/${tenant.slug}${pathname}`, request.url),
+      new URL(internalTenantPath, request.url),
       { request: { headers: requestHeaders } }
     )
   );
