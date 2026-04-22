@@ -65,6 +65,7 @@ export async function platformSignIn(_prevState: unknown, formData: FormData) {
 
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
+  const slugHint = String(formData.get('slug') ?? '').trim();
   if (!password) return { error: 'Enter your password or use a magic link.' };
 
   const supabase = await createSupabaseServerClient();
@@ -79,11 +80,12 @@ export async function platformSignIn(_prevState: unknown, formData: FormData) {
     .from('memberships')
     .select('tenants(slug)')
     .eq('user_id', data.user.id)
-    .limit(1);
+    .limit(50);
 
-  const slugFromMember = (
-    membershipRows?.[0]?.tenants as unknown as { slug: string } | null
-  )?.slug;
+  const memberSlugs = (membershipRows ?? [])
+    .map((row) => (row.tenants as unknown as { slug: string } | null)?.slug ?? null)
+    .filter((slug): slug is string => !!slug);
+  const slugFromMember = slugHint && memberSlugs.includes(slugHint) ? slugHint : memberSlugs[0] ?? null;
 
   const emailNorm = normaliseInviteEmail(data.user.email);
   const slugFromPending =
@@ -105,36 +107,6 @@ export async function platformSignIn(_prevState: unknown, formData: FormData) {
   }
 
   redirect(`${protocol}://${slug}.${rootDomain}/`);
-}
-
-export async function superadminSignIn(
-  _prevState: unknown,
-  formData: FormData
-): Promise<{ error: string } | void> {
-  const rl = await authRateLimit();
-  if (!rl.success) return { error: 'Too many attempts. Please wait and try again.' };
-
-  const email = String(formData.get('email') ?? '').trim();
-  const password = String(formData.get('password') ?? '');
-  if (!password) return { error: 'Password is required.' };
-
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return { error: error.message };
-
-  const serviceClient = createSupabaseServiceClient();
-  const { data: superadminRow } = await serviceClient
-    .from('superadmins')
-    .select('id')
-    .eq('user_id', data.user.id)
-    .maybeSingle();
-
-  if (!superadminRow) {
-    await supabase.auth.signOut();
-    return { error: 'This account is not authorised for superadmin access.' };
-  }
-
-  redirect('/admin');
 }
 
 export type AuthEmailActionState = { error?: string; success?: string } | null;

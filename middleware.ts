@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { redis } from '@/lib/redis';
 import { extractSubdomain } from '@/lib/subdomain';
-import { rootDomain } from '@/lib/utils';
+import { protocol, rootDomain } from '@/lib/utils';
 import type { TenantRedisData } from '@/app/actions/tenants';
 
 // Node.js runtime required for ioredis (TCP sockets).
@@ -116,9 +116,15 @@ export async function middleware(request: NextRequest) {
     });
   }
 
-  if (pathname === '/auth/sign-up') {
-    const url = new URL('/auth/sign-in', request.url);
-    return applyAuthCookies(NextResponse.redirect(url));
+  const platformSignInUrl = new URL(`${protocol}://${rootDomain}/auth/sign-in`);
+  platformSignInUrl.searchParams.set('slug', subdomain);
+  const redirectTo = request.nextUrl.searchParams.get('redirectTo');
+  if (redirectTo) {
+    platformSignInUrl.searchParams.set('redirectTo', redirectTo);
+  }
+
+  if (pathname === '/auth/sign-in' || pathname === '/auth/sign-up') {
+    return applyAuthCookies(NextResponse.redirect(platformSignInUrl));
   }
 
   // -------------------------------------------------------------------------
@@ -131,7 +137,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/pwa/');
 
   if (!user && !isPublicPath) {
-    const signInUrl = new URL('/auth/sign-in', request.url);
+    const signInUrl = new URL(`${protocol}://${rootDomain}/auth/sign-in`);
+    signInUrl.searchParams.set('slug', subdomain);
     signInUrl.searchParams.set('redirectTo', pathname);
     return applyAuthCookies(NextResponse.redirect(signInUrl));
   }

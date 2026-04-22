@@ -2,18 +2,24 @@
 
 import { useActionState, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { platformSignIn, sendSignInMagicLink } from '@/app/actions/auth';
+import { platformSignIn } from '@/app/actions/auth';
 import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { createSupabaseBrowserClient } from '@/lib/supabase-client';
 
 export function SignInForm() {
   const [state, action, isPending] = useActionState(platformSignIn, null);
-  const [magicState, magicAction, isMagicPending] = useActionState(sendSignInMagicLink, null);
+  const [magicState, setMagicState] = useState<{ error?: string; success?: string } | null>(null);
+  const [isMagicPending, setIsMagicPending] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState('');
+  const searchParams = useSearchParams();
+  const slug = searchParams.get('slug')?.trim() ?? '';
   const t = useTranslations('Platform.auth');
 
   // Invite / magic links sometimes land on Site URL (sign-in) with tokens in the
@@ -33,6 +39,37 @@ export function SignInForm() {
     window.location.replace(`${window.location.origin}/auth/confirm${hash}`);
   }, []);
 
+  async function handleMagicLink() {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setMagicState({ error: 'Email is required.' });
+      return;
+    }
+
+    setIsMagicPending(true);
+    setMagicState(null);
+
+    const redirectUrl = new URL('/auth/confirm', window.location.origin);
+    redirectUrl.searchParams.set('flow', 'magic');
+    if (slug) redirectUrl.searchParams.set('slug', slug);
+
+    const supabase = createSupabaseBrowserClient();
+    const { error } = await supabase.auth.signInWithOtp({
+      email: trimmedEmail,
+      options: {
+        shouldCreateUser: false,
+        emailRedirectTo: redirectUrl.toString(),
+      },
+    });
+
+    if (error) {
+      setMagicState({ error: error.message });
+    } else {
+      setMagicState({ success: 'Check your email for a sign-in link.' });
+    }
+    setIsMagicPending(false);
+  }
+
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-6">
@@ -50,6 +87,7 @@ export function SignInForm() {
           </CardHeader>
 
           <form action={action}>
+            <input type="hidden" name="slug" value={slug} />
             <CardContent className="space-y-4">
               {state?.error && (
                 <p className="text-sm text-destructive">{state.error}</p>
@@ -68,6 +106,8 @@ export function SignInForm() {
                   name="email"
                   type="email"
                   autoComplete="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
                   required
                 />
               </div>
@@ -88,12 +128,11 @@ export function SignInForm() {
 
             <CardFooter className="flex flex-col gap-3 pt-2">
               <Button
-                type="submit"
-                formAction={magicAction}
-                formNoValidate
+                type="button"
                 variant="outline"
                 className="w-full"
                 disabled={isMagicPending}
+                onClick={handleMagicLink}
               >
                 {isMagicPending ? t('sendingMagicLink') : t('magicLinkButton')}
               </Button>
@@ -113,9 +152,6 @@ export function SignInForm() {
               )}
               <Link href="/auth/forgot-password" className="text-sm underline underline-offset-4">
                 {t('forgotPasswordLink')}
-              </Link>
-              <Link href="/auth/superadmin-sign-in" className="text-sm underline underline-offset-4">
-                {t('superadminSignInLink')}
               </Link>
               <p className="text-sm text-muted-foreground text-center">
                 {t('createVenuePrompt')}{' '}
