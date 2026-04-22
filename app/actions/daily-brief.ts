@@ -22,6 +22,7 @@
 import { createTenantClient } from '@/lib/supabase-server';
 import { getTenantId } from '@/lib/tenant';
 import { getUserRole, requireEditor } from '@/lib/membership';
+import { isFeatureEnabled } from '@/app/actions/feature-flags';
 import { dailyBriefRateLimit } from '@/lib/rate-limit';
 import { ensureDayExists } from '@/app/actions/days';
 import {
@@ -70,6 +71,9 @@ export async function getDailyBrief(dayId: string): Promise<ActionResponse<Daily
 
 export async function generateDailyBrief(dateIso: string): Promise<ActionResponse<DailyBriefRecord>> {
   const tenantId = await getTenantId();
+  if (!(await isFeatureEnabled(tenantId, 'daily_brief'))) {
+    return { success: false, error: 'Daily brief is disabled for this venue.' };
+  }
   const user = await requireEditor(tenantId);
 
   if (!process.env.AI_GATEWAY_API_KEY) {

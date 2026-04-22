@@ -17,6 +17,7 @@ import { BreakfastForm } from '@/components/breakfast-form';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
+import { useFeatureFlag } from '@/lib/feature-flags-context';
 import type {
   Activity,
   ActivityWithRelations,
@@ -52,6 +53,8 @@ type DayData = {
 
 export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
   const t = useTranslations('Tenant.sidebar');
+  const showReservations = useFeatureFlag('reservations');
+  const showBreakfast = useFeatureFlag('breakfast_config');
   const [data, setData] = useState<DayData | null>(null);
   const [loading, startLoading] = useTransition();
 
@@ -70,8 +73,8 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
       const [itemsResult, resResult, bfResult, pocsResult, venuesResult] =
         await Promise.all([
           getActivitiesForDay(dayId),
-          getReservationsForDay(dayId),
-          getBreakfastConfigurationsForDay(dayId),
+          showReservations ? getReservationsForDay(dayId) : Promise.resolve({ success: true as const, data: [] as Reservation[] }),
+          showBreakfast ? getBreakfastConfigurationsForDay(dayId) : Promise.resolve({ success: true as const, data: [] as BreakfastConfiguration[] }),
           getAllPOCs(),
           getAllVenueTypes(),
         ]);
@@ -85,7 +88,7 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
         venueTypes: venuesResult.success ? venuesResult.data : [],
       });
     });
-  }, [date]);
+  }, [date, showReservations, showBreakfast]);
 
   function handleActivitySaved(item: Activity) {
     if (!data) return;
@@ -151,45 +154,51 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
               >
                 <Plus className="h-3 w-3 mr-1" /> {t('activity')}
               </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-7 text-xs"
-                onClick={() => setReservationModalOpen(true)}
-              >
-                <Plus className="h-3 w-3 mr-1" /> {t('reservation')}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-7 text-xs"
-                onClick={() => setBreakfastModalOpen(true)}
-              >
-                <Plus className="h-3 w-3 mr-1" /> {t('breakfast')}
-              </Button>
+              {showReservations && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs"
+                  onClick={() => setReservationModalOpen(true)}
+                >
+                  <Plus className="h-3 w-3 mr-1" /> {t('reservation')}
+                </Button>
+              )}
+              {showBreakfast && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs"
+                  onClick={() => setBreakfastModalOpen(true)}
+                >
+                  <Plus className="h-3 w-3 mr-1" /> {t('breakfast')}
+                </Button>
+              )}
             </div>
 
             <Separator />
 
             {/* Breakfast */}
-            <SidebarSection
-              title={t('breakfast')}
-              empty={data.breakfastConfigs.length === 0}
-              emptyLabel={t('none')}
-            >
-              {data.breakfastConfigs.map((item) => (
-                <div key={item.id} className="flex items-baseline justify-between gap-2">
-                  <span className="text-sm truncate flex-1">
-                    {item.group_name ?? 'Unnamed'}
-                  </span>
-                  {item.total_guests > 0 && (
-                    <span className="text-xs text-muted-foreground shrink-0">
-                      {item.total_guests} guests
+            {showBreakfast && (
+              <SidebarSection
+                title={t('breakfast')}
+                empty={data.breakfastConfigs.length === 0}
+                emptyLabel={t('none')}
+              >
+                {data.breakfastConfigs.map((item) => (
+                  <div key={item.id} className="flex items-baseline justify-between gap-2">
+                    <span className="text-sm truncate flex-1">
+                      {item.group_name ?? 'Unnamed'}
                     </span>
-                  )}
-                </div>
-              ))}
-            </SidebarSection>
+                    {item.total_guests > 0 && (
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {item.total_guests} guests
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </SidebarSection>
+            )}
 
             {/* Activities */}
             <SidebarSection
@@ -210,22 +219,24 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
             </SidebarSection>
 
             {/* Reservations */}
-            <SidebarSection
-              title={t('reservations')}
-              empty={data.reservations.length === 0}
-              emptyLabel={t('none')}
-            >
-              {data.reservations.map((res) => (
-                <div key={res.id} className="flex items-baseline justify-between gap-2">
-                  <span className="text-sm truncate">{res.guest_name ?? 'Guest'}</span>
-                  {res.start_time && (
-                    <span className="text-xs text-muted-foreground shrink-0">
-                      {res.start_time.slice(0, 5)}
-                    </span>
-                  )}
-                </div>
-              ))}
-            </SidebarSection>
+            {showReservations && (
+              <SidebarSection
+                title={t('reservations')}
+                empty={data.reservations.length === 0}
+                emptyLabel={t('none')}
+              >
+                {data.reservations.map((res) => (
+                  <div key={res.id} className="flex items-baseline justify-between gap-2">
+                    <span className="text-sm truncate">{res.guest_name ?? 'Guest'}</span>
+                    {res.start_time && (
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {res.start_time.slice(0, 5)}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </SidebarSection>
+            )}
 
             <Separator />
 
@@ -250,20 +261,24 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
             editItem={null}
             onSuccess={handleActivitySaved}
           />
-          <ReservationForm
-            isOpen={reservationModalOpen}
-            onClose={() => setReservationModalOpen(false)}
-            dayId={data.dayId}
-            editItem={null}
-            onSuccess={handleReservationSaved}
-          />
-          <BreakfastForm
-            isOpen={breakfastModalOpen}
-            onClose={() => setBreakfastModalOpen(false)}
-            dayId={data.dayId}
-            editItem={null}
-            onSuccess={handleBreakfastSaved}
-          />
+          {showReservations && (
+            <ReservationForm
+              isOpen={reservationModalOpen}
+              onClose={() => setReservationModalOpen(false)}
+              dayId={data.dayId}
+              editItem={null}
+              onSuccess={handleReservationSaved}
+            />
+          )}
+          {showBreakfast && (
+            <BreakfastForm
+              isOpen={breakfastModalOpen}
+              onClose={() => setBreakfastModalOpen(false)}
+              dayId={data.dayId}
+              editItem={null}
+              onSuccess={handleBreakfastSaved}
+            />
+          )}
         </>
       )}
     </aside>

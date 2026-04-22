@@ -107,6 +107,28 @@ All server actions live under `app/actions/`:
 
 `next-intl` is used for all user-visible strings. Translation files are at `messages/en.json` and `messages/fr.json`. Tenant language is stored in the `tenants.language` column and passed via the `x-tenant-language` request header by middleware. Namespace structure: `Platform.*` (root domain) and `Tenant.*` (tenant app).
 
+### Feature Flags
+
+Per-tenant feature toggles controlled by superadmin via `app/admin/dashboard.tsx`. Source of truth: `lib/feature-flags.ts` (KNOWN_FLAGS, labels, descriptions). Stored in `feature_flags` table; missing rows default to **enabled**.
+
+| Flag Key | Label | What it gates | Default |
+|----------|-------|---------------|---------|
+| `reservations` | Reservations | Reservation CRUD, reservation counts/pips on calendar/agenda/sidebar, reservation sections on day views, DaySummaryCard column. Server actions guarded. | true |
+| `breakfast_config` | Breakfast Config | Breakfast CRUD, breakfast counts/pips on calendar/agenda/sidebar, breakfast sections on day views, DaySummaryCard column. Server actions guarded. | true |
+| `weather_reporting` | Weather Reporting | WeatherCard on day views, weather data fetch on day page. | true |
+| `checklists` | Checklists | Checklists settings page, settings dropdown/mobile-nav/command palette link. | true |
+| `staff_schedule` | Staff Schedule | Staff schedule section on day views, staff settings page, shift data fetch, copy-day shift option. | true |
+| `daily_brief` | Daily Brief | DailyBriefCard on day views (editor + viewer), `generateDailyBrief` server action, morning brief cron email (skips tenant when off), daily brief data fetch on day page. | true |
+
+**Always-on modules** (no flag, core functionality):
+Activities, day notes, notifications, templates, feedback, branding, members, onboarding, PWA, realtime, language settings.
+
+**Enforcement layers:**
+- **UI**: Components use `useFeatureFlag()` from `lib/feature-flags-context.tsx`. Hidden from settings-dropdown, mobile-nav, command-palette, calendar pips, agenda counts, day view sections, DaySummaryCard columns.
+- **Server pages**: `app/[tenant]/page.tsx` and `app/[tenant]/day/[date]/page.tsx` skip DB queries for disabled features.
+- **Server actions**: Mutation actions (`create*`, `update*`, `delete*`) return error when feature is disabled. Read actions are not guarded (harmless, may be needed for admin).
+- **Cron**: Morning brief cron skips tenants with `daily_brief` off.
+
 ### Planned Work (TICKETS.md)
 
 The `TICKETS.md` file contains the full backlog of AI-executable tickets. Follow its **How Claude Code should use this file** section — including **Supabase migrations**: implement SQL in `supabase/migrations/`, update seeds when needed, and verify with the Supabase CLI locally; do not defer migration work to the user when the toolchain is available.

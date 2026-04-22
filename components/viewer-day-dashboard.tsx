@@ -87,6 +87,7 @@ export function ViewerDayDashboard({
   const showBreakfast = useFeatureFlag('breakfast_config');
   const showWeatherReporting = useFeatureFlag('weather_reporting');
   const showStaffSchedule = useFeatureFlag('staff_schedule');
+  const showDailyBrief = useFeatureFlag('daily_brief');
 
   const visibleBreakfastConfigs = showBreakfast ? breakfastConfigs : [];
   const visibleReservations = showReservations ? reservations : [];
@@ -110,12 +111,14 @@ export function ViewerDayDashboard({
         />
       )}
 
-      <DailyBriefCard
-        dateIso={date}
-        dayId={dayId}
-        initialBrief={dailyBrief}
-        isEditor={false}
-      />
+      {showDailyBrief && (
+        <DailyBriefCard
+          dateIso={date}
+          dayId={dayId}
+          initialBrief={dailyBrief}
+          isEditor={false}
+        />
+      )}
 
       {showWeatherReporting && weather && <WeatherCard weather={weather} />}
 
@@ -131,10 +134,10 @@ export function ViewerDayDashboard({
       />
 
       {/* Summary — large numbers for at-a-glance reading */}
-      <div className="grid grid-cols-3 gap-3">
-        <StatBlock label={tsummary('breakfast')} value={totalBreakfastCovers} />
+      <div className={`grid gap-3 ${showBreakfast && showReservations ? 'grid-cols-3' : showBreakfast || showReservations ? 'grid-cols-2' : 'grid-cols-1'}`}>
+        {showBreakfast && <StatBlock label={tsummary('breakfast')} value={totalBreakfastCovers} />}
         <StatBlock label={tsummary('activities')} value={totalActivityCovers} />
-        <StatBlock label={tsummary('reservations')} value={totalReservationCovers} />
+        {showReservations && <StatBlock label={tsummary('reservations')} value={totalReservationCovers} />}
       </div>
 
       {showStaffSchedule && (

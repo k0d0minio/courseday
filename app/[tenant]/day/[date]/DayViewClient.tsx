@@ -240,6 +240,7 @@ function DayViewEditor({
   const showReservations = useFeatureFlag('reservations');
   const showBreakfast = useFeatureFlag('breakfast_config');
   const showWeatherReporting = useFeatureFlag('weather_reporting');
+  const showDailyBrief = useFeatureFlag('daily_brief');
 
   const {
     activities,
@@ -559,12 +560,14 @@ function DayViewEditor({
         showCopyShifts={showStaffSchedule}
       />
 
-      <DailyBriefCard
-        dateIso={date}
-        dayId={dayId}
-        initialBrief={dailyBrief}
-        isEditor
-      />
+      {showDailyBrief && (
+        <DailyBriefCard
+          dateIso={date}
+          dayId={dayId}
+          initialBrief={dailyBrief}
+          isEditor
+        />
+      )}
 
       {showWeatherReporting && weather && <WeatherCard weather={weather} />}
 

@@ -2,6 +2,7 @@ import { Resend } from 'resend';
 import { parse } from 'date-fns';
 import { fromZonedTime } from 'date-fns-tz';
 import { createSupabaseServiceClient } from '@/lib/supabase-server';
+import { getFeatureFlags } from '@/app/actions/feature-flags';
 import { getTenantToday } from '@/lib/day-utils';
 import { ensureDayForTenant } from '@/lib/ensure-day';
 import { formatDailyBriefMarkdown } from '@/lib/daily-brief-format';
@@ -111,6 +112,11 @@ export async function runMorningBriefEmailCron(): Promise<MorningBriefCronResult
     );
     if (now < local7am) continue;
     tenantsInWindow += 1;
+
+    // Skip tenants with daily_brief disabled
+    const flags = await getFeatureFlags(tenant.id);
+    if (!flags.daily_brief) continue;
+
     const dayRes = await ensureDayForTenant(tenant.id, dateIso);
     if (!dayRes.success) {
       errors.push(`${tenant.slug}: ${dayRes.error}`);

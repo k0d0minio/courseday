@@ -120,9 +120,10 @@ export default async function DayPage({
 
   const flags = await getFeatureFlags(tenant.id);
   const staffScheduleOn = flags.staff_schedule;
+  const dailyBriefOn = flags.daily_brief;
   const authState = await getAuthState();
 
-  // Load all day data in parallel
+  // Load all day data in parallel — skip disabled features
   const [
     activities,
     reservations,
@@ -137,11 +138,11 @@ export default async function DayPage({
     staffRoles,
   ] = await Promise.all([
     getProgramItemsForDay(tenant.id, day.id),
-    getReservationsForDay(tenant.id, day.id),
-    getBreakfastConfigsForDay(tenant.id, day.id),
+    flags.reservations ? getReservationsForDay(tenant.id, day.id) : Promise.resolve([]),
+    flags.breakfast_config ? getBreakfastConfigsForDay(tenant.id, day.id) : Promise.resolve([]),
     getDayNotesForDay(tenant.id, day.id),
-    getWeatherForDay(date, weatherCoords),
-    getDailyBriefForDay(tenant.id, day.id),
+    flags.weather_reporting ? getWeatherForDay(date, weatherCoords) : Promise.resolve(null),
+    dailyBriefOn ? getDailyBriefForDay(tenant.id, day.id) : Promise.resolve(null),
     getAllPOCs(),
     getAllVenueTypes(),
     staffScheduleOn ? getShiftsForDay(tenant.id, day.id) : Promise.resolve([]),

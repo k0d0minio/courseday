@@ -3,6 +3,7 @@
 import { createTenantClient } from '@/lib/supabase-server';
 import { getTenantId } from '@/lib/tenant';
 import { requireEditor, getUserRole } from '@/lib/membership';
+import { isFeatureEnabled } from '@/app/actions/feature-flags';
 import { createBreakfastSchema, updateBreakfastSchema } from '@/lib/breakfast-schema';
 import { notifyTenantMembers, getDayDate } from '@/lib/notifications';
 import type { CreateBreakfastFormData, UpdateBreakfastFormData } from '@/lib/breakfast-schema';
@@ -25,6 +26,9 @@ export async function createBreakfastConfiguration(
   }
 
   const tenantId = await getTenantId();
+  if (!(await isFeatureEnabled(tenantId, 'breakfast_config'))) {
+    return { success: false, error: 'Breakfast config is disabled for this venue.' };
+  }
   const user = await requireEditor(tenantId);
 
   const { supabase } = await createTenantClient();
@@ -75,6 +79,9 @@ export async function updateBreakfastConfiguration(
   }
 
   const tenantId = await getTenantId();
+  if (!(await isFeatureEnabled(tenantId, 'breakfast_config'))) {
+    return { success: false, error: 'Breakfast config is disabled for this venue.' };
+  }
   const user = await requireEditor(tenantId);
 
   const { supabase } = await createTenantClient();
@@ -112,6 +119,9 @@ export async function updateBreakfastConfiguration(
 
 export async function deleteBreakfastConfiguration(id: string): Promise<ActionResponse> {
   const tenantId = await getTenantId();
+  if (!(await isFeatureEnabled(tenantId, 'breakfast_config'))) {
+    return { success: false, error: 'Breakfast config is disabled for this venue.' };
+  }
   const user = await requireEditor(tenantId);
 
   const { supabase } = await createTenantClient();

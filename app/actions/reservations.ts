@@ -3,6 +3,7 @@
 import { createTenantClient } from '@/lib/supabase-server';
 import { getTenantId } from '@/lib/tenant';
 import { getUserRole, requireEditor } from '@/lib/membership';
+import { isFeatureEnabled } from '@/app/actions/feature-flags';
 import { reservationSchema } from '@/lib/reservation-schema';
 import { notifyTenantMembers, getDayDate } from '@/lib/notifications';
 import type { ReservationFormData } from '@/lib/reservation-schema';
@@ -18,6 +19,9 @@ export async function createReservation(
   }
 
   const tenantId = await getTenantId();
+  if (!(await isFeatureEnabled(tenantId, 'reservations'))) {
+    return { success: false, error: 'Reservations are disabled for this venue.' };
+  }
   const user = await requireEditor(tenantId);
 
   const { supabase } = await createTenantClient();
@@ -61,6 +65,9 @@ export async function updateReservation(
   }
 
   const tenantId = await getTenantId();
+  if (!(await isFeatureEnabled(tenantId, 'reservations'))) {
+    return { success: false, error: 'Reservations are disabled for this venue.' };
+  }
   const user = await requireEditor(tenantId);
 
   const { supabase } = await createTenantClient();
@@ -98,6 +105,9 @@ export async function updateReservation(
 
 export async function deleteReservation(id: string): Promise<ActionResponse> {
   const tenantId = await getTenantId();
+  if (!(await isFeatureEnabled(tenantId, 'reservations'))) {
+    return { success: false, error: 'Reservations are disabled for this venue.' };
+  }
   const user = await requireEditor(tenantId);
 
   const { supabase } = await createTenantClient();

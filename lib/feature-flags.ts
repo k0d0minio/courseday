@@ -4,6 +4,7 @@ export const KNOWN_FLAGS = [
   'weather_reporting',
   'checklists',
   'staff_schedule',
+  'daily_brief',
 ] as const;
 
 export type FlagKey = (typeof KNOWN_FLAGS)[number];
@@ -15,6 +16,7 @@ export const FLAG_LABELS: Record<FlagKey, string> = {
   weather_reporting: 'Weather Reporting',
   checklists: 'Checklists',
   staff_schedule: 'Staff schedule',
+  daily_brief: 'Daily Brief',
 };
 
 export const FLAG_DESCRIPTIONS: Record<FlagKey, string> = {
@@ -23,4 +25,5 @@ export const FLAG_DESCRIPTIONS: Record<FlagKey, string> = {
   weather_reporting: 'Show weather card and weather reporting data.',
   checklists: 'Show checklists in tenant settings.',
   staff_schedule: 'Show staff scheduling on day views and Staff settings.',
+  daily_brief: 'Show AI daily brief card and enable morning brief email.',
 };

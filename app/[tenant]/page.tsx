@@ -4,6 +4,7 @@ import { getTenantFromHeaders } from '@/lib/tenant';
 import { requireTenantMember } from '@/lib/guards';
 import { ensureDaysRange } from '@/app/actions/days';
 import { getTenantToday, getMonthDateRange } from '@/lib/day-utils';
+import { getFeatureFlags } from '@/app/actions/feature-flags';
 import {
   getProgramItemsForMonth,
   getReservationsForMonth,
@@ -70,12 +71,14 @@ export default async function TenantHomePage({
   const dayIds = monthDays.map((d) => d.id);
   const dayDateMap = new Map(monthDays.map((d) => [d.id, d.date_iso]));
 
-  // Load all month data in parallel
+  const flags = await getFeatureFlags(tenant.id);
+
+  // Load all month data in parallel — skip disabled features
   const [activities, reservations, breakfastConfigs] =
     await Promise.all([
       getProgramItemsForMonth(tenant.id, dayIds),
-      getReservationsForMonth(tenant.id, dayIds),
-      getBreakfastConfigsForMonth(tenant.id, start, end),
+      flags.reservations ? getReservationsForMonth(tenant.id, dayIds) : Promise.resolve([]),
+      flags.breakfast_config ? getBreakfastConfigsForMonth(tenant.id, start, end) : Promise.resolve([]),
     ]);
 
   // Build per-day summary map

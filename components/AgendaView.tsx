@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { useFeatureFlag } from '@/lib/feature-flags-context';
 import type {
   Activity,
   ActivityWithRelations,
@@ -55,6 +56,8 @@ const PAGE_SIZE = 14;
 export function AgendaView({ today, isEditor = true }: Props) {
   const t = useTranslations('Tenant.home');
   const ts = useTranslations('Tenant.sidebar');
+  const showReservations = useFeatureFlag('reservations');
+  const showBreakfast = useFeatureFlag('breakfast_config');
   const [summaries, setSummaries] = useState<DaySummary[]>([]);
   const [initialLoading, startInitialLoad] = useTransition();
   const [loadingMore, startLoadMore] = useTransition();
@@ -114,6 +117,8 @@ export function AgendaView({ today, isEditor = true }: Props) {
             )
           }
           onSummaryChanged={(patch) => handleSummaryChanged(summary.date, patch)}
+          showReservations={showReservations}
+          showBreakfast={showBreakfast}
         />
       ))}
 
@@ -142,6 +147,8 @@ type RowProps = {
   isExpanded: boolean;
   onToggle: () => void;
   onSummaryChanged: (patch: Partial<DaySummary>) => void;
+  showReservations: boolean;
+  showBreakfast: boolean;
 };
 
 function AgendaDayRow({
@@ -151,6 +158,8 @@ function AgendaDayRow({
   isExpanded,
   onToggle,
   onSummaryChanged,
+  showReservations,
+  showBreakfast,
 }: RowProps) {
   const ts = useTranslations('Tenant.sidebar');
   const [expandedData, setExpandedData] = useState<ExpandedData | null>(null);
@@ -167,12 +176,15 @@ function AgendaDayRow({
     if (!isExpanded || hasLoaded.current) return;
     hasLoaded.current = true;
     startDataLoad(async () => {
+      const noRes = { success: true as const, data: [] as Reservation[] };
+      const noBf = { success: true as const, data: [] as BreakfastConfiguration[] };
+
       if (isEditor) {
         const [activitiesRes, reservationsRes, bfRes, pocsRes, venuesRes] =
           await Promise.all([
             getActivitiesForDay(summary.dayId),
-            getReservationsForDay(summary.dayId),
-            getBreakfastConfigurationsForDay(summary.dayId),
+            showReservations ? getReservationsForDay(summary.dayId) : Promise.resolve(noRes),
+            showBreakfast ? getBreakfastConfigurationsForDay(summary.dayId) : Promise.resolve(noBf),
             getAllPOCs(),
             getAllVenueTypes(),
           ]);
@@ -188,8 +200,8 @@ function AgendaDayRow({
       } else {
         const [activitiesRes, reservationsRes, bfRes] = await Promise.all([
           getActivitiesForDay(summary.dayId),
-          getReservationsForDay(summary.dayId),
-          getBreakfastConfigurationsForDay(summary.dayId),
+          showReservations ? getReservationsForDay(summary.dayId) : Promise.resolve(noRes),
+          showBreakfast ? getBreakfastConfigurationsForDay(summary.dayId) : Promise.resolve(noBf),
         ]);
         setExpandedData({
           activities: (activitiesRes.success
@@ -202,7 +214,7 @@ function AgendaDayRow({
         });
       }
     });
-  }, [isExpanded, isEditor, summary.dayId]);
+  }, [isExpanded, isEditor, summary.dayId, showReservations, showBreakfast]);
 
   const isToday = summary.date === today;
   const formattedDate = format(parseISO(summary.date), 'EEEE d MMMM');
@@ -210,9 +222,9 @@ function AgendaDayRow({
   const countParts: string[] = [];
   if (summary.golfCount > 0)
     countParts.push(ts('activityCount', { count: summary.golfCount }));
-  if (summary.reservationCount > 0)
+  if (showReservations && summary.reservationCount > 0)
     countParts.push(ts('reservationCount', { count: summary.reservationCount }));
-  if (summary.breakfastCount > 0)
+  if (showBreakfast && summary.breakfastCount > 0)
     countParts.push(ts('breakfastCoverCount', { count: summary.breakfastCount }));
 
   return (
@@ -270,27 +282,31 @@ function AgendaDayRow({
                     >
                       <Plus className="h-3 w-3 mr-1" /> {ts('activity')}
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs"
-                      onClick={() => setReservationOpen(true)}
-                    >
-                      <Plus className="h-3 w-3 mr-1" /> {ts('reservation')}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs"
-                      onClick={() => setBreakfastOpen(true)}
-                    >
-                      <Plus className="h-3 w-3 mr-1" /> {ts('breakfast')}
-                    </Button>
+                    {showReservations && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs"
+                        onClick={() => setReservationOpen(true)}
+                      >
+                        <Plus className="h-3 w-3 mr-1" /> {ts('reservation')}
+                      </Button>
+                    )}
+                    {showBreakfast && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs"
+                        onClick={() => setBreakfastOpen(true)}
+                      >
+                        <Plus className="h-3 w-3 mr-1" /> {ts('breakfast')}
+                      </Button>
+                    )}
                   </div>
                 )}
 
                 {/* Breakfast */}
-                {expandedData.breakfastConfigs.length > 0 && (
+                {showBreakfast && expandedData.breakfastConfigs.length > 0 && (
                   <InlineSection title={ts('breakfast')}>
                     {expandedData.breakfastConfigs.map((item) => (
                       <div
@@ -330,7 +346,7 @@ function AgendaDayRow({
                 )}
 
                 {/* Reservations */}
-                {expandedData.reservations.length > 0 && (
+                {showReservations && expandedData.reservations.length > 0 && (
                   <InlineSection title={ts('reservations')}>
                     {expandedData.reservations.map((item) => (
                       <div
@@ -389,41 +405,45 @@ function AgendaDayRow({
               onSummaryChanged({ golfCount: summary.golfCount + 1 });
             }}
           />
-          <ReservationForm
-            isOpen={reservationOpen}
-            onClose={() => setReservationOpen(false)}
-            dayId={summary.dayId}
-            editItem={null}
-            onSuccess={(item: Reservation) => {
-              setExpandedData((prev) =>
-                prev
-                  ? { ...prev, reservations: [...prev.reservations, item] }
-                  : prev
-              );
-              onSummaryChanged({
-                reservationCount: summary.reservationCount + 1,
-              });
-            }}
-          />
-          <BreakfastForm
-            isOpen={breakfastOpen}
-            onClose={() => setBreakfastOpen(false)}
-            dayId={summary.dayId}
-            editItem={null}
-            onSuccess={(item: BreakfastConfiguration) => {
-              setExpandedData((prev) =>
-                prev
-                  ? {
-                      ...prev,
-                      breakfastConfigs: [...prev.breakfastConfigs, item],
-                    }
-                  : prev
-              );
-              onSummaryChanged({
-                breakfastCount: summary.breakfastCount + item.total_guests,
-              });
-            }}
-          />
+          {showReservations && (
+            <ReservationForm
+              isOpen={reservationOpen}
+              onClose={() => setReservationOpen(false)}
+              dayId={summary.dayId}
+              editItem={null}
+              onSuccess={(item: Reservation) => {
+                setExpandedData((prev) =>
+                  prev
+                    ? { ...prev, reservations: [...prev.reservations, item] }
+                    : prev
+                );
+                onSummaryChanged({
+                  reservationCount: summary.reservationCount + 1,
+                });
+              }}
+            />
+          )}
+          {showBreakfast && (
+            <BreakfastForm
+              isOpen={breakfastOpen}
+              onClose={() => setBreakfastOpen(false)}
+              dayId={summary.dayId}
+              editItem={null}
+              onSuccess={(item: BreakfastConfiguration) => {
+                setExpandedData((prev) =>
+                  prev
+                    ? {
+                        ...prev,
+                        breakfastConfigs: [...prev.breakfastConfigs, item],
+                      }
+                    : prev
+                );
+                onSummaryChanged({
+                  breakfastCount: summary.breakfastCount + item.total_guests,
+                });
+              }}
+            />
+          )}
         </>
       )}
     </>

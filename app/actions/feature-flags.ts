@@ -79,3 +79,12 @@ export async function setFeatureFlag(
   if (error) return { success: false, error: error.message };
   return { success: true, data: undefined };
 }
+
+/**
+ * Check whether a single feature flag is enabled for a tenant.
+ * Convenience wrapper for use in server action guards.
+ */
+export async function isFeatureEnabled(tenantId: string, key: FlagKey): Promise<boolean> {
+  const flags = await getFeatureFlags(tenantId);
+  return flags[key];
+}

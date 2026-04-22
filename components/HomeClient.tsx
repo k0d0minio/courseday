@@ -10,6 +10,7 @@ import { AgendaView } from '@/components/AgendaView';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useActiveDay } from '@/lib/active-day-context';
+import { useFeatureFlag } from '@/lib/feature-flags-context';
 
 const VIEW_PREF_KEY = 'editor-home-view-preference';
 type ViewMode = 'calendar' | 'agenda';
@@ -51,6 +52,8 @@ export function HomeClient({
   const t = useTranslations('Tenant.home');
   const isEditor = variant === 'editor';
   const { setActiveDayYmd } = useActiveDay();
+  const showReservations = useFeatureFlag('reservations');
+  const showBreakfast = useFeatureFlag('breakfast_config');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [days, setDays] = useState<DaySummary[]>(initialDays);
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
@@ -244,8 +247,8 @@ export function HomeClient({
                 format(parseISO(dateStr), 'EEEE, MMMM d'),
                 ...(summary ? [
                   summary.golfCount > 0 ? `${summary.golfCount} activities` : '',
-                  summary.reservationCount > 0 ? `${summary.reservationCount} reservations` : '',
-                  summary.breakfastCount > 0 ? `${summary.breakfastCount} breakfast covers` : '',
+                  showReservations && summary.reservationCount > 0 ? `${summary.reservationCount} reservations` : '',
+                  showBreakfast && summary.breakfastCount > 0 ? `${summary.breakfastCount} breakfast covers` : '',
                 ].filter(Boolean) : []),
               ].join(', ');
 
@@ -280,10 +283,10 @@ export function HomeClient({
                       {summary.golfCount > 0 && (
                         <SummaryPip label={`${summary.golfCount}A`} color="emerald" />
                       )}
-                      {summary.reservationCount > 0 && (
+                      {showReservations && summary.reservationCount > 0 && (
                         <SummaryPip label={`${summary.reservationCount}R`} color="amber" />
                       )}
-                      {summary.breakfastCount > 0 && (
+                      {showBreakfast && summary.breakfastCount > 0 && (
                         <SummaryPip label={`${summary.breakfastCount}B`} color="blue" />
                       )}
                     </div>
@@ -308,8 +311,8 @@ export function HomeClient({
       {viewMode === 'calendar' && (
         <div className="mt-4 flex flex-wrap gap-3 text-xs text-muted-foreground">
           <LegendItem color="emerald" label={t('legendActivity')} />
-          <LegendItem color="amber" label={t('legendReservation')} />
-          <LegendItem color="blue" label={t('legendBreakfast')} />
+          {showReservations && <LegendItem color="amber" label={t('legendReservation')} />}
+          {showBreakfast && <LegendItem color="blue" label={t('legendBreakfast')} />}
         </div>
       )}
     </div>
