@@ -80,6 +80,7 @@ export async function updateReservation(
     })
     .eq('id', id)
     .eq('tenant_id', tenantId)
+    .is('deleted_at', null)
     .select()
     .single();
 
@@ -101,18 +102,21 @@ export async function deleteReservation(id: string): Promise<ActionResponse> {
 
   const { supabase } = await createTenantClient();
 
+  const now = new Date().toISOString();
   const { data: existing } = await supabase
     .from('reservation')
     .select('guest_name, day_id')
     .eq('id', id)
     .eq('tenant_id', tenantId)
+    .is('deleted_at', null)
     .maybeSingle();
 
   const { error } = await supabase
     .from('reservation')
-    .delete()
+    .update({ deleted_at: now, updated_at: now })
     .eq('id', id)
-    .eq('tenant_id', tenantId);
+    .eq('tenant_id', tenantId)
+    .is('deleted_at', null);
 
   if (error) return { success: false, error: error.message };
 
@@ -142,6 +146,7 @@ export async function getReservationsForDay(
     .select('*')
     .eq('tenant_id', tenantId)
     .eq('day_id', dayId)
+    .is('deleted_at', null)
     .order('start_time', { nullsFirst: true });
 
   if (error) return { success: false, error: error.message };

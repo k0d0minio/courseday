@@ -56,3 +56,14 @@ export async function authRateLimit(): Promise<{ success: boolean }> {
 export async function mutationRateLimit(userId: string): Promise<{ success: boolean }> {
   return checkLimit(`mutation:${userId}`, 120, 60);
 }
+
+/** Daily brief regeneration: 5 per calendar day per tenant (UTC window from rate-limit slot). */
+const DAILY_BRIEF_LIMIT = 5;
+const DAILY_BRIEF_WINDOW_SEC = 86400;
+
+export async function dailyBriefRateLimit(
+  tenantId: string,
+  dateIso: string
+): Promise<{ success: boolean }> {
+  return checkLimit(`daily-brief:${tenantId}:${dateIso}`, DAILY_BRIEF_LIMIT, DAILY_BRIEF_WINDOW_SEC);
+}

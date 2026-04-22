@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { useDayRealtime } from './useDayRealtime';
 import { useTranslations } from 'next-intl';
@@ -16,13 +16,16 @@ import { BreakfastForm } from '@/components/breakfast-form';
 import { BreakfastCard } from '@/components/breakfast-card';
 import { DayNotes } from '@/components/day-notes';
 import { WeatherCard } from '@/components/weather-card';
+import { DailyBriefCard } from '@/components/daily-brief-card';
 import { StaffScheduleSection } from '@/components/staff-schedule-section';
 import { CopyDayDialog } from '@/components/copy-day-dialog';
+import { HandoverControls } from '@/components/handover-controls';
 import { Button } from '@/components/ui/button';
 import { KbdHint } from '@/components/kbd-hint';
 import { useFeatureFlag } from '@/lib/feature-flags-context';
 import { useActiveDay } from '@/lib/active-day-context';
 import { useDayViewHotkeys } from '@/lib/keyboard-shortcuts';
+import { handoverRowStatus } from '@/lib/handover';
 import type {
   Activity,
   ActivityWithRelations,
@@ -31,6 +34,9 @@ import type {
   ShiftWithStaffMember,
 } from '@/types/index';
 import type { DayViewProps } from './page';
+import type { DayNote } from '@/app/actions/day-notes';
+import type { HandoverRemovedItem } from '@/app/actions/day-view-receipts';
+import type { HandoverCounts } from '@/components/handover-controls';
 
 function useDayViewLiveState(p: DayViewProps, staffScheduleEnabled: boolean) {
   const [activities, setActivities] = useState(
@@ -41,6 +47,7 @@ function useDayViewLiveState(p: DayViewProps, staffScheduleEnabled: boolean) {
     p.breakfastConfigs
   );
   const [shifts, setShifts] = useState<ShiftWithStaffMember[]>(p.shifts);
+  const [dayNotes, setDayNotes] = useState<DayNote[]>(p.dayNotes);
 
   useDayRealtime(
     p.dayId,
@@ -49,7 +56,8 @@ function useDayViewLiveState(p: DayViewProps, staffScheduleEnabled: boolean) {
     setBreakfastConfigs,
     setShifts,
     p.staffMembers,
-    staffScheduleEnabled
+    staffScheduleEnabled,
+    setDayNotes
   );
 
   useEffect(() => {
@@ -57,12 +65,14 @@ function useDayViewLiveState(p: DayViewProps, staffScheduleEnabled: boolean) {
     setReservations(p.reservations);
     setBreakfastConfigs(p.breakfastConfigs);
     setShifts(staffScheduleEnabled ? p.shifts : []);
+    setDayNotes(p.dayNotes);
   }, [
     p.dayId,
     p.activities,
     p.reservations,
     p.breakfastConfigs,
     p.shifts,
+    p.dayNotes,
     staffScheduleEnabled,
   ]);
 
@@ -75,18 +85,77 @@ function useDayViewLiveState(p: DayViewProps, staffScheduleEnabled: boolean) {
     setBreakfastConfigs,
     shifts,
     setShifts,
+    dayNotes,
+    setDayNotes,
   };
 }
 
 export function DayViewClient(props: DayViewProps) {
-  const { date, authState } = props;
+  const { date, authState, handoverLastViewedAt, handoverRemoved } = props;
   const { setActiveDayYmd } = useActiveDay();
   const staffScheduleEnabled = useFeatureFlag('staff_schedule');
   const live = useDayViewLiveState(props, staffScheduleEnabled);
 
+  const [handoverEnabled, setHandoverEnabled] = useState(false);
+  const [baselineIso, setBaselineIso] = useState(handoverLastViewedAt ?? '');
+  const [removedSnapshot, setRemovedSnapshot] = useState(handoverRemoved);
+
   useEffect(() => {
     setActiveDayYmd(date);
   }, [date, setActiveDayYmd]);
+
+  useEffect(() => {
+    if (handoverLastViewedAt) setBaselineIso(handoverLastViewedAt);
+    setRemovedSnapshot(handoverRemoved);
+  }, [props.dayId, handoverLastViewedAt, handoverRemoved]);
+
+  const showHandover = Boolean(authState.user && handoverLastViewedAt);
+
+  const handoverCounts = useMemo(() => {
+    if (!showHandover || !baselineIso) {
+      return { newCount: 0, editedCount: 0, removedCount: 0 };
+    }
+    let newCount = 0;
+    let editedCount = 0;
+    for (const a of live.activities) {
+      const s = handoverRowStatus(a.created_at, a.updated_at, baselineIso);
+      if (s === 'new') newCount++;
+      else if (s === 'edited') editedCount++;
+    }
+    for (const r of live.reservations) {
+      const s = handoverRowStatus(r.created_at, r.updated_at, baselineIso);
+      if (s === 'new') newCount++;
+      else if (s === 'edited') editedCount++;
+    }
+    for (const b of live.breakfastConfigs) {
+      const s = handoverRowStatus(b.created_at, b.updated_at, baselineIso);
+      if (s === 'new') newCount++;
+      else if (s === 'edited') editedCount++;
+    }
+    for (const n of live.dayNotes) {
+      const s = handoverRowStatus(n.created_at, n.updated_at, baselineIso);
+      if (s === 'new') newCount++;
+      else if (s === 'edited') editedCount++;
+    }
+    return {
+      newCount,
+      editedCount,
+      removedCount: removedSnapshot.length,
+    };
+  }, [
+    showHandover,
+    baselineIso,
+    live.activities,
+    live.reservations,
+    live.breakfastConfigs,
+    live.dayNotes,
+    removedSnapshot.length,
+  ]);
+
+  const onHandoverCaughtUp = useCallback((next: string) => {
+    setBaselineIso(next);
+    setRemovedSnapshot([]);
+  }, []);
 
   if (!authState.isEditor) {
     return (
@@ -96,12 +165,32 @@ export function DayViewClient(props: DayViewProps) {
         reservations={live.reservations}
         breakfastConfigs={live.breakfastConfigs}
         shifts={live.shifts}
+        dayNotes={live.dayNotes}
+        setDayNotes={live.setDayNotes}
+        handoverEnabled={handoverEnabled}
+        onHandoverEnabledChange={setHandoverEnabled}
+        handoverBaselineIso={showHandover ? baselineIso : null}
+        handoverRemoved={removedSnapshot}
+        handoverCounts={handoverCounts}
+        onHandoverCaughtUp={onHandoverCaughtUp}
+        showHandover={showHandover}
       />
     );
   }
 
   return (
-    <DayViewEditor {...props} live={live} showStaffSchedule={staffScheduleEnabled} />
+    <DayViewEditor
+      {...props}
+      live={live}
+      showStaffSchedule={staffScheduleEnabled}
+      handoverEnabled={handoverEnabled}
+      onHandoverEnabledChange={setHandoverEnabled}
+      handoverBaselineIso={showHandover ? baselineIso : null}
+      handoverRemoved={removedSnapshot}
+      handoverCounts={handoverCounts}
+      onHandoverCaughtUp={onHandoverCaughtUp}
+      showHandover={showHandover}
+    />
   );
 }
 
@@ -111,6 +200,7 @@ function DayViewEditor({
   today,
   dayNotes,
   weather,
+  dailyBrief,
   pocs,
   venueTypes,
   authState,
@@ -118,9 +208,23 @@ function DayViewEditor({
   staffRoles,
   live,
   showStaffSchedule,
+  handoverEnabled,
+  onHandoverEnabledChange,
+  handoverBaselineIso,
+  handoverRemoved,
+  handoverCounts,
+  onHandoverCaughtUp,
+  showHandover,
 }: DayViewProps & {
   live: ReturnType<typeof useDayViewLiveState>;
   showStaffSchedule: boolean;
+  handoverEnabled: boolean;
+  onHandoverEnabledChange: (enabled: boolean) => void;
+  handoverBaselineIso: string | null;
+  handoverRemoved: HandoverRemovedItem[];
+  handoverCounts: HandoverCounts;
+  onHandoverCaughtUp: (nextBaselineIso: string) => void;
+  showHandover: boolean;
 }) {
   const t = useTranslations('Tenant.day');
   const router = useRouter();
@@ -139,6 +243,8 @@ function DayViewEditor({
     setBreakfastConfigs,
     shifts,
     setShifts,
+    dayNotes: liveDayNotes,
+    setDayNotes,
   } = live;
 
   const [activityModalOpen, setActivityModalOpen] = useState(false);
@@ -303,12 +409,30 @@ function DayViewEditor({
         </Button>
       </div>
 
+      {showHandover && (
+        <HandoverControls
+          dayId={dayId}
+          removed={handoverRemoved}
+          handoverEnabled={handoverEnabled}
+          onHandoverEnabledChange={onHandoverEnabledChange}
+          counts={handoverCounts}
+          onCaughtUp={onHandoverCaughtUp}
+        />
+      )}
+
       <CopyDayDialog
         isOpen={copyDayOpen}
         onClose={() => setCopyDayOpen(false)}
         sourceDayId={dayId}
         today={today}
         showCopyShifts={showStaffSchedule}
+      />
+
+      <DailyBriefCard
+        dateIso={date}
+        dayId={dayId}
+        initialBrief={dailyBrief}
+        isEditor
       />
 
       {showWeatherReporting && weather && <WeatherCard weather={weather} />}
@@ -360,6 +484,11 @@ function DayViewEditor({
                   onBeforeEdit={(el) => {
                     returnFocusRef.current = el;
                   }}
+                  handoverStatus={
+                    handoverEnabled && handoverBaselineIso
+                      ? handoverRowStatus(item.created_at, item.updated_at, handoverBaselineIso)
+                      : null
+                  }
                 />
               ))}
             </div>
@@ -397,6 +526,11 @@ function DayViewEditor({
                 onBeforeEdit={(el) => {
                   returnFocusRef.current = el;
                 }}
+                handoverStatus={
+                  handoverEnabled && handoverBaselineIso
+                    ? handoverRowStatus(item.created_at, item.updated_at, handoverBaselineIso)
+                    : null
+                }
               />
             ))}
           </div>
@@ -433,6 +567,11 @@ function DayViewEditor({
                   onBeforeEdit={(el) => {
                     returnFocusRef.current = el;
                   }}
+                  handoverStatus={
+                    handoverEnabled && handoverBaselineIso
+                      ? handoverRowStatus(item.created_at, item.updated_at, handoverBaselineIso)
+                      : null
+                  }
                 />
               ))}
             </div>
@@ -443,8 +582,12 @@ function DayViewEditor({
       <DayNotes
         dayId={dayId}
         initialNotes={dayNotes}
+        notes={live.dayNotes}
+        onNotesChange={live.setDayNotes}
         isEditor={authState.isEditor}
         currentUserId={authState.user?.id}
+        handoverEnabled={handoverEnabled}
+        handoverBaselineIso={handoverBaselineIso}
       />
 
       <ActivityForm

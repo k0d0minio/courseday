@@ -12,6 +12,7 @@ import {
   getReservationsForDay,
   getBreakfastConfigsForDay,
   getDayNotesForDay,
+  getDailyBriefForDay,
   getShiftsForDay,
   getStaffMembersForTenant,
   getStaffRolesForTenant,
@@ -33,6 +34,12 @@ import type { DayNote } from '@/app/actions/day-notes';
 import { getWeatherForDay } from '@/app/actions/weather';
 import type { WeatherData } from '@/app/actions/weather';
 import { getFeatureFlags } from '@/app/actions/feature-flags';
+import {
+  ensureDayViewReceipt,
+  getSoftDeletedSince,
+  type HandoverRemovedItem,
+} from '@/app/actions/day-view-receipts';
+import type { DailyBriefRecord } from '@/types/daily-brief';
 
 export type DayViewProps = {
   date: string;
@@ -43,12 +50,15 @@ export type DayViewProps = {
   breakfastConfigs: BreakfastConfiguration[];
   dayNotes: DayNote[];
   weather: WeatherData | null;
+  dailyBrief: DailyBriefRecord | null;
   pocs: PointOfContact[];
   venueTypes: VenueType[];
   authState: AuthState;
   shifts: ShiftWithStaffMember[];
   staffMembers: StaffMember[];
   staffRoles: StaffRole[];
+  handoverLastViewedAt: string | null;
+  handoverRemoved: HandoverRemovedItem[];
 };
 
 const YMD_REGEX = /^\d{4}-\d{2}-\d{2}$/;
@@ -110,6 +120,7 @@ export default async function DayPage({
 
   const flags = await getFeatureFlags(tenant.id);
   const staffScheduleOn = flags.staff_schedule;
+  const authState = await getAuthState();
 
   // Load all day data in parallel
   const [
@@ -118,9 +129,9 @@ export default async function DayPage({
     breakfastConfigs,
     dayNotes,
     weather,
+    dailyBrief,
     pocsResult,
     venueTypesResult,
-    authState,
     shifts,
     staffMembers,
     staffRoles,
@@ -130,13 +141,29 @@ export default async function DayPage({
     getBreakfastConfigsForDay(tenant.id, day.id),
     getDayNotesForDay(tenant.id, day.id),
     getWeatherForDay(date, weatherCoords),
+    getDailyBriefForDay(tenant.id, day.id),
     getAllPOCs(),
     getAllVenueTypes(),
-    getAuthState(),
     staffScheduleOn ? getShiftsForDay(tenant.id, day.id) : Promise.resolve([]),
     staffScheduleOn ? getStaffMembersForTenant(tenant.id) : Promise.resolve([]),
     staffScheduleOn ? getStaffRolesForTenant(tenant.id) : Promise.resolve([]),
   ]);
+
+  let handoverLastViewedAt: string | null = null;
+  let handoverRemoved: HandoverRemovedItem[] = [];
+  const uid = authState.user?.id;
+  if (uid) {
+    const receipt = await ensureDayViewReceipt(tenant.id, day.id, uid);
+    if (receipt.success) {
+      handoverLastViewedAt = receipt.data.last_viewed_at;
+      const removed = await getSoftDeletedSince(
+        tenant.id,
+        day.id,
+        receipt.data.last_viewed_at
+      );
+      if (removed.success) handoverRemoved = removed.data;
+    }
+  }
 
   return (
     <Suspense fallback={<div className="max-w-3xl mx-auto px-3 py-8 text-sm text-muted-foreground" />}>
@@ -149,12 +176,15 @@ export default async function DayPage({
         breakfastConfigs={breakfastConfigs}
         dayNotes={dayNotes}
         weather={weather}
+        dailyBrief={dailyBrief}
         pocs={pocsResult.success ? pocsResult.data : []}
         venueTypes={venueTypesResult.success ? venueTypesResult.data : []}
         authState={authState}
         shifts={shifts}
         staffMembers={staffMembers}
         staffRoles={staffRoles}
+        handoverLastViewedAt={handoverLastViewedAt}
+        handoverRemoved={handoverRemoved}
       />
     </Suspense>
   );

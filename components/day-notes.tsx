@@ -1,25 +1,50 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { Pencil, Trash2, Check, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { DayNote } from '@/app/actions/day-notes';
 import { mutateWithOfflineQueue } from '@/lib/day-mutation-client';
 import { useTenant } from '@/lib/tenant-context';
+import { handoverRowStatus } from '@/lib/handover';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 
 const MAX_LEN = 2000;
 
 interface DayNotesProps {
   dayId: string;
   initialNotes: DayNote[];
+  /** When set with `onNotesChange`, notes are controlled (e.g. realtime sync). */
+  notes?: DayNote[];
+  onNotesChange?: React.Dispatch<React.SetStateAction<DayNote[]>>;
   isEditor: boolean;
   currentUserId: string | undefined;
+  handoverEnabled?: boolean;
+  handoverBaselineIso?: string | null;
 }
 
-export function DayNotes({ dayId, initialNotes, isEditor, currentUserId }: DayNotesProps) {
-  const [notes, setNotes] = useState<DayNote[]>(initialNotes);
+export function DayNotes({
+  dayId,
+  initialNotes,
+  notes: controlledNotes,
+  onNotesChange,
+  isEditor,
+  currentUserId,
+  handoverEnabled = false,
+  handoverBaselineIso = null,
+}: DayNotesProps) {
+  const th = useTranslations('Tenant.handover');
+  const [internalNotes, setInternalNotes] = useState<DayNote[]>(initialNotes);
+  const isControlled = controlledNotes != null && onNotesChange != null;
+  const notes = isControlled ? controlledNotes : internalNotes;
+  const setNotes = isControlled ? onNotesChange! : setInternalNotes;
+
+  useEffect(() => {
+    if (!isControlled) setInternalNotes(initialNotes);
+  }, [initialNotes, dayId, isControlled]);
   const [draft, setDraft] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState('');
@@ -118,6 +143,10 @@ export function DayNotes({ dayId, initialNotes, isEditor, currentUserId }: DayNo
           {notes.map((note) => {
             const isOwn = note.user_id === currentUserId;
             const isEditing = editingId === note.id;
+            const ho =
+              handoverEnabled && handoverBaselineIso
+                ? handoverRowStatus(note.created_at, note.updated_at, handoverBaselineIso)
+                : null;
 
             return (
               <div
@@ -154,7 +183,19 @@ export function DayNotes({ dayId, initialNotes, isEditor, currentUserId }: DayNo
                   </div>
                 ) : (
                   <>
-                    <p className="text-sm whitespace-pre-wrap">{note.content}</p>
+                    <div className="flex flex-wrap items-start gap-2">
+                      <p className="text-sm whitespace-pre-wrap flex-1 min-w-0">{note.content}</p>
+                      {ho === 'new' && (
+                        <Badge variant="default" className="shrink-0 text-[10px] uppercase">
+                          {th('badgeNew')}
+                        </Badge>
+                      )}
+                      {ho === 'edited' && (
+                        <Badge variant="secondary" className="shrink-0 text-[10px] uppercase">
+                          {th('badgeEdited')}
+                        </Badge>
+                      )}
+                    </div>
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-xs text-muted-foreground">
                         {note.author_name} · {formatDate(note.created_at)}

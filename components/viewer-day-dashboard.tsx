@@ -1,12 +1,17 @@
 'use client';
 
+import type { Dispatch, SetStateAction } from 'react';
 import { useTranslations } from 'next-intl';
 import { DayNav } from '@/components/day-nav';
 import { DayNotes } from '@/components/day-notes';
 import { WeatherCard } from '@/components/weather-card';
 import { TableBreakdownDisplay } from '@/components/table-breakdown-display';
+import { HandoverControls, type HandoverCounts } from '@/components/handover-controls';
+import { Badge } from '@/components/ui/badge';
 import { useFeatureFlag } from '@/lib/feature-flags-context';
 import { ShiftCard } from '@/components/shift-card';
+import { handoverRowStatus } from '@/lib/handover';
+import type { HandoverRemovedItem } from '@/app/actions/day-view-receipts';
 import type {
   ActivityWithRelations,
   Reservation,
@@ -15,8 +20,10 @@ import type {
 } from '@/types/index';
 import type { DayNote } from '@/app/actions/day-notes';
 import type { WeatherData } from '@/app/actions/weather';
+import type { DailyBriefRecord } from '@/types/daily-brief';
 import { useAuth } from '@/lib/AuthProvider';
 import { useDayViewHotkeys } from '@/lib/keyboard-shortcuts';
+import { DailyBriefCard } from '@/components/daily-brief-card';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -30,8 +37,17 @@ type Props = {
   reservations: Reservation[];
   breakfastConfigs: BreakfastConfiguration[];
   dayNotes: DayNote[];
+  setDayNotes: Dispatch<SetStateAction<DayNote[]>>;
   weather: WeatherData | null;
+  dailyBrief: DailyBriefRecord | null;
   shifts: ShiftWithStaffMember[];
+  handoverEnabled: boolean;
+  onHandoverEnabledChange: (enabled: boolean) => void;
+  handoverBaselineIso: string | null;
+  handoverRemoved: HandoverRemovedItem[];
+  handoverCounts: HandoverCounts;
+  onHandoverCaughtUp: (nextBaselineIso: string) => void;
+  showHandover: boolean;
 };
 
 // ---------------------------------------------------------------------------
@@ -46,8 +62,17 @@ export function ViewerDayDashboard({
   reservations,
   breakfastConfigs,
   dayNotes,
+  setDayNotes,
   weather,
+  dailyBrief,
   shifts,
+  handoverEnabled,
+  onHandoverEnabledChange,
+  handoverBaselineIso,
+  handoverRemoved,
+  handoverCounts,
+  onHandoverCaughtUp,
+  showHandover,
 }: Props) {
   const { impersonationRole } = useAuth();
 
@@ -74,13 +99,35 @@ export function ViewerDayDashboard({
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-6">
       <DayNav date={date} today={today} />
 
+      {showHandover && (
+        <HandoverControls
+          dayId={dayId}
+          removed={handoverRemoved}
+          handoverEnabled={handoverEnabled}
+          onHandoverEnabledChange={onHandoverEnabledChange}
+          counts={handoverCounts}
+          onCaughtUp={onHandoverCaughtUp}
+        />
+      )}
+
+      <DailyBriefCard
+        dateIso={date}
+        dayId={dayId}
+        initialBrief={dailyBrief}
+        isEditor={false}
+      />
+
       {showWeatherReporting && weather && <WeatherCard weather={weather} />}
 
       <DayNotes
-        dayId={date}
+        dayId={dayId}
         initialNotes={dayNotes}
+        notes={dayNotes}
+        onNotesChange={setDayNotes}
         isEditor={false}
         currentUserId={undefined}
+        handoverEnabled={handoverEnabled}
+        handoverBaselineIso={handoverBaselineIso}
       />
 
       {/* Summary — large numbers for at-a-glance reading */}
@@ -109,7 +156,16 @@ export function ViewerDayDashboard({
         emptyLabel={td('noBreakfasts')}
       >
         {visibleBreakfastConfigs.map((item) => (
-          <BreakfastRow key={item.id} item={item} t={tb} />
+          <BreakfastRow
+            key={item.id}
+            item={item}
+            t={tb}
+            handoverStatus={
+              handoverEnabled && handoverBaselineIso
+                ? handoverRowStatus(item.created_at, item.updated_at, handoverBaselineIso)
+                : null
+            }
+          />
         ))}
       </ViewerSection>
 
@@ -120,7 +176,16 @@ export function ViewerDayDashboard({
         emptyLabel={td('noEntries')}
       >
         {activities.map((item) => (
-          <ActivityRow key={item.id} item={item} t={te} />
+          <ActivityRow
+            key={item.id}
+            item={item}
+            t={te}
+            handoverStatus={
+              handoverEnabled && handoverBaselineIso
+                ? handoverRowStatus(item.created_at, item.updated_at, handoverBaselineIso)
+                : null
+            }
+          />
         ))}
       </ViewerSection>
 
@@ -131,7 +196,15 @@ export function ViewerDayDashboard({
         emptyLabel={td('noReservations')}
       >
         {visibleReservations.map((item) => (
-          <ReservationRow key={item.id} item={item} />
+          <ReservationRow
+            key={item.id}
+            item={item}
+            handoverStatus={
+              handoverEnabled && handoverBaselineIso
+                ? handoverRowStatus(item.created_at, item.updated_at, handoverBaselineIso)
+                : null
+            }
+          />
         ))}
       </ViewerSection>
     </div>
@@ -179,10 +252,13 @@ function ViewerSection({
 function BreakfastRow({
   item,
   t,
+  handoverStatus,
 }: {
   item: BreakfastConfiguration;
   t: ReturnType<typeof useTranslations<'Tenant.breakfastCard'>>;
+  handoverStatus: ReturnType<typeof handoverRowStatus>;
 }) {
+  const th = useTranslations('Tenant.handover');
   const breakdown = Array.isArray(item.table_breakdown)
     ? (item.table_breakdown as number[])
     : [];
@@ -190,7 +266,19 @@ function BreakfastRow({
   return (
     <div className="rounded-lg border bg-card p-4 space-y-2">
       <div className="flex items-start justify-between gap-3">
-        <p className="font-semibold">{item.group_name ?? t('unnamedGroup')}</p>
+        <p className="font-semibold flex items-center gap-2 flex-wrap">
+          {item.group_name ?? t('unnamedGroup')}
+          {handoverStatus === 'new' && (
+            <Badge variant="default" className="text-[10px] uppercase shrink-0">
+              {th('badgeNew')}
+            </Badge>
+          )}
+          {handoverStatus === 'edited' && (
+            <Badge variant="secondary" className="text-[10px] uppercase shrink-0">
+              {th('badgeEdited')}
+            </Badge>
+          )}
+        </p>
         <div className="flex items-center gap-3 shrink-0 text-sm">
           {item.start_time && (
             <span className="text-muted-foreground">{item.start_time.slice(0, 5)}</span>
@@ -213,10 +301,13 @@ function BreakfastRow({
 function ActivityRow({
   item,
   t,
+  handoverStatus,
 }: {
   item: ActivityWithRelations;
   t: ReturnType<typeof useTranslations<'Tenant.entry'>>;
+  handoverStatus: ReturnType<typeof handoverRowStatus>;
 }) {
+  const th = useTranslations('Tenant.handover');
   return (
     <div className="rounded-lg border bg-card p-4 space-y-1.5">
       {item.tags && item.tags.length > 0 && (
@@ -231,7 +322,19 @@ function ActivityRow({
           ))}
         </div>
       )}
-      <p className="font-semibold">{item.title}</p>
+      <p className="font-semibold flex items-center gap-2 flex-wrap">
+        {item.title}
+        {handoverStatus === 'new' && (
+          <Badge variant="default" className="text-[10px] uppercase shrink-0">
+            {th('badgeNew')}
+          </Badge>
+        )}
+        {handoverStatus === 'edited' && (
+          <Badge variant="secondary" className="text-[10px] uppercase shrink-0">
+            {th('badgeEdited')}
+          </Badge>
+        )}
+      </p>
       <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-sm text-muted-foreground">
         {(item.start_time || item.end_time) && (
           <span>{formatTimeRange(item.start_time, item.end_time, t)}</span>
@@ -249,8 +352,15 @@ function ActivityRow({
   );
 }
 
-function ReservationRow({ item }: { item: Reservation }) {
+function ReservationRow({
+  item,
+  handoverStatus,
+}: {
+  item: Reservation;
+  handoverStatus: ReturnType<typeof handoverRowStatus>;
+}) {
   const tr = useTranslations('Tenant.reservation');
+  const th = useTranslations('Tenant.handover');
   const breakdown = Array.isArray(item.table_breakdown)
     ? (item.table_breakdown as number[])
     : [];
@@ -258,7 +368,19 @@ function ReservationRow({ item }: { item: Reservation }) {
   return (
     <div className="rounded-lg border bg-card p-4 space-y-2">
       <div className="flex items-start justify-between gap-3">
-        <p className="font-semibold">{item.guest_name ?? tr('fallbackName')}</p>
+        <p className="font-semibold flex items-center gap-2 flex-wrap">
+          {item.guest_name ?? tr('fallbackName')}
+          {handoverStatus === 'new' && (
+            <Badge variant="default" className="text-[10px] uppercase shrink-0">
+              {th('badgeNew')}
+            </Badge>
+          )}
+          {handoverStatus === 'edited' && (
+            <Badge variant="secondary" className="text-[10px] uppercase shrink-0">
+              {th('badgeEdited')}
+            </Badge>
+          )}
+        </p>
         <div className="flex items-center gap-3 shrink-0 text-sm">
           {(item.start_time || item.end_time) && (
             <span className="text-muted-foreground">

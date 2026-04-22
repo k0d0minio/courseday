@@ -139,6 +139,7 @@ export function BreakfastForm({
           start_time: payload.startTime ?? null,
           notes: payload.notes ?? null,
           allergens: payload.allergens ?? [],
+          deleted_at: null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         });

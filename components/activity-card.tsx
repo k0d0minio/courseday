@@ -11,6 +11,7 @@ import { mutateWithOfflineQueue } from '@/lib/day-mutation-client';
 import { useTenant } from '@/lib/tenant-context';
 import type { ActivityWithRelations } from '@/types/index';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   AlertDialog,
@@ -30,10 +31,12 @@ type Props = {
   onDeleted: (id: string, mode: 'single' | 'all' | 'from-here') => void;
   /** Called with the edit control element before opening the editor (focus return). */
   onBeforeEdit?: (trigger: HTMLElement) => void;
+  handoverStatus?: 'new' | 'edited' | null;
 };
 
-export function ActivityCard({ item, isEditor, onEdit, onDeleted, onBeforeEdit }: Props) {
+export function ActivityCard({ item, isEditor, onEdit, onDeleted, onBeforeEdit, handoverStatus }: Props) {
   const t = useTranslations('Tenant.entry');
+  const th = useTranslations('Tenant.handover');
   const tChecklist = useTranslations('Tenant.checklists');
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [checklistOpen, setChecklistOpen] = useState(false);
@@ -112,8 +115,18 @@ export function ActivityCard({ item, isEditor, onEdit, onDeleted, onBeforeEdit }
               )}
 
               {/* Title */}
-              <p className="font-medium leading-snug truncate flex items-center gap-2">
+              <p className="font-medium leading-snug truncate flex items-center gap-2 flex-wrap">
                 {item.title}
+                {handoverStatus === 'new' && (
+                  <Badge variant="default" className="text-[10px] uppercase shrink-0">
+                    {th('badgeNew')}
+                  </Badge>
+                )}
+                {handoverStatus === 'edited' && (
+                  <Badge variant="secondary" className="text-[10px] uppercase shrink-0">
+                    {th('badgeEdited')}
+                  </Badge>
+                )}
                 {isPending && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
               </p>
 

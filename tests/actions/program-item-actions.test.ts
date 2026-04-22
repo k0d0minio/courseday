@@ -23,7 +23,7 @@ type QueryResult = { data: unknown; error: { message: string } | null };
 function makeChain(result: QueryResult = { data: null, error: null }) {
   const chain: Record<string, unknown> = {};
   ['select', 'insert', 'update', 'delete', 'upsert',
-   'eq', 'neq', 'in', 'lt', 'lte', 'gt', 'gte', 'order', 'limit'].forEach((m) => {
+   'eq', 'neq', 'in', 'is', 'lt', 'lte', 'gt', 'gte', 'order', 'limit'].forEach((m) => {
     chain[m] = vi.fn().mockReturnValue(chain);
   });
   chain.single = vi.fn().mockResolvedValue(result);
@@ -141,24 +141,35 @@ describe('updateActivity', () => {
 describe('deleteActivity', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('deletes by id and tenant and returns success', async () => {
-    const chain = makeChain({ data: null, error: null });
-    const from = vi.fn().mockReturnValue(chain);
+  it('soft-deletes by id and tenant and returns success', async () => {
+    const selectChain = makeChain({
+      data: { title: 'T', day_id: 'day-1' },
+      error: null,
+    });
+    const updateChain = makeChain({ data: null, error: null });
+    const from = vi.fn().mockReturnValueOnce(selectChain).mockReturnValueOnce(updateChain);
     vi.mocked(createTenantClient).mockResolvedValue({ supabase: { from } as never, tenantId: 'tenant-1' });
 
     const result = await deleteActivity('item-1');
     expect(result.success).toBe(true);
     expect(from).toHaveBeenCalledWith('activity');
-    expect((chain.delete as ReturnType<typeof vi.fn>)).toHaveBeenCalled();
+    expect((updateChain.update as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(
+      expect.objectContaining({ deleted_at: expect.any(String), updated_at: expect.any(String) })
+    );
   });
 
-  it('returns error when Supabase delete fails', async () => {
-    const from = vi.fn().mockReturnValue(makeChain({ data: null, error: { message: 'delete error' } }));
+  it('returns error when Supabase update fails', async () => {
+    const selectChain = makeChain({
+      data: { title: 'T', day_id: 'day-1' },
+      error: null,
+    });
+    const updateChain = makeChain({ data: null, error: { message: 'update error' } });
+    const from = vi.fn().mockReturnValueOnce(selectChain).mockReturnValueOnce(updateChain);
     vi.mocked(createTenantClient).mockResolvedValue({ supabase: { from } as never, tenantId: 'tenant-1' });
 
     const result = await deleteActivity('item-1');
     expect(result.success).toBe(false);
-    expect(result.error).toBe('delete error');
+    expect(result.error).toBe('update error');
   });
 });
 
@@ -167,7 +178,7 @@ describe('deleteActivity', () => {
 describe('deleteActivityRecurrenceGroup', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('deletes all items in the recurrence group', async () => {
+  it('soft-deletes all items in the recurrence group', async () => {
     const chain = makeChain({ data: null, error: null });
     const from = vi.fn().mockReturnValue(chain);
     vi.mocked(createTenantClient).mockResolvedValue({ supabase: { from } as never, tenantId: 'tenant-1' });
@@ -177,6 +188,9 @@ describe('deleteActivityRecurrenceGroup', () => {
 
     const eqCalls = (chain.eq as ReturnType<typeof vi.fn>).mock.calls;
     expect(eqCalls).toContainEqual(['recurrence_group_id', 'group-abc']);
+    expect((chain.update as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(
+      expect.objectContaining({ deleted_at: expect.any(String) })
+    );
   });
 });
 

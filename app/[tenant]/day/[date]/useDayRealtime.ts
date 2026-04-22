@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase-client';
+import type { DayNote } from '@/app/actions/day-notes';
 import type {
   ActivityWithRelations,
   ActivityChecklistItem,
@@ -16,6 +17,7 @@ type SetActivities = React.Dispatch<React.SetStateAction<ActivityWithRelations[]
 type SetReservations = React.Dispatch<React.SetStateAction<Reservation[]>>;
 type SetBreakfastConfigs = React.Dispatch<React.SetStateAction<BreakfastConfiguration[]>>;
 type SetShifts = React.Dispatch<React.SetStateAction<ShiftWithStaffMember[]>>;
+type SetDayNotes = React.Dispatch<React.SetStateAction<DayNote[]>>;
 
 /**
  * Subscribes to Postgres changes for the three day-view tables scoped to the
@@ -53,7 +55,8 @@ export function useDayRealtime(
   setBreakfastConfigs: SetBreakfastConfigs,
   setShifts: SetShifts,
   staffMembers: StaffMember[],
-  subscribeShifts: boolean
+  subscribeShifts: boolean,
+  setDayNotes: SetDayNotes
 ) {
   const staffRef = useRef(staffMembers);
   staffRef.current = staffMembers;
@@ -74,7 +77,8 @@ export function useDayRealtime(
         },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            const row = payload.new as ActivityWithRelations;
+            const row = payload.new as ActivityWithRelations & { deleted_at?: string | null };
+            if (row.deleted_at) return;
             setActivities((prev) => {
               if (prev.some((a) => a.id === row.id)) return prev;
               const withoutPendingDuplicate = prev.filter((item) => {
@@ -90,7 +94,11 @@ export function useDayRealtime(
               );
             });
           } else if (payload.eventType === 'UPDATE') {
-            const row = payload.new as ActivityWithRelations;
+            const row = payload.new as ActivityWithRelations & { deleted_at?: string | null };
+            if (row.deleted_at) {
+              setActivities((prev) => prev.filter((a) => a.id !== row.id));
+              return;
+            }
             // Merge to preserve joined fields (venue_type, poc, tags) that
             // the realtime payload doesn't include.
             setActivities((prev) =>
@@ -113,7 +121,8 @@ export function useDayRealtime(
         },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            const row = payload.new as Reservation;
+            const row = payload.new as Reservation & { deleted_at?: string | null };
+            if (row.deleted_at) return;
             setReservations((prev) => {
               if (prev.some((r) => r.id === row.id)) return prev;
               const withoutPendingDuplicate = prev.filter((item) => {
@@ -129,7 +138,11 @@ export function useDayRealtime(
               );
             });
           } else if (payload.eventType === 'UPDATE') {
-            const row = payload.new as Reservation;
+            const row = payload.new as Reservation & { deleted_at?: string | null };
+            if (row.deleted_at) {
+              setReservations((prev) => prev.filter((r) => r.id !== row.id));
+              return;
+            }
             setReservations((prev) =>
               prev.map((r) => (r.id === row.id ? row : r))
             );
@@ -150,7 +163,8 @@ export function useDayRealtime(
         },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            const row = payload.new as BreakfastConfiguration;
+            const row = payload.new as BreakfastConfiguration & { deleted_at?: string | null };
+            if (row.deleted_at) return;
             setBreakfastConfigs((prev) => {
               if (prev.some((c) => c.id === row.id)) return prev;
               const withoutPendingDuplicate = prev.filter((item) => {
@@ -164,13 +178,51 @@ export function useDayRealtime(
               return [...withoutPendingDuplicate, row];
             });
           } else if (payload.eventType === 'UPDATE') {
-            const row = payload.new as BreakfastConfiguration;
+            const row = payload.new as BreakfastConfiguration & { deleted_at?: string | null };
+            if (row.deleted_at) {
+              setBreakfastConfigs((prev) => prev.filter((c) => c.id !== row.id));
+              return;
+            }
             setBreakfastConfigs((prev) =>
               prev.map((c) => (c.id === row.id ? row : c))
             );
           } else if (payload.eventType === 'DELETE') {
             const id = (payload.old as { id: string }).id;
             setBreakfastConfigs((prev) => prev.filter((c) => c.id !== id));
+          }
+        }
+      )
+      // Day notes
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'day_notes',
+          filter: `day_id=eq.${dayId}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const row = payload.new as DayNote & { deleted_at?: string | null };
+            if (row.deleted_at) return;
+            setDayNotes((prev) => {
+              if (prev.some((n) => n.id === row.id)) return prev;
+              return [...prev, row as DayNote].sort((a, b) =>
+                a.created_at.localeCompare(b.created_at)
+              );
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            const row = payload.new as DayNote & { deleted_at?: string | null };
+            if (row.deleted_at) {
+              setDayNotes((prev) => prev.filter((n) => n.id !== row.id));
+              return;
+            }
+            setDayNotes((prev) =>
+              prev.map((n) => (n.id === row.id ? (row as DayNote) : n))
+            );
+          } else if (payload.eventType === 'DELETE') {
+            const id = (payload.old as { id: string }).id;
+            setDayNotes((prev) => prev.filter((n) => n.id !== id));
           }
         }
       )
@@ -287,5 +339,6 @@ export function useDayRealtime(
     setBreakfastConfigs,
     setShifts,
     subscribeShifts,
+    setDayNotes,
   ]);
 }

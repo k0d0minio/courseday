@@ -106,11 +106,13 @@ export async function applyTemplate(
   if (!items.length) return { success: true, data: undefined };
 
   if (mode === 'replace') {
+    const now = new Date().toISOString();
     const { error: delErr } = await supabase
       .from('activity')
-      .delete()
+      .update({ deleted_at: now, updated_at: now })
       .eq('day_id', dayId)
-      .eq('tenant_id', tenantId);
+      .eq('tenant_id', tenantId)
+      .is('deleted_at', null);
     if (delErr) return { success: false, error: delErr.message };
   }
 
@@ -174,7 +176,8 @@ export async function copyDaySections(
         'title, start_time, end_time, expected_covers, venue_type_id, poc_id, notes'
       )
       .eq('day_id', sourceDayId)
-      .eq('tenant_id', tenantId);
+      .eq('tenant_id', tenantId)
+      .is('deleted_at', null);
 
     if (fetchErr) return { success: false, error: fetchErr.message };
 

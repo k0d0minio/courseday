@@ -241,6 +241,7 @@ export async function attachChecklistTemplatesToActivity(
     .select('id, day_id, tenant_id')
     .eq('id', activityId)
     .eq('tenant_id', tenantId)
+    .is('deleted_at', null)
     .single();
 
   if (activityErr || !activityRow) {

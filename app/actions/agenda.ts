@@ -44,18 +44,21 @@ export async function getDaySummaries(
       .from('activity')
       .select('day_id')
       .eq('tenant_id', tenantId)
-      .in('day_id', dayIds),
+      .in('day_id', dayIds)
+      .is('deleted_at', null),
     supabase
       .from('reservation')
       .select('day_id')
       .eq('tenant_id', tenantId)
-      .in('day_id', dayIds),
+      .in('day_id', dayIds)
+      .is('deleted_at', null),
     supabase
       .from('breakfast_configuration')
       .select('breakfast_date,total_guests')
       .eq('tenant_id', tenantId)
       .gte('breakfast_date', start)
-      .lte('breakfast_date', end),
+      .lte('breakfast_date', end)
+      .is('deleted_at', null),
   ]);
 
   // Build summary map

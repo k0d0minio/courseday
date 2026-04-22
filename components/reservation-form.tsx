@@ -137,6 +137,7 @@ export function ReservationForm({
           notes: payload.notes ?? null,
           table_breakdown: payload.tableBreakdown ?? null,
           allergens: payload.allergens ?? [],
+          deleted_at: null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };

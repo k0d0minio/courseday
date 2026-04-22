@@ -244,6 +244,7 @@ export function ActivityForm({
           is_recurring: payload.isRecurring ?? false,
           recurrence_frequency: payload.recurrenceFrequency ?? null,
           recurrence_group_id: null,
+          deleted_at: null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         });

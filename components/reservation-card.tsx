@@ -11,6 +11,7 @@ import { mutateWithOfflineQueue } from '@/lib/day-mutation-client';
 import { useTenant } from '@/lib/tenant-context';
 import type { Reservation } from '@/types/index';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   AlertDialog,
@@ -29,10 +30,12 @@ type Props = {
   onEdit: (item: Reservation) => void;
   onDeleted: (id: string) => void;
   onBeforeEdit?: (trigger: HTMLElement) => void;
+  handoverStatus?: 'new' | 'edited' | null;
 };
 
-export function ReservationCard({ item, isEditor, onEdit, onDeleted, onBeforeEdit }: Props) {
+export function ReservationCard({ item, isEditor, onEdit, onDeleted, onBeforeEdit, handoverStatus }: Props) {
   const t = useTranslations('Tenant.reservation');
+  const th = useTranslations('Tenant.handover');
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDeleting, startDeleteTransition] = useTransition();
   const { tenantSlug } = useTenant();
@@ -70,8 +73,18 @@ export function ReservationCard({ item, isEditor, onEdit, onDeleted, onBeforeEdi
             <div className="flex-1 min-w-0 space-y-1.5">
               {/* Name + count */}
               <div className="flex items-baseline gap-2">
-                <p className="font-medium flex items-center gap-2">
+                <p className="font-medium flex items-center gap-2 flex-wrap">
                   {item.guest_name ?? t('fallbackName')}
+                  {handoverStatus === 'new' && (
+                    <Badge variant="default" className="text-[10px] uppercase shrink-0">
+                      {th('badgeNew')}
+                    </Badge>
+                  )}
+                  {handoverStatus === 'edited' && (
+                    <Badge variant="secondary" className="text-[10px] uppercase shrink-0">
+                      {th('badgeEdited')}
+                    </Badge>
+                  )}
                   {isPending && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
                 </p>
                 {item.guest_count != null && (
