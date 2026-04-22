@@ -1,17 +1,21 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase-client';
 import type {
   ActivityWithRelations,
   ActivityChecklistItem,
   Reservation,
   BreakfastConfiguration,
+  Shift,
+  ShiftWithStaffMember,
+  StaffMember,
 } from '@/types/index';
 
 type SetActivities = React.Dispatch<React.SetStateAction<ActivityWithRelations[]>>;
 type SetReservations = React.Dispatch<React.SetStateAction<Reservation[]>>;
 type SetBreakfastConfigs = React.Dispatch<React.SetStateAction<BreakfastConfiguration[]>>;
+type SetShifts = React.Dispatch<React.SetStateAction<ShiftWithStaffMember[]>>;
 
 /**
  * Subscribes to Postgres changes for the three day-view tables scoped to the
@@ -27,12 +31,32 @@ type SetBreakfastConfigs = React.Dispatch<React.SetStateAction<BreakfastConfigur
  * Limitation: calendar aggregate counts are not updated in real-time.
  * Realtime only applies to the day view.
  */
+function shiftWithMemberFromRow(row: Shift, members: StaffMember[]): ShiftWithStaffMember {
+  const staff_member =
+    members.find((m) => m.id === row.staff_member_id) ??
+    ({
+      id: row.staff_member_id,
+      tenant_id: row.tenant_id,
+      name: '—',
+      role: '',
+      active: false,
+      created_at: row.created_at,
+    } satisfies StaffMember);
+
+  return { ...row, staff_member };
+}
+
 export function useDayRealtime(
   dayId: string,
   setActivities: SetActivities,
   setReservations: SetReservations,
-  setBreakfastConfigs: SetBreakfastConfigs
+  setBreakfastConfigs: SetBreakfastConfigs,
+  setShifts: SetShifts,
+  staffMembers: StaffMember[]
 ) {
+  const staffRef = useRef(staffMembers);
+  staffRef.current = staffMembers;
+
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
 
@@ -207,10 +231,50 @@ export function useDayRealtime(
           }
         }
       )
+      // Shifts
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'shift',
+          filter: `day_id=eq.${dayId}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const row = payload.new as Shift;
+            setShifts((prev) => {
+              if (prev.some((s) => s.id === row.id)) return prev;
+              const withMember = shiftWithMemberFromRow(row, staffRef.current);
+              return [...prev, withMember].sort((a, b) =>
+                (a.start_time ?? '').localeCompare(b.start_time ?? '')
+              );
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            const row = payload.new as Shift;
+            setShifts((prev) =>
+              prev.map((s) =>
+                s.id === row.id
+                  ? {
+                      ...s,
+                      ...row,
+                      staff_member:
+                        staffRef.current.find((m) => m.id === row.staff_member_id) ??
+                        s.staff_member,
+                    }
+                  : s
+              )
+            );
+          } else if (payload.eventType === 'DELETE') {
+            const id = (payload.old as { id: string }).id;
+            setShifts((prev) => prev.filter((s) => s.id !== id));
+          }
+        }
+      )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [dayId, setActivities, setReservations, setBreakfastConfigs]);
+  }, [dayId, setActivities, setReservations, setBreakfastConfigs, setShifts]);
 }

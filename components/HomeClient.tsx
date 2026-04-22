@@ -9,6 +9,7 @@ import { CalendarDaySidebar } from '@/components/CalendarDaySidebar';
 import { AgendaView } from '@/components/AgendaView';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useActiveDay } from '@/lib/active-day-context';
 
 const VIEW_PREF_KEY = 'editor-home-view-preference';
 type ViewMode = 'calendar' | 'agenda';
@@ -49,6 +50,7 @@ export function HomeClient({
   const router = useRouter();
   const t = useTranslations('Tenant.home');
   const isEditor = variant === 'editor';
+  const { setActiveDayYmd } = useActiveDay();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [days, setDays] = useState<DaySummary[]>(initialDays);
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
@@ -68,6 +70,10 @@ export function HomeClient({
     mq.addEventListener('change', sync);
     return () => mq.removeEventListener('change', sync);
   }, []);
+
+  useEffect(() => {
+    setActiveDayYmd(selectedDate ?? today);
+  }, [selectedDate, today, setActiveDayYmd]);
 
   // Restore view preference from localStorage (editors only)
   useEffect(() => {

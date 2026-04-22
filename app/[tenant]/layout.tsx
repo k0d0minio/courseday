@@ -25,6 +25,7 @@ import { getUnreadCount } from '@/app/actions/notifications';
 import { getTenantToday } from '@/lib/day-utils';
 import { getSuperadminImpersonationRole } from '@/lib/superadmin';
 import { getTenantPalette, getTenantThemeCssVariables } from '@/lib/theme/palettes';
+import { TenantKeyboardShell } from '@/components/tenant-keyboard-shell';
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -117,44 +118,46 @@ export default async function TenantLayout({
       <FeatureFlagProvider flags={featureFlags}>
       <TenantProvider tenantId={tenant.id} tenantSlug={tenant.slug}>
         <AuthProvider>
-          <a
-            href="#main-content"
-            className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:rounded focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:ring-2 focus:ring-ring"
-          >
-            {t('skipToContent')}
-          </a>
-          <div className="tenant-themed min-h-screen flex flex-col" dir={dir} style={accentStyle}>
-            <header className="border-b px-6 h-14 flex items-center justify-between">
-              <Link
-                href="/"
-                className="inline-flex items-center"
-                aria-label={row?.name ?? 'Home'}
-              >
-                <Logo logoUrl={row?.logo_url} tenantName={row?.name} />
-              </Link>
-              <div className="flex items-center gap-1">
-                <OfflineStatusPill />
-                {/* Theme toggle — visible to all signed-in users */}
-                {user && <ThemeToggle />}
-                {/* Settings dropdown — editors only, desktop */}
-                {editor && (
-                  <span className="hidden sm:inline-flex">
-                    <SettingsDropdown />
-                  </span>
-                )}
-                <NotificationBell initialCount={unreadCount} />
-                {user && <UserMenu user={user} signOutLabel={t('signOut')} />}
-              </div>
-            </header>
-            <main id="main-content" className="flex-1 pb-16 sm:pb-0">{children}</main>
-          </div>
-          <MobileNav today={today} isEditor={editor} />
-          {superadminImpersonationRole && (
-            <SuperadminReturnPopup role={superadminImpersonationRole} />
-          )}
-          <Toaster richColors closeButton />
-          <PwaRegister />
-          <PwaInstallPrompt />
+          <TenantKeyboardShell tenantTodayYmd={today}>
+            <a
+              href="#main-content"
+              className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:rounded focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:ring-2 focus:ring-ring"
+            >
+              {t('skipToContent')}
+            </a>
+            <div className="tenant-themed min-h-screen flex flex-col" dir={dir} style={accentStyle}>
+              <header className="border-b px-6 h-14 flex items-center justify-between">
+                <Link
+                  href="/"
+                  className="inline-flex items-center"
+                  aria-label={row?.name ?? 'Home'}
+                >
+                  <Logo logoUrl={row?.logo_url} tenantName={row?.name} />
+                </Link>
+                <div className="flex items-center gap-1">
+                  <OfflineStatusPill />
+                  {/* Theme toggle — visible to all signed-in users */}
+                  {user && <ThemeToggle />}
+                  {/* Settings dropdown — editors only, desktop */}
+                  {editor && (
+                    <span className="hidden sm:inline-flex">
+                      <SettingsDropdown />
+                    </span>
+                  )}
+                  <NotificationBell initialCount={unreadCount} />
+                  {user && <UserMenu user={user} signOutLabel={t('signOut')} />}
+                </div>
+              </header>
+              <main id="main-content" className="flex-1 pb-16 sm:pb-0">{children}</main>
+            </div>
+            <MobileNav today={today} isEditor={editor} />
+            {superadminImpersonationRole && (
+              <SuperadminReturnPopup role={superadminImpersonationRole} />
+            )}
+            <Toaster richColors closeButton />
+            <PwaRegister />
+            <PwaInstallPrompt />
+          </TenantKeyboardShell>
         </AuthProvider>
       </TenantProvider>
       </FeatureFlagProvider>

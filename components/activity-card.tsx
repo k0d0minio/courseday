@@ -28,9 +28,11 @@ type Props = {
   isEditor: boolean;
   onEdit: (item: ActivityWithRelations) => void;
   onDeleted: (id: string, mode: 'single' | 'all' | 'from-here') => void;
+  /** Called with the edit control element before opening the editor (focus return). */
+  onBeforeEdit?: (trigger: HTMLElement) => void;
 };
 
-export function ActivityCard({ item, isEditor, onEdit, onDeleted }: Props) {
+export function ActivityCard({ item, isEditor, onEdit, onDeleted, onBeforeEdit }: Props) {
   const t = useTranslations('Tenant.entry');
   const tChecklist = useTranslations('Tenant.checklists');
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -194,7 +196,15 @@ export function ActivityCard({ item, isEditor, onEdit, onDeleted }: Props) {
             {/* Right: actions */}
             {isEditor && (
               <div className="flex gap-1 shrink-0">
-                <Button variant="ghost" size="icon" onClick={() => onEdit(item)} aria-label={`Edit: ${item.title}`}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={(e) => {
+                    onBeforeEdit?.(e.currentTarget);
+                    onEdit(item);
+                  }}
+                  aria-label={`Edit: ${item.title}`}
+                >
                   <Pencil className="h-4 w-4" aria-hidden="true" />
                 </Button>
                 <Button variant="ghost" size="icon" onClick={() => setDeleteOpen(true)} aria-label={`Delete: ${item.title}`}>

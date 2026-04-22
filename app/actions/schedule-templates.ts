@@ -133,44 +133,94 @@ export async function applyTemplate(
   return { success: true, data: undefined };
 }
 
+export type CopyDayOptions = {
+  copyActivities: boolean;
+  copyShifts: boolean;
+};
+
 export async function copyDayActivities(
   sourceDayId: string,
   targetDate: string
 ): Promise<ActionResponse> {
+  return copyDaySections(sourceDayId, targetDate, {
+    copyActivities: true,
+    copyShifts: false,
+  });
+}
+
+export async function copyDaySections(
+  sourceDayId: string,
+  targetDate: string,
+  options: CopyDayOptions
+): Promise<ActionResponse> {
   const tenantId = await getTenantId();
   await requireEditor(tenantId);
 
+  if (!options.copyActivities && !options.copyShifts) {
+    return { success: false, error: 'Select at least one section to copy.' };
+  }
+
   const { supabase } = await createTenantClient();
-
-  const { data: sourceActivities, error: fetchErr } = await supabase
-    .from('activity')
-    .select('title, start_time, end_time, expected_covers, venue_type_id, poc_id, notes')
-    .eq('day_id', sourceDayId)
-    .eq('tenant_id', tenantId);
-
-  if (fetchErr) return { success: false, error: fetchErr.message };
-  if (!sourceActivities?.length) return { success: true, data: undefined };
 
   const dayResult = await ensureDayExists(targetDate);
   if (!dayResult.success) return { success: false, error: 'Could not create target day.' };
 
   const targetDayId = dayResult.data.id;
 
-  const rows = (sourceActivities as TemplateItem[]).map((a) => ({
-    tenant_id: tenantId,
-    day_id: targetDayId,
-    title: a.title,
-    start_time: a.start_time,
-    end_time: a.end_time,
-    expected_covers: a.expected_covers,
-    venue_type_id: a.venue_type_id,
-    poc_id: a.poc_id,
-    notes: a.notes,
-    is_recurring: false,
-  }));
+  if (options.copyActivities) {
+    const { data: sourceActivities, error: fetchErr } = await supabase
+      .from('activity')
+      .select(
+        'title, start_time, end_time, expected_covers, venue_type_id, poc_id, notes'
+      )
+      .eq('day_id', sourceDayId)
+      .eq('tenant_id', tenantId);
 
-  const { error: insErr } = await supabase.from('activity').insert(rows);
-  if (insErr) return { success: false, error: insErr.message };
+    if (fetchErr) return { success: false, error: fetchErr.message };
+
+    if (sourceActivities?.length) {
+      const rows = (sourceActivities as TemplateItem[]).map((a) => ({
+        tenant_id: tenantId,
+        day_id: targetDayId,
+        title: a.title,
+        start_time: a.start_time,
+        end_time: a.end_time,
+        expected_covers: a.expected_covers,
+        venue_type_id: a.venue_type_id,
+        poc_id: a.poc_id,
+        notes: a.notes,
+        is_recurring: false,
+      }));
+
+      const { error: insErr } = await supabase.from('activity').insert(rows);
+      if (insErr) return { success: false, error: insErr.message };
+    }
+  }
+
+  if (options.copyShifts) {
+    const { data: sourceShifts, error: shiftFetchErr } = await supabase
+      .from('shift')
+      .select('staff_member_id, role, start_time, end_time, notes')
+      .eq('day_id', sourceDayId)
+      .eq('tenant_id', tenantId);
+
+    if (shiftFetchErr) return { success: false, error: shiftFetchErr.message };
+
+    if (sourceShifts?.length) {
+      const shiftRows = sourceShifts.map((s) => ({
+        tenant_id: tenantId,
+        day_id: targetDayId,
+        staff_member_id: s.staff_member_id,
+        role: s.role,
+        start_time: s.start_time,
+        end_time: s.end_time,
+        notes: s.notes,
+      }));
+
+      const { error: shiftInsErr } = await supabase.from('shift').insert(shiftRows);
+      if (shiftInsErr) return { success: false, error: shiftInsErr.message };
+    }
+  }
 
   return { success: true, data: undefined };
 }

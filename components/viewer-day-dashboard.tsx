@@ -6,9 +6,17 @@ import { DayNotes } from '@/components/day-notes';
 import { WeatherCard } from '@/components/weather-card';
 import { TableBreakdownDisplay } from '@/components/table-breakdown-display';
 import { useFeatureFlag } from '@/lib/feature-flags-context';
-import type { ActivityWithRelations, Reservation, BreakfastConfiguration } from '@/types/index';
+import { ShiftCard } from '@/components/shift-card';
+import type {
+  ActivityWithRelations,
+  Reservation,
+  BreakfastConfiguration,
+  ShiftWithStaffMember,
+} from '@/types/index';
 import type { DayNote } from '@/app/actions/day-notes';
 import type { WeatherData } from '@/app/actions/weather';
+import { useAuth } from '@/lib/AuthProvider';
+import { useDayViewHotkeys } from '@/lib/keyboard-shortcuts';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -16,12 +24,14 @@ import type { WeatherData } from '@/app/actions/weather';
 
 type Props = {
   date: string;
+  dayId: string;
   today: string;
   activities: ActivityWithRelations[];
   reservations: Reservation[];
   breakfastConfigs: BreakfastConfiguration[];
   dayNotes: DayNote[];
   weather: WeatherData | null;
+  shifts: ShiftWithStaffMember[];
 };
 
 // ---------------------------------------------------------------------------
@@ -30,15 +40,22 @@ type Props = {
 
 export function ViewerDayDashboard({
   date,
+  dayId,
   today,
   activities,
   reservations,
   breakfastConfigs,
   dayNotes,
   weather,
+  shifts,
 }: Props) {
+  const { impersonationRole } = useAuth();
+
+  useDayViewHotkeys({ date, today, impersonationRole });
+
   const td = useTranslations('Tenant.day');
-  const ts = useTranslations('Tenant.summary');
+  const ts = useTranslations('Tenant.staff.section');
+  const tsummary = useTranslations('Tenant.summary');
   const te = useTranslations('Tenant.entry');
   const tb = useTranslations('Tenant.breakfastCard');
   const showReservations = useFeatureFlag('reservations');
@@ -67,10 +84,20 @@ export function ViewerDayDashboard({
 
       {/* Summary — large numbers for at-a-glance reading */}
       <div className="grid grid-cols-3 gap-3">
-        <StatBlock label={ts('breakfast')} value={totalBreakfastCovers} />
-        <StatBlock label={ts('activities')} value={totalActivityCovers} />
-        <StatBlock label={ts('reservations')} value={totalReservationCovers} />
+        <StatBlock label={tsummary('breakfast')} value={totalBreakfastCovers} />
+        <StatBlock label={tsummary('activities')} value={totalActivityCovers} />
+        <StatBlock label={tsummary('reservations')} value={totalReservationCovers} />
       </div>
+
+      <ViewerSection
+        title={ts('title')}
+        empty={shifts.length === 0}
+        emptyLabel={ts('empty')}
+      >
+        {shifts.map((item) => (
+          <ShiftCard key={item.id} dayId={dayId} item={item} isEditor={false} />
+        ))}
+      </ViewerSection>
 
       {/* Breakfast */}
       <ViewerSection

@@ -8,6 +8,7 @@ import { useFeatureFlag } from '@/lib/feature-flags-context';
 
 export const SETTINGS_ROUTES = [
   { href: '/admin/settings/poc', labelKey: 'tabPoc' },
+  { href: '/admin/settings/staff', labelKey: 'tabStaff' },
   { href: '/admin/settings/venue-types', labelKey: 'tabVenueTypes' },
   { href: '/admin/settings/activity-tags', labelKey: 'tabActivityTags' },
   { href: '/admin/settings/checklists', labelKey: 'tabChecklists' },

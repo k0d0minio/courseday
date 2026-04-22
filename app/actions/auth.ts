@@ -5,6 +5,7 @@ import { createSupabaseServerClient, createSupabaseServiceClient } from '@/lib/s
 import { buildAuthConfirmRedirectUrl } from '@/lib/auth-email-redirect';
 import { getTenantId } from '@/lib/tenant';
 import { getUserRole } from '@/lib/membership';
+import { getSuperadminImpersonationRole } from '@/lib/superadmin';
 import { protocol, rootDomain } from '@/lib/utils';
 import { authRateLimit } from '@/lib/rate-limit';
 import { getTenantToday } from '@/lib/day-utils';
@@ -152,13 +153,18 @@ export async function sendPasswordResetEmail(
 
 export async function getAuthState() {
   const user = await getUser();
-  if (!user) return { user: null, role: null, isEditor: false };
+  if (!user) {
+    return { user: null, role: null, isEditor: false, impersonationRole: null };
+  }
 
   const tenantId = await getTenantId().catch(() => null);
-  if (!tenantId) return { user, role: null, isEditor: false };
+  if (!tenantId) {
+    return { user, role: null, isEditor: false, impersonationRole: null };
+  }
 
   const role = await getUserRole(tenantId);
-  return { user, role, isEditor: role === 'editor' };
+  const impersonationRole = await getSuperadminImpersonationRole(tenantId, user.id);
+  return { user, role, isEditor: role === 'editor', impersonationRole };
 }
 
 export type InviteJoinErrorCode =

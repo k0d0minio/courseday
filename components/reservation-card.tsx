@@ -28,9 +28,10 @@ type Props = {
   isEditor: boolean;
   onEdit: (item: Reservation) => void;
   onDeleted: (id: string) => void;
+  onBeforeEdit?: (trigger: HTMLElement) => void;
 };
 
-export function ReservationCard({ item, isEditor, onEdit, onDeleted }: Props) {
+export function ReservationCard({ item, isEditor, onEdit, onDeleted, onBeforeEdit }: Props) {
   const t = useTranslations('Tenant.reservation');
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDeleting, startDeleteTransition] = useTransition();
@@ -105,7 +106,15 @@ export function ReservationCard({ item, isEditor, onEdit, onDeleted }: Props) {
 
             {isEditor && (
               <div className="flex gap-1 shrink-0">
-                <Button variant="ghost" size="icon" onClick={() => onEdit(item)} aria-label={`Edit: ${item.guest_name ?? t('fallbackName')}`}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={(e) => {
+                    onBeforeEdit?.(e.currentTarget);
+                    onEdit(item);
+                  }}
+                  aria-label={`Edit: ${item.guest_name ?? t('fallbackName')}`}
+                >
                   <Pencil className="h-4 w-4" aria-hidden="true" />
                 </Button>
                 <Button variant="ghost" size="icon" onClick={() => setDeleteOpen(true)} aria-label={`Delete: ${item.guest_name ?? t('fallbackName')}`}>

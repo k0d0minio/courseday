@@ -54,6 +54,20 @@ export type PointOfContact = Tables<'point_of_contact'>;
 export type PointOfContactInsert = TablesInsert<'point_of_contact'>;
 export type PointOfContactUpdate = TablesUpdate<'point_of_contact'>;
 
+// ── Staff schedule ─────────────────────────────────────────────────────────────
+
+export type StaffMember = Tables<'staff_member'>;
+export type StaffMemberInsert = TablesInsert<'staff_member'>;
+export type StaffMemberUpdate = TablesUpdate<'staff_member'>;
+
+export type StaffRole = Tables<'staff_role'>;
+export type StaffRoleInsert = TablesInsert<'staff_role'>;
+export type StaffRoleUpdate = TablesUpdate<'staff_role'>;
+
+export type Shift = Tables<'shift'>;
+export type ShiftInsert = TablesInsert<'shift'>;
+export type ShiftUpdate = TablesUpdate<'shift'>;
+
 // ── Venue type ────────────────────────────────────────────────────────────────
 
 export type VenueType = Tables<'venue_type'>;
@@ -85,4 +99,8 @@ export type ActivityWithRelations = Activity & {
   venue_type: VenueType | null;
   point_of_contact: PointOfContact | null;
   checklist_items?: ActivityChecklistItem[];
+};
+
+export type ShiftWithStaffMember = Shift & {
+  staff_member: StaffMember;
 };

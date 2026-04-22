@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, useTransition } from 'react';
+import { useEffect, useMemo, useState, useTransition, type RefObject } from 'react';
 import { useForm } from 'react-hook-form';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { z } from 'zod';
@@ -95,6 +95,7 @@ type Props = {
   venueTypes: VenueType[];
   editItem?: ActivityWithRelations | null;
   onSuccess: (item: Activity) => void;
+  returnFocusRef?: RefObject<HTMLElement | null>;
 };
 
 // ---------------------------------------------------------------------------
@@ -110,6 +111,7 @@ export function ActivityForm({
   venueTypes: initialVenueTypes,
   editItem,
   onSuccess,
+  returnFocusRef,
 }: Props) {
   const t = useTranslations('Tenant.activityForm');
   const tAllergens = useTranslations('Tenant.allergens');
@@ -445,7 +447,17 @@ export function ActivityForm({
 
   if (isMobile) {
     return (
-      <Drawer open={isOpen} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <Drawer
+        open={isOpen}
+        onOpenChange={(v) => {
+          if (!v) {
+            onClose();
+            if (returnFocusRef?.current) {
+              queueMicrotask(() => returnFocusRef.current?.focus());
+            }
+          }
+        }}
+      >
         <DrawerContent>
           <DrawerHeader>
             <DrawerTitle>{modalTitle}</DrawerTitle>
@@ -458,7 +470,15 @@ export function ActivityForm({
 
   return (
     <Dialog open={isOpen} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="sm:max-w-lg max-h-[90vh] overflow-y-auto"
+        onCloseAutoFocus={(e) => {
+          if (returnFocusRef?.current) {
+            e.preventDefault();
+            returnFocusRef.current.focus();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>{modalTitle}</DialogTitle>
         </DialogHeader>

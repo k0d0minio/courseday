@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { useDayRealtime } from './useDayRealtime';
 import { useTranslations } from 'next-intl';
-import { Plus } from 'lucide-react';
+import { Plus, Copy } from 'lucide-react';
 import { DayNav } from '@/components/day-nav';
 import { DaySummaryCard } from '@/components/day-summary-card';
 import { ViewerDayDashboard } from '@/components/viewer-day-dashboard';
@@ -15,63 +16,153 @@ import { BreakfastForm } from '@/components/breakfast-form';
 import { BreakfastCard } from '@/components/breakfast-card';
 import { DayNotes } from '@/components/day-notes';
 import { WeatherCard } from '@/components/weather-card';
+import { StaffScheduleSection } from '@/components/staff-schedule-section';
+import { CopyDayDialog } from '@/components/copy-day-dialog';
 import { Button } from '@/components/ui/button';
+import { KbdHint } from '@/components/kbd-hint';
 import { useFeatureFlag } from '@/lib/feature-flags-context';
+import { useActiveDay } from '@/lib/active-day-context';
+import { useDayViewHotkeys } from '@/lib/keyboard-shortcuts';
 import type {
   Activity,
   ActivityWithRelations,
   Reservation,
   BreakfastConfiguration,
+  ShiftWithStaffMember,
 } from '@/types/index';
 import type { DayViewProps } from './page';
 
-export function DayViewClient({
+function useDayViewLiveState(p: DayViewProps) {
+  const [activities, setActivities] = useState(
+    () => p.activities as ActivityWithRelations[]
+  );
+  const [reservations, setReservations] = useState<Reservation[]>(p.reservations);
+  const [breakfastConfigs, setBreakfastConfigs] = useState<BreakfastConfiguration[]>(
+    p.breakfastConfigs
+  );
+  const [shifts, setShifts] = useState<ShiftWithStaffMember[]>(p.shifts);
+
+  useDayRealtime(
+    p.dayId,
+    setActivities,
+    setReservations,
+    setBreakfastConfigs,
+    setShifts,
+    p.staffMembers
+  );
+
+  useEffect(() => {
+    setActivities(p.activities as ActivityWithRelations[]);
+    setReservations(p.reservations);
+    setBreakfastConfigs(p.breakfastConfigs);
+    setShifts(p.shifts);
+  }, [
+    p.dayId,
+    p.activities,
+    p.reservations,
+    p.breakfastConfigs,
+    p.shifts,
+  ]);
+
+  return {
+    activities,
+    setActivities,
+    reservations,
+    setReservations,
+    breakfastConfigs,
+    setBreakfastConfigs,
+    shifts,
+    setShifts,
+  };
+}
+
+export function DayViewClient(props: DayViewProps) {
+  const { date, authState } = props;
+  const { setActiveDayYmd } = useActiveDay();
+  const live = useDayViewLiveState(props);
+
+  useEffect(() => {
+    setActiveDayYmd(date);
+  }, [date, setActiveDayYmd]);
+
+  if (!authState.isEditor) {
+    return (
+      <ViewerDayDashboard
+        {...props}
+        activities={live.activities}
+        reservations={live.reservations}
+        breakfastConfigs={live.breakfastConfigs}
+        shifts={live.shifts}
+      />
+    );
+  }
+
+  return <DayViewEditor {...props} live={live} />;
+}
+
+function DayViewEditor({
   date,
   dayId,
   today,
-  activities: initialActivities,
-  reservations: initialReservations,
-  breakfastConfigs: initialBreakfastConfigs,
   dayNotes,
   weather,
   pocs,
   venueTypes,
   authState,
-}: DayViewProps) {
+  staffMembers,
+  staffRoles,
+  live,
+}: DayViewProps & {
+  live: ReturnType<typeof useDayViewLiveState>;
+}) {
   const t = useTranslations('Tenant.day');
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const showReservations = useFeatureFlag('reservations');
   const showBreakfast = useFeatureFlag('breakfast_config');
   const showWeatherReporting = useFeatureFlag('weather_reporting');
 
-  const [activities, setActivities] = useState(
-    initialActivities as ActivityWithRelations[]
-  );
-  const [reservations, setReservations] = useState<Reservation[]>(initialReservations);
-  const [breakfastConfigs, setBreakfastConfigs] = useState<BreakfastConfiguration[]>(
-    initialBreakfastConfigs
-  );
+  const {
+    activities,
+    setActivities,
+    reservations,
+    setReservations,
+    breakfastConfigs,
+    setBreakfastConfigs,
+    shifts,
+    setShifts,
+  } = live;
 
-  // Subscribe to realtime updates for this day — unsubscribes on navigation away.
-  useDayRealtime(dayId, setActivities, setReservations, setBreakfastConfigs);
-
-  // Activity modal state
   const [activityModalOpen, setActivityModalOpen] = useState(false);
   const [editActivity, setEditActivity] = useState<ActivityWithRelations | null>(null);
 
-  // Reservation modal state
   const [reservationModalOpen, setReservationModalOpen] = useState(false);
   const [editReservation, setEditReservation] = useState<Reservation | null>(null);
 
-  // Breakfast modal state
   const [breakfastModalOpen, setBreakfastModalOpen] = useState(false);
   const [editBreakfast, setEditBreakfast] = useState<BreakfastConfiguration | null>(null);
+  const [copyDayOpen, setCopyDayOpen] = useState(false);
 
-  // ---------- Activity handlers ----------
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+  const activityAddRef = useRef<HTMLButtonElement>(null);
+  const reservationAddRef = useRef<HTMLButtonElement>(null);
+  const breakfastAddRef = useRef<HTMLButtonElement>(null);
 
-  function openAddActivity() {
+  const openAddActivity = useCallback(() => {
     setEditActivity(null);
     setActivityModalOpen(true);
-  }
+  }, []);
+
+  const openAddReservation = useCallback(() => {
+    setEditReservation(null);
+    setReservationModalOpen(true);
+  }, []);
+
+  const openAddBreakfast = useCallback(() => {
+    setEditBreakfast(null);
+    setBreakfastModalOpen(true);
+  }, []);
 
   function openEditActivity(item: ActivityWithRelations) {
     setEditActivity(item);
@@ -105,13 +196,6 @@ export function DayViewClient({
     }
   }
 
-  // ---------- Reservation handlers ----------
-
-  function openAddReservation() {
-    setEditReservation(null);
-    setReservationModalOpen(true);
-  }
-
   function openEditReservation(item: Reservation) {
     setEditReservation(item);
     setReservationModalOpen(true);
@@ -135,13 +219,6 @@ export function DayViewClient({
     setReservations((prev) => prev.filter((r) => r.id !== id));
   }
 
-  // ---------- Breakfast handlers ----------
-
-  function openAddBreakfast() {
-    setEditBreakfast(null);
-    setBreakfastModalOpen(true);
-  }
-
   function openEditBreakfast(config: BreakfastConfiguration) {
     setEditBreakfast(config);
     setBreakfastModalOpen(true);
@@ -163,24 +240,68 @@ export function DayViewClient({
     setBreakfastConfigs((prev) => prev.filter((c) => c.id !== id));
   }
 
-  // Viewer sees a read-only dashboard — no edit controls
-  if (!authState.isEditor) {
-    return (
-      <ViewerDayDashboard
-        date={date}
-        today={today}
-        activities={activities}
-        reservations={reservations}
-        breakfastConfigs={breakfastConfigs}
-        dayNotes={dayNotes}
-        weather={weather}
-      />
-    );
-  }
+  useDayViewHotkeys({
+    date,
+    today,
+    impersonationRole: authState.impersonationRole,
+    onOpenActivity: () => {
+      returnFocusRef.current = activityAddRef.current;
+      openAddActivity();
+    },
+    onOpenReservation: showReservations
+      ? () => {
+          returnFocusRef.current = reservationAddRef.current;
+          openAddReservation();
+        }
+      : undefined,
+    onOpenBreakfast: showBreakfast
+      ? () => {
+          returnFocusRef.current = breakfastAddRef.current;
+          openAddBreakfast();
+        }
+      : undefined,
+  });
+
+  useEffect(() => {
+    const create = searchParams.get('create');
+    if (!create) return;
+
+    if (create === 'activity') {
+      returnFocusRef.current = activityAddRef.current;
+      setEditActivity(null);
+      setActivityModalOpen(true);
+    } else if (create === 'reservation' && showReservations) {
+      returnFocusRef.current = reservationAddRef.current;
+      setEditReservation(null);
+      setReservationModalOpen(true);
+    } else if (create === 'breakfast' && showBreakfast) {
+      returnFocusRef.current = breakfastAddRef.current;
+      setEditBreakfast(null);
+      setBreakfastModalOpen(true);
+    }
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('create');
+    const q = params.toString();
+    router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
+  }, [searchParams, showReservations, showBreakfast, router, pathname]);
 
   return (
     <div className="max-w-3xl mx-auto px-3 sm:px-6 py-4 sm:py-8 space-y-6">
-      <DayNav date={date} today={today} />
+      <div className="flex flex-wrap items-center gap-2 justify-between">
+        <DayNav date={date} today={today} />
+        <Button variant="outline" size="sm" className="shrink-0" onClick={() => setCopyDayOpen(true)}>
+          <Copy className="h-4 w-4 mr-1" />
+          {t('copyDay')}
+        </Button>
+      </div>
+
+      <CopyDayDialog
+        isOpen={copyDayOpen}
+        onClose={() => setCopyDayOpen(false)}
+        sourceDayId={dayId}
+        today={today}
+      />
 
       {showWeatherReporting && weather && <WeatherCard weather={weather} />}
 
@@ -190,16 +311,30 @@ export function DayViewClient({
         breakfastConfigs={breakfastConfigs}
       />
 
-      {/* Breakfast */}
+      <StaffScheduleSection
+        dayId={dayId}
+        shifts={shifts}
+        staffMembers={staffMembers}
+        staffRoles={staffRoles}
+        isEditor={authState.isEditor}
+        onShiftsChange={setShifts}
+      />
+
       {showBreakfast && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold">{t('breakfast')}</h2>
-            {authState.isEditor && (
-              <Button size="sm" onClick={openAddBreakfast}>
-                <Plus className="w-4 h-4 mr-1" /> {t('addBreakfast')}
-              </Button>
-            )}
+            <Button
+              ref={breakfastAddRef}
+              size="sm"
+              onClick={() => {
+                returnFocusRef.current = breakfastAddRef.current;
+                openAddBreakfast();
+              }}
+            >
+              <Plus className="w-4 h-4 mr-1" /> {t('addBreakfast')}
+              <KbdHint className="ml-1">B</KbdHint>
+            </Button>
           </div>
           {breakfastConfigs.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('noBreakfasts')}</p>
@@ -212,6 +347,9 @@ export function DayViewClient({
                   isEditor={authState.isEditor}
                   onEdit={openEditBreakfast}
                   onDeleted={handleBreakfastDeleted}
+                  onBeforeEdit={(el) => {
+                    returnFocusRef.current = el;
+                  }}
                 />
               ))}
             </div>
@@ -219,19 +357,21 @@ export function DayViewClient({
         </section>
       )}
 
-      {/* Activities */}
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
           <h2 className="font-semibold min-w-0">{t('activities')}</h2>
-          {authState.isEditor && (
-            <Button
-              size="sm"
-              onClick={openAddActivity}
-              className="h-7 shrink-0 gap-1 px-2.5 text-xs has-[>svg]:px-2"
-            >
-              <Plus className="size-3.5" /> {t('addActivity')}
-            </Button>
-          )}
+          <Button
+            ref={activityAddRef}
+            size="sm"
+            onClick={() => {
+              returnFocusRef.current = activityAddRef.current;
+              openAddActivity();
+            }}
+            className="h-7 shrink-0 gap-1 px-2.5 text-xs has-[>svg]:px-2"
+          >
+            <Plus className="size-3.5" /> {t('addActivity')}
+            <KbdHint className="ml-0.5">A</KbdHint>
+          </Button>
         </div>
         {activities.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t('noEntries')}</p>
@@ -244,22 +384,30 @@ export function DayViewClient({
                 isEditor={authState.isEditor}
                 onEdit={openEditActivity}
                 onDeleted={handleActivityDeleted}
+                onBeforeEdit={(el) => {
+                  returnFocusRef.current = el;
+                }}
               />
             ))}
           </div>
         )}
       </section>
 
-      {/* Reservations */}
       {showReservations && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold">{t('reservations')}</h2>
-            {authState.isEditor && (
-              <Button size="sm" onClick={openAddReservation}>
-                <Plus className="w-4 h-4 mr-1" /> {t('addReservation')}
-              </Button>
-            )}
+            <Button
+              ref={reservationAddRef}
+              size="sm"
+              onClick={() => {
+                returnFocusRef.current = reservationAddRef.current;
+                openAddReservation();
+              }}
+            >
+              <Plus className="w-4 h-4 mr-1" /> {t('addReservation')}
+              <KbdHint className="ml-1">R</KbdHint>
+            </Button>
           </div>
           {reservations.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('noReservations')}</p>
@@ -272,6 +420,9 @@ export function DayViewClient({
                   isEditor={authState.isEditor}
                   onEdit={openEditReservation}
                   onDeleted={handleReservationDeleted}
+                  onBeforeEdit={(el) => {
+                    returnFocusRef.current = el;
+                  }}
                 />
               ))}
             </div>
@@ -295,6 +446,7 @@ export function DayViewClient({
         venueTypes={venueTypes}
         editItem={editActivity}
         onSuccess={handleActivitySaved}
+        returnFocusRef={returnFocusRef}
       />
 
       <ReservationForm
@@ -303,6 +455,7 @@ export function DayViewClient({
         dayId={dayId}
         editItem={editReservation}
         onSuccess={handleReservationSaved}
+        returnFocusRef={returnFocusRef}
       />
 
       <BreakfastForm
@@ -311,8 +464,8 @@ export function DayViewClient({
         dayId={dayId}
         editItem={editBreakfast}
         onSuccess={handleBreakfastSaved}
+        returnFocusRef={returnFocusRef}
       />
-
     </div>
   );
 }

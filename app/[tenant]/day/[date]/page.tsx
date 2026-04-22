@@ -12,7 +12,11 @@ import {
   getReservationsForDay,
   getBreakfastConfigsForDay,
   getDayNotesForDay,
+  getShiftsForDay,
+  getStaffMembersForTenant,
+  getStaffRolesForTenant,
 } from './queries';
+import { Suspense } from 'react';
 import { DayViewClient } from './DayViewClient';
 import type {
   Activity,
@@ -20,6 +24,9 @@ import type {
   BreakfastConfiguration,
   PointOfContact,
   VenueType,
+  ShiftWithStaffMember,
+  StaffMember,
+  StaffRole,
 } from '@/types/index';
 import type { AuthState } from '@/types/actions';
 import type { DayNote } from '@/app/actions/day-notes';
@@ -38,6 +45,9 @@ export type DayViewProps = {
   pocs: PointOfContact[];
   venueTypes: VenueType[];
   authState: AuthState;
+  shifts: ShiftWithStaffMember[];
+  staffMembers: StaffMember[];
+  staffRoles: StaffRole[];
 };
 
 const YMD_REGEX = /^\d{4}-\d{2}-\d{2}$/;
@@ -107,6 +117,9 @@ export default async function DayPage({
     pocsResult,
     venueTypesResult,
     authState,
+    shifts,
+    staffMembers,
+    staffRoles,
   ] = await Promise.all([
     getProgramItemsForDay(tenant.id, day.id),
     getReservationsForDay(tenant.id, day.id),
@@ -116,21 +129,29 @@ export default async function DayPage({
     getAllPOCs(),
     getAllVenueTypes(),
     getAuthState(),
+    getShiftsForDay(tenant.id, day.id),
+    getStaffMembersForTenant(tenant.id),
+    getStaffRolesForTenant(tenant.id),
   ]);
 
   return (
-    <DayViewClient
-      date={date}
-      dayId={day.id}
-      today={today}
-      activities={activities}
-      reservations={reservations}
-      breakfastConfigs={breakfastConfigs}
-      dayNotes={dayNotes}
-      weather={weather}
-      pocs={pocsResult.success ? pocsResult.data : []}
-      venueTypes={venueTypesResult.success ? venueTypesResult.data : []}
-      authState={authState}
-    />
+    <Suspense fallback={<div className="max-w-3xl mx-auto px-3 py-8 text-sm text-muted-foreground" />}>
+      <DayViewClient
+        date={date}
+        dayId={day.id}
+        today={today}
+        activities={activities}
+        reservations={reservations}
+        breakfastConfigs={breakfastConfigs}
+        dayNotes={dayNotes}
+        weather={weather}
+        pocs={pocsResult.success ? pocsResult.data : []}
+        venueTypes={venueTypesResult.success ? venueTypesResult.data : []}
+        authState={authState}
+        shifts={shifts}
+        staffMembers={staffMembers}
+        staffRoles={staffRoles}
+      />
+    </Suspense>
   );
 }

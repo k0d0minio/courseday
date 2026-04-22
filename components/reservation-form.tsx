@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useState, useTransition, type RefObject } from 'react';
 import { useForm } from 'react-hook-form';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { z } from 'zod';
@@ -66,13 +66,21 @@ type Props = {
   dayId: string;
   editItem?: Reservation | null;
   onSuccess: (item: Reservation) => void;
+  returnFocusRef?: RefObject<HTMLElement | null>;
 };
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export function ReservationForm({ isOpen, onClose, dayId, editItem, onSuccess }: Props) {
+export function ReservationForm({
+  isOpen,
+  onClose,
+  dayId,
+  editItem,
+  onSuccess,
+  returnFocusRef,
+}: Props) {
   const t = useTranslations('Tenant.reservationForm');
   const tAllergens = useTranslations('Tenant.allergens');
   const isMobile = useIsMobile();
@@ -204,7 +212,17 @@ export function ReservationForm({ isOpen, onClose, dayId, editItem, onSuccess }:
 
   if (isMobile) {
     return (
-      <Drawer open={isOpen} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <Drawer
+        open={isOpen}
+        onOpenChange={(v) => {
+          if (!v) {
+            onClose();
+            if (returnFocusRef?.current) {
+              queueMicrotask(() => returnFocusRef.current?.focus());
+            }
+          }
+        }}
+      >
         <DrawerContent>
           <DrawerHeader><DrawerTitle>{title}</DrawerTitle></DrawerHeader>
           <div className="px-4 pb-6 overflow-y-auto max-h-[70vh]">{formBody}</div>
@@ -215,7 +233,15 @@ export function ReservationForm({ isOpen, onClose, dayId, editItem, onSuccess }:
 
   return (
     <Dialog open={isOpen} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="sm:max-w-md max-h-[90vh] overflow-y-auto"
+        onCloseAutoFocus={(e) => {
+          if (returnFocusRef?.current) {
+            e.preventDefault();
+            returnFocusRef.current.focus();
+          }
+        }}
+      >
         <DialogHeader><DialogTitle>{title}</DialogTitle></DialogHeader>
         {formBody}
       </DialogContent>

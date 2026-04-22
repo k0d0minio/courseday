@@ -4,10 +4,11 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { copyDayActivities } from '@/app/actions/schedule-templates';
+import { copyDaySections } from '@/app/actions/schedule-templates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
   DialogContent,
@@ -47,24 +48,40 @@ export function CopyDayDialog({ isOpen, onClose, sourceDayId, today }: Props) {
   const isMobile = useIsMobile();
   const router = useRouter();
   const [targetDate, setTargetDate] = useState('');
+  const [copyActivities, setCopyActivities] = useState(true);
+  const [copyShifts, setCopyShifts] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setTargetDate('');
+    setCopyActivities(true);
+    setCopyShifts(false);
+  }, [isOpen]);
 
   async function handleSubmit() {
     if (!targetDate) return;
     setSaving(true);
     try {
-      const result = await copyDayActivities(sourceDayId, targetDate);
+      const result = await copyDaySections(sourceDayId, targetDate, {
+        copyActivities,
+        copyShifts,
+      });
       if (!result.success) {
         toast.error(result.error);
         return;
       }
-      toast.success(t('copied'));
+      if (copyActivities && copyShifts) toast.success(t('copiedBoth'));
+      else if (copyActivities) toast.success(t('copiedActivities'));
+      else toast.success(t('copiedShifts'));
       onClose();
       router.push(`/day/${targetDate}`);
     } finally {
       setSaving(false);
     }
   }
+
+  const canSubmit = targetDate && (copyActivities || copyShifts);
 
   const body = (
     <div className="space-y-4 py-2">
@@ -78,6 +95,22 @@ export function CopyDayDialog({ isOpen, onClose, sourceDayId, today }: Props) {
           onChange={(e) => setTargetDate(e.target.value)}
         />
       </div>
+      <div className="flex items-center justify-between gap-4 rounded-md border p-3">
+        <Label htmlFor="copy-activities" className="cursor-pointer">
+          {t('copyActivities')}
+        </Label>
+        <Switch
+          id="copy-activities"
+          checked={copyActivities}
+          onCheckedChange={setCopyActivities}
+        />
+      </div>
+      <div className="flex items-center justify-between gap-4 rounded-md border p-3">
+        <Label htmlFor="copy-shifts" className="cursor-pointer">
+          {t('copyShifts')}
+        </Label>
+        <Switch id="copy-shifts" checked={copyShifts} onCheckedChange={setCopyShifts} />
+      </div>
     </div>
   );
 
@@ -86,7 +119,7 @@ export function CopyDayDialog({ isOpen, onClose, sourceDayId, today }: Props) {
       <Button variant="outline" onClick={onClose} disabled={saving}>
         {t('cancel')}
       </Button>
-      <Button onClick={handleSubmit} disabled={saving || !targetDate}>
+      <Button onClick={handleSubmit} disabled={saving || !canSubmit}>
         {saving ? t('copying') : t('copy')}
       </Button>
     </>
