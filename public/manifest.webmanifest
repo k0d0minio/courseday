@@ -1,12 +1,12 @@
 {
-  "name": "Golf Schedule",
-  "short_name": "Golf Schedule",
-  "description": "Daily operations and team communication for golf venues, private clubs, and resorts.",
+  "name": "Courseday",
+  "short_name": "Courseday",
+  "description": "Run your golf club's day in one view. Daily operations platform for golf clubs.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#ffffff",
-  "theme_color": "#166534",
+  "theme_color": "#1f5d3a",
   "icons": [
     {
       "src": "/icon.svg",

@@ -1,26 +1,124 @@
 {
   "Platform": {
     "nav": {
+      "faq": "FAQ",
       "signIn": "Sign in",
-      "getStarted": "Get started"
+      "bookDemo": "Book a demo",
+      "getStarted": "Try it free"
     },
     "landing": {
-      "heroTitle": "Your venue's day, visible to everyone who needs it",
-      "heroBody": "Courseday keeps your operations team and food & beverage service on the same page — daily programme, covers, reservations, and hotel guests, all in one shared view.",
-      "ctaGetStarted": "Get started",
-      "ctaSignIn": "Sign in",
-      "feature1Label": "Daily programme",
-      "feature1Title": "One view for the whole day",
-      "feature1Body": "Golf rounds, events, and group activities are published each day with times, guest counts, and venue details. Everyone on the team sees the same picture — no calls, no printouts.",
-      "feature2Label": "F&B coordination",
-      "feature2Title": "Covers and timing, always current",
-      "feature2Body": "Restaurant reservations, hotel breakfast configurations, and table breakdowns sit alongside the programme. Your kitchen and front-of-house have the right numbers without chasing them down.",
-      "feature3Label": "Your venue",
-      "feature3Title": "Private workspace, simple setup",
-      "feature3Body": "Each venue gets its own subdomain and team. Editors manage the schedule; the rest of the team can follow along on any device. No app to install, no complicated onboarding.",
-      "footerTitle": "Ready to get your team aligned?",
-      "footerBody": "Set up your venue in a few minutes. No credit card required.",
-      "footerCta": "Create your venue"
+      "hero": {
+        "eyebrow": "Daily operations for golf clubs",
+        "title": "Run your golf club's day in one view.",
+        "body": "Reception, restaurant, pro shop, and floor staff all working from one shared page. No more missed covers. No more morning phone calls.",
+        "ctaDemo": "Book a demo",
+        "ctaTrial": "Try it free"
+      },
+      "problem": {
+        "eyebrow": "The problem",
+        "title": "Every role has its own list. The day falls through the gaps.",
+        "pain1Title": "Reception knows. The bar doesn't.",
+        "pain1Body": "Bookings sit in one diary. Service finds out when guests walk in.",
+        "pain2Title": "Covers off by twenty.",
+        "pain2Body": "Kitchen preps for one number. Reality shows up with another.",
+        "pain3Title": "Phones ringing all morning.",
+        "pain3Body": "Each team calls the other to piece together what today looks like."
+      },
+      "showcase": {
+        "eyebrow": "One shared day",
+        "title": "Everything the club does today, in one place.",
+        "body": "Programme, reservations, breakfasts, covers — live, clear, and visible to every role.",
+        "programmeTitle": "Daily programme",
+        "programmeBody": "Tee times, group events, and activities with times, covers, and point of contact.",
+        "reservationsTitle": "Restaurant reservations",
+        "reservationsBody": "Party sizes, time slots, and table layouts in one stream.",
+        "breakfastsTitle": "Breakfast service",
+        "breakfastsBody": "Hotel breakfast groups and service windows the kitchen can prep from.",
+        "coversTitle": "Live covers count",
+        "coversBody": "Today's totals update as reception edits. The restaurant is never surprised."
+      },
+      "roles": {
+        "eyebrow": "Built for every role",
+        "title": "Each team gets exactly what they need.",
+        "receptionTitle": "Reception publishes",
+        "receptionBody": "Add activities, reservations, and breakfasts as they come in. The rest of the club sees it instantly.",
+        "fnbTitle": "F&B prepares",
+        "fnbBody": "See today's covers, party sizes, and service times. Order and staff with confidence.",
+        "floorTitle": "Floor follows",
+        "floorBody": "Read-only view on any device. No login dance for seasonal staff."
+      },
+      "howItWorks": {
+        "eyebrow": "How it works",
+        "title": "Up and running in an afternoon.",
+        "step1Title": "Set up your club",
+        "step1Body": "Create your venue, invite the team, and pick a language. Your club gets its own subdomain.",
+        "step2Title": "Publish the day",
+        "step2Body": "Reception adds the day's programme, reservations, and breakfasts once. Everyone sees it.",
+        "step3Title": "Team reads it live",
+        "step3Body": "Bar, kitchen, and floor open the day view on any device. One source of truth, all shift."
+      },
+      "outcomes": {
+        "eyebrow": "What changes",
+        "title": "A quieter morning. A better service.",
+        "item1": "Fewer calls between teams",
+        "item2": "Covers forecast before service starts",
+        "item3": "One source of truth for the day",
+        "item4": "Works on any device, no install",
+        "item5": "English and French out of the box",
+        "item6": "Your data, your subdomain, your team"
+      },
+      "faq": {
+        "eyebrow": "Questions",
+        "title": "Good questions. Short answers.",
+        "q1": "Does it work on phones and tablets?",
+        "a1": "Yes. Courseday runs in any browser on any device. Install it as a home-screen app if you prefer.",
+        "q2": "Is it available in French?",
+        "a2": "Yes. English and French are both built in. Each club picks its language.",
+        "q3": "How long does setup take?",
+        "a3": "An afternoon. Create your club, invite the team, publish the first day. You're live.",
+        "q4": "Who owns the data?",
+        "a4": "You do. Each club has its own private space. We never share data between clubs.",
+        "q5": "Do you handle tee-time booking?",
+        "a5": "No. Courseday is a daily operations view — it sits on top of your existing booking system. Reception publishes the day, the club reads it.",
+        "q6": "How much does it cost?",
+        "a6": "We'd rather show you the product first. Book a demo and we'll talk pricing based on your club."
+      },
+      "finalCta": {
+        "title": "Your club's day, one page.",
+        "body": "See how it would fit your club. Fifteen minutes, no commitment.",
+        "ctaDemo": "Book a demo",
+        "ctaTrial": "Try it free"
+      },
+      "footer": {
+        "tagline": "Daily operations for golf clubs.",
+        "product": "Product",
+        "navFaq": "FAQ",
+        "navDemo": "Book a demo",
+        "navSignIn": "Sign in",
+        "navNewVenue": "Create your venue",
+        "company": "Company",
+        "navContact": "Contact",
+        "legal": "Legal",
+        "navPrivacy": "Privacy",
+        "navTerms": "Terms",
+        "copyright": "© {year} Courseday. All rights reserved."
+      },
+      "demo": {
+        "eyebrow": "Book a demo",
+        "title": "See Courseday at your club.",
+        "body": "Tell us a little about your club and we'll get back within one working day.",
+        "nameLabel": "Your name",
+        "emailLabel": "Work email",
+        "clubLabel": "Club name",
+        "roleLabel": "Your role",
+        "rolePlaceholder": "General Manager, F&B, Reception…",
+        "notesLabel": "Anything you want us to know (optional)",
+        "submit": "Send request",
+        "submitting": "Sending…",
+        "successTitle": "Thanks — we got it.",
+        "successBody": "We'll be in touch within one working day.",
+        "backHome": "Back to home"
+      }
     },
     "auth": {
       "signInTitle": "Sign in",
@@ -59,7 +157,7 @@
       "emailLabel": "Email",
       "passwordLabel": "Password",
       "nameLabel": "Venue name",
-      "namePlaceholder": "Pierpont Golf Club",
+      "namePlaceholder": "Your Golf Club",
       "slugLabel": "Subdomain",
       "slugHint": "Lowercase letters, numbers, and hyphens only.",
       "submitButton": "Create venue",

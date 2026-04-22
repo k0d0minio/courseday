@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import { NextIntlClientProvider } from 'next-intl';
-import { getLocale, getMessages } from 'next-intl/server';
+import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
-import { getTranslations } from 'next-intl/server';
+import { LandingFooter } from '@/components/landing/landing-footer';
 
 export default async function PlatformLayout({
   children,
@@ -17,20 +17,30 @@ export default async function PlatformLayout({
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
       <div className="min-h-screen flex flex-col">
-        <header className="border-b px-6 h-14 flex items-center justify-between">
-          <Link href="/" className="inline-flex items-center" aria-label="Home">
-            <Logo />
-          </Link>
-          <nav className="flex items-center gap-3">
-            <Link href="/auth/sign-in">
-              <Button variant="ghost" size="sm">{t('signIn')}</Button>
+        <header className="sticky top-0 z-40 border-b border-black/5 bg-background/80 backdrop-blur-md dark:border-white/5">
+          <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
+            <Link href="/" className="inline-flex items-center" aria-label="Courseday">
+              <Logo />
             </Link>
-            <Link href="/new">
-              <Button size="sm">{t('getStarted')}</Button>
-            </Link>
-          </nav>
+            <nav className="flex items-center gap-1 sm:gap-3">
+              <Link href="/#faq" className="hidden sm:inline">
+                <Button variant="ghost" size="sm">
+                  {t('faq')}
+                </Button>
+              </Link>
+              <Link href="/auth/sign-in">
+                <Button variant="ghost" size="sm">
+                  {t('signIn')}
+                </Button>
+              </Link>
+              <Link href="/demo">
+                <Button size="sm">{t('bookDemo')}</Button>
+              </Link>
+            </nav>
+          </div>
         </header>
         <main className="flex-1">{children}</main>
+        <LandingFooter />
       </div>
     </NextIntlClientProvider>
   );

@@ -1,26 +1,124 @@
 {
   "Platform": {
     "nav": {
+      "faq": "FAQ",
       "signIn": "Se connecter",
-      "getStarted": "Commencer"
+      "bookDemo": "Réserver une démo",
+      "getStarted": "Essayer gratuitement"
     },
     "landing": {
-      "heroTitle": "La journée de votre établissement, visible par tous ceux qui en ont besoin",
-      "heroBody": "Courseday permet à votre équipe d'exploitation et à votre service de restauration de rester sur la même longueur d'onde — programme journalier, couverts, réservations et clients hôtel, le tout dans une vue partagée.",
-      "ctaGetStarted": "Commencer",
-      "ctaSignIn": "Se connecter",
-      "feature1Label": "Programme journalier",
-      "feature1Title": "Une seule vue pour toute la journée",
-      "feature1Body": "Les parties de golf, événements et activités de groupe sont publiés chaque jour avec les horaires, le nombre d'invités et les détails du lieu. Toute l'équipe dispose du même tableau de bord — sans appels ni impressions.",
-      "feature2Label": "Coordination F&B",
-      "feature2Title": "Couverts et horaires, toujours à jour",
-      "feature2Body": "Les réservations au restaurant, les configurations du petit-déjeuner à l'hôtel et les répartitions de tables sont présentées avec le programme. Votre cuisine et votre salle ont les bons chiffres sans avoir à les chercher.",
-      "feature3Label": "Votre établissement",
-      "feature3Title": "Espace privé, configuration simple",
-      "feature3Body": "Chaque établissement dispose de son propre sous-domaine et de son équipe. Les éditeurs gèrent le planning ; le reste de l'équipe peut le suivre sur n'importe quel appareil. Aucune application à installer, aucune prise en main compliquée.",
-      "footerTitle": "Prêt à aligner votre équipe ?",
-      "footerBody": "Configurez votre établissement en quelques minutes. Aucune carte de crédit requise.",
-      "footerCta": "Créer votre établissement"
+      "hero": {
+        "eyebrow": "Gestion quotidienne pour golfs",
+        "title": "Pilotez la journée de votre golf sur une seule vue.",
+        "body": "Réception, restaurant, pro shop et équipe de salle travaillent tous depuis la même page. Fini les couverts oubliés. Fini les coups de fil du matin.",
+        "ctaDemo": "Réserver une démo",
+        "ctaTrial": "Essayer gratuitement"
+      },
+      "problem": {
+        "eyebrow": "Le problème",
+        "title": "Chaque poste a sa propre liste. La journée passe à travers les mailles.",
+        "pain1Title": "La réception sait. Le bar, non.",
+        "pain1Body": "Les réservations dorment dans un cahier. Le service découvre les clients à l'arrivée.",
+        "pain2Title": "Vingt couverts d'écart.",
+        "pain2Body": "La cuisine prépare pour un chiffre. La réalité arrive avec un autre.",
+        "pain3Title": "Les téléphones sonnent toute la matinée.",
+        "pain3Body": "Chaque équipe appelle l'autre pour reconstituer ce à quoi ressemble la journée."
+      },
+      "showcase": {
+        "eyebrow": "Une seule journée partagée",
+        "title": "Tout ce que le club fait aujourd'hui, au même endroit.",
+        "body": "Programme, réservations, petits-déjeuners, couverts — en direct, clairs, visibles par chaque poste.",
+        "programmeTitle": "Programme journalier",
+        "programmeBody": "Départs, événements de groupe et activités avec horaires, couverts et point de contact.",
+        "reservationsTitle": "Réservations restaurant",
+        "reservationsBody": "Tailles de groupe, créneaux et plans de table dans un seul flux.",
+        "breakfastsTitle": "Service petit-déjeuner",
+        "breakfastsBody": "Groupes et services hôteliers que la cuisine peut préparer sans stress.",
+        "coversTitle": "Couverts en direct",
+        "coversBody": "Les totaux du jour bougent dès que la réception modifie. Le restaurant n'est jamais surpris."
+      },
+      "roles": {
+        "eyebrow": "Pensé pour chaque poste",
+        "title": "Chaque équipe obtient exactement ce qu'il lui faut.",
+        "receptionTitle": "La réception publie",
+        "receptionBody": "Ajoutez activités, réservations et petits-déjeuners au fil de l'eau. Le reste du club les voit aussitôt.",
+        "fnbTitle": "Le F&B prépare",
+        "fnbBody": "Couverts, tailles de groupe et horaires de service du jour. Commandes et effectifs maîtrisés.",
+        "floorTitle": "La salle suit",
+        "floorBody": "Vue en lecture seule sur n'importe quel appareil. Pas d'obstacle de connexion pour les saisonniers."
+      },
+      "howItWorks": {
+        "eyebrow": "Comment ça marche",
+        "title": "Opérationnel en une après-midi.",
+        "step1Title": "Créez votre club",
+        "step1Body": "Créez votre établissement, invitez l'équipe, choisissez la langue. Votre club reçoit son propre sous-domaine.",
+        "step2Title": "Publiez la journée",
+        "step2Body": "La réception saisit le programme, les réservations et les petits-déjeuners une fois. Tout le monde voit.",
+        "step3Title": "L'équipe lit en direct",
+        "step3Body": "Bar, cuisine et salle ouvrent la vue du jour sur n'importe quel appareil. Une seule vérité, tout le service."
+      },
+      "outcomes": {
+        "eyebrow": "Ce qui change",
+        "title": "Matinée plus calme. Service plus juste.",
+        "item1": "Moins d'appels entre les équipes",
+        "item2": "Couverts anticipés avant le service",
+        "item3": "Une seule source de vérité pour la journée",
+        "item4": "Fonctionne sur tout appareil, sans installation",
+        "item5": "Anglais et français, nativement",
+        "item6": "Vos données, votre sous-domaine, votre équipe"
+      },
+      "faq": {
+        "eyebrow": "Questions",
+        "title": "Bonnes questions. Réponses courtes.",
+        "q1": "Ça fonctionne sur mobile et tablette ?",
+        "a1": "Oui. Courseday fonctionne dans un navigateur, sur n'importe quel appareil. Installable comme application si vous le souhaitez.",
+        "q2": "Disponible en français ?",
+        "a2": "Oui. Français et anglais sont intégrés. Chaque club choisit sa langue.",
+        "q3": "Combien de temps pour démarrer ?",
+        "a3": "Une après-midi. Créez le club, invitez l'équipe, publiez la première journée. C'est parti.",
+        "q4": "À qui appartiennent les données ?",
+        "a4": "À vous. Chaque club a son espace privé. Aucune donnée n'est partagée entre clubs.",
+        "q5": "Vous gérez les réservations de départ ?",
+        "a5": "Non. Courseday est une vue d'exploitation — elle s'ajoute à votre système de réservation existant. La réception publie la journée, le club la lit.",
+        "q6": "Combien ça coûte ?",
+        "a6": "On préfère d'abord vous montrer le produit. Réservez une démo, on parle tarif adapté à votre club."
+      },
+      "finalCta": {
+        "title": "La journée de votre club, une seule page.",
+        "body": "Voyez comment ça s'adapte à votre club. Quinze minutes, sans engagement.",
+        "ctaDemo": "Réserver une démo",
+        "ctaTrial": "Essayer gratuitement"
+      },
+      "footer": {
+        "tagline": "Gestion quotidienne pour golfs.",
+        "product": "Produit",
+        "navFaq": "FAQ",
+        "navDemo": "Réserver une démo",
+        "navSignIn": "Se connecter",
+        "navNewVenue": "Créer votre établissement",
+        "company": "Société",
+        "navContact": "Contact",
+        "legal": "Mentions légales",
+        "navPrivacy": "Confidentialité",
+        "navTerms": "Conditions",
+        "copyright": "© {year} Courseday. Tous droits réservés."
+      },
+      "demo": {
+        "eyebrow": "Réserver une démo",
+        "title": "Découvrez Courseday pour votre club.",
+        "body": "Dites-nous quelques mots sur votre club et nous revenons vers vous sous un jour ouvré.",
+        "nameLabel": "Votre nom",
+        "emailLabel": "E-mail professionnel",
+        "clubLabel": "Nom du club",
+        "roleLabel": "Votre rôle",
+        "rolePlaceholder": "Directeur, F&B, Réception…",
+        "notesLabel": "Un message pour nous (optionnel)",
+        "submit": "Envoyer la demande",
+        "submitting": "Envoi…",
+        "successTitle": "Merci — c'est bien reçu.",
+        "successBody": "Nous revenons vers vous sous un jour ouvré.",
+        "backHome": "Retour à l'accueil"
+      }
     },
     "auth": {
       "signInTitle": "Se connecter",
@@ -59,7 +157,7 @@
       "emailLabel": "Adresse e-mail",
       "passwordLabel": "Mot de passe",
       "nameLabel": "Nom de l'établissement",
-      "namePlaceholder": "Golf de Pierpont",
+      "namePlaceholder": "Votre Golf Club",
       "slugLabel": "Sous-domaine",
       "slugHint": "Lettres minuscules, chiffres et tirets uniquement.",
       "submitButton": "Créer l'établissement",

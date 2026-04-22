@@ -1,90 +1,73 @@
-# Next.js Multi-Tenant Example
+# Courseday
 
-A production-ready example of a multi-tenant application built with Next.js 15, featuring custom subdomains for each tenant.
+**Run your golf club's day in one view.**
 
-## Features
+Courseday is the daily operations platform for golf clubs. Reception, restaurant, pro shop, and floor staff all work from one shared page — the day's programme, reservations, breakfasts, and covers, visible to every role.
 
-- ✅ Custom subdomain routing with Next.js middleware
-- ✅ Tenant-specific content and pages
-- ✅ Shared components and layouts across tenants
-- ✅ Redis for tenant data storage
-- ✅ Admin interface for managing tenants
-- ✅ Emoji support for tenant branding
-- ✅ Support for local development with subdomains
-- ✅ Compatible with Vercel preview deployments
+## What it does
 
-## Tech Stack
+- **Daily programme** — tee times, group events, and activities with times, covers, and points of contact.
+- **Restaurant reservations** — party sizes, time slots, and table layouts.
+- **Breakfast service** — hotel breakfast groups and service windows.
+- **Live covers** — totals update as reception edits.
+- **Per-club workspace** — each club gets its own subdomain, team, and branding.
+- **Bilingual** — English and French built in.
 
-- [Next.js 15](https://nextjs.org/) with App Router
-- [React 19](https://react.dev/)
-- [Upstash Redis](https://upstash.com/) for data storage
-- [Tailwind 4](https://tailwindcss.com/) for styling
-- [shadcn/ui](https://ui.shadcn.com/) for the design system
+## Tech stack
 
-## Getting Started
+- [Next.js 15](https://nextjs.org/) App Router + [React 19](https://react.dev/)
+- [Supabase](https://supabase.com/) (Postgres, Auth, RLS) — source of truth for tenants, memberships, days, activities, reservations, breakfasts.
+- [Upstash Redis](https://upstash.com/) — tenant routing cache (`subdomain:{slug}` → tenant data).
+- [Tailwind CSS 4](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/) for the design system.
+- [next-intl](https://next-intl-docs.vercel.app/) for localization.
+
+## Getting started
 
 ### Prerequisites
 
-- Node.js 18.17.0 or later
-- pnpm (recommended) or npm/yarn
-- Upstash Redis account (for production)
+- Node.js 20+
+- pnpm
+- Supabase project
+- Upstash Redis
 
-### Installation
+### Install
 
-1. Clone the repository:
+```bash
+pnpm install
+```
 
-   ```bash
-   git clone https://github.com/vercel/platforms.git
-   cd platforms
-   ```
+### Environment
 
-2. Install dependencies:
+Create `.env.local`:
 
-   ```bash
-   pnpm install
-   ```
+```
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+KV_REST_API_URL=your_upstash_redis_url
+KV_REST_API_TOKEN=your_upstash_redis_token
+NEXT_PUBLIC_ROOT_DOMAIN=localhost:3000
+OPENWEATHER_API_KEY=your_openweather_api_key
+```
 
-3. Set up environment variables:
-   Create a `.env.local` file in the root directory with:
+### Run
 
-   ```
-   KV_REST_API_URL=your_redis_url
-   KV_REST_API_TOKEN=your_redis_token
-   ```
+```bash
+pnpm dev        # http://localhost:3000
+pnpm build
+pnpm start
+```
 
-4. Start the development server:
+## Routing model
 
-   ```bash
-   pnpm dev
-   ```
+- Root domain (`localhost:3000` / `yourdomain.com`) — marketing landing page, `/new`, `/auth`, `/demo`, `/admin`.
+- Subdomain (`{slug}.yourdomain.com`) — the tenant app: monthly calendar, day view, tenant settings.
+- `middleware.ts` resolves subdomains via Redis and internally rewrites to `app/[tenant]/...`. The URL in the browser never changes.
 
-5. Access the application:
-   - Main site: http://localhost:3000
-   - Admin panel: http://localhost:3000/admin
-   - Tenants: http://[tenant-name].localhost:3000
+## Architecture
 
-## Multi-Tenant Architecture
-
-This application demonstrates a subdomain-based multi-tenant architecture where:
-
-- Each tenant gets their own subdomain (`tenant.yourdomain.com`)
-- The middleware handles routing requests to the correct tenant
-- Tenant data is stored in Redis using a `subdomain:{name}` key pattern
-- The main domain hosts the landing page and admin interface
-- Subdomains are dynamically mapped to tenant-specific content
-
-The middleware (`middleware.ts`) intelligently detects subdomains across various environments (local development, production, and Vercel preview deployments).
+See [CLAUDE.md](CLAUDE.md) for the full domain model, data layer, and route map.
 
 ## Deployment
 
-This application is designed to be deployed on Vercel. To deploy:
-
-1. Push your repository to GitHub
-2. Connect your repository to Vercel
-3. Configure environment variables
-4. Deploy
-
-For custom domains, make sure to:
-
-1. Add your root domain to Vercel
-2. Set up a wildcard DNS record (`*.yourdomain.com`) on Vercel
+Deploy on Vercel. Add the root domain and a wildcard DNS record (`*.yourdomain.com`) so every tenant subdomain resolves.

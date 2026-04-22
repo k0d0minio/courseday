@@ -1,5 +1,5 @@
-import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import type { Metadata, Viewport } from 'next';
+import { Geist, Geist_Mono, Fraunces } from 'next/font/google';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { ThemeProvider } from '@/components/theme-provider';
 import './globals.css';
@@ -14,9 +14,28 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 });
 
+const fraunces = Fraunces({
+  variable: '--font-fraunces',
+  subsets: ['latin'],
+  axes: ['SOFT', 'opsz'],
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
-  title: 'Courseday',
-  description: 'Daily operations and team communication for golf venues, private clubs, and resorts.',
+  title: {
+    default: "Courseday — Run your golf club's day in one view",
+    template: '%s · Courseday',
+  },
+  description:
+    "Courseday is the daily operations platform for golf clubs. Reception, restaurant, and floor staff work from one shared day — no more missed covers or phone calls between teams.",
+  icons: {
+    icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
+  },
+  manifest: '/manifest.webmanifest',
+};
+
+export const viewport: Viewport = {
+  themeColor: '#1f5d3a',
 };
 
 export default function RootLayout({
@@ -25,7 +44,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable}`}
+      suppressHydrationWarning
+    >
       <body className="antialiased">
         <ThemeProvider>
           {children}
