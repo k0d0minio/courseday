@@ -11,12 +11,13 @@ export default async function OnboardingPage() {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from('tenants')
-    .select('onboarding_completed, accent_color, logo_url')
+    .select('onboarding_completed, theme_palette, accent_color, logo_url')
     .eq('id', tenant.id)
     .single();
 
   const row = data as {
     onboarding_completed?: boolean | null;
+    theme_palette?: string | null;
     accent_color?: string | null;
     logo_url?: string | null;
   } | null;
@@ -29,6 +30,7 @@ export default async function OnboardingPage() {
     <OnboardingWizard
       tenantId={tenant.id}
       currentUserId={user.id}
+      initialPaletteId={row?.theme_palette ?? null}
       initialAccentColor={row?.accent_color ?? null}
       initialLogoUrl={row?.logo_url ?? null}
     />

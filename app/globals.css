@@ -29,6 +29,12 @@
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+  --color-info-foreground: var(--info-foreground);
+  --color-info: var(--info);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning: var(--warning);
+  --color-success-foreground: var(--success-foreground);
+  --color-success: var(--success);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -53,7 +59,6 @@
 
 :root {
   --radius: 0.625rem;
-  --tenant-accent: oklch(0.21 0.006 285.885); /* matches old neutral primary; keeps unbranded tenants visually stable */
   --brand: oklch(0.42 0.08 152);
   --brand-foreground: oklch(0.985 0.01 90);
   --brand-soft: oklch(0.96 0.02 150);
@@ -84,6 +89,12 @@
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
+  --success: oklch(0.55 0.14 150);
+  --success-foreground: oklch(0.99 0.01 95);
+  --warning: oklch(0.72 0.14 80);
+  --warning-foreground: oklch(0.22 0.03 82);
+  --info: oklch(0.56 0.12 240);
+  --info-foreground: oklch(0.98 0.01 265);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.141 0.005 285.823);
   --sidebar-primary: oklch(0.21 0.006 285.885);
@@ -95,7 +106,6 @@
 }
 
 .dark {
-  --tenant-accent: oklch(0.92 0.004 286.32); /* matches old neutral primary; keeps unbranded tenants visually stable */
   --brand: oklch(0.72 0.09 150);
   --brand-foreground: oklch(0.18 0.04 150);
   --brand-soft: oklch(0.26 0.05 150);
@@ -126,6 +136,12 @@
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
+  --success: oklch(0.72 0.11 154);
+  --success-foreground: oklch(0.16 0.03 150);
+  --warning: oklch(0.82 0.12 82);
+  --warning-foreground: oklch(0.22 0.04 84);
+  --info: oklch(0.77 0.1 244);
+  --info-foreground: oklch(0.19 0.03 246);
   --sidebar: oklch(0.21 0.006 285.885);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
@@ -145,38 +161,74 @@
   }
 }
 
-/*
- * Tenant accent color theming.
- * The tenant layout sets --tenant-accent as an inline style on .tenant-themed
- * when accent_color is non-null. Fallback values in :root / .dark match the
- * current primary defaults, so unbranded tenants are visually unchanged.
- *
- * Light mode: accent is typically a medium-dark brand color → white foreground.
- * Dark mode: accent default is a light value → dark foreground.
- * For custom dark accents in dark mode, consider a future v2 with color-contrast().
- */
 .tenant-themed {
-  --primary: var(--tenant-accent);
-  --primary-foreground: oklch(1 0 0);
-  --accent: color-mix(in oklch, var(--tenant-accent) 18%, var(--background));
-  --accent-foreground: var(--tenant-accent);
-  --ring: var(--tenant-accent);
-  --sidebar-accent: color-mix(in oklch, var(--tenant-accent) 18%, var(--background));
-  --sidebar-accent-foreground: var(--tenant-accent);
-  --sidebar-primary: var(--tenant-accent);
-  --sidebar-primary-foreground: oklch(1 0 0);
+  --background: var(--tenant-light-background);
+  --foreground: var(--tenant-light-foreground);
+  --card: var(--tenant-light-card);
+  --card-foreground: var(--tenant-light-card-foreground);
+  --popover: var(--tenant-light-popover);
+  --popover-foreground: var(--tenant-light-popover-foreground);
+  --primary: var(--tenant-light-primary);
+  --primary-foreground: var(--tenant-light-primary-foreground);
+  --secondary: var(--tenant-light-secondary);
+  --secondary-foreground: var(--tenant-light-secondary-foreground);
+  --muted: var(--tenant-light-muted);
+  --muted-foreground: var(--tenant-light-muted-foreground);
+  --accent: var(--tenant-light-accent);
+  --accent-foreground: var(--tenant-light-accent-foreground);
+  --destructive: var(--tenant-light-destructive);
+  --border: var(--tenant-light-border);
+  --input: var(--tenant-light-input);
+  --ring: var(--tenant-light-ring);
+  --sidebar: var(--tenant-light-sidebar);
+  --sidebar-foreground: var(--tenant-light-sidebar-foreground);
+  --sidebar-primary: var(--tenant-light-sidebar-primary);
+  --sidebar-primary-foreground: var(--tenant-light-sidebar-primary-foreground);
+  --sidebar-accent: var(--tenant-light-sidebar-accent);
+  --sidebar-accent-foreground: var(--tenant-light-sidebar-accent-foreground);
+  --sidebar-border: var(--tenant-light-sidebar-border);
+  --sidebar-ring: var(--tenant-light-sidebar-ring);
+  --success: var(--tenant-light-success);
+  --success-foreground: var(--tenant-light-success-foreground);
+  --warning: var(--tenant-light-warning);
+  --warning-foreground: var(--tenant-light-warning-foreground);
+  --info: var(--tenant-light-info);
+  --info-foreground: var(--tenant-light-info-foreground);
 }
 
 .dark .tenant-themed {
-  --primary: var(--tenant-accent);
-  --primary-foreground: oklch(0.141 0.005 285.823);
-  --accent: color-mix(in oklch, var(--tenant-accent) 28%, var(--background));
-  --accent-foreground: var(--tenant-accent);
-  --ring: var(--tenant-accent);
-  --sidebar-accent: color-mix(in oklch, var(--tenant-accent) 28%, var(--background));
-  --sidebar-accent-foreground: var(--tenant-accent);
-  --sidebar-primary: var(--tenant-accent);
-  --sidebar-primary-foreground: oklch(0.141 0.005 285.823);
+  --background: var(--tenant-dark-background);
+  --foreground: var(--tenant-dark-foreground);
+  --card: var(--tenant-dark-card);
+  --card-foreground: var(--tenant-dark-card-foreground);
+  --popover: var(--tenant-dark-popover);
+  --popover-foreground: var(--tenant-dark-popover-foreground);
+  --primary: var(--tenant-dark-primary);
+  --primary-foreground: var(--tenant-dark-primary-foreground);
+  --secondary: var(--tenant-dark-secondary);
+  --secondary-foreground: var(--tenant-dark-secondary-foreground);
+  --muted: var(--tenant-dark-muted);
+  --muted-foreground: var(--tenant-dark-muted-foreground);
+  --accent: var(--tenant-dark-accent);
+  --accent-foreground: var(--tenant-dark-accent-foreground);
+  --destructive: var(--tenant-dark-destructive);
+  --border: var(--tenant-dark-border);
+  --input: var(--tenant-dark-input);
+  --ring: var(--tenant-dark-ring);
+  --sidebar: var(--tenant-dark-sidebar);
+  --sidebar-foreground: var(--tenant-dark-sidebar-foreground);
+  --sidebar-primary: var(--tenant-dark-sidebar-primary);
+  --sidebar-primary-foreground: var(--tenant-dark-sidebar-primary-foreground);
+  --sidebar-accent: var(--tenant-dark-sidebar-accent);
+  --sidebar-accent-foreground: var(--tenant-dark-sidebar-accent-foreground);
+  --sidebar-border: var(--tenant-dark-sidebar-border);
+  --sidebar-ring: var(--tenant-dark-sidebar-ring);
+  --success: var(--tenant-dark-success);
+  --success-foreground: var(--tenant-dark-success-foreground);
+  --warning: var(--tenant-dark-warning);
+  --warning-foreground: var(--tenant-dark-warning-foreground);
+  --info: var(--tenant-dark-info);
+  --info-foreground: var(--tenant-dark-info-foreground);
 }
 
 .emoji-picker-container .epr-body::-webkit-scrollbar {

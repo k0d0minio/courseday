@@ -21,6 +21,31 @@ test.describe('Settings', () => {
     await expect(signedInPage.getByRole('heading', { level: 1 })).toBeVisible();
   });
 
+  test('branding palette persists and previews live', async ({ signedInPage, tenantUrl }) => {
+    await signedInPage.goto(`${tenantUrl}/admin/settings/branding`);
+
+    const selectedBefore = await signedInPage.locator('[role="radio"][aria-checked="true"]').first().getAttribute('aria-label');
+    const targetPalette = selectedBefore === 'Ocean' ? 'Sunset' : 'Ocean';
+
+    const primaryBefore = await signedInPage.evaluate(() =>
+      getComputedStyle(document.querySelector('.tenant-themed') as HTMLElement).getPropertyValue('--tenant-light-primary').trim()
+    );
+
+    await signedInPage.getByRole('radio', { name: targetPalette }).click();
+
+    const primaryAfter = await signedInPage.evaluate(() =>
+      getComputedStyle(document.querySelector('.tenant-themed') as HTMLElement).getPropertyValue('--tenant-light-primary').trim()
+    );
+
+    expect(primaryAfter).not.toBe(primaryBefore);
+    await signedInPage.getByRole('button', { name: /save changes/i }).click();
+    await expect(signedInPage.getByText(/saved/i)).toBeVisible({ timeout: 5000 });
+    await expect(signedInPage.getByRole('radio', { name: targetPalette })).toHaveAttribute('aria-checked', 'true');
+
+    await signedInPage.reload();
+    await expect(signedInPage.getByRole('radio', { name: targetPalette })).toHaveAttribute('aria-checked', 'true');
+  });
+
   test('branding city search shows mocked results', async ({ signedInPage, tenantUrl }) => {
     await signedInPage.route('**/api/geocode**', async (route) => {
       await route.fulfill({

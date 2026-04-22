@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getTenantFromHeaders } from '@/lib/tenant';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { getTenantPalette } from '@/lib/theme/palettes';
 
 export async function GET() {
   try {
@@ -9,12 +10,15 @@ export async function GET() {
 
     const { data } = await supabase
       .from('tenants')
-      .select('name, accent_color, logo_url')
+      .select('name, theme_palette, accent_color, logo_url')
       .eq('id', tenant.id)
       .single();
 
     const name = (data?.name as string | null) ?? 'Courseday';
-    const accentColor = (data?.accent_color as string | null) ?? '#e5e7eb';
+    const palette = getTenantPalette(
+      (data?.theme_palette as string | null) ?? null,
+      (data?.accent_color as string | null) ?? null
+    );
 
     const manifest = {
       name: `${name} · Courseday`,
@@ -24,7 +28,7 @@ export async function GET() {
       display: 'standalone',
       orientation: 'portrait',
       background_color: '#ffffff',
-      theme_color: accentColor,
+      theme_color: palette.legacyAccentHex,
       icons: [
         {
           src: '/pwa/icon',

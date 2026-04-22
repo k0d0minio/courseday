@@ -817,6 +817,7 @@ export type Database = {
           onboarding_completed: boolean
           slug: string
           status: string
+          theme_palette: string
           timezone: string
           updated_at: string
         }
@@ -832,6 +833,7 @@ export type Database = {
           onboarding_completed?: boolean
           slug: string
           status?: string
+          theme_palette?: string
           timezone?: string
           updated_at?: string
         }
@@ -847,6 +849,7 @@ export type Database = {
           onboarding_completed?: boolean
           slug?: string
           status?: string
+          theme_palette?: string
           timezone?: string
           updated_at?: string
         }

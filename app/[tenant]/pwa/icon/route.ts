@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getTenantFromHeaders } from '@/lib/tenant';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { getTenantPalette } from '@/lib/theme/palettes';
 
 function getInitials(name: string): string {
   return name
@@ -36,7 +37,7 @@ export async function GET() {
 
     const { data } = await supabase
       .from('tenants')
-      .select('name, accent_color, logo_url')
+      .select('name, theme_palette, accent_color, logo_url')
       .eq('id', tenant.id)
       .single();
 
@@ -46,8 +47,11 @@ export async function GET() {
     }
 
     const name = (data?.name as string | null) ?? 'C';
-    const accent = (data?.accent_color as string | null) ?? '#e5e7eb';
-    const bg = accent.startsWith('#') ? accent : '#e5e7eb';
+    const palette = getTenantPalette(
+      (data?.theme_palette as string | null) ?? null,
+      (data?.accent_color as string | null) ?? null
+    );
+    const bg = palette.legacyAccentHex;
     const fg = isLightHex(bg) ? '#1a1a1a' : '#ffffff';
     const initials = getInitials(name) || name[0].toUpperCase();
 

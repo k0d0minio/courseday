@@ -317,9 +317,9 @@ export function HomeClient({
 type PipColor = 'emerald' | 'blue' | 'amber';
 
 const PIP_CLASSES: Record<PipColor, string> = {
-  emerald: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400',
-  blue: 'bg-blue-500/15 text-blue-700 dark:text-blue-400',
-  amber: 'bg-amber-500/15 text-amber-700 dark:text-amber-400',
+  emerald: 'bg-success/15 text-success',
+  blue: 'bg-info/15 text-info',
+  amber: 'bg-warning/20 text-warning-foreground',
 };
 
 function SummaryPip({ label, color }: { label: string; color: PipColor }) {

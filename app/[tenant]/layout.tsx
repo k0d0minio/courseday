@@ -24,6 +24,7 @@ import { SuperadminReturnPopup } from '@/components/superadmin-return-popup';
 import { getUnreadCount } from '@/app/actions/notifications';
 import { getTenantToday } from '@/lib/day-utils';
 import { getSuperadminImpersonationRole } from '@/lib/superadmin';
+import { getTenantPalette, getTenantThemeCssVariables } from '@/lib/theme/palettes';
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -31,15 +32,18 @@ export async function generateMetadata(): Promise<Metadata> {
     const supabase = await createSupabaseServerClient();
     const { data } = await supabase
       .from('tenants')
-      .select('name, accent_color')
+      .select('name, theme_palette, accent_color')
       .eq('id', tenant.id)
       .single();
     const name = data?.name as string | undefined;
-    const accentColor = (data?.accent_color as string | null) ?? '#e5e7eb';
+    const palette = getTenantPalette(
+      (data?.theme_palette as string | null) ?? null,
+      (data?.accent_color as string | null) ?? null
+    );
     return {
       title: name ? `${name} · Courseday` : 'Courseday',
       manifest: '/pwa/manifest',
-      themeColor: accentColor,
+      themeColor: palette.legacyAccentHex,
       appleWebApp: {
         capable: true,
         statusBarStyle: 'default',
@@ -82,16 +86,20 @@ export default async function TenantLayout({
   const supabase = await createSupabaseServerClient();
   const { data: tenantRow } = await supabase
     .from('tenants')
-    .select('accent_color, logo_url, name, timezone')
+    .select('theme_palette, accent_color, logo_url, name, timezone')
     .eq('id', tenant.id)
     .single();
 
-  const row = tenantRow as { accent_color?: string | null; logo_url?: string | null; name?: string | null; timezone?: string | null } | null;
+  const row = tenantRow as {
+    theme_palette?: string | null;
+    accent_color?: string | null;
+    logo_url?: string | null;
+    name?: string | null;
+    timezone?: string | null;
+  } | null;
   const today = getTenantToday(row?.timezone ?? 'UTC');
-  const accentColor = row?.accent_color;
-  const accentStyle = accentColor
-    ? ({ '--tenant-accent': accentColor } as React.CSSProperties)
-    : undefined;
+  const palette = getTenantPalette(row?.theme_palette ?? null, row?.accent_color ?? null);
+  const accentStyle = getTenantThemeCssVariables(palette) as React.CSSProperties;
 
   const [editor, superadminImpersonationRole, t, unreadCount] = await Promise.all([
     isEditor(tenant.id),

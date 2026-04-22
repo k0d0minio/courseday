@@ -18,6 +18,7 @@ type Step = (typeof STEPS)[number];
 interface OnboardingWizardProps {
   tenantId: string;
   currentUserId: string;
+  initialPaletteId: string | null;
   initialAccentColor: string | null;
   initialLogoUrl: string | null;
 }
@@ -25,6 +26,7 @@ interface OnboardingWizardProps {
 export function OnboardingWizard({
   tenantId,
   currentUserId,
+  initialPaletteId,
   initialAccentColor,
   initialLogoUrl,
 }: OnboardingWizardProps) {
@@ -122,6 +124,7 @@ export function OnboardingWizard({
         {STEPS[currentStep] === 'branding' && (
           <SettingsForm
             tenantId={tenantId}
+            initialPaletteId={initialPaletteId}
             initialAccentColor={initialAccentColor}
             initialLogoUrl={initialLogoUrl}
             initialLatitude={null}

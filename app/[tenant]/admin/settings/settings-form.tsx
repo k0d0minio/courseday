@@ -6,21 +6,37 @@ import { toast } from 'sonner';
 import { updateTenant } from '@/app/actions/tenants';
 import { createSupabaseBrowserClient } from '@/lib/supabase-client';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CitySearch } from '@/components/city-search';
+import { TenantPalettePicker } from '@/components/tenant-palette-picker';
+import {
+  getTenantPalette,
+  getTenantThemeCssVariables,
+  resolveTenantPaletteId,
+  type TenantPaletteId,
+} from '@/lib/theme/palettes';
 
 interface SettingsFormProps {
   tenantId: string;
+  initialPaletteId: string | null;
   initialAccentColor: string | null;
   initialLogoUrl: string | null;
   initialLatitude: number | null;
   initialLongitude: number | null;
 }
 
-export function SettingsForm({ tenantId, initialAccentColor, initialLogoUrl, initialLatitude, initialLongitude }: SettingsFormProps) {
-  const [accentColor, setAccentColor] = useState(initialAccentColor ?? '#1a1a1a');
+export function SettingsForm({
+  tenantId,
+  initialPaletteId,
+  initialAccentColor,
+  initialLogoUrl,
+  initialLatitude,
+  initialLongitude,
+}: SettingsFormProps) {
+  const [paletteId, setPaletteId] = useState<TenantPaletteId>(
+    resolveTenantPaletteId(initialPaletteId, initialAccentColor)
+  );
   const [logoUrl, setLogoUrl] = useState(initialLogoUrl ?? '');
   const [latitude, setLatitude] = useState(initialLatitude != null ? String(initialLatitude) : '');
   const [longitude, setLongitude] = useState(initialLongitude != null ? String(initialLongitude) : '');
@@ -28,10 +44,20 @@ export function SettingsForm({ tenantId, initialAccentColor, initialLogoUrl, ini
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  function handleColorChange(value: string) {
-    setAccentColor(value);
-    // Live preview: update the CSS variable on the page
-    document.documentElement.style.setProperty('--tenant-accent', value);
+  function applyPalettePreview(nextPaletteId: TenantPaletteId) {
+    const root = document.querySelector('.tenant-themed');
+    if (!(root instanceof HTMLElement)) return;
+
+    const palette = getTenantPalette(nextPaletteId);
+    const cssVars = getTenantThemeCssVariables(palette);
+    Object.entries(cssVars).forEach(([key, value]) => {
+      root.style.setProperty(key, value);
+    });
+  }
+
+  function handlePaletteChange(nextPaletteId: TenantPaletteId) {
+    setPaletteId(nextPaletteId);
+    applyPalettePreview(nextPaletteId);
   }
 
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -73,9 +99,11 @@ export function SettingsForm({ tenantId, initialAccentColor, initialLogoUrl, ini
     try {
       const lat = latitude.trim() ? parseFloat(latitude) : null;
       const lon = longitude.trim() ? parseFloat(longitude) : null;
+      const palette = getTenantPalette(paletteId);
 
       const result = await updateTenant(tenantId, {
-        accent_color: accentColor || null,
+        theme_palette: paletteId,
+        accent_color: palette.legacyAccentHex,
         logo_url: logoUrl || null,
         latitude: lat != null && !isNaN(lat) ? lat : null,
         longitude: lon != null && !isNaN(lon) ? lon : null,
@@ -97,36 +125,14 @@ export function SettingsForm({ tenantId, initialAccentColor, initialLogoUrl, ini
       {/* Accent Color */}
       <Card>
         <CardHeader>
-          <CardTitle>Brand Color</CardTitle>
+          <CardTitle>Theme palette</CardTitle>
           <CardDescription>
-            Applied as the primary accent color across your tenant's interface.
+            Pick a curated palette. All non-destructive highlights update to this theme.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center gap-3">
-            <input
-              id="accent-color-picker"
-              type="color"
-              value={accentColor.startsWith('#') ? accentColor : '#1a1a1a'}
-              onChange={(e) => handleColorChange(e.target.value)}
-              className="h-10 w-10 cursor-pointer rounded border border-input bg-transparent p-0.5"
-            />
-            <div className="flex-1">
-              <Label htmlFor="accent-color-input" className="sr-only">Hex color</Label>
-              <Input
-                id="accent-color-input"
-                value={accentColor}
-                onChange={(e) => handleColorChange(e.target.value)}
-                className="w-36 font-mono"
-                placeholder="#1a1a1a"
-              />
-            </div>
-          </div>
-          <div
-            className="h-8 w-full rounded-md border"
-            style={{ backgroundColor: accentColor }}
-            aria-label="Color preview"
-          />
+          <Label className="sr-only">Palette picker</Label>
+          <TenantPalettePicker value={paletteId} onChange={handlePaletteChange} />
         </CardContent>
       </Card>
 

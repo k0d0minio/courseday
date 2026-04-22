@@ -12,11 +12,12 @@ export default async function BrandingSettingsPage() {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from('tenants')
-    .select('accent_color, logo_url, latitude, longitude')
+    .select('theme_palette, accent_color, logo_url, latitude, longitude')
     .eq('id', tenant.id)
     .single();
 
   const row = data as {
+    theme_palette?: string | null;
     accent_color?: string | null;
     logo_url?: string | null;
     latitude?: number | null;
@@ -28,6 +29,7 @@ export default async function BrandingSettingsPage() {
       <h1 className="text-2xl font-semibold mb-6">{t('tabBranding')}</h1>
       <SettingsForm
         tenantId={tenant.id}
+        initialPaletteId={row?.theme_palette ?? null}
         initialAccentColor={row?.accent_color ?? null}
         initialLogoUrl={row?.logo_url ?? null}
         initialLatitude={row?.latitude ?? null}
