@@ -15,7 +15,12 @@ export default function ForgotPasswordPage() {
   const [state, action, isPending] = useActionState(sendPasswordResetEmail, null);
   const searchParams = useSearchParams();
   const slug = searchParams.get('slug') ?? '';
+  const errorCode = searchParams.get('error');
   const t = useTranslations('Platform.auth');
+  const linkError =
+    errorCode === 'otp_expired'
+      ? 'Reset link expired or already used. Request a new reset email.'
+      : null;
 
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center p-4">
@@ -38,6 +43,9 @@ export default function ForgotPasswordPage() {
             <CardContent className="space-y-4">
               {state?.error && (
                 <p className="text-sm text-destructive">{state.error}</p>
+              )}
+              {linkError && (
+                <p className="text-sm text-destructive">{linkError}</p>
               )}
               {state?.success && (
                 <p className="text-sm text-green-700">{state.success}</p>

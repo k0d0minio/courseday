@@ -55,6 +55,7 @@ export function ConfirmAuthClient() {
   const flow = params.get('flow');
   const queryType = params.get('type');
   const tokenHash = params.get('token_hash');
+  const queryErrorCode = params.get('error_code');
 
   useEffect(() => {
     let cancelled = false;
@@ -62,6 +63,22 @@ export function ConfirmAuthClient() {
     async function run() {
       const supabase = createAuthConfirmBrowserClient();
       let authType = toEmailOtpType(queryType ?? (flow === 'recovery' ? 'recovery' : null));
+      const hash = typeof window !== 'undefined' ? window.location.hash : '';
+      const fragment = hash.startsWith('#') ? hash.slice(1) : hash;
+      const hp = new URLSearchParams(fragment);
+      const errorCode = queryErrorCode ?? hp.get('error_code');
+
+      if (errorCode) {
+        if (flow === 'recovery') {
+          const target = new URL('/auth/forgot-password', window.location.origin);
+          if (slug) target.searchParams.set('slug', slug);
+          target.searchParams.set('error', errorCode);
+          router.replace(target.pathname + target.search);
+          return;
+        }
+        router.replace('/auth/sign-in?error=confirm_failed');
+        return;
+      }
 
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
@@ -81,9 +98,6 @@ export function ConfirmAuthClient() {
           return;
         }
       } else {
-        const hash = typeof window !== 'undefined' ? window.location.hash : '';
-        const fragment = hash.startsWith('#') ? hash.slice(1) : hash;
-        const hp = new URLSearchParams(fragment);
         authType = toEmailOtpType(hp.get('type')) ?? authType;
         const access_token = hp.get('access_token');
         const refresh_token = hp.get('refresh_token');
@@ -137,7 +151,7 @@ export function ConfirmAuthClient() {
     return () => {
       cancelled = true;
     };
-  }, [code, slug, flow, queryType, tokenHash, router]);
+  }, [code, slug, flow, queryType, tokenHash, queryErrorCode, router]);
 
   return (
     <div className="flex min-h-[50vh] items-center justify-center p-6 text-sm text-muted-foreground">
