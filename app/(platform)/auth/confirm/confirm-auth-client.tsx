@@ -51,6 +51,10 @@ async function tryVerifyOtpFromHashCandidates(
   return { ok: false as const };
 }
 
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function createAuthConfirmBrowserClient() {
   const cookieDomain = '.' + rootDomain.split(':')[0];
   return createBrowserClient(
@@ -174,7 +178,12 @@ export function ConfirmAuthClient() {
         return;
       }
 
-      const result = await finalizeEmailAuthRedirect(slug, flow);
+      let result = await finalizeEmailAuthRedirect(slug, flow);
+      if (!result.ok && result.error === 'no_session') {
+        // Cookie write from client auth exchange can lag first server action call.
+        await wait(350);
+        result = await finalizeEmailAuthRedirect(slug, flow);
+      }
       if (cancelled) return;
       if (!result.ok) {
         router.replace(
