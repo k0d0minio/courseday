@@ -53,7 +53,7 @@ export function SignInForm() {
     redirectUrl.searchParams.set('flow', 'magic');
     if (slug) redirectUrl.searchParams.set('slug', slug);
 
-    const supabase = createSupabaseBrowserClient();
+    const supabase = createSupabaseBrowserClient({ flowType: 'implicit' });
     const { error } = await supabase.auth.signInWithOtp({
       email: trimmedEmail,
       options: {
