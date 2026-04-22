@@ -8,7 +8,6 @@ import {
   finalizeEmailAuthRedirect,
   finalizeEmailAuthRedirectWithToken,
 } from '@/app/actions/auth-confirm';
-import { Button } from '@/components/ui/button';
 
 type EmailOtpType =
   | 'signup'
@@ -91,10 +90,8 @@ export function ConfirmAuthClient() {
   const queryType = params.get('type');
   const tokenHash = params.get('token_hash');
   const queryErrorCode = params.get('error_code');
-  const [isArmed, setIsArmed] = useState(flow !== 'magic');
 
   useEffect(() => {
-    if (!isArmed) return;
     let cancelled = false;
 
     async function run() {
@@ -223,18 +220,7 @@ export function ConfirmAuthClient() {
     return () => {
       cancelled = true;
     };
-  }, [code, slug, flow, queryType, tokenHash, queryErrorCode, router, isArmed]);
-
-  if (!isArmed) {
-    return (
-      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 p-6 text-center">
-        <p className="text-sm text-muted-foreground">
-          Ready to sign you in. Click button below to continue.
-        </p>
-        <Button onClick={() => setIsArmed(true)}>Continue sign in</Button>
-      </div>
-    );
-  }
+  }, [code, slug, flow, queryType, tokenHash, queryErrorCode, router]);
 
   return (
     <div className="flex min-h-[50vh] items-center justify-center p-6 text-sm text-muted-foreground">
