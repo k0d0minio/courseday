@@ -117,7 +117,8 @@
         "submitting": "Sending…",
         "successTitle": "Thanks — we got it.",
         "successBody": "We'll be in touch within one working day.",
-        "backHome": "Back to home"
+        "backHome": "Back to home",
+        "errorGeneric": "Something went wrong. Please try again."
       }
     },
     "auth": {

@@ -117,7 +117,8 @@
         "submitting": "Envoi…",
         "successTitle": "Merci — c'est bien reçu.",
         "successBody": "Nous revenons vers vous sous un jour ouvré.",
-        "backHome": "Retour à l'accueil"
+        "backHome": "Retour à l'accueil",
+        "errorGeneric": "Une erreur est survenue. Veuillez réessayer."
       }
     },
     "auth": {

@@ -41,6 +41,7 @@ export default async function DemoPage() {
               successTitle: t('successTitle'),
               successBody: t('successBody'),
               backHome: t('backHome'),
+              errorGeneric: t('errorGeneric'),
             }}
           />
         </div>
