@@ -90,7 +90,17 @@ export async function platformSignIn(_prevState: unknown, formData: FormData) {
       : null;
 
   const slug = slugFromMember ?? slugFromPending;
-  if (!slug) return { error: 'No course found for this account.' };
+  if (!slug) {
+    const { data: superadminRow } = await serviceClient
+      .from('superadmins')
+      .select('id')
+      .eq('user_id', data.user.id)
+      .maybeSingle();
+    if (superadminRow) {
+      redirect('/admin');
+    }
+    return { error: 'No course found for this account.' };
+  }
 
   redirect(`${protocol}://${slug}.${rootDomain}/`);
 }
