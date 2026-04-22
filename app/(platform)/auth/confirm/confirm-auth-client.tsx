@@ -31,6 +31,7 @@ export function ConfirmAuthClient() {
   const slug = params.get('slug');
   const flow = params.get('flow');
   const queryType = params.get('type');
+  const tokenHash = params.get('token_hash');
 
   useEffect(() => {
     let cancelled = false;
@@ -41,6 +42,16 @@ export function ConfirmAuthClient() {
 
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (cancelled) return;
+        if (error) {
+          router.replace('/auth/sign-in?error=confirm_failed');
+          return;
+        }
+      } else if (tokenHash && authType) {
+        const { error } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: authType,
+        });
         if (cancelled) return;
         if (error) {
           router.replace('/auth/sign-in?error=confirm_failed');
@@ -103,7 +114,7 @@ export function ConfirmAuthClient() {
     return () => {
       cancelled = true;
     };
-  }, [code, slug, flow, queryType, router]);
+  }, [code, slug, flow, queryType, tokenHash, router]);
 
   return (
     <div className="flex min-h-[50vh] items-center justify-center p-6 text-sm text-muted-foreground">
