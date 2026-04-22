@@ -6,9 +6,9 @@ import { buildAuthConfirmRedirectUrl } from '@/lib/auth-email-redirect';
 import { getTenantId } from '@/lib/tenant';
 import { getUserRole } from '@/lib/membership';
 import { protocol, rootDomain } from '@/lib/utils';
-import { getPendingInviteTenantSlug, normaliseInviteEmail } from '@/lib/pending-invite';
 import { authRateLimit } from '@/lib/rate-limit';
 import { getTenantToday } from '@/lib/day-utils';
+import { resolveTenantRedirect } from '@/lib/auth-post-confirm';
 
 function mapSignInError(message: string) {
   const lower = message.toLowerCase();
@@ -89,28 +89,9 @@ export async function platformSignIn(_prevState: unknown, formData: FormData) {
     };
   }
 
-  // Look up tenant: membership first, else pending invitation (invited viewers
-  // often have no membership row until first tenant visit).
-  const serviceClient = createSupabaseServiceClient();
-  const { data: membershipRows } = await serviceClient
-    .from('memberships')
-    .select('tenants(slug)')
-    .eq('user_id', data.user.id)
-    .limit(50);
-
-  const memberSlugs = (membershipRows ?? [])
-    .map((row) => (row.tenants as unknown as { slug: string } | null)?.slug ?? null)
-    .filter((slug): slug is string => !!slug);
-  const slugFromMember = slugHint && memberSlugs.includes(slugHint) ? slugHint : memberSlugs[0] ?? null;
-
-  const emailNorm = normaliseInviteEmail(data.user.email);
-  const slugFromPending =
-    !slugFromMember && emailNorm
-      ? await getPendingInviteTenantSlug(serviceClient, emailNorm)
-      : null;
-
-  const slug = slugFromMember ?? slugFromPending;
-  if (!slug) {
+  const tenantRedirect = await resolveTenantRedirect(data.user.id, slugHint || null);
+  if (!tenantRedirect) {
+    const serviceClient = createSupabaseServiceClient();
     const { data: superadminRow } = await serviceClient
       .from('superadmins')
       .select('id')
@@ -122,7 +103,7 @@ export async function platformSignIn(_prevState: unknown, formData: FormData) {
     return { error: 'No course found for this account. Create new venue or ask admin for invite.' };
   }
 
-  redirect(`${protocol}://${slug}.${rootDomain}/`);
+  redirect(`${protocol}://${tenantRedirect.slug}.${rootDomain}${tenantRedirect.pathname}`);
 }
 
 export type AuthEmailActionState = { error?: string; success?: string } | null;
