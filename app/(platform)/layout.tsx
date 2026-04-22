@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
+import { LanguageSwitcher } from '@/components/language-switcher';
 import { LandingFooter } from '@/components/landing/landing-footer';
 
 export default async function PlatformLayout({
@@ -22,17 +23,18 @@ export default async function PlatformLayout({
             <Link href="/" className="inline-flex items-center" aria-label="Courseday">
               <Logo />
             </Link>
-            <nav className="flex items-center gap-1 sm:gap-3">
+            <nav className="flex items-center gap-1 sm:gap-2">
               <Link href="/#faq" className="hidden sm:inline">
                 <Button variant="ghost" size="sm">
                   {t('faq')}
                 </Button>
               </Link>
-              <Link href="/auth/sign-in">
+              <Link href="/auth/sign-in" className="hidden sm:inline-flex">
                 <Button variant="ghost" size="sm">
                   {t('signIn')}
                 </Button>
               </Link>
+              <LanguageSwitcher />
               <Link href="/demo">
                 <Button size="sm">{t('bookDemo')}</Button>
               </Link>
