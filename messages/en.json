@@ -461,7 +461,8 @@
       "citySearchHttpError": "Search failed ({status}).",
       "cityUnexpectedResponse": "Unexpected response from geocoding service.",
       "clearLocationAria": "Clear location",
-      "locationCoordsHint": "Clear the coordinates above to search for a city by name."
+      "locationCoordsHint": "Clear the coordinates above to search for a city by name.",
+      "staffScheduleDisabled": "Staff scheduling is disabled for this venue by a platform admin."
     },
     "checklists": {
       "title": "Checklists",

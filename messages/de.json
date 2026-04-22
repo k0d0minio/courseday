@@ -334,7 +334,8 @@
       "citySearchHttpError": "Suche fehlgeschlagen ({status}).",
       "cityUnexpectedResponse": "Unerwartete Antwort vom Geocoding-Dienst.",
       "clearLocationAria": "Standort löschen",
-      "locationCoordsHint": "Löschen Sie die Koordinaten oben, um nach einer Stadt zu suchen."
+      "locationCoordsHint": "Löschen Sie die Koordinaten oben, um nach einer Stadt zu suchen.",
+      "staffScheduleDisabled": "Die Personalplanung ist für diesen Betrieb von einem Plattform-Administrator deaktiviert."
     },
     "checklists": {
       "title": "Checklisten",

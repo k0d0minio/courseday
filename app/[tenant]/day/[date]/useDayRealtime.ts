@@ -52,7 +52,8 @@ export function useDayRealtime(
   setReservations: SetReservations,
   setBreakfastConfigs: SetBreakfastConfigs,
   setShifts: SetShifts,
-  staffMembers: StaffMember[]
+  staffMembers: StaffMember[],
+  subscribeShifts: boolean
 ) {
   const staffRef = useRef(staffMembers);
   staffRef.current = staffMembers;
@@ -60,7 +61,7 @@ export function useDayRealtime(
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
 
-    const channel = supabase
+    let channel = supabase
       .channel(`day-${dayId}`)
       // Activities
       .on(
@@ -230,9 +231,10 @@ export function useDayRealtime(
             );
           }
         }
-      )
-      // Shifts
-      .on(
+      );
+
+    if (subscribeShifts) {
+      channel = channel.on(
         'postgres_changes',
         {
           event: '*',
@@ -270,11 +272,20 @@ export function useDayRealtime(
             setShifts((prev) => prev.filter((s) => s.id !== id));
           }
         }
-      )
-      .subscribe();
+      );
+    }
+
+    channel.subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [dayId, setActivities, setReservations, setBreakfastConfigs, setShifts]);
+  }, [
+    dayId,
+    setActivities,
+    setReservations,
+    setBreakfastConfigs,
+    setShifts,
+    subscribeShifts,
+  ]);
 }

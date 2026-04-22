@@ -26,7 +26,11 @@ export function MobileNav({ today, isEditor }: MobileNavProps) {
   const navT = useTranslations('Tenant.nav');
   const settingsT = useTranslations('Tenant.settings');
   const showChecklists = useFeatureFlag('checklists');
-  const settingsRoutes = getVisibleSettingsRoutes(showChecklists);
+  const showStaffSchedule = useFeatureFlag('staff_schedule');
+  const settingsRoutes = getVisibleSettingsRoutes({
+    checklists: showChecklists,
+    staffSchedule: showStaffSchedule,
+  });
 
   const navItems = [
     { href: '/', label: navT('home'), icon: Home, active: pathname === '/' },

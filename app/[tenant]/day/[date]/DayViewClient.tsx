@@ -32,7 +32,7 @@ import type {
 } from '@/types/index';
 import type { DayViewProps } from './page';
 
-function useDayViewLiveState(p: DayViewProps) {
+function useDayViewLiveState(p: DayViewProps, staffScheduleEnabled: boolean) {
   const [activities, setActivities] = useState(
     () => p.activities as ActivityWithRelations[]
   );
@@ -48,20 +48,22 @@ function useDayViewLiveState(p: DayViewProps) {
     setReservations,
     setBreakfastConfigs,
     setShifts,
-    p.staffMembers
+    p.staffMembers,
+    staffScheduleEnabled
   );
 
   useEffect(() => {
     setActivities(p.activities as ActivityWithRelations[]);
     setReservations(p.reservations);
     setBreakfastConfigs(p.breakfastConfigs);
-    setShifts(p.shifts);
+    setShifts(staffScheduleEnabled ? p.shifts : []);
   }, [
     p.dayId,
     p.activities,
     p.reservations,
     p.breakfastConfigs,
     p.shifts,
+    staffScheduleEnabled,
   ]);
 
   return {
@@ -79,7 +81,8 @@ function useDayViewLiveState(p: DayViewProps) {
 export function DayViewClient(props: DayViewProps) {
   const { date, authState } = props;
   const { setActiveDayYmd } = useActiveDay();
-  const live = useDayViewLiveState(props);
+  const staffScheduleEnabled = useFeatureFlag('staff_schedule');
+  const live = useDayViewLiveState(props, staffScheduleEnabled);
 
   useEffect(() => {
     setActiveDayYmd(date);
@@ -97,7 +100,9 @@ export function DayViewClient(props: DayViewProps) {
     );
   }
 
-  return <DayViewEditor {...props} live={live} />;
+  return (
+    <DayViewEditor {...props} live={live} showStaffSchedule={staffScheduleEnabled} />
+  );
 }
 
 function DayViewEditor({
@@ -112,8 +117,10 @@ function DayViewEditor({
   staffMembers,
   staffRoles,
   live,
+  showStaffSchedule,
 }: DayViewProps & {
   live: ReturnType<typeof useDayViewLiveState>;
+  showStaffSchedule: boolean;
 }) {
   const t = useTranslations('Tenant.day');
   const router = useRouter();
@@ -301,6 +308,7 @@ function DayViewEditor({
         onClose={() => setCopyDayOpen(false)}
         sourceDayId={dayId}
         today={today}
+        showCopyShifts={showStaffSchedule}
       />
 
       {showWeatherReporting && weather && <WeatherCard weather={weather} />}
@@ -311,14 +319,16 @@ function DayViewEditor({
         breakfastConfigs={breakfastConfigs}
       />
 
-      <StaffScheduleSection
-        dayId={dayId}
-        shifts={shifts}
-        staffMembers={staffMembers}
-        staffRoles={staffRoles}
-        isEditor={authState.isEditor}
-        onShiftsChange={setShifts}
-      />
+      {showStaffSchedule && (
+        <StaffScheduleSection
+          dayId={dayId}
+          shifts={shifts}
+          staffMembers={staffMembers}
+          staffRoles={staffRoles}
+          isEditor={authState.isEditor}
+          onShiftsChange={setShifts}
+        />
+      )}
 
       {showBreakfast && (
         <section className="space-y-3">

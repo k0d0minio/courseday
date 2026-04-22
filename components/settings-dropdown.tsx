@@ -22,9 +22,18 @@ export const SETTINGS_ROUTES = [
 type LabelKey = (typeof SETTINGS_ROUTES)[number]['labelKey'];
 type SettingsRoute = (typeof SETTINGS_ROUTES)[number];
 
-export function getVisibleSettingsRoutes(showChecklists: boolean): SettingsRoute[] {
-  if (showChecklists) return [...SETTINGS_ROUTES];
-  return SETTINGS_ROUTES.filter((route) => route.href !== '/admin/settings/checklists');
+export function getVisibleSettingsRoutes(visibility: {
+  checklists: boolean;
+  staffSchedule: boolean;
+}): SettingsRoute[] {
+  let routes = [...SETTINGS_ROUTES];
+  if (!visibility.checklists) {
+    routes = routes.filter((route) => route.href !== '/admin/settings/checklists');
+  }
+  if (!visibility.staffSchedule) {
+    routes = routes.filter((route) => route.href !== '/admin/settings/staff');
+  }
+  return routes;
 }
 
 /** Desktop: gear icon → popover with all settings destinations. */
@@ -32,7 +41,11 @@ export function SettingsDropdown() {
   const t = useTranslations('Tenant.settings');
   const navT = useTranslations('Tenant.nav');
   const showChecklists = useFeatureFlag('checklists');
-  const routes = getVisibleSettingsRoutes(showChecklists);
+  const showStaffSchedule = useFeatureFlag('staff_schedule');
+  const routes = getVisibleSettingsRoutes({
+    checklists: showChecklists,
+    staffSchedule: showStaffSchedule,
+  });
 
   return (
     <Popover>

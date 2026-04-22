@@ -334,7 +334,8 @@
       "citySearchHttpError": "Error en la búsqueda ({status}).",
       "cityUnexpectedResponse": "Respuesta inesperada del servicio de geocodificación.",
       "clearLocationAria": "Borrar ubicación",
-      "locationCoordsHint": "Borra las coordenadas de arriba para buscar una ciudad por nombre."
+      "locationCoordsHint": "Borra las coordenadas de arriba para buscar una ciudad por nombre.",
+      "staffScheduleDisabled": "La planificación de personal está desactivada para este establecimiento por un administrador de la plataforma."
     },
     "checklists": {
       "title": "Listas de verificación",

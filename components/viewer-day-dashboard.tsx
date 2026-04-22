@@ -61,6 +61,7 @@ export function ViewerDayDashboard({
   const showReservations = useFeatureFlag('reservations');
   const showBreakfast = useFeatureFlag('breakfast_config');
   const showWeatherReporting = useFeatureFlag('weather_reporting');
+  const showStaffSchedule = useFeatureFlag('staff_schedule');
 
   const visibleBreakfastConfigs = showBreakfast ? breakfastConfigs : [];
   const visibleReservations = showReservations ? reservations : [];
@@ -89,15 +90,17 @@ export function ViewerDayDashboard({
         <StatBlock label={tsummary('reservations')} value={totalReservationCovers} />
       </div>
 
-      <ViewerSection
-        title={ts('title')}
-        empty={shifts.length === 0}
-        emptyLabel={ts('empty')}
-      >
-        {shifts.map((item) => (
-          <ShiftCard key={item.id} dayId={dayId} item={item} isEditor={false} />
-        ))}
-      </ViewerSection>
+      {showStaffSchedule && (
+        <ViewerSection
+          title={ts('title')}
+          empty={shifts.length === 0}
+          emptyLabel={ts('empty')}
+        >
+          {shifts.map((item) => (
+            <ShiftCard key={item.id} dayId={dayId} item={item} isEditor={false} />
+          ))}
+        </ViewerSection>
+      )}
 
       {/* Breakfast */}
       <ViewerSection

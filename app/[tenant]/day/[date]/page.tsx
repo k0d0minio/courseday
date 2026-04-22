@@ -32,6 +32,7 @@ import type { AuthState } from '@/types/actions';
 import type { DayNote } from '@/app/actions/day-notes';
 import { getWeatherForDay } from '@/app/actions/weather';
 import type { WeatherData } from '@/app/actions/weather';
+import { getFeatureFlags } from '@/app/actions/feature-flags';
 
 export type DayViewProps = {
   date: string;
@@ -107,6 +108,9 @@ export default async function DayPage({
         }
       : undefined;
 
+  const flags = await getFeatureFlags(tenant.id);
+  const staffScheduleOn = flags.staff_schedule;
+
   // Load all day data in parallel
   const [
     activities,
@@ -129,9 +133,9 @@ export default async function DayPage({
     getAllPOCs(),
     getAllVenueTypes(),
     getAuthState(),
-    getShiftsForDay(tenant.id, day.id),
-    getStaffMembersForTenant(tenant.id),
-    getStaffRolesForTenant(tenant.id),
+    staffScheduleOn ? getShiftsForDay(tenant.id, day.id) : Promise.resolve([]),
+    staffScheduleOn ? getStaffMembersForTenant(tenant.id) : Promise.resolve([]),
+    staffScheduleOn ? getStaffRolesForTenant(tenant.id) : Promise.resolve([]),
   ]);
 
   return (

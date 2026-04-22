@@ -41,9 +41,17 @@ interface Props {
   onClose: () => void;
   sourceDayId: string;
   today: string;
+  /** When false, staff schedule is not copied and the toggle is hidden. */
+  showCopyShifts?: boolean;
 }
 
-export function CopyDayDialog({ isOpen, onClose, sourceDayId, today }: Props) {
+export function CopyDayDialog({
+  isOpen,
+  onClose,
+  sourceDayId,
+  today,
+  showCopyShifts = true,
+}: Props) {
   const t = useTranslations('Tenant.copyDay');
   const isMobile = useIsMobile();
   const router = useRouter();
@@ -59,19 +67,24 @@ export function CopyDayDialog({ isOpen, onClose, sourceDayId, today }: Props) {
     setCopyShifts(false);
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!showCopyShifts) setCopyShifts(false);
+  }, [showCopyShifts]);
+
   async function handleSubmit() {
     if (!targetDate) return;
     setSaving(true);
     try {
       const result = await copyDaySections(sourceDayId, targetDate, {
         copyActivities,
-        copyShifts,
+        copyShifts: showCopyShifts && copyShifts,
       });
       if (!result.success) {
         toast.error(result.error);
         return;
       }
-      if (copyActivities && copyShifts) toast.success(t('copiedBoth'));
+      const didCopyShifts = showCopyShifts && copyShifts;
+      if (copyActivities && didCopyShifts) toast.success(t('copiedBoth'));
       else if (copyActivities) toast.success(t('copiedActivities'));
       else toast.success(t('copiedShifts'));
       onClose();
@@ -81,7 +94,8 @@ export function CopyDayDialog({ isOpen, onClose, sourceDayId, today }: Props) {
     }
   }
 
-  const canSubmit = targetDate && (copyActivities || copyShifts);
+  const canSubmit =
+    targetDate && (copyActivities || (showCopyShifts && copyShifts));
 
   const body = (
     <div className="space-y-4 py-2">
@@ -105,12 +119,14 @@ export function CopyDayDialog({ isOpen, onClose, sourceDayId, today }: Props) {
           onCheckedChange={setCopyActivities}
         />
       </div>
-      <div className="flex items-center justify-between gap-4 rounded-md border p-3">
-        <Label htmlFor="copy-shifts" className="cursor-pointer">
-          {t('copyShifts')}
-        </Label>
-        <Switch id="copy-shifts" checked={copyShifts} onCheckedChange={setCopyShifts} />
-      </div>
+      {showCopyShifts && (
+        <div className="flex items-center justify-between gap-4 rounded-md border p-3">
+          <Label htmlFor="copy-shifts" className="cursor-pointer">
+            {t('copyShifts')}
+          </Label>
+          <Switch id="copy-shifts" checked={copyShifts} onCheckedChange={setCopyShifts} />
+        </div>
+      )}
     </div>
   );
 

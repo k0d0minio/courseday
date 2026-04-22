@@ -461,7 +461,8 @@
       "citySearchHttpError": "Échec de la recherche ({status}).",
       "cityUnexpectedResponse": "Réponse inattendue du service de géocodage.",
       "clearLocationAria": "Effacer le lieu",
-      "locationCoordsHint": "Effacez les coordonnées ci-dessus pour rechercher une ville par son nom."
+      "locationCoordsHint": "Effacez les coordonnées ci-dessus pour rechercher une ville par son nom.",
+      "staffScheduleDisabled": "La planification du personnel est désactivée pour cet établissement par un administrateur."
     },
     "checklists": {
       "title": "Checklists",
