@@ -22,6 +22,15 @@ export default function SignInPage() {
   const t = useTranslations('Platform.auth');
 
   useEffect(() => {
+    const query = new URLSearchParams(window.location.search);
+    if (query.get('code')) {
+      window.location.replace(`${protocol}://${rootDomain}/auth/confirm${window.location.search}`);
+      return;
+    }
+    if (query.get('token_hash')) {
+      window.location.replace(`${protocol}://${rootDomain}/auth/confirm${window.location.search}`);
+      return;
+    }
     const hash = window.location.hash;
     if (!hash || !hash.includes('access_token')) return;
     window.location.replace(`${protocol}://${rootDomain}/auth/confirm${hash}`);

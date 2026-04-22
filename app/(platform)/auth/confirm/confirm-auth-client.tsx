@@ -38,7 +38,7 @@ export function ConfirmAuthClient() {
 
     async function run() {
       const supabase = createAuthConfirmBrowserClient();
-      let authType = queryType;
+      let authType = queryType ?? (flow === 'recovery' ? 'recovery' : null);
 
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);

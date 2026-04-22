@@ -18,6 +18,15 @@ export function SignInForm() {
   // Invite / magic links sometimes land on Site URL (sign-in) with tokens in the
   // hash after a failed server-only confirm — forward to client confirm handler.
   useEffect(() => {
+    const query = new URLSearchParams(window.location.search);
+    if (query.get('code')) {
+      window.location.replace(`${window.location.origin}/auth/confirm${window.location.search}`);
+      return;
+    }
+    if (query.get('token_hash')) {
+      window.location.replace(`${window.location.origin}/auth/confirm${window.location.search}`);
+      return;
+    }
     const hash = window.location.hash;
     if (!hash || !hash.includes('access_token')) return;
     window.location.replace(`${window.location.origin}/auth/confirm${hash}`);
