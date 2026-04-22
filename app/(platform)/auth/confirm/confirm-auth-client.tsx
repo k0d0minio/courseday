@@ -61,6 +61,24 @@ export function ConfirmAuthClient() {
     let cancelled = false;
 
     async function run() {
+      // For recovery links, avoid consuming one-time tokens on page load.
+      // Email scanners can preload this URL and burn tokens before user action.
+      if (flow === 'recovery') {
+        const target = new URL('/auth/reset-password', window.location.origin);
+        if (slug) target.searchParams.set('slug', slug);
+        target.searchParams.set('flow', 'recovery');
+        if (code) target.searchParams.set('code', code);
+        if (tokenHash) target.searchParams.set('token_hash', tokenHash);
+        if (queryType) target.searchParams.set('type', queryType);
+        if (queryErrorCode) target.searchParams.set('error', queryErrorCode);
+        if (typeof window !== 'undefined' && window.location.hash) {
+          window.location.assign(target.pathname + target.search + window.location.hash);
+          return;
+        }
+        router.replace(target.pathname + target.search);
+        return;
+      }
+
       const supabase = createAuthConfirmBrowserClient();
       let authType = toEmailOtpType(queryType ?? (flow === 'recovery' ? 'recovery' : null));
       const hash = typeof window !== 'undefined' ? window.location.hash : '';
@@ -69,13 +87,6 @@ export function ConfirmAuthClient() {
       const errorCode = queryErrorCode ?? hp.get('error_code');
 
       if (errorCode) {
-        if (flow === 'recovery') {
-          const target = new URL('/auth/forgot-password', window.location.origin);
-          if (slug) target.searchParams.set('slug', slug);
-          target.searchParams.set('error', errorCode);
-          router.replace(target.pathname + target.search);
-          return;
-        }
         router.replace('/auth/sign-in?error=confirm_failed');
         return;
       }
