@@ -29,6 +29,27 @@ function toEmailOtpType(value: string | null): EmailOtpType | null {
   }
 }
 
+async function tryVerifyOtpFromHashCandidates(
+  supabase: ReturnType<typeof createAuthConfirmBrowserClient>,
+  tokenHash: string,
+  preferredType: EmailOtpType | null
+) {
+  const candidates: EmailOtpType[] = preferredType
+    ? [preferredType, 'magiclink', 'email', 'invite', 'signup', 'recovery', 'email_change']
+    : ['magiclink', 'email', 'invite', 'signup', 'recovery', 'email_change'];
+  const deduped = Array.from(new Set(candidates));
+
+  for (const type of deduped) {
+    const { error } = await supabase.auth.verifyOtp({
+      token_hash: tokenHash,
+      type,
+    });
+    if (!error) return { ok: true as const, type };
+  }
+
+  return { ok: false as const };
+}
+
 function createAuthConfirmBrowserClient() {
   const cookieDomain = '.' + rootDomain.split(':')[0];
   return createBrowserClient(
@@ -94,8 +115,15 @@ export function ConfirmAuthClient() {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
         if (cancelled) return;
         if (error) {
-          router.replace('/auth/sign-in?error=confirm_failed');
-          return;
+          // Some email templates/providers deliver token hash in `code` query param.
+          // Fallback avoids hard-fail when PKCE verifier is unavailable.
+          const fallback = await tryVerifyOtpFromHashCandidates(supabase, code, authType);
+          if (cancelled) return;
+          if (!fallback.ok) {
+            router.replace('/auth/sign-in?error=confirm_failed');
+            return;
+          }
+          authType = fallback.type;
         }
       } else if (tokenHash && authType) {
         const { error } = await supabase.auth.verifyOtp({
