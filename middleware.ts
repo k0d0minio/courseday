@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { redis } from '@/lib/redis';
 import { extractSubdomain } from '@/lib/subdomain';
-import { protocol, rootDomain } from '@/lib/utils';
+import { protocol, rootDomain, sharedCookieDomain } from '@/lib/utils';
 import type { TenantRedisData } from '@/app/actions/tenants';
 
 // Node.js runtime required for ioredis (TCP sockets).
@@ -38,13 +38,10 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Cookies must be shared across subdomains — strip port, prepend '.'.
-  const cookieDomain = '.' + rootDomain.split(':')[0];
-
   function applyAuthCookies(response: NextResponse): NextResponse {
     authCookies.forEach(({ name, value, options }) =>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      response.cookies.set(name, value, { ...(options as any), domain: cookieDomain })
+      response.cookies.set(name, value, { ...(options as any), domain: sharedCookieDomain })
     );
     return response;
   }

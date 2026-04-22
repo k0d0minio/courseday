@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
-import { rootDomain } from '@/lib/utils';
+import { sharedCookieDomain } from '@/lib/utils';
 import {
   finalizeEmailAuthRedirect,
   finalizeEmailAuthRedirectWithToken,
@@ -64,13 +64,12 @@ function wait(ms: number) {
 }
 
 function createAuthConfirmBrowserClient() {
-  const cookieDomain = '.' + rootDomain.split(':')[0];
   return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       isSingleton: false,
-      cookieOptions: { domain: cookieDomain, path: '/' },
+      cookieOptions: { domain: sharedCookieDomain, path: '/' },
       auth: {
         detectSessionInUrl: false,
         flowType: 'pkce',

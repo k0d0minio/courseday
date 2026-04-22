@@ -2,13 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { getTenantId } from '@/lib/tenant';
-import { rootDomain } from '@/lib/utils';
-
-// Cookies must be shared across all subdomains so a session established on the
-// root domain (platform sign-in) is immediately available on tenant subdomains.
-// Strip the port (cookies ignore ports) and prepend '.' to cover all subdomains.
-// e.g. 'localhost:3000' → '.localhost',  'example.com' → '.example.com'
-const cookieDomain = '.' + rootDomain.split(':')[0];
+import { sharedCookieDomain } from '@/lib/utils';
 
 export async function createSupabaseServerClient() {
   const cookieStore = await cookies();
@@ -24,7 +18,7 @@ export async function createSupabaseServerClient() {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, { ...options, domain: cookieDomain })
+              cookieStore.set(name, value, { ...options, domain: sharedCookieDomain })
             );
           } catch {
             // setAll called from a Server Component — session refresh still

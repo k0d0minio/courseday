@@ -1,7 +1,5 @@
 import { createBrowserClient } from '@supabase/ssr';
-import { rootDomain } from '@/lib/utils';
-
-const cookieDomain = '.' + rootDomain.split(':')[0];
+import { sharedCookieDomain } from '@/lib/utils';
 
 type BrowserClientOptions = {
   flowType?: 'pkce' | 'implicit';
@@ -14,7 +12,7 @@ export function createSupabaseBrowserClient(options?: BrowserClientOptions) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       isSingleton: options?.isSingleton ?? true,
-      cookieOptions: { domain: cookieDomain, path: '/' },
+      cookieOptions: { domain: sharedCookieDomain, path: '/' },
       auth: options?.flowType ? { flowType: options.flowType } : undefined,
     }
   );

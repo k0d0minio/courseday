@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { rootDomain } from '@/lib/utils';
+import { sharedCookieDomain } from '@/lib/utils';
 
 type EmailOtpType =
   | 'signup'
@@ -37,13 +37,12 @@ function toEmailOtpType(value: string | null): EmailOtpType | null {
 }
 
 function createRecoveryBrowserClient() {
-  const cookieDomain = '.' + rootDomain.split(':')[0];
   return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       isSingleton: false,
-      cookieOptions: { domain: cookieDomain, path: '/' },
+      cookieOptions: { domain: sharedCookieDomain, path: '/' },
       auth: {
         detectSessionInUrl: false,
         flowType: 'pkce',
