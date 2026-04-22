@@ -28,7 +28,11 @@ KV_REST_API_URL=your_upstash_redis_url
 KV_REST_API_TOKEN=your_upstash_redis_token
 NEXT_PUBLIC_ROOT_DOMAIN=localhost:3000   # or your production domain
 OPENWEATHER_API_KEY=your_openweather_api_key   # used by /api/geocode for city search in branding settings
+CRON_SECRET=long_random_string                  # Vercel Cron: Authorization: Bearer for /api/cron/morning-brief
+RESEND_API_KEY=...                              # morning brief + demo emails; RESEND_FROM_EMAIL optional
+AI_GATEWAY_API_KEY=...                          # LLM daily brief (editor button + morning email)
 ```
+
 
 ## Architecture
 

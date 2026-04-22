@@ -1,7 +1,7 @@
 'use server';
 
 import { redis } from '@/lib/redis';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { createSupabaseServerClient, createSupabaseServiceClient } from '@/lib/supabase-server';
 import { getTenantFromHeaders } from '@/lib/tenant';
 
 const CACHE_TTL = 1800; // 30 minutes
@@ -63,7 +63,45 @@ export async function getWeatherForDay(
   if (!row.latitude || !row.longitude) return null;
 
   const cacheKey = `weather:${tenant.id}:${date}`;
+  return fetchWeatherForCoords(cacheKey, row, date);
+}
 
+/**
+ * Like getWeatherForDay, but for cron/background: resolves coords by tenant id
+ * (no request context).
+ */
+export async function getWeatherForTenantId(
+  tenantId: string,
+  date: string
+): Promise<WeatherData | null> {
+  const supabase = createSupabaseServiceClient();
+  const { data } = await supabase
+    .from('tenants')
+    .select('latitude, longitude, timezone')
+    .eq('id', tenantId)
+    .maybeSingle();
+
+  const fetched = data as {
+    latitude?: number | null;
+    longitude?: number | null;
+    timezone?: string | null;
+  } | null;
+
+  if (!fetched?.latitude || !fetched?.longitude) return null;
+  const row: WeatherCoords = {
+    latitude: fetched.latitude,
+    longitude: fetched.longitude,
+    timezone: fetched.timezone ?? 'UTC',
+  };
+  const cacheKey = `weather:${tenantId}:${date}`;
+  return fetchWeatherForCoords(cacheKey, row, date);
+}
+
+async function fetchWeatherForCoords(
+  cacheKey: string,
+  row: WeatherCoords,
+  date: string
+): Promise<WeatherData | null> {
   try {
     const cached = await redis.get(cacheKey);
     if (cached) return JSON.parse(cached) as WeatherData;

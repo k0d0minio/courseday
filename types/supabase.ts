@@ -435,7 +435,7 @@ export type Database = {
           content: Json
           day_id: string
           generated_at: string
-          generated_by: string
+          generated_by: string | null
           id: string
           model: string
           prompt_version: string
@@ -445,7 +445,7 @@ export type Database = {
           content: Json
           day_id: string
           generated_at?: string
-          generated_by: string
+          generated_by?: string | null
           id?: string
           model: string
           prompt_version: string
@@ -455,7 +455,7 @@ export type Database = {
           content?: Json
           day_id?: string
           generated_at?: string
-          generated_by?: string
+          generated_by?: string | null
           id?: string
           model?: string
           prompt_version?: string
@@ -474,6 +474,45 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      morning_brief_email_sent: {
+        Row: {
+          id: string
+          tenant_id: string
+          day_id: string
+          user_id: string
+          sent_at: string
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          day_id: string
+          user_id: string
+          sent_at?: string
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          day_id?: string
+          user_id?: string
+          sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "morning_brief_email_sent_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "morning_brief_email_sent_day_id_fkey"
+            columns: ["day_id"]
+            isOneToOne: false
+            referencedRelation: "day"
             referencedColumns: ["id"]
           },
         ]
