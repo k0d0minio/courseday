@@ -9,6 +9,7 @@ import {
   resolveTenantRedirect,
   tenantSubdomainUrl,
 } from '@/lib/auth-post-confirm';
+import { protocol, rootDomain } from '@/lib/utils';
 
 export type PostConfirmResult =
   | { ok: true; redirectUrl: string }
@@ -45,6 +46,17 @@ export async function finalizeEmailAuthRedirect(
 
   const tenantRedirect = await resolveTenantRedirect(user.id, slugHint);
   if (!tenantRedirect) {
+    const service = createSupabaseServiceClient();
+    const { data: superadminRow } = await service
+      .from('superadmins')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (superadminRow) {
+      return { ok: true, redirectUrl: `${protocol}://${rootDomain}/admin` };
+    }
+
     return { ok: false, error: 'no_tenant' };
   }
 

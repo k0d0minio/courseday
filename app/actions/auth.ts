@@ -2,6 +2,7 @@
 
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient, createSupabaseServiceClient } from '@/lib/supabase-server';
+import { buildAuthConfirmRedirectUrl } from '@/lib/auth-email-redirect';
 import { getTenantId } from '@/lib/tenant';
 import { getUserRole } from '@/lib/membership';
 import { protocol, rootDomain } from '@/lib/utils';
@@ -105,6 +106,50 @@ export async function platformSignIn(_prevState: unknown, formData: FormData) {
   redirect(`${protocol}://${slug}.${rootDomain}/`);
 }
 
+export type AuthEmailActionState = { error?: string; success?: string } | null;
+
+export async function sendSignInMagicLink(
+  _prevState: AuthEmailActionState,
+  formData: FormData
+): Promise<AuthEmailActionState> {
+  const rl = await authRateLimit();
+  if (!rl.success) return { error: 'Too many attempts. Please wait and try again.' };
+
+  const email = String(formData.get('email') ?? '').trim();
+  const slug = String(formData.get('slug') ?? '').trim() || null;
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      shouldCreateUser: false,
+      emailRedirectTo: buildAuthConfirmRedirectUrl({ slug, flow: 'magic' }),
+    },
+  });
+
+  if (error) return { error: error.message };
+  return { success: 'Check your email for a sign-in link.' };
+}
+
+export async function sendPasswordResetEmail(
+  _prevState: AuthEmailActionState,
+  formData: FormData
+): Promise<AuthEmailActionState> {
+  const rl = await authRateLimit();
+  if (!rl.success) return { error: 'Too many attempts. Please wait and try again.' };
+
+  const email = String(formData.get('email') ?? '').trim();
+  const slug = String(formData.get('slug') ?? '').trim() || null;
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: buildAuthConfirmRedirectUrl({ slug, flow: 'recovery' }),
+  });
+
+  if (error) return { error: error.message };
+  return { success: 'If an account exists for that email, we sent a reset link.' };
+}
+
 export async function getAuthState() {
   const user = await getUser();
   if (!user) return { user: null, role: null, isEditor: false };
@@ -124,6 +169,15 @@ export type InviteJoinErrorCode =
   | 'NO_ACCESS';
 
 export type InviteJoinState = { error: InviteJoinErrorCode | string } | null;
+export type PasswordRecoveryErrorCode =
+  | 'RATE_LIMIT'
+  | 'TOO_SHORT'
+  | 'MISMATCH'
+  | 'NOT_SIGNED_IN';
+export type PasswordRecoveryState = {
+  error?: PasswordRecoveryErrorCode | string;
+  success?: boolean;
+} | null;
 
 /**
  * After invite email link: user has a session on the tenant join page.
@@ -175,4 +229,28 @@ export async function completeInvitePassword(
     redirect(`/day/${today}`);
   }
   redirect('/');
+}
+
+export async function completePasswordRecovery(
+  _prev: PasswordRecoveryState,
+  formData: FormData
+): Promise<PasswordRecoveryState> {
+  const rl = await authRateLimit();
+  if (!rl.success) return { error: 'RATE_LIMIT' };
+
+  const password = String(formData.get('password') ?? '');
+  const confirm = String(formData.get('confirm') ?? '');
+  if (password.length < 8) return { error: 'TOO_SHORT' };
+  if (password !== confirm) return { error: 'MISMATCH' };
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'NOT_SIGNED_IN' };
+
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) return { error: error.message };
+
+  return { success: true };
 }

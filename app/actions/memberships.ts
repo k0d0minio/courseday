@@ -4,7 +4,7 @@ import { createTenantClient, createSupabaseServiceClient } from '@/lib/supabase-
 import { getTenantId } from '@/lib/tenant';
 import { getUserRole } from '@/lib/membership';
 import { getUser } from '@/app/actions/auth';
-import { protocol, rootDomain } from '@/lib/utils';
+import { buildAuthConfirmRedirectUrl } from '@/lib/auth-email-redirect';
 import type { ActionResponse } from '@/types/actions';
 
 export type MemberRole = 'editor' | 'viewer';
@@ -152,7 +152,10 @@ export async function inviteMember(
   }
 
   const tenantSlug = tenantRow.slug as string;
-  const confirmRedirect = `${protocol}://${rootDomain}/auth/confirm?slug=${encodeURIComponent(tenantSlug)}&flow=invite`;
+  const confirmRedirect = buildAuthConfirmRedirectUrl({
+    slug: tenantSlug,
+    flow: 'invite',
+  });
 
   const { data: inviteData, error: inviteError } =
     await serviceClient.auth.admin.inviteUserByEmail(trimmedEmail, {

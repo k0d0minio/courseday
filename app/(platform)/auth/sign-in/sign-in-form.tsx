@@ -3,7 +3,7 @@
 import { useActionState, useEffect } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { platformSignIn } from '@/app/actions/auth';
+import { platformSignIn, sendSignInMagicLink } from '@/app/actions/auth';
 import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 
 export function SignInForm() {
   const [state, action, isPending] = useActionState(platformSignIn, null);
+  const [magicState, magicAction, isMagicPending] = useActionState(sendSignInMagicLink, null);
   const t = useTranslations('Platform.auth');
 
   // Invite / magic links sometimes land on Site URL (sign-in) with tokens in the
@@ -43,6 +44,12 @@ export function SignInForm() {
               {state?.error && (
                 <p className="text-sm text-destructive">{state.error}</p>
               )}
+              {magicState?.error && (
+                <p className="text-sm text-destructive">{magicState.error}</p>
+              )}
+              {magicState?.success && (
+                <p className="text-sm text-green-700">{magicState.success}</p>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="email">{t('emailLabel')}</Label>
@@ -71,6 +78,18 @@ export function SignInForm() {
               <Button type="submit" className="w-full" disabled={isPending}>
                 {isPending ? t('signingIn') : t('signInButton')}
               </Button>
+              <Button
+                type="submit"
+                formAction={magicAction}
+                variant="outline"
+                className="w-full"
+                disabled={isMagicPending}
+              >
+                {isMagicPending ? t('sendingMagicLink') : t('magicLinkButton')}
+              </Button>
+              <Link href="/auth/forgot-password" className="text-sm underline underline-offset-4">
+                {t('forgotPasswordLink')}
+              </Link>
               <p className="text-sm text-muted-foreground text-center">
                 {t('createVenuePrompt')}{' '}
                 <Link href="/new" className="underline underline-offset-4">

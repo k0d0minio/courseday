@@ -5,8 +5,8 @@ import {
   createSupabaseServerClient,
   createSupabaseServiceClient,
 } from '@/lib/supabase-server';
+import { buildAuthConfirmRedirectUrl } from '@/lib/auth-email-redirect';
 import { isValidSlug } from '@/lib/tenant-validation';
-import { protocol, rootDomain } from '@/lib/utils';
 import type { ActionResponse } from '@/types/actions';
 
 type CourseResult = { slug: string; requiresConfirmation: boolean };
@@ -54,7 +54,10 @@ export async function createCourse(data: {
     email: data.email,
     password: data.password,
     options: {
-      emailRedirectTo: `${protocol}://${rootDomain}/auth/confirm?slug=${encodeURIComponent(data.slug)}&flow=signup`,
+      emailRedirectTo: buildAuthConfirmRedirectUrl({
+        slug: data.slug,
+        flow: 'signup',
+      }),
     },
   });
 

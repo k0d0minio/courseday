@@ -30,12 +30,14 @@ export function ConfirmAuthClient() {
   const code = params.get('code');
   const slug = params.get('slug');
   const flow = params.get('flow');
+  const queryType = params.get('type');
 
   useEffect(() => {
     let cancelled = false;
 
     async function run() {
       const supabase = createAuthConfirmBrowserClient();
+      let authType = queryType;
 
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
@@ -48,6 +50,7 @@ export function ConfirmAuthClient() {
         const hash = typeof window !== 'undefined' ? window.location.hash : '';
         const fragment = hash.startsWith('#') ? hash.slice(1) : hash;
         const hp = new URLSearchParams(fragment);
+        authType = hp.get('type') ?? authType;
         const access_token = hp.get('access_token');
         const refresh_token = hp.get('refresh_token');
         if (access_token && refresh_token) {
@@ -74,6 +77,14 @@ export function ConfirmAuthClient() {
         );
       }
 
+      if (authType === 'recovery' || flow === 'recovery') {
+        const target = new URL('/auth/reset-password', window.location.origin);
+        if (slug) target.searchParams.set('slug', slug);
+        if (flow) target.searchParams.set('flow', flow);
+        router.replace(target.pathname + target.search);
+        return;
+      }
+
       const result = await finalizeEmailAuthRedirect(slug, flow);
       if (cancelled) return;
       if (!result.ok) {
@@ -92,7 +103,7 @@ export function ConfirmAuthClient() {
     return () => {
       cancelled = true;
     };
-  }, [code, slug, flow, router]);
+  }, [code, slug, flow, queryType, router]);
 
   return (
     <div className="flex min-h-[50vh] items-center justify-center p-6 text-sm text-muted-foreground">

@@ -7,17 +7,30 @@ vi.mock('next/navigation', () => ({ redirect: vi.fn() }));
 vi.mock('@/lib/supabase-server', () => ({
   createSupabaseServerClient: vi.fn(),
 }));
+vi.mock('@/lib/rate-limit', () => ({
+  authRateLimit: vi.fn().mockResolvedValue({ success: true }),
+}));
+vi.mock('@/lib/auth-email-redirect', () => ({
+  buildAuthConfirmRedirectUrl: vi.fn().mockReturnValue('https://example.com/auth/confirm'),
+}));
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { redirect } from 'next/navigation';
-import { signIn, signOut } from '@/app/actions/auth';
+import {
+  sendPasswordResetEmail,
+  sendSignInMagicLink,
+  signIn,
+  signOut,
+} from '@/app/actions/auth';
 
 function makeAuthClient(signInResult: { error: { message: string } | null }) {
   return {
     auth: {
       signInWithPassword: vi.fn().mockResolvedValue({ error: signInResult.error }),
+      signInWithOtp: vi.fn().mockResolvedValue({ error: null }),
+      resetPasswordForEmail: vi.fn().mockResolvedValue({ error: null }),
       signOut: vi.fn().mockResolvedValue({ error: null }),
     },
   };
@@ -83,5 +96,50 @@ describe('signOut', () => {
 
     expect(client.auth.signOut).toHaveBeenCalled();
     expect(redirect).toHaveBeenCalledWith('/auth/sign-in');
+  });
+});
+
+describe('sendSignInMagicLink', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('sends a magic link without creating users', async () => {
+    const client = makeAuthClient({ error: null });
+    vi.mocked(createSupabaseServerClient).mockResolvedValue(client as never);
+
+    const formData = new FormData();
+    formData.set('email', 'user@example.com');
+    formData.set('slug', 'venue-slug');
+
+    const result = await sendSignInMagicLink(null, formData);
+    expect(result).toEqual({ success: 'Check your email for a sign-in link.' });
+    expect(client.auth.signInWithOtp).toHaveBeenCalledWith({
+      email: 'user@example.com',
+      options: {
+        shouldCreateUser: false,
+        emailRedirectTo: 'https://example.com/auth/confirm',
+      },
+    });
+  });
+});
+
+describe('sendPasswordResetEmail', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('sends reset-password email with redirect URL', async () => {
+    const client = makeAuthClient({ error: null });
+    vi.mocked(createSupabaseServerClient).mockResolvedValue(client as never);
+
+    const formData = new FormData();
+    formData.set('email', 'user@example.com');
+    formData.set('slug', 'venue-slug');
+
+    const result = await sendPasswordResetEmail(null, formData);
+    expect(result).toEqual({
+      success: 'If an account exists for that email, we sent a reset link.',
+    });
+    expect(client.auth.resetPasswordForEmail).toHaveBeenCalledWith(
+      'user@example.com',
+      { redirectTo: 'https://example.com/auth/confirm' }
+    );
   });
 });
