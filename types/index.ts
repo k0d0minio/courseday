@@ -60,10 +60,29 @@ export type VenueType = Tables<'venue_type'>;
 export type VenueTypeInsert = TablesInsert<'venue_type'>;
 export type VenueTypeUpdate = TablesUpdate<'venue_type'>;
 
+// ── Checklists ────────────────────────────────────────────────────────────────
+
+export type ChecklistTemplate = Tables<'checklist_template'>;
+export type ChecklistTemplateInsert = TablesInsert<'checklist_template'>;
+export type ChecklistTemplateUpdate = TablesUpdate<'checklist_template'>;
+
+export type ChecklistTemplateItem = Tables<'checklist_template_item'>;
+export type ChecklistTemplateItemInsert = TablesInsert<'checklist_template_item'>;
+
+export type ActivityChecklistItem = Tables<'activity_checklist_item'>;
+export type ActivityChecklistItemInsert = TablesInsert<'activity_checklist_item'>;
+export type ActivityChecklistItemUpdate = TablesUpdate<'activity_checklist_item'>;
+
+// A template as returned to the client: includes its items.
+export type ChecklistTemplateWithItems = ChecklistTemplate & {
+  items: ChecklistTemplateItem[];
+};
+
 // ── Composite / relation types ────────────────────────────────────────────────
 
 export type ActivityWithRelations = Activity & {
   tags?: ActivityTag[];
   venue_type: VenueType | null;
   point_of_contact: PointOfContact | null;
+  checklist_items?: ActivityChecklistItem[];
 };
