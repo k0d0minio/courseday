@@ -23,8 +23,6 @@ export interface FeatureRequest {
   created_at: string;
 }
 
-export type { FeatureRequestFormData };
-
 export async function createFeatureRequest(
   raw: FeatureRequestFormData
 ): Promise<ActionResponse<FeatureRequest>> {
