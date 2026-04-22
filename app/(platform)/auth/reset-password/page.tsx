@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { createBrowserClient } from '@supabase/ssr';
@@ -59,7 +59,6 @@ export default function ResetPasswordPage() {
   const code = params.get('code');
   const tokenHash = params.get('token_hash');
   const queryType = params.get('type');
-  const linkErrorCode = params.get('error');
   const router = useRouter();
   const t = useTranslations('Platform.auth');
   const [password, setPassword] = useState('');
@@ -67,15 +66,6 @@ export default function ResetPasswordPage() {
   const [isPending, setIsPending] = useState(false);
   const [displayError, setDisplayError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!linkErrorCode) return;
-    if (linkErrorCode === 'otp_expired') {
-      setDisplayError('Reset link expired or already used. Request a new reset email.');
-      return;
-    }
-    setDisplayError('Reset link is invalid. Request a new reset email.');
-  }, [linkErrorCode]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

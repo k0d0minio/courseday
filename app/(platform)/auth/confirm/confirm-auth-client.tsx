@@ -70,7 +70,6 @@ export function ConfirmAuthClient() {
         if (code) target.searchParams.set('code', code);
         if (tokenHash) target.searchParams.set('token_hash', tokenHash);
         if (queryType) target.searchParams.set('type', queryType);
-        if (queryErrorCode) target.searchParams.set('error', queryErrorCode);
         if (typeof window !== 'undefined' && window.location.hash) {
           window.location.assign(target.pathname + target.search + window.location.hash);
           return;
