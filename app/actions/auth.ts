@@ -10,6 +10,17 @@ import { getPendingInviteTenantSlug, normaliseInviteEmail } from '@/lib/pending-
 import { authRateLimit } from '@/lib/rate-limit';
 import { getTenantToday } from '@/lib/day-utils';
 
+function mapSignInError(message: string) {
+  const lower = message.toLowerCase();
+  if (lower.includes('email not confirmed')) {
+    return 'Email not confirmed yet. Check inbox and click confirmation link, then sign in.';
+  }
+  if (lower.includes('invalid login credentials')) {
+    return 'Invalid credentials. If account is new, complete email confirmation first.';
+  }
+  return message;
+}
+
 export async function signIn(_prevState: unknown, formData: FormData) {
   const rl = await authRateLimit();
   if (!rl.success) return { error: 'Too many attempts. Please wait and try again.' };
@@ -21,9 +32,7 @@ export async function signIn(_prevState: unknown, formData: FormData) {
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
-  if (error) {
-    return { error: error.message };
-  }
+  if (error) return { error: mapSignInError(error.message) };
 
   redirect(redirectTo);
 }
@@ -71,7 +80,14 @@ export async function platformSignIn(_prevState: unknown, formData: FormData) {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-  if (error) return { error: error.message };
+  if (error) return { error: mapSignInError(error.message) };
+
+  if (!data.user.email_confirmed_at) {
+    await supabase.auth.signOut();
+    return {
+      error: 'Email not confirmed yet. Check inbox and click confirmation link, then sign in.',
+    };
+  }
 
   // Look up tenant: membership first, else pending invitation (invited viewers
   // often have no membership row until first tenant visit).
@@ -103,7 +119,7 @@ export async function platformSignIn(_prevState: unknown, formData: FormData) {
     if (superadminRow) {
       redirect('/admin');
     }
-    return { error: 'No course found for this account.' };
+    return { error: 'No course found for this account. Create new venue or ask admin for invite.' };
   }
 
   redirect(`${protocol}://${slug}.${rootDomain}/`);

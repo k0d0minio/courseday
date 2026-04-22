@@ -65,7 +65,19 @@ export async function createCourse(data: {
     return { success: false, error: authError?.message ?? 'Sign up failed.' };
   }
 
+  const isRepeatedSignup =
+    Array.isArray(authData.user.identities) && authData.user.identities.length === 0;
+
+  if (isRepeatedSignup) {
+    return {
+      success: false,
+      error:
+        'Email already registered. Sign in to existing account. If email is unconfirmed, open confirmation email first.',
+    };
+  }
+
   const userId = authData.user.id;
+  const requiresConfirmation = !authData.session;
 
   // Create the tenant
   const { data: tenant, error: tenantError } = await serviceClient
@@ -95,7 +107,7 @@ export async function createCourse(data: {
     success: true,
     data: {
       slug: data.slug,
-      requiresConfirmation: !authData.session,
+      requiresConfirmation,
     },
   };
 }

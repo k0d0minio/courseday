@@ -51,7 +51,25 @@ describe('signIn', () => {
     formData.set('password', 'badpassword');
 
     const result = await signIn(null, formData);
-    expect(result).toEqual({ error: 'Invalid login credentials' });
+    expect(result).toEqual({
+      error: 'Invalid credentials. If account is new, complete email confirmation first.',
+    });
+    expect(redirect).not.toHaveBeenCalled();
+  });
+
+  it('returns clear error when email is not confirmed', async () => {
+    vi.mocked(createSupabaseServerClient).mockResolvedValue(
+      makeAuthClient({ error: { message: 'Email not confirmed' } }) as never
+    );
+
+    const formData = new FormData();
+    formData.set('email', 'new@example.com');
+    formData.set('password', 'somepass');
+
+    const result = await signIn(null, formData);
+    expect(result).toEqual({
+      error: 'Email not confirmed yet. Check inbox and click confirmation link, then sign in.',
+    });
     expect(redirect).not.toHaveBeenCalled();
   });
 
