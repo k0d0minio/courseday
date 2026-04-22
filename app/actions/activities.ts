@@ -9,6 +9,7 @@ import { activitySchema } from '@/lib/program-item-schema';
 import { ensureDayExists } from '@/app/actions/days';
 import { notifyTenantMembers, getDayDate } from '@/lib/notifications';
 import { mutationRateLimit } from '@/lib/rate-limit';
+import { snapshotMatchingTemplatesForActivity } from '@/lib/checklist-snapshot';
 import type { ActionResponse } from '@/types/actions';
 import type { Activity, ActivityWithRelations } from '@/types/index';
 import type { ActivityFormData } from '@/lib/program-item-schema';
@@ -97,13 +98,22 @@ export async function createActivity(
       if (tagErr) return { success: false, error: tagErr };
     }
 
+    const activity = row as Activity;
+    await snapshotMatchingTemplatesForActivity(supabase, {
+      tenantId,
+      dayId: activity.day_id,
+      activityId: activity.id,
+      venueTypeId: data.venueTypeId ?? null,
+      tagIds,
+    });
+
     Promise.allSettled([
       getDayDate(data.dayId).then((date) =>
         notifyTenantMembers(tenantId, user.id, `Activity added: ${data.title}`, undefined, date ? `/day/${date}` : undefined)
       ),
     ]);
 
-    return { success: true, data: row as Activity };
+    return { success: true, data: activity };
   }
 
   // Recurring path
@@ -147,19 +157,34 @@ export async function createActivity(
       })
     );
 
-  const { data: inserted, error: insertErr } = await supabase
+  const { data: insertedRows, error: insertErr } = await supabase
     .from('activity')
     .insert(rows)
-    .select()
-    .eq('day_id', data.dayId)
-    .single();
+    .select();
 
   if (insertErr) return { success: false, error: insertErr.message };
 
+  const allInserted = (insertedRows ?? []) as Activity[];
+  const primary = allInserted.find((r) => r.day_id === data.dayId) ?? allInserted[0];
+  if (!primary) return { success: false, error: 'Failed to insert recurring activity.' };
+
   if (tagIds.length > 0) {
-    const tagErr = await assignTags(supabase, (inserted as Activity).id, tagIds);
+    const tagErr = await assignTags(supabase, primary.id, tagIds);
     if (tagErr) return { success: false, error: tagErr };
   }
+
+  // Snapshot matching templates onto every occurrence.
+  await Promise.all(
+    allInserted.map((row) =>
+      snapshotMatchingTemplatesForActivity(supabase, {
+        tenantId,
+        dayId: row.day_id,
+        activityId: row.id,
+        venueTypeId: data.venueTypeId ?? null,
+        tagIds,
+      })
+    )
+  );
 
   Promise.allSettled([
     getDayDate(data.dayId).then((date) =>
@@ -167,7 +192,7 @@ export async function createActivity(
     ),
   ]);
 
-  return { success: true, data: inserted as Activity };
+  return { success: true, data: primary };
 }
 
 export async function updateActivity(
@@ -357,7 +382,9 @@ export async function getActivitiesForDay(
   const { supabase } = await createTenantClient();
   const { data, error } = await supabase
     .from('activity')
-    .select('*, venue_type(*), point_of_contact(*), activity_tag_assignment(activity_tag(*))')
+    .select(
+      '*, venue_type(*), point_of_contact(*), activity_tag_assignment(activity_tag(*)), activity_checklist_item(*)'
+    )
     .eq('tenant_id', tenantId)
     .eq('day_id', dayId)
     .order('start_time', { nullsFirst: true });
@@ -369,6 +396,10 @@ export async function getActivitiesForDay(
     ...row,
     tags: (row.activity_tag_assignment ?? []).map((a: { activity_tag: unknown }) => a.activity_tag),
     activity_tag_assignment: undefined,
+    checklist_items: ((row.activity_checklist_item ?? []) as { position: number }[])
+      .slice()
+      .sort((a, b) => a.position - b.position),
+    activity_checklist_item: undefined,
   }));
 
   return { success: true, data: items as ActivityWithRelations[] };

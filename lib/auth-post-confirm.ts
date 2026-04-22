@@ -1,6 +1,7 @@
 import { createSupabaseServiceClient } from '@/lib/supabase-server';
 import { resolvePendingInviteSlugForUser } from '@/lib/pending-invite';
 import { protocol, rootDomain } from '@/lib/utils';
+import { getTenantToday } from '@/lib/day-utils';
 
 export const ONBOARDING_PATH = '/admin/onboarding';
 
@@ -37,7 +38,7 @@ export async function resolveTenantRedirect(
 
     const { data: tenant } = await service
       .from('tenants')
-      .select('id, onboarding_completed')
+      .select('id, onboarding_completed, timezone')
       .eq('slug', slug)
       .maybeSingle();
 
@@ -52,11 +53,13 @@ export async function resolveTenantRedirect(
       .eq('tenant_id', tenant.id)
       .maybeSingle();
 
-    const row = tenant as { onboarding_completed?: boolean };
+    const row = tenant as { onboarding_completed?: boolean | null; timezone?: string | null };
     const onboardingDone = row.onboarding_completed === true;
     const isEditor = mem?.role === 'editor';
-    const pathname =
-      isEditor && !onboardingDone ? ONBOARDING_PATH : '/';
+    const today = getTenantToday(row.timezone ?? 'UTC');
+    const pathname = isEditor
+      ? (onboardingDone ? '/' : ONBOARDING_PATH)
+      : `/day/${today}`;
 
     return { slug, pathname };
   }

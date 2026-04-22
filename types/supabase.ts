@@ -128,6 +128,67 @@ export type Database = {
           },
         ]
       }
+      activity_checklist_item: {
+        Row: {
+          activity_id: string
+          created_at: string
+          day_id: string
+          done_at: string | null
+          done_by: string | null
+          id: string
+          is_done: boolean
+          label: string
+          position: number
+          tenant_id: string
+        }
+        Insert: {
+          activity_id: string
+          created_at?: string
+          day_id: string
+          done_at?: string | null
+          done_by?: string | null
+          id?: string
+          is_done?: boolean
+          label: string
+          position?: number
+          tenant_id: string
+        }
+        Update: {
+          activity_id?: string
+          created_at?: string
+          day_id?: string
+          done_at?: string | null
+          done_by?: string | null
+          id?: string
+          is_done?: boolean
+          label?: string
+          position?: number
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_checklist_item_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activity"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_checklist_item_day_id_fkey"
+            columns: ["day_id"]
+            isOneToOne: false
+            referencedRelation: "day"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_checklist_item_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       activity_tag: {
         Row: {
           created_at: string
@@ -247,6 +308,90 @@ export type Database = {
           },
         ]
       }
+      checklist_template: {
+        Row: {
+          activity_tag_id: string | null
+          created_at: string
+          id: string
+          name: string
+          tenant_id: string
+          updated_at: string
+          venue_type_id: string | null
+        }
+        Insert: {
+          activity_tag_id?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          tenant_id: string
+          updated_at?: string
+          venue_type_id?: string | null
+        }
+        Update: {
+          activity_tag_id?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          tenant_id?: string
+          updated_at?: string
+          venue_type_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_template_activity_tag_id_fkey"
+            columns: ["activity_tag_id"]
+            isOneToOne: false
+            referencedRelation: "activity_tag"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_template_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_template_venue_type_id_fkey"
+            columns: ["venue_type_id"]
+            isOneToOne: false
+            referencedRelation: "venue_type"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checklist_template_item: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          position: number
+          template_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          position?: number
+          template_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          position?: number
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_template_item_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_template"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       day: {
         Row: {
           created_at: string
@@ -279,6 +424,127 @@ export type Database = {
           },
         ]
       }
+      day_notes: {
+        Row: {
+          author_name: string
+          content: string
+          created_at: string
+          day_id: string
+          id: string
+          tenant_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          author_name: string
+          content: string
+          created_at?: string
+          day_id: string
+          id?: string
+          tenant_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          author_name?: string
+          content?: string
+          created_at?: string
+          day_id?: string
+          id?: string
+          tenant_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "day_notes_day_id_fkey"
+            columns: ["day_id"]
+            isOneToOne: false
+            referencedRelation: "day"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "day_notes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feature_flags: {
+        Row: {
+          enabled: boolean
+          flag_key: string
+          id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          flag_key: string
+          id?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          flag_key?: string
+          id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_flags_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feature_requests: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          status: string
+          tenant_id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          status?: string
+          tenant_id: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          status?: string
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_requests_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memberships: {
         Row: {
           created_at: string
@@ -304,6 +570,82 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "memberships_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          link: string | null
+          read: boolean
+          tenant_id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read?: boolean
+          tenant_id: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read?: boolean
+          tenant_id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pending_invitations: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          role: string
+          tenant_id: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          role?: string
+          tenant_id: string
+          token?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          role?: string
+          tenant_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_invitations_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -409,15 +751,72 @@ export type Database = {
           },
         ]
       }
+      schedule_templates: {
+        Row: {
+          created_at: string
+          id: string
+          items: Json
+          name: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          items?: Json
+          name: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          items?: Json
+          name?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_templates_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      superadmins: {
+        Row: {
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       tenants: {
         Row: {
           accent_color: string | null
           created_at: string
           id: string
           language: string
+          latitude: number | null
           logo_url: string | null
+          longitude: number | null
           name: string
+          onboarding_completed: boolean
           slug: string
+          status: string
           timezone: string
           updated_at: string
         }
@@ -426,9 +825,13 @@ export type Database = {
           created_at?: string
           id?: string
           language?: string
+          latitude?: number | null
           logo_url?: string | null
+          longitude?: number | null
           name: string
+          onboarding_completed?: boolean
           slug: string
+          status?: string
           timezone?: string
           updated_at?: string
         }
@@ -437,9 +840,13 @@ export type Database = {
           created_at?: string
           id?: string
           language?: string
+          latitude?: number | null
           logo_url?: string | null
+          longitude?: number | null
           name?: string
+          onboarding_completed?: boolean
           slug?: string
+          status?: string
           timezone?: string
           updated_at?: string
         }
@@ -485,6 +892,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_id_by_email: { Args: { p_email: string }; Returns: string }
       is_tenant_editor: { Args: { t_id: string }; Returns: boolean }
       is_tenant_member: { Args: { t_id: string }; Returns: boolean }
     }

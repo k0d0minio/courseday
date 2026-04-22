@@ -9,6 +9,7 @@ export const SETTINGS_ROUTES = [
   { href: '/admin/settings/poc', labelKey: 'tabPoc' },
   { href: '/admin/settings/venue-types', labelKey: 'tabVenueTypes' },
   { href: '/admin/settings/activity-tags', labelKey: 'tabActivityTags' },
+  { href: '/admin/settings/checklists', labelKey: 'tabChecklists' },
   { href: '/admin/settings/branding', labelKey: 'tabBranding' },
   { href: '/admin/settings/language', labelKey: 'tabLanguage' },
   { href: '/admin/settings/members', labelKey: 'tabMembers' },

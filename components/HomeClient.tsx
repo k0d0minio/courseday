@@ -51,9 +51,13 @@ export function HomeClient({
   const isEditor = variant === 'editor';
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [days, setDays] = useState<DaySummary[]>(initialDays);
-  const [viewMode, setViewMode] = useState<ViewMode>(() =>
-    variant === 'viewer' ? 'agenda' : 'calendar'
-  );
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (variant === 'viewer') return 'agenda';
+    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches) {
+      return 'agenda';
+    }
+    return 'calendar';
+  });
   /** Below Tailwind `sm` (640px): calendar day cells go straight to full day page. */
   const [isNarrowScreen, setIsNarrowScreen] = useState(false);
 

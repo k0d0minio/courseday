@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import { Pencil, Trash2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { deleteActivity, deleteActivityRecurrenceGroup, deleteActivityFromHere } from '@/app/actions/activities';
+import { setChecklistItemDone } from '@/app/actions/checklists';
 import { AllergenBadgeRow } from '@/components/allergen-badge';
 import { filterAllergenCodes } from '@/lib/allergens';
 import type { ActivityWithRelations } from '@/types/index';
@@ -30,10 +31,18 @@ type Props = {
 
 export function ActivityCard({ item, isEditor, onEdit, onDeleted }: Props) {
   const t = useTranslations('Tenant.entry');
+  const tChecklist = useTranslations('Tenant.checklists');
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [checklistOpen, setChecklistOpen] = useState(false);
   const [isDeleting, startDeleteTransition] = useTransition();
+  const [isToggling, startToggleTransition] = useTransition();
   const isRecurring = !!item.recurrence_group_id;
   const allergens = filterAllergenCodes(item.allergens);
+  const checklistItems = item.checklist_items ?? [];
+  const checklistDone = useMemo(
+    () => checklistItems.filter((it) => it.is_done).length,
+    [checklistItems]
+  );
 
   function handleDelete(mode: 'single' | 'all' | 'from-here') {
     startDeleteTransition(async () => {
@@ -54,6 +63,16 @@ export function ActivityCard({ item, isEditor, onEdit, onDeleted }: Props) {
       toast.success(mode === 'all' ? t('allDeleted') : mode === 'from-here' ? t('fromHereDeleted') : t('deleted'));
       setDeleteOpen(false);
       onDeleted(item.id, mode);
+    });
+  }
+
+  function handleChecklistToggle(id: string, done: boolean) {
+    if (!isEditor) return;
+    startToggleTransition(async () => {
+      const result = await setChecklistItemDone(id, done);
+      if (!result.success) {
+        toast.error(result.error);
+      }
     });
   }
 
@@ -119,6 +138,47 @@ export function ActivityCard({ item, isEditor, onEdit, onDeleted }: Props) {
               {/* Notes */}
               {item.notes && (
                 <p className="text-sm text-muted-foreground italic">{item.notes}</p>
+              )}
+
+              {checklistItems.length > 0 && (
+                <div className="pt-1 space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => setChecklistOpen((v) => !v)}
+                    className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+                  >
+                    {tChecklist('progress', {
+                      done: checklistDone,
+                      total: checklistItems.length,
+                    })}
+                  </button>
+                  {checklistOpen && (
+                    <ul className="space-y-1">
+                      {checklistItems.map((checkItem) => (
+                        <li key={checkItem.id} className="flex items-start gap-2">
+                          <input
+                            type="checkbox"
+                            className="mt-0.5 h-4 w-4"
+                            checked={checkItem.is_done}
+                            disabled={!isEditor || isToggling}
+                            onChange={(e) =>
+                              handleChecklistToggle(checkItem.id, e.target.checked)
+                            }
+                          />
+                          <span
+                            className={
+                              checkItem.is_done
+                                ? 'text-sm text-muted-foreground line-through'
+                                : 'text-sm'
+                            }
+                          >
+                            {checkItem.label}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               )}
             </div>
 

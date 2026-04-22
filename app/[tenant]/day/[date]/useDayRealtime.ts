@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase-client';
 import type {
   ActivityWithRelations,
+  ActivityChecklistItem,
   Reservation,
   BreakfastConfiguration,
 } from '@/types/index';
@@ -121,6 +122,64 @@ export function useDayRealtime(
           } else if (payload.eventType === 'DELETE') {
             const id = (payload.old as { id: string }).id;
             setBreakfastConfigs((prev) => prev.filter((c) => c.id !== id));
+          }
+        }
+      )
+      // Activity checklist items
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'activity_checklist_item',
+          filter: `day_id=eq.${dayId}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const row = payload.new as ActivityChecklistItem;
+            setActivities((prev) =>
+              prev.map((activity) => {
+                if (activity.id !== row.activity_id) return activity;
+                const checklist = activity.checklist_items ?? [];
+                if (checklist.some((item) => item.id === row.id)) return activity;
+                return {
+                  ...activity,
+                  checklist_items: [...checklist, row].sort(
+                    (a, b) => a.position - b.position
+                  ),
+                };
+              })
+            );
+          } else if (payload.eventType === 'UPDATE') {
+            const row = payload.new as ActivityChecklistItem;
+            setActivities((prev) =>
+              prev.map((activity) => {
+                if (activity.id !== row.activity_id) return activity;
+                const checklist = activity.checklist_items ?? [];
+                return {
+                  ...activity,
+                  checklist_items: checklist.map((item) =>
+                    item.id === row.id ? row : item
+                  ),
+                };
+              })
+            );
+          } else if (payload.eventType === 'DELETE') {
+            const old = payload.old as {
+              id: string;
+              activity_id: string;
+            };
+            setActivities((prev) =>
+              prev.map((activity) => {
+                if (activity.id !== old.activity_id) return activity;
+                return {
+                  ...activity,
+                  checklist_items: (activity.checklist_items ?? []).filter(
+                    (item) => item.id !== old.id
+                  ),
+                };
+              })
+            );
           }
         }
       )
