@@ -86,12 +86,33 @@ export async function middleware(request: NextRequest) {
   // -------------------------------------------------------------------------
   // 3. Tenant resolution via Redis.
   // -------------------------------------------------------------------------
-  const cached = await redis.get(`subdomain:${subdomain}`);
-  if (!cached) {
-    return new NextResponse('Not found', { status: 404 });
-  }
+  const cacheKey = `subdomain:${subdomain}`;
+  const cached = await redis.get(cacheKey);
+  let tenant: TenantRedisData | null = cached
+    ? (JSON.parse(cached) as TenantRedisData)
+    : null;
 
-  const tenant = JSON.parse(cached) as TenantRedisData;
+  // Supabase is source of truth. Redis is routing cache only.
+  if (!tenant) {
+    const { data: tenantFromDb } = await serviceClient
+      .from('tenants')
+      .select('id, name, slug, language, status')
+      .eq('slug', subdomain)
+      .maybeSingle();
+
+    if (!tenantFromDb) {
+      return new NextResponse('Not found', { status: 404 });
+    }
+
+    tenant = {
+      id: tenantFromDb.id,
+      name: tenantFromDb.name,
+      slug: tenantFromDb.slug,
+      language: (tenantFromDb as { language?: string }).language ?? 'en',
+      status: ((tenantFromDb as { status?: string }).status ?? 'active') as TenantRedisData['status'],
+    };
+    await redis.set(cacheKey, JSON.stringify(tenant));
+  }
 
   // -------------------------------------------------------------------------
   // 3b. Suspended / archived tenants — show a branded gate page.

@@ -35,22 +35,26 @@ export async function createTenant(data: {
     };
   }
 
-  // Check Redis first (fast path)
-  const existingInRedis = await redis.get(`subdomain:${data.slug}`);
-  if (existingInRedis) {
-    return { success: false, error: 'This subdomain is already taken.' };
-  }
-
-  // Check Supabase (source of truth)
+  // Check Supabase first (source of truth)
   const serviceClient = createSupabaseServiceClient();
-  const { data: existing } = await serviceClient
+  const { data: existing, error: existingError } = await serviceClient
     .from('tenants')
     .select('id')
     .eq('slug', data.slug)
     .maybeSingle();
 
+  if (existingError) {
+    return { success: false, error: 'Failed to validate tenant slug.' };
+  }
+
   if (existing) {
     return { success: false, error: 'This subdomain is already taken.' };
+  }
+
+  // Redis is cache only. If key exists without DB row, clear stale key.
+  const existingInRedis = await redis.get(`subdomain:${data.slug}`);
+  if (existingInRedis) {
+    await redis.del(`subdomain:${data.slug}`);
   }
 
   // Insert into Supabase
@@ -61,6 +65,9 @@ export async function createTenant(data: {
     .single();
 
   if (error || !tenant) {
+    if (error?.code === '23505') {
+      return { success: false, error: 'This subdomain is already taken.' };
+    }
     return { success: false, error: 'Failed to create tenant.' };
   }
 
