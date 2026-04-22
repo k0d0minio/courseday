@@ -34,6 +34,8 @@ import type { DaySummary } from '@/components/HomeClient';
 
 type Props = {
   today: string;
+  /** When false, hide add-item controls and server forms (viewer home). */
+  isEditor?: boolean;
 };
 
 type ExpandedData = {
@@ -50,7 +52,7 @@ const PAGE_SIZE = 14;
 // AgendaView
 // ---------------------------------------------------------------------------
 
-export function AgendaView({ today }: Props) {
+export function AgendaView({ today, isEditor = true }: Props) {
   const t = useTranslations('Tenant.home');
   const ts = useTranslations('Tenant.sidebar');
   const [summaries, setSummaries] = useState<DaySummary[]>([]);
@@ -104,6 +106,7 @@ export function AgendaView({ today }: Props) {
           key={summary.date}
           summary={summary}
           today={today}
+          isEditor={isEditor}
           isExpanded={expandedDate === summary.date}
           onToggle={() =>
             setExpandedDate((prev) =>
@@ -135,6 +138,7 @@ export function AgendaView({ today }: Props) {
 type RowProps = {
   summary: DaySummary;
   today: string;
+  isEditor: boolean;
   isExpanded: boolean;
   onToggle: () => void;
   onSummaryChanged: (patch: Partial<DaySummary>) => void;
@@ -143,6 +147,7 @@ type RowProps = {
 function AgendaDayRow({
   summary,
   today,
+  isEditor,
   isExpanded,
   onToggle,
   onSummaryChanged,
@@ -162,25 +167,42 @@ function AgendaDayRow({
     if (!isExpanded || hasLoaded.current) return;
     hasLoaded.current = true;
     startDataLoad(async () => {
-      const [activitiesRes, reservationsRes, bfRes, pocsRes, venuesRes] =
-        await Promise.all([
+      if (isEditor) {
+        const [activitiesRes, reservationsRes, bfRes, pocsRes, venuesRes] =
+          await Promise.all([
+            getActivitiesForDay(summary.dayId),
+            getReservationsForDay(summary.dayId),
+            getBreakfastConfigurationsForDay(summary.dayId),
+            getAllPOCs(),
+            getAllVenueTypes(),
+          ]);
+        setExpandedData({
+          activities: (activitiesRes.success
+            ? activitiesRes.data
+            : []) as ActivityWithRelations[],
+          reservations: reservationsRes.success ? reservationsRes.data : [],
+          breakfastConfigs: bfRes.success ? bfRes.data : [],
+          pocs: pocsRes.success ? pocsRes.data : [],
+          venueTypes: venuesRes.success ? venuesRes.data : [],
+        });
+      } else {
+        const [activitiesRes, reservationsRes, bfRes] = await Promise.all([
           getActivitiesForDay(summary.dayId),
           getReservationsForDay(summary.dayId),
           getBreakfastConfigurationsForDay(summary.dayId),
-          getAllPOCs(),
-          getAllVenueTypes(),
         ]);
-      setExpandedData({
-        activities: (activitiesRes.success
-          ? activitiesRes.data
-          : []) as ActivityWithRelations[],
-        reservations: reservationsRes.success ? reservationsRes.data : [],
-        breakfastConfigs: bfRes.success ? bfRes.data : [],
-        pocs: pocsRes.success ? pocsRes.data : [],
-        venueTypes: venuesRes.success ? venuesRes.data : [],
-      });
+        setExpandedData({
+          activities: (activitiesRes.success
+            ? activitiesRes.data
+            : []) as ActivityWithRelations[],
+          reservations: reservationsRes.success ? reservationsRes.data : [],
+          breakfastConfigs: bfRes.success ? bfRes.data : [],
+          pocs: [],
+          venueTypes: [],
+        });
+      }
     });
-  }, [isExpanded, summary.dayId]);
+  }, [isExpanded, isEditor, summary.dayId]);
 
   const isToday = summary.date === today;
   const formattedDate = format(parseISO(summary.date), 'EEEE d MMMM');
@@ -238,33 +260,34 @@ function AgendaDayRow({
 
             {expandedData && (
               <>
-                {/* Quick actions */}
-                <div className="flex flex-wrap gap-2 pt-3">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 text-xs"
-                    onClick={() => setActivityOpen(true)}
-                  >
-                    <Plus className="h-3 w-3 mr-1" /> {ts('activity')}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 text-xs"
-                    onClick={() => setReservationOpen(true)}
-                  >
-                    <Plus className="h-3 w-3 mr-1" /> {ts('reservation')}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 text-xs"
-                    onClick={() => setBreakfastOpen(true)}
-                  >
-                    <Plus className="h-3 w-3 mr-1" /> {ts('breakfast')}
-                  </Button>
-                </div>
+                {isEditor && (
+                  <div className="flex flex-wrap gap-2 pt-3">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs"
+                      onClick={() => setActivityOpen(true)}
+                    >
+                      <Plus className="h-3 w-3 mr-1" /> {ts('activity')}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs"
+                      onClick={() => setReservationOpen(true)}
+                    >
+                      <Plus className="h-3 w-3 mr-1" /> {ts('reservation')}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs"
+                      onClick={() => setBreakfastOpen(true)}
+                    >
+                      <Plus className="h-3 w-3 mr-1" /> {ts('breakfast')}
+                    </Button>
+                  </div>
+                )}
 
                 {/* Breakfast */}
                 {expandedData.breakfastConfigs.length > 0 && (
@@ -341,7 +364,7 @@ function AgendaDayRow({
       </div>
 
       {/* Forms — rendered outside the card to avoid stacking-context issues */}
-      {expandedData && (
+      {isEditor && expandedData && (
         <>
           <ActivityForm
             isOpen={activityOpen}

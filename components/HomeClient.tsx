@@ -26,9 +26,11 @@ export type DaySummary = {
 };
 
 type Props = {
-  month: string;  // YYYY-MM
-  today: string;  // YYYY-MM-DD
+  month: string; // YYYY-MM
+  today: string; // YYYY-MM-DD
   days: DaySummary[];
+  /** Viewers only see agenda; editors get calendar + agenda toggle. */
+  variant?: 'editor' | 'viewer';
 };
 
 // Day-of-week header label keys — Monday first (resolved via translations)
@@ -38,22 +40,50 @@ const DOW_KEYS = ['dowMon', 'dowTue', 'dowWed', 'dowThu', 'dowFri', 'dowSat', 'd
 // Component
 // ---------------------------------------------------------------------------
 
-export function HomeClient({ month, today, days: initialDays }: Props) {
+export function HomeClient({
+  month,
+  today,
+  days: initialDays,
+  variant = 'editor',
+}: Props) {
   const router = useRouter();
   const t = useTranslations('Tenant.home');
+  const isEditor = variant === 'editor';
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [days, setDays] = useState<DaySummary[]>(initialDays);
-  const [viewMode, setViewMode] = useState<ViewMode>('calendar');
+  const [viewMode, setViewMode] = useState<ViewMode>(() =>
+    variant === 'viewer' ? 'agenda' : 'calendar'
+  );
+  /** Below Tailwind `sm` (640px): calendar day cells go straight to full day page. */
+  const [isNarrowScreen, setIsNarrowScreen] = useState(false);
 
-  // Restore view preference from localStorage (client-only)
   useEffect(() => {
-    const saved = localStorage.getItem(VIEW_PREF_KEY);
-    if (saved === 'agenda' || saved === 'calendar') setViewMode(saved);
+    const mq = window.matchMedia('(max-width: 639px)');
+    const sync = () => setIsNarrowScreen(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
   }, []);
 
+  // Restore view preference from localStorage (editors only)
+  useEffect(() => {
+    if (!isEditor) return;
+    const saved = localStorage.getItem(VIEW_PREF_KEY);
+    if (saved === 'agenda' || saved === 'calendar') setViewMode(saved);
+  }, [isEditor]);
+
   function changeViewMode(mode: ViewMode) {
+    if (!isEditor) return;
     setViewMode(mode);
     localStorage.setItem(VIEW_PREF_KEY, mode);
+  }
+
+  function handleDayCellClick(dateStr: string, isSelected: boolean) {
+    if (isEditor && viewMode === 'calendar' && isNarrowScreen) {
+      router.push(`/day/${dateStr}`);
+      return;
+    }
+    setSelectedDate(isSelected ? null : dateStr);
   }
 
   const dayMap = new Map(days.map((d) => [d.date, d]));
@@ -90,75 +120,81 @@ export function HomeClient({ month, today, days: initialDays }: Props) {
     <div className="max-w-5xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
       {/* Heading row */}
       <div className="flex items-center justify-between mb-6">
-        {viewMode === 'calendar' ? (
+        {viewMode === 'calendar' && isEditor ? (
           <h1 className="text-xl font-semibold">
             {format(firstOfMonth, 'MMMM yyyy')}
           </h1>
         ) : (
           <h1 className="text-xl font-semibold">{t('agenda')}</h1>
         )}
-        <div className="flex items-center gap-2">
-          {/* View toggle */}
-          <div className="flex rounded-md border overflow-hidden" role="group" aria-label="View mode">
-            <Button
-              variant={viewMode === 'calendar' ? 'secondary' : 'ghost'}
-              size="sm"
-              className="rounded-none border-0 h-8 px-3"
-              onClick={() => changeViewMode('calendar')}
-              aria-pressed={viewMode === 'calendar'}
+        {isEditor && (
+          <div className="flex items-center gap-2">
+            {/* View toggle */}
+            <div
+              className="flex rounded-md border overflow-hidden"
+              role="group"
+              aria-label="View mode"
             >
-              {t('calendar')}
-            </Button>
-            <Button
-              variant={viewMode === 'agenda' ? 'secondary' : 'ghost'}
-              size="sm"
-              className="rounded-none border-0 border-l h-8 px-3"
-              onClick={() => changeViewMode('agenda')}
-              aria-pressed={viewMode === 'agenda'}
-            >
-              {t('agenda')}
-            </Button>
-          </div>
-
-          {/* Calendar navigation — only in calendar mode */}
-          {viewMode === 'calendar' && (
-            <div className="flex items-center gap-1">
-              {!isCurrentMonth && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate(todayMonth)}
-                >
-                  {t('today')}
-                </Button>
-              )}
               <Button
-                variant="ghost"
-                size="icon"
-                disabled={isPrevDisabled}
-                onClick={() => navigate(prevMonthStr)}
-                aria-label={t('previousMonth')}
-                className="h-11 w-11 sm:h-9 sm:w-9"
+                variant={viewMode === 'calendar' ? 'secondary' : 'ghost'}
+                size="sm"
+                className="rounded-none border-0 h-8 px-3"
+                onClick={() => changeViewMode('calendar')}
+                aria-pressed={viewMode === 'calendar'}
               >
-                <ChevronLeft className="h-4 w-4" />
+                {t('calendar')}
               </Button>
               <Button
-                variant="ghost"
-                size="icon"
-                disabled={isNextDisabled}
-                onClick={() => navigate(nextMonthStr)}
-                aria-label={t('nextMonth')}
-                className="h-11 w-11 sm:h-9 sm:w-9"
+                variant={viewMode === 'agenda' ? 'secondary' : 'ghost'}
+                size="sm"
+                className="rounded-none border-0 border-l h-8 px-3"
+                onClick={() => changeViewMode('agenda')}
+                aria-pressed={viewMode === 'agenda'}
               >
-                <ChevronRight className="h-4 w-4" />
+                {t('agenda')}
               </Button>
             </div>
-          )}
-        </div>
+
+            {/* Calendar navigation — only in calendar mode */}
+            {viewMode === 'calendar' && (
+              <div className="flex items-center gap-1">
+                {!isCurrentMonth && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate(todayMonth)}
+                  >
+                    {t('today')}
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  disabled={isPrevDisabled}
+                  onClick={() => navigate(prevMonthStr)}
+                  aria-label={t('previousMonth')}
+                  className="h-11 w-11 sm:h-9 sm:w-9"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  disabled={isNextDisabled}
+                  onClick={() => navigate(nextMonthStr)}
+                  aria-label={t('nextMonth')}
+                  className="h-11 w-11 sm:h-9 sm:w-9"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Agenda view */}
-      {viewMode === 'agenda' && <AgendaView today={today} />}
+      {viewMode === 'agenda' && <AgendaView today={today} isEditor={isEditor} />}
 
       {viewMode === 'calendar' && <div className={cn('flex gap-6', selectedDate && 'lg:gap-8')}>
         {/* Calendar grid */}
@@ -206,7 +242,7 @@ export function HomeClient({ month, today, days: initialDays }: Props) {
               return (
                 <button
                   key={dateStr}
-                  onClick={() => setSelectedDate(isSelected ? null : dateStr)}
+                  onClick={() => handleDayCellClick(dateStr, isSelected)}
                   aria-pressed={isSelected}
                   aria-current={isToday ? 'date' : undefined}
                   aria-label={cellLabel}

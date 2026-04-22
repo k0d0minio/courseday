@@ -44,9 +44,14 @@ export default async function TenantHomePage({
 
   const today = getTenantToday(timezone);
 
-  // Viewers see the day view; calendar is editor-only
+  // Viewers: agenda-only home (no calendar). Editors: full calendar + agenda.
   if (role !== 'editor') {
-    redirect(`/day/${today}`);
+    return (
+      <>
+        {!onboardingCompleted && <OnboardingBanner />}
+        <HomeClient variant="viewer" month={today.slice(0, 7)} today={today} days={[]} />
+      </>
+    );
   }
 
   // Parse ?month=YYYY-MM, default to current month
@@ -110,11 +115,7 @@ export default async function TenantHomePage({
   return (
     <>
       {!onboardingCompleted && <OnboardingBanner />}
-      <HomeClient
-        month={month}
-        today={today}
-        days={days}
-      />
+      <HomeClient variant="editor" month={month} today={today} days={days} />
     </>
   );
 }
