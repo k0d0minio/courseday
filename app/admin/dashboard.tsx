@@ -28,6 +28,7 @@ import Link from 'next/link';
 import { deleteTenant, suspendTenant, reactivateTenant, archiveTenant } from '@/app/actions/tenants';
 import { setFeatureFlag } from '@/app/actions/feature-flags';
 import { KNOWN_FLAGS, FLAG_LABELS, FLAG_DESCRIPTIONS } from '@/lib/feature-flags';
+import { SUPERADMIN_ROLE_QUERY_PARAM } from '@/lib/superadmin-impersonation';
 import type { FlagMap } from '@/lib/feature-flags';
 import { rootDomain, protocol } from '@/lib/utils';
 import type { TenantStatus } from '@/app/actions/tenants';
@@ -113,6 +114,9 @@ function TenantCard({
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   const { label: statusLabel, variant: statusVariant } = STATUS_BADGE[tenant.status];
+  const baseTenantUrl = `${protocol}://${tenant.slug}.${rootDomain}`;
+  const editorJumpUrl = `${baseTenantUrl}?${SUPERADMIN_ROLE_QUERY_PARAM}=editor`;
+  const viewerJumpUrl = `${baseTenantUrl}?${SUPERADMIN_ROLE_QUERY_PARAM}=viewer`;
 
   function handleFlagChange(key: (typeof KNOWN_FLAGS)[number], enabled: boolean) {
     setFlags((prev) => ({ ...prev, [key]: enabled }));
@@ -163,14 +167,22 @@ function TenantCard({
           <p className="text-sm text-muted-foreground mt-1">
             Created: {new Date(tenant.created_at).toLocaleDateString()}
           </p>
-          <div className="mt-3">
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
             <a
-              href={`${protocol}://${tenant.slug}.${rootDomain}`}
+              href={editorJumpUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-primary hover:underline text-sm"
+              className="text-primary hover:underline"
             >
-              Visit tenant →
+              View as editor
+            </a>
+            <a
+              href={viewerJumpUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              View as viewer
             </a>
           </div>
 

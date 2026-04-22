@@ -1,9 +1,15 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
+import { createClient } from '@supabase/supabase-js';
 import { redis } from '@/lib/redis';
 import { extractSubdomain } from '@/lib/subdomain';
 import { protocol, rootDomain, sharedCookieDomain } from '@/lib/utils';
+import {
+  SUPERADMIN_ROLE_COOKIE,
+  SUPERADMIN_ROLE_QUERY_PARAM,
+  buildSuperadminRoleCookie,
+} from '@/lib/superadmin-impersonation';
 import type { TenantRedisData } from '@/app/actions/tenants';
 
 // Node.js runtime required for ioredis (TCP sockets).
@@ -12,6 +18,11 @@ export const runtime = 'nodejs';
 export async function middleware(request: NextRequest) {
   const host = request.headers.get('host') || '';
   const { pathname } = request.nextUrl;
+  const serviceClient = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
 
   // -------------------------------------------------------------------------
   // 1. Refresh Supabase auth session on every request.
@@ -150,12 +161,39 @@ export async function middleware(request: NextRequest) {
   requestHeaders.set('x-tenant-slug', tenant.slug);
   requestHeaders.set('x-tenant-language', tenant.language ?? 'en');
 
-  return applyAuthCookies(
+  let superadminRoleCookieValue: string | null = null;
+  const requestedRole = request.nextUrl.searchParams.get(SUPERADMIN_ROLE_QUERY_PARAM);
+  if ((requestedRole === 'editor' || requestedRole === 'viewer') && user) {
+    const { data: superadminRow } = await serviceClient
+      .from('superadmins')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (superadminRow) {
+      superadminRoleCookieValue = buildSuperadminRoleCookie(user.id, tenant.id, requestedRole);
+    }
+  }
+
+  const response = applyAuthCookies(
     NextResponse.rewrite(
       new URL(`/${tenant.slug}${pathname}`, request.url),
       { request: { headers: requestHeaders } }
     )
   );
+
+  if (superadminRoleCookieValue) {
+    response.cookies.set(SUPERADMIN_ROLE_COOKIE, superadminRoleCookieValue, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: 60 * 60 * 8,
+      domain: sharedCookieDomain,
+    });
+  }
+
+  return response;
 }
 
 export const config = {

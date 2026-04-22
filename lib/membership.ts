@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { getUser } from '@/app/actions/auth';
+import { getSuperadminImpersonationRole } from '@/lib/superadmin';
 
 export type Role = 'editor' | 'viewer';
 
@@ -8,6 +9,9 @@ export type Role = 'editor' | 'viewer';
 export async function getUserRole(tenantId: string): Promise<Role | null> {
   const user = await getUser();
   if (!user) return null;
+
+  const superadminRole = await getSuperadminImpersonationRole(tenantId, user.id);
+  if (superadminRole) return superadminRole;
 
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase

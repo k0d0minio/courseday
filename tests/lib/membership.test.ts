@@ -12,10 +12,15 @@ vi.mock('@/lib/supabase-server', () => ({
   createSupabaseServerClient: vi.fn(),
 }));
 
+vi.mock('@/lib/superadmin', () => ({
+  getSuperadminImpersonationRole: vi.fn(),
+}));
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 import { getUser } from '@/app/actions/auth';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { getSuperadminImpersonationRole } from '@/lib/superadmin';
 import { redirect } from 'next/navigation';
 
 function makeChain(result: unknown) {
@@ -31,9 +36,12 @@ function makeChain(result: unknown) {
 
 import { getUserRole, isEditor, requireEditor } from '@/lib/membership';
 
-describe('getUserRole', () => {
-  beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.mocked(getSuperadminImpersonationRole).mockResolvedValue(null);
+});
 
+describe('getUserRole', () => {
   it('returns null when unauthenticated', async () => {
     vi.mocked(getUser).mockResolvedValue(null);
     expect(await getUserRole('tenant-1')).toBeNull();
@@ -62,11 +70,16 @@ describe('getUserRole', () => {
     );
     expect(await getUserRole('tenant-1')).toBe('viewer');
   });
+
+  it('returns superadmin impersonation role when present', async () => {
+    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never);
+    vi.mocked(getSuperadminImpersonationRole).mockResolvedValue('editor');
+    expect(await getUserRole('tenant-1')).toBe('editor');
+    expect(createSupabaseServerClient).not.toHaveBeenCalled();
+  });
 });
 
 describe('isEditor', () => {
-  beforeEach(() => vi.clearAllMocks());
-
   it('returns true for editor', async () => {
     vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never);
     vi.mocked(createSupabaseServerClient).mockResolvedValue(
@@ -93,8 +106,6 @@ describe('isEditor', () => {
 });
 
 describe('requireEditor', () => {
-  beforeEach(() => vi.clearAllMocks());
-
   it('redirects to sign-in when unauthenticated', async () => {
     vi.mocked(getUser).mockResolvedValue(null);
     await requireEditor('tenant-1');
