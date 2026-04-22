@@ -29,6 +29,7 @@
       "signInButton": "Anmelden",
       "signingIn": "Anmelden\u2026",
       "magicLinkButton": "Magic-Link per E-Mail senden",
+      "usePasswordButton": "Stattdessen Passwort nutzen",
       "sendingMagicLink": "Link wird gesendet…",
       "forgotPasswordLink": "Passwort vergessen?",
       "superadminSignInLink": "Superadmin-Anmeldung",

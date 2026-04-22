@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useEffect } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { platformSignIn, sendSignInMagicLink } from '@/app/actions/auth';
@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 export function SignInForm() {
   const [state, action, isPending] = useActionState(platformSignIn, null);
   const [magicState, magicAction, isMagicPending] = useActionState(sendSignInMagicLink, null);
+  const [showPassword, setShowPassword] = useState(false);
   const t = useTranslations('Platform.auth');
 
   // Invite / magic links sometimes land on Site URL (sign-in) with tokens in the
@@ -71,22 +72,21 @@ export function SignInForm() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">{t('passwordLabel')}</Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                />
-              </div>
+              {showPassword && (
+                <div className="space-y-2">
+                  <Label htmlFor="password">{t('passwordLabel')}</Label>
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    required={showPassword}
+                  />
+                </div>
+              )}
             </CardContent>
 
             <CardFooter className="flex flex-col gap-3 pt-2">
-              <Button type="submit" className="w-full" disabled={isPending}>
-                {isPending ? t('signingIn') : t('signInButton')}
-              </Button>
               <Button
                 type="submit"
                 formAction={magicAction}
@@ -97,6 +97,20 @@ export function SignInForm() {
               >
                 {isMagicPending ? t('sendingMagicLink') : t('magicLinkButton')}
               </Button>
+              {!showPassword ? (
+                <Button
+                  type="button"
+                  className="w-full"
+                  variant="secondary"
+                  onClick={() => setShowPassword(true)}
+                >
+                  {t('usePasswordButton')}
+                </Button>
+              ) : (
+                <Button type="submit" className="w-full" disabled={isPending}>
+                  {isPending ? t('signingIn') : t('signInButton')}
+                </Button>
+              )}
               <Link href="/auth/forgot-password" className="text-sm underline underline-offset-4">
                 {t('forgotPasswordLink')}
               </Link>

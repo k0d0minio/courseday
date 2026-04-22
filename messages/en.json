@@ -29,6 +29,7 @@
       "signInButton": "Sign in",
       "signingIn": "Signing in…",
       "magicLinkButton": "Email me a magic link",
+      "usePasswordButton": "Use password instead",
       "sendingMagicLink": "Sending link…",
       "forgotPasswordLink": "Forgot your password?",
       "superadminSignInLink": "Superadmin sign in",

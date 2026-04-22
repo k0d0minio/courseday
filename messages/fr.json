@@ -29,6 +29,7 @@
       "signInButton": "Se connecter",
       "signingIn": "Connexion en cours…",
       "magicLinkButton": "M'envoyer un lien magique",
+      "usePasswordButton": "Utiliser un mot de passe",
       "sendingMagicLink": "Envoi du lien…",
       "forgotPasswordLink": "Mot de passe oublié ?",
       "superadminSignInLink": "Connexion superadmin",

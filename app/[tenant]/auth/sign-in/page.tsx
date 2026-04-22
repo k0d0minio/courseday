@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useEffect } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -15,6 +15,7 @@ import { protocol, rootDomain } from '@/lib/utils';
 export default function SignInPage() {
   const [state, action, isPending] = useActionState(signIn, null);
   const [magicState, magicAction, isMagicPending] = useActionState(sendSignInMagicLink, null);
+  const [showPassword, setShowPassword] = useState(false);
   const searchParams = useSearchParams();
   const params = useParams<{ tenant: string }>();
   const redirectTo = searchParams.get('redirectTo') ?? '/';
@@ -77,22 +78,21 @@ export default function SignInPage() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">{t('passwordLabel')}</Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                />
-              </div>
+              {showPassword && (
+                <div className="space-y-2">
+                  <Label htmlFor="password">{t('passwordLabel')}</Label>
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    required={showPassword}
+                  />
+                </div>
+              )}
             </CardContent>
 
             <CardFooter className="flex flex-col gap-3 pt-2">
-              <Button type="submit" className="w-full" disabled={isPending}>
-                {isPending ? t('signingIn') : t('signInButton')}
-              </Button>
               <Button
                 type="submit"
                 formAction={magicAction}
@@ -103,6 +103,20 @@ export default function SignInPage() {
               >
                 {isMagicPending ? t('sendingMagicLink') : t('magicLinkButton')}
               </Button>
+              {!showPassword ? (
+                <Button
+                  type="button"
+                  className="w-full"
+                  variant="secondary"
+                  onClick={() => setShowPassword(true)}
+                >
+                  {t('usePasswordButton')}
+                </Button>
+              ) : (
+                <Button type="submit" className="w-full" disabled={isPending}>
+                  {isPending ? t('signingIn') : t('signInButton')}
+                </Button>
+              )}
               <Link
                 href={`/auth/forgot-password?slug=${encodeURIComponent(tenantSlug)}`}
                 className="text-sm underline underline-offset-4"

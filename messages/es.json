@@ -29,6 +29,7 @@
       "signInButton": "Iniciar sesión",
       "signingIn": "Iniciando sesión\u2026",
       "magicLinkButton": "Enviarme un enlace mágico",
+      "usePasswordButton": "Usar contraseña",
       "sendingMagicLink": "Enviando enlace…",
       "forgotPasswordLink": "¿Olvidaste tu contraseña?",
       "superadminSignInLink": "Acceso de superadministrador",
