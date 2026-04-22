@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 import { rootDomain } from '@/lib/utils';
 import { finalizeEmailAuthRedirect } from '@/app/actions/auth-confirm';
+import { Button } from '@/components/ui/button';
 
 type EmailOtpType =
   | 'signup'
@@ -69,7 +70,7 @@ function createAuthConfirmBrowserClient() {
 export function ConfirmAuthClient() {
   const params = useSearchParams();
   const router = useRouter();
-  const [message] = useState('Confirming your session…');
+  const [message] = useState('Confirming your session...');
 
   const code = params.get('code');
   const slug = params.get('slug');
@@ -77,8 +78,10 @@ export function ConfirmAuthClient() {
   const queryType = params.get('type');
   const tokenHash = params.get('token_hash');
   const queryErrorCode = params.get('error_code');
+  const [isArmed, setIsArmed] = useState(flow !== 'magic');
 
   useEffect(() => {
+    if (!isArmed) return;
     let cancelled = false;
 
     async function run() {
@@ -189,7 +192,18 @@ export function ConfirmAuthClient() {
     return () => {
       cancelled = true;
     };
-  }, [code, slug, flow, queryType, tokenHash, queryErrorCode, router]);
+  }, [code, slug, flow, queryType, tokenHash, queryErrorCode, router, isArmed]);
+
+  if (!isArmed) {
+    return (
+      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 p-6 text-center">
+        <p className="text-sm text-muted-foreground">
+          Ready to sign you in. Click button below to continue.
+        </p>
+        <Button onClick={() => setIsArmed(true)}>Continue sign in</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-[50vh] items-center justify-center p-6 text-sm text-muted-foreground">
