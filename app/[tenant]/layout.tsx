@@ -20,8 +20,10 @@ import { getFeatureFlags } from '@/app/actions/feature-flags';
 import { MobileNav } from '@/components/mobile-nav';
 import { NotificationBell } from '@/components/notification-bell';
 import { OfflineStatusPill } from '@/components/offline-status-pill';
+import { SuperadminReturnPopup } from '@/components/superadmin-return-popup';
 import { getUnreadCount } from '@/app/actions/notifications';
 import { getTenantToday } from '@/lib/day-utils';
+import { getSuperadminImpersonationRole } from '@/lib/superadmin';
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -91,8 +93,9 @@ export default async function TenantLayout({
     ? ({ '--tenant-accent': accentColor } as React.CSSProperties)
     : undefined;
 
-  const [editor, t, unreadCount] = await Promise.all([
+  const [editor, superadminImpersonationRole, t, unreadCount] = await Promise.all([
     isEditor(tenant.id),
+    user ? getSuperadminImpersonationRole(tenant.id, user.id) : Promise.resolve(null),
     getTranslations('Tenant.nav'),
     getUnreadCount(),
   ]);
@@ -138,6 +141,9 @@ export default async function TenantLayout({
             <main id="main-content" className="flex-1 pb-16 sm:pb-0">{children}</main>
           </div>
           <MobileNav today={today} isEditor={editor} />
+          {superadminImpersonationRole && (
+            <SuperadminReturnPopup role={superadminImpersonationRole} />
+          )}
           <Toaster richColors closeButton />
           <PwaRegister />
           <PwaInstallPrompt />
