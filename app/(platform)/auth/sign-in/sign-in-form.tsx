@@ -81,6 +81,7 @@ export function SignInForm() {
               <Button
                 type="submit"
                 formAction={magicAction}
+                formNoValidate
                 variant="outline"
                 className="w-full"
                 disabled={isMagicPending}
@@ -89,6 +90,9 @@ export function SignInForm() {
               </Button>
               <Link href="/auth/forgot-password" className="text-sm underline underline-offset-4">
                 {t('forgotPasswordLink')}
+              </Link>
+              <Link href="/auth/superadmin-sign-in" className="text-sm underline underline-offset-4">
+                {t('superadminSignInLink')}
               </Link>
               <p className="text-sm text-muted-foreground text-center">
                 {t('createVenuePrompt')}{' '}
