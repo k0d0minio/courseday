@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -199,6 +200,9 @@ export function TemplateDialog({ isOpen, onClose, dayId, currentItems, onApplied
         <DrawerContent>
           <DrawerHeader>
             <DrawerTitle>{t('dialogTitle')}</DrawerTitle>
+            <p className="text-sm text-muted-foreground text-left font-normal">
+              {t('dialogDescription')}
+            </p>
           </DrawerHeader>
           <div className="px-4 pb-6">{inner}</div>
         </DrawerContent>
@@ -211,6 +215,7 @@ export function TemplateDialog({ isOpen, onClose, dayId, currentItems, onApplied
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t('dialogTitle')}</DialogTitle>
+          <DialogDescription>{t('dialogDescription')}</DialogDescription>
         </DialogHeader>
         {inner}
       </DialogContent>

@@ -68,6 +68,34 @@ export async function saveTemplate(
   return { success: true, data: data as ScheduleTemplate };
 }
 
+export async function updateTemplate(
+  id: string,
+  name: string,
+  items: TemplateItem[]
+): Promise<ActionResponse<ScheduleTemplate>> {
+  const trimmed = name.trim();
+  if (!trimmed) return { success: false, error: 'Template name is required.' };
+
+  const tenantId = await getTenantId();
+  await requireEditor(tenantId);
+
+  const { supabase } = await createTenantClient();
+  const { data, error } = await supabase
+    .from('schedule_templates')
+    .update({
+      name: trimmed,
+      items,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .eq('tenant_id', tenantId)
+    .select()
+    .single();
+
+  if (error) return { success: false, error: error.message };
+  return { success: true, data: data as ScheduleTemplate };
+}
+
 export async function deleteTemplate(id: string): Promise<ActionResponse> {
   const tenantId = await getTenantId();
   await requireEditor(tenantId);
