@@ -87,6 +87,8 @@ export default function ResetPasswordPage() {
       const hash = typeof window !== 'undefined' ? window.location.hash : '';
       const fragment = hash.startsWith('#') ? hash.slice(1) : hash;
       const hp = new URLSearchParams(fragment);
+      const tokenHashFromHash = hp.get('token_hash');
+      const authTypeFromHash = toEmailOtpType(hp.get('type'));
 
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
@@ -95,10 +97,10 @@ export default function ResetPasswordPage() {
           setIsPending(false);
           return;
         }
-      } else if (tokenHash && authType) {
+      } else if ((tokenHash || tokenHashFromHash) && (authType || authTypeFromHash)) {
         const { error } = await supabase.auth.verifyOtp({
-          token_hash: tokenHash,
-          type: authType,
+          token_hash: tokenHash ?? tokenHashFromHash!,
+          type: (authType ?? authTypeFromHash)!,
         });
         if (error) {
           setDisplayError('Reset link expired or already used. Request a new reset email.');
