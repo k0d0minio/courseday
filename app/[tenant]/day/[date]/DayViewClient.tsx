@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useDayRealtime } from './useDayRealtime';
 import { useTranslations } from 'next-intl';
-import { Plus, Copy, LayoutTemplate } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { DayNav } from '@/components/day-nav';
 import { DaySummaryCard } from '@/components/day-summary-card';
 import { ViewerDayDashboard } from '@/components/viewer-day-dashboard';
@@ -15,8 +15,6 @@ import { BreakfastForm } from '@/components/breakfast-form';
 import { BreakfastCard } from '@/components/breakfast-card';
 import { DayNotes } from '@/components/day-notes';
 import { WeatherCard } from '@/components/weather-card';
-import { CopyDayDialog } from '@/components/copy-day-dialog';
-import { TemplateDialog } from '@/components/template-dialog';
 import { Button } from '@/components/ui/button';
 import { useFeatureFlag } from '@/lib/feature-flags-context';
 import type {
@@ -67,10 +65,6 @@ export function DayViewClient({
   // Breakfast modal state
   const [breakfastModalOpen, setBreakfastModalOpen] = useState(false);
   const [editBreakfast, setEditBreakfast] = useState<BreakfastConfiguration | null>(null);
-
-  // Copy / template modal state
-  const [copyDayOpen, setCopyDayOpen] = useState(false);
-  const [templateOpen, setTemplateOpen] = useState(false);
 
   // ---------- Activity handlers ----------
 
@@ -190,13 +184,6 @@ export function DayViewClient({
 
       {weather && <WeatherCard weather={weather} />}
 
-      <DayNotes
-        dayId={dayId}
-        initialNotes={dayNotes}
-        isEditor={authState.isEditor}
-        currentUserId={authState.user?.id}
-      />
-
       <DaySummaryCard
         activities={activities}
         reservations={reservations}
@@ -235,20 +222,16 @@ export function DayViewClient({
       {/* Activities */}
       {showActivities && (
         <section className="space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="font-semibold">{t('activities')}</h2>
+          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
+            <h2 className="font-semibold min-w-0">{t('activities')}</h2>
             {authState.isEditor && (
-              <div className="flex items-center gap-1.5 shrink-0">
-                <Button size="sm" variant="outline" onClick={() => setCopyDayOpen(true)}>
-                  <Copy className="w-3.5 h-3.5 mr-1" /> {t('copyDay')}
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => setTemplateOpen(true)}>
-                  <LayoutTemplate className="w-3.5 h-3.5 mr-1" /> {t('templates')}
-                </Button>
-                <Button size="sm" onClick={openAddActivity}>
-                  <Plus className="w-4 h-4 mr-1" /> {t('addActivity')}
-                </Button>
-              </div>
+              <Button
+                size="sm"
+                onClick={openAddActivity}
+                className="h-7 shrink-0 gap-1 px-2.5 text-xs has-[>svg]:px-2"
+              >
+                <Plus className="size-3.5" /> {t('addActivity')}
+              </Button>
             )}
           </div>
           {activities.length === 0 ? (
@@ -298,6 +281,13 @@ export function DayViewClient({
         </section>
       )}
 
+      <DayNotes
+        dayId={dayId}
+        initialNotes={dayNotes}
+        isEditor={authState.isEditor}
+        currentUserId={authState.user?.id}
+      />
+
       <ActivityForm
         isOpen={activityModalOpen}
         onClose={() => setActivityModalOpen(false)}
@@ -325,28 +315,6 @@ export function DayViewClient({
         onSuccess={handleBreakfastSaved}
       />
 
-      <CopyDayDialog
-        isOpen={copyDayOpen}
-        onClose={() => setCopyDayOpen(false)}
-        sourceDayId={dayId}
-        today={today}
-      />
-
-      <TemplateDialog
-        isOpen={templateOpen}
-        onClose={() => setTemplateOpen(false)}
-        dayId={dayId}
-        currentItems={activities.map((a) => ({
-          title: a.title,
-          start_time: a.start_time ?? null,
-          end_time: a.end_time ?? null,
-          expected_covers: a.expected_covers ?? null,
-          venue_type_id: a.venue_type_id ?? null,
-          poc_id: a.poc_id ?? null,
-          notes: a.notes ?? null,
-        }))}
-        onApplied={() => window.location.reload()}
-      />
     </div>
   );
 }
