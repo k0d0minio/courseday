@@ -20,7 +20,7 @@ export async function LandingFooter() {
           <Link className="text-sm hover:text-[var(--brand)]" href="/#faq">
             {t('navFaq')}
           </Link>
-          <Link className="text-sm hover:text-[var(--brand)]" href="/demo">
+          <Link className="text-sm hover:text-[var(--brand)]" href="/book-a-demo">
             {t('navDemo')}
           </Link>
           <Link className="text-sm hover:text-[var(--brand)]" href="/auth/sign-in">
@@ -34,7 +34,7 @@ export async function LandingFooter() {
           <div className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
             {t('legal')}
           </div>
-          <Link className="text-sm text-muted-foreground hover:text-[var(--brand)]" href="/demo">
+          <Link className="text-sm text-muted-foreground hover:text-[var(--brand)]" href="/book-a-demo">
             {t('navContact')}
           </Link>
           <span className="text-sm text-muted-foreground/60">{t('navPrivacy')}</span>

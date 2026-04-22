@@ -35,7 +35,7 @@ export default async function PlatformLayout({
                 </Button>
               </Link>
               <LanguageSwitcher />
-              <Link href="/demo">
+              <Link href="/book-a-demo">
                 <Button size="sm">{t('bookDemo')}</Button>
               </Link>
             </nav>

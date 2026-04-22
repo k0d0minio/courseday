@@ -24,7 +24,7 @@ export async function Hero() {
             {t('body')}
           </p>
           <div className="flex flex-wrap items-center gap-3 pt-2">
-            <Link href="/demo">
+            <Link href="/book-a-demo">
               <Button size="lg">{t('ctaDemo')}</Button>
             </Link>
             <Link href="/new">

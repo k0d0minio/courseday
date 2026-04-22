@@ -17,7 +17,7 @@ export async function FinalCta() {
         </h2>
         <p className="max-w-xl text-base opacity-80 sm:text-lg">{t('body')}</p>
         <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
-          <Link href="/demo">
+          <Link href="/book-a-demo">
             <Button
               size="lg"
               className="bg-[var(--brand-foreground)] text-[var(--brand)] hover:bg-[var(--brand-foreground)]/90"
