@@ -5,6 +5,7 @@ import { DayNav } from '@/components/day-nav';
 import { DayNotes } from '@/components/day-notes';
 import { WeatherCard } from '@/components/weather-card';
 import { TableBreakdownDisplay } from '@/components/table-breakdown-display';
+import { useFeatureFlag } from '@/lib/feature-flags-context';
 import type { ActivityWithRelations, Reservation, BreakfastConfiguration } from '@/types/index';
 import type { DayNote } from '@/app/actions/day-notes';
 import type { WeatherData } from '@/app/actions/weather';
@@ -40,16 +41,22 @@ export function ViewerDayDashboard({
   const ts = useTranslations('Tenant.summary');
   const te = useTranslations('Tenant.entry');
   const tb = useTranslations('Tenant.breakfastCard');
+  const showReservations = useFeatureFlag('reservations');
+  const showBreakfast = useFeatureFlag('breakfast_config');
+  const showWeatherReporting = useFeatureFlag('weather_reporting');
 
-  const totalBreakfastCovers = breakfastConfigs.reduce((s, b) => s + b.total_guests, 0);
+  const visibleBreakfastConfigs = showBreakfast ? breakfastConfigs : [];
+  const visibleReservations = showReservations ? reservations : [];
+
+  const totalBreakfastCovers = visibleBreakfastConfigs.reduce((s, b) => s + b.total_guests, 0);
   const totalActivityCovers = activities.reduce((s, a) => s + (a.expected_covers ?? 0), 0);
-  const totalReservationCovers = reservations.reduce((s, r) => s + (r.guest_count ?? 0), 0);
+  const totalReservationCovers = visibleReservations.reduce((s, r) => s + (r.guest_count ?? 0), 0);
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-6">
       <DayNav date={date} today={today} />
 
-      {weather && <WeatherCard weather={weather} />}
+      {showWeatherReporting && weather && <WeatherCard weather={weather} />}
 
       <DayNotes
         dayId={date}
@@ -68,10 +75,10 @@ export function ViewerDayDashboard({
       {/* Breakfast */}
       <ViewerSection
         title={td('breakfast')}
-        empty={breakfastConfigs.length === 0}
+        empty={visibleBreakfastConfigs.length === 0}
         emptyLabel={td('noBreakfasts')}
       >
-        {breakfastConfigs.map((item) => (
+        {visibleBreakfastConfigs.map((item) => (
           <BreakfastRow key={item.id} item={item} t={tb} />
         ))}
       </ViewerSection>
@@ -90,10 +97,10 @@ export function ViewerDayDashboard({
       {/* Reservations */}
       <ViewerSection
         title={td('reservations')}
-        empty={reservations.length === 0}
+        empty={visibleReservations.length === 0}
         emptyLabel={td('noReservations')}
       >
-        {reservations.map((item) => (
+        {visibleReservations.map((item) => (
           <ReservationRow key={item.id} item={item} />
         ))}
       </ViewerSection>

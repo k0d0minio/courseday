@@ -13,7 +13,8 @@ import {
   DrawerTitle,
   DrawerClose,
 } from '@/components/ui/drawer';
-import { SETTINGS_ROUTES } from '@/components/settings-dropdown';
+import { getVisibleSettingsRoutes } from '@/components/settings-dropdown';
+import { useFeatureFlag } from '@/lib/feature-flags-context';
 
 interface MobileNavProps {
   today: string;
@@ -24,6 +25,8 @@ export function MobileNav({ today, isEditor }: MobileNavProps) {
   const pathname = usePathname();
   const navT = useTranslations('Tenant.nav');
   const settingsT = useTranslations('Tenant.settings');
+  const showChecklists = useFeatureFlag('checklists');
+  const settingsRoutes = getVisibleSettingsRoutes(showChecklists);
 
   const navItems = [
     { href: '/', label: navT('home'), icon: Home, active: pathname === '/' },
@@ -81,7 +84,7 @@ export function MobileNav({ today, isEditor }: MobileNavProps) {
                 <DrawerTitle>{settingsT('title')}</DrawerTitle>
               </DrawerHeader>
               <div className="px-4 pb-8 flex flex-col gap-1">
-                {SETTINGS_ROUTES.map(({ href, labelKey }) => (
+                {settingsRoutes.map(({ href, labelKey }) => (
                   <DrawerClose key={href} asChild>
                     <Link
                       href={href}

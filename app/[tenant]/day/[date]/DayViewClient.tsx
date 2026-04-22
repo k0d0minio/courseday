@@ -39,9 +39,9 @@ export function DayViewClient({
   authState,
 }: DayViewProps) {
   const t = useTranslations('Tenant.day');
-  const showActivities = useFeatureFlag('activities');
   const showReservations = useFeatureFlag('reservations');
   const showBreakfast = useFeatureFlag('breakfast_config');
+  const showWeatherReporting = useFeatureFlag('weather_reporting');
 
   const [activities, setActivities] = useState(
     initialActivities as ActivityWithRelations[]
@@ -182,7 +182,7 @@ export function DayViewClient({
     <div className="max-w-3xl mx-auto px-3 sm:px-6 py-4 sm:py-8 space-y-6">
       <DayNav date={date} today={today} />
 
-      {weather && <WeatherCard weather={weather} />}
+      {showWeatherReporting && weather && <WeatherCard weather={weather} />}
 
       <DaySummaryCard
         activities={activities}
@@ -220,37 +220,35 @@ export function DayViewClient({
       )}
 
       {/* Activities */}
-      {showActivities && (
-        <section className="space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
-            <h2 className="font-semibold min-w-0">{t('activities')}</h2>
-            {authState.isEditor && (
-              <Button
-                size="sm"
-                onClick={openAddActivity}
-                className="h-7 shrink-0 gap-1 px-2.5 text-xs has-[>svg]:px-2"
-              >
-                <Plus className="size-3.5" /> {t('addActivity')}
-              </Button>
-            )}
-          </div>
-          {activities.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t('noEntries')}</p>
-          ) : (
-            <div className="space-y-2">
-              {activities.map((item) => (
-                <ActivityCard
-                  key={item.id}
-                  item={item}
-                  isEditor={authState.isEditor}
-                  onEdit={openEditActivity}
-                  onDeleted={handleActivityDeleted}
-                />
-              ))}
-            </div>
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
+          <h2 className="font-semibold min-w-0">{t('activities')}</h2>
+          {authState.isEditor && (
+            <Button
+              size="sm"
+              onClick={openAddActivity}
+              className="h-7 shrink-0 gap-1 px-2.5 text-xs has-[>svg]:px-2"
+            >
+              <Plus className="size-3.5" /> {t('addActivity')}
+            </Button>
           )}
-        </section>
-      )}
+        </div>
+        {activities.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t('noEntries')}</p>
+        ) : (
+          <div className="space-y-2">
+            {activities.map((item) => (
+              <ActivityCard
+                key={item.id}
+                item={item}
+                isEditor={authState.isEditor}
+                onEdit={openEditActivity}
+                onDeleted={handleActivityDeleted}
+              />
+            ))}
+          </div>
+        )}
+      </section>
 
       {/* Reservations */}
       {showReservations && (

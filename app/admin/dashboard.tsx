@@ -20,7 +20,7 @@ import { Trash2, Loader2, ChevronDown, ChevronUp, PauseCircle, PlayCircle, Archi
 import Link from 'next/link';
 import { deleteTenant, suspendTenant, reactivateTenant, archiveTenant } from '@/app/actions/tenants';
 import { setFeatureFlag } from '@/app/actions/feature-flags';
-import { KNOWN_FLAGS, FLAG_LABELS } from '@/lib/feature-flags';
+import { KNOWN_FLAGS, FLAG_LABELS, FLAG_DESCRIPTIONS } from '@/lib/feature-flags';
 import type { FlagMap } from '@/lib/feature-flags';
 import { rootDomain, protocol } from '@/lib/utils';
 import type { TenantStatus } from '@/app/actions/tenants';
@@ -229,20 +229,51 @@ function TenantCard({
             </button>
 
             {expanded && (
-              <div className="mt-3 space-y-2">
-                {KNOWN_FLAGS.map((key) => (
-                  <div key={key} className="flex items-center justify-between">
-                    <Label htmlFor={`flag-${tenant.id}-${key}`} className="text-sm">
-                      {FLAG_LABELS[key]}
-                    </Label>
-                    <Switch
-                      id={`flag-${tenant.id}-${key}`}
-                      checked={flags[key]}
-                      disabled={isPending}
-                      onCheckedChange={(checked) => handleFlagChange(key, checked)}
-                    />
+              <div className="mt-3 space-y-4">
+                <div className="rounded-md border p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-medium">Activities</p>
+                      <p className="text-xs text-muted-foreground">
+                        Core functionality. Always on.
+                      </p>
+                    </div>
+                    <Badge variant="secondary">Always on</Badge>
                   </div>
-                ))}
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Toggleable Features
+                  </p>
+                  {KNOWN_FLAGS.map((key) => (
+                    <div key={key} className="rounded-md border p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="space-y-1">
+                          <Label htmlFor={`flag-${tenant.id}-${key}`} className="text-sm">
+                            {FLAG_LABELS[key]}
+                          </Label>
+                          <p className="text-xs text-muted-foreground">
+                            {FLAG_DESCRIPTIONS[key]}
+                          </p>
+                        </div>
+                        <Switch
+                          id={`flag-${tenant.id}-${key}`}
+                          checked={flags[key]}
+                          disabled={isPending}
+                          onCheckedChange={(checked) => handleFlagChange(key, checked)}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {isPending && (
+                  <div className="flex items-center text-xs text-muted-foreground">
+                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                    Saving feature settings...
+                  </div>
+                )}
               </div>
             )}
           </div>

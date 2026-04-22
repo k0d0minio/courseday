@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { useFeatureFlag } from '@/lib/feature-flags-context';
 
 export const SETTINGS_ROUTES = [
   { href: '/admin/settings/poc', labelKey: 'tabPoc' },
@@ -18,11 +19,19 @@ export const SETTINGS_ROUTES = [
 ] as const;
 
 type LabelKey = (typeof SETTINGS_ROUTES)[number]['labelKey'];
+type SettingsRoute = (typeof SETTINGS_ROUTES)[number];
+
+export function getVisibleSettingsRoutes(showChecklists: boolean): SettingsRoute[] {
+  if (showChecklists) return [...SETTINGS_ROUTES];
+  return SETTINGS_ROUTES.filter((route) => route.href !== '/admin/settings/checklists');
+}
 
 /** Desktop: gear icon → popover with all settings destinations. */
 export function SettingsDropdown() {
   const t = useTranslations('Tenant.settings');
   const navT = useTranslations('Tenant.nav');
+  const showChecklists = useFeatureFlag('checklists');
+  const routes = getVisibleSettingsRoutes(showChecklists);
 
   return (
     <Popover>
@@ -36,7 +45,7 @@ export function SettingsDropdown() {
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-52 p-1">
-        {SETTINGS_ROUTES.map(({ href, labelKey }) => (
+        {routes.map(({ href, labelKey }) => (
           <Link
             key={href}
             href={href}
