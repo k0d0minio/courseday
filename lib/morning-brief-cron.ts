@@ -1,5 +1,6 @@
 import { Resend } from 'resend';
-import { toZonedTime } from 'date-fns-tz';
+import { parse } from 'date-fns';
+import { fromZonedTime } from 'date-fns-tz';
 import { createSupabaseServiceClient } from '@/lib/supabase-server';
 import { getTenantToday } from '@/lib/day-utils';
 import { ensureDayForTenant } from '@/lib/ensure-day';
@@ -65,8 +66,13 @@ export type MorningBriefCronResult = {
 };
 
 /**
- * 7:00 local time for each tenant: send daily brief email to all members
- * when day has at least one activity, reservation, or breakfast.
+ * After 7:00 local for each tenant's "today" (in their timezone), send the daily
+ * brief to members if the day has content. Deduplication is via
+ * `morning_brief_email_sent`.
+ *
+ * A single Vercel Cron run per day (Hobby) is enough: for each tenant we use
+ * `getTenantToday` and compare `now` to 7:00 that local calendar day, so
+ * short-interval crons (Pro) are not required.
  */
 export async function runMorningBriefEmailCron(): Promise<MorningBriefCronResult> {
   const supabase = createSupabaseServiceClient();
@@ -98,11 +104,13 @@ export async function runMorningBriefEmailCron(): Promise<MorningBriefCronResult
 
   for (const tenant of tenants) {
     const tz = tenant.timezone || 'UTC';
-    const zoned = toZonedTime(now, tz);
-    if (zoned.getHours() !== 7) continue;
-    tenantsInWindow += 1;
-
     const dateIso = getTenantToday(tz);
+    const local7am = fromZonedTime(
+      parse(`${dateIso} 07:00:00`, 'yyyy-MM-dd HH:mm:ss', new Date(0)),
+      tz
+    );
+    if (now < local7am) continue;
+    tenantsInWindow += 1;
     const dayRes = await ensureDayForTenant(tenant.id, dateIso);
     if (!dayRes.success) {
       errors.push(`${tenant.slug}: ${dayRes.error}`);

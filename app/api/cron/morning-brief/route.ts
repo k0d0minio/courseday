@@ -5,8 +5,10 @@ export const runtime = 'nodejs';
 export const maxDuration = 300;
 
 /**
- * Vercel Cron: every 15m. Picks tenants where local wall clock is 07:00.
- * Set CRON_SECRET in the project. Invoke with: Authorization: Bearer <CRON_SECRET>
+ * Vercel Cron: `0 5 * * *` = 05:00 UTC. That is 07:00 in Europe/Brussels during
+ * CEST (roughly late Mar–late Oct). In CET, same schedule is 06:00 Brussels; use
+ * `0 6 * * *` in vercel.json if you prefer 07:00 in winter (then summer is 08:00).
+ * Set CRON_SECRET. Invoke with: Authorization: Bearer <CRON_SECRET>
  */
 export async function GET(request: Request) {
   if (!process.env.CRON_SECRET) {
