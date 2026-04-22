@@ -5,6 +5,7 @@ const cookieDomain = '.' + rootDomain.split(':')[0];
 
 type BrowserClientOptions = {
   flowType?: 'pkce' | 'implicit';
+  isSingleton?: boolean;
 };
 
 export function createSupabaseBrowserClient(options?: BrowserClientOptions) {
@@ -12,6 +13,7 @@ export function createSupabaseBrowserClient(options?: BrowserClientOptions) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      isSingleton: options?.isSingleton ?? true,
       cookieOptions: { domain: cookieDomain, path: '/' },
       auth: options?.flowType ? { flowType: options.flowType } : undefined,
     }
