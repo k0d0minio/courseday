@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useTransition, type RefObject } from 'react';
+import { useEffect, useRef, useState, useTransition, type RefObject } from 'react';
 import { useForm } from 'react-hook-form';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { z } from 'zod';
@@ -10,6 +10,8 @@ import { TableBreakdownBuilder } from '@/components/table-breakdown-builder';
 import { AllergenMultiSelect } from '@/components/allergen-multi-select';
 import { MoreOptionsSection } from '@/components/more-options-section';
 import { filterAllergenCodes, type AllergenCode } from '@/lib/allergens';
+import type { QuickAddBreakfastFormDefaults, QuickAddGapId } from '@/lib/quick-add-types';
+import { cn } from '@/lib/utils';
 import type { BreakfastConfiguration } from '@/types/index';
 import { mutateWithOfflineQueue } from '@/lib/day-mutation-client';
 import { useTenant } from '@/lib/tenant-context';
@@ -59,6 +61,13 @@ function useIsMobile() {
 // Props
 // ---------------------------------------------------------------------------
 
+export type BreakfastQuickAdd = {
+  defaults: QuickAddBreakfastFormDefaults;
+  tableBreakdown: number[];
+  allergens: AllergenCode[];
+  gapFieldKeys: readonly QuickAddGapId[];
+};
+
 type Props = {
   isOpen: boolean;
   onClose: () => void;
@@ -66,6 +75,7 @@ type Props = {
   editItem?: BreakfastConfiguration | null;
   onSuccess: (config: BreakfastConfiguration) => void;
   returnFocusRef?: RefObject<HTMLElement | null>;
+  quickAdd?: BreakfastQuickAdd | null;
 };
 
 // ---------------------------------------------------------------------------
@@ -79,6 +89,7 @@ export function BreakfastForm({
   editItem,
   onSuccess,
   returnFocusRef,
+  quickAdd,
 }: Props) {
   const t = useTranslations('Tenant.breakfastForm');
   const tAllergens = useTranslations('Tenant.allergens');
@@ -89,17 +100,53 @@ export function BreakfastForm({
   const isEditing = !!editItem;
   const { tenantSlug } = useTenant();
 
+  const quickAddKeyRef = useRef<string>('');
+  const [qaGaps, setQaGaps] = useState<ReadonlySet<QuickAddGapId> | null>(null);
+  const qaRing = (field: QuickAddGapId) =>
+    qaGaps?.has(field) ? 'rounded-md ring-2 ring-amber-500/40 p-0.5 -m-0.5' : '';
+
   const { register, handleSubmit, reset } = useForm<FormData>({
     resolver: standardSchemaResolver(formSchema),
     defaultValues: defaultValues(editItem),
   });
 
   useEffect(() => {
-    reset(defaultValues(editItem));
-    const tb = editItem?.table_breakdown;
-    setTableBreakdown(Array.isArray(tb) ? (tb as number[]) : []);
-    setAllergens(filterAllergenCodes(editItem?.allergens));
-  }, [isOpen, editItem, reset]);
+    if (!isOpen) {
+      quickAddKeyRef.current = '';
+      setQaGaps(null);
+      return;
+    }
+    if (isEditing) {
+      quickAddKeyRef.current = '';
+      setQaGaps(null);
+      reset(defaultValues(editItem));
+      const tb = editItem?.table_breakdown;
+      setTableBreakdown(Array.isArray(tb) ? (tb as number[]) : []);
+      setAllergens(filterAllergenCodes(editItem?.allergens));
+      return;
+    }
+    if (quickAdd) {
+      const k = JSON.stringify(quickAdd);
+      if (quickAddKeyRef.current === k) return;
+      quickAddKeyRef.current = k;
+      const d = quickAdd.defaults;
+      reset({
+        groupName: d.groupName,
+        guestCount: d.guestCount,
+        startTime: d.startTime,
+        notes: d.notes,
+      });
+      setTableBreakdown(quickAdd.tableBreakdown);
+      setAllergens(quickAdd.allergens);
+      setQaGaps(new Set(quickAdd.gapFieldKeys));
+      return;
+    }
+    quickAddKeyRef.current = '';
+    setQaGaps(null);
+    reset(defaultValues(null));
+    setTableBreakdown([]);
+    setAllergens([]);
+  }, [isOpen, editItem, quickAdd, reset]);
 
   function onSubmit(data: FormData) {
     startTransition(async () => {
@@ -169,12 +216,12 @@ export function BreakfastForm({
 
   const formBody = (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="space-y-1">
+      <div className={cn('space-y-1', qaRing('groupName'))}>
         <Label htmlFor="bf-group">{t('groupNameLabel')}</Label>
         <Input id="bf-group" placeholder={t('groupNamePlaceholder')} {...register('groupName')} />
       </div>
 
-      <div className="space-y-1">
+      <div className={cn('space-y-1', qaRing('guestCount'))}>
         <Label htmlFor="bf-count">{t('guestCountLabel')}</Label>
         <Input id="bf-count" type="number" min={1} placeholder={t('guestCountHint')} {...register('guestCount')} />
       </div>
@@ -184,7 +231,7 @@ export function BreakfastForm({
         <TableBreakdownBuilder value={tableBreakdown} onChange={setTableBreakdown} />
       </div>
 
-      <div className="space-y-1">
+      <div className={cn('space-y-1', qaRing('startTime'))}>
         <Label htmlFor="bf-time">{t('serviceTimeLabel')}</Label>
         <Input id="bf-time" type="time" {...register('startTime')} />
       </div>

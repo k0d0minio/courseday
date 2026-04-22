@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, useTransition, type RefObject } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition, type RefObject } from 'react';
 import { useForm } from 'react-hook-form';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { z } from 'zod';
@@ -12,6 +12,7 @@ import { createVenueType } from '@/app/actions/venue-type';
 import { createActivityTag, getAllActivityTags } from '@/app/actions/activity-tags';
 import { generateRecurrenceDates } from '@/lib/day-utils';
 import { filterAllergenCodes, type AllergenCode } from '@/lib/allergens';
+import type { QuickAddActivityFormDefaults, QuickAddGapId } from '@/lib/quick-add-types';
 import { AllergenMultiSelect } from '@/components/allergen-multi-select';
 import { MoreOptionsSection } from '@/components/more-options-section';
 import { cn } from '@/lib/utils';
@@ -86,6 +87,12 @@ function useIsMobile() {
 // Props
 // ---------------------------------------------------------------------------
 
+export type ActivityQuickAddSeed = {
+  defaults: QuickAddActivityFormDefaults;
+  allergens: AllergenCode[];
+  gapFieldKeys: readonly QuickAddGapId[];
+};
+
 type Props = {
   isOpen: boolean;
   onClose: () => void;
@@ -96,6 +103,8 @@ type Props = {
   editItem?: ActivityWithRelations | null;
   onSuccess: (item: Activity) => void;
   returnFocusRef?: RefObject<HTMLElement | null>;
+  /** Create flow only: pre-fill from quick add parse. */
+  quickAdd?: ActivityQuickAddSeed | null;
 };
 
 // ---------------------------------------------------------------------------
@@ -112,6 +121,7 @@ export function ActivityForm({
   editItem,
   onSuccess,
   returnFocusRef,
+  quickAdd,
 }: Props) {
   const t = useTranslations('Tenant.activityForm');
   const tAllergens = useTranslations('Tenant.allergens');
@@ -144,6 +154,9 @@ export function ActivityForm({
   const isEditing = !!editItem;
   const modalTitle = isEditing ? t('editTitle') : t('addTitle');
 
+  const quickAddKeyRef = useRef<string>('');
+  const [qaGapFieldKeys, setQaGapFieldKeys] = useState<ReadonlySet<QuickAddGapId> | null>(null);
+
   const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<FormData>({
     resolver: standardSchemaResolver(formSchema),
     defaultValues: defaultValues(editItem),
@@ -153,20 +166,81 @@ export function ActivityForm({
   useEffect(() => { setPocs(initialPocs); }, [initialPocs]);
   useEffect(() => { setVenueTypes(initialVenueTypes); }, [initialVenueTypes]);
 
-  // Reset on open/editItem change
+  // Reset on open / edit / quick add
   useEffect(() => {
-    if (!isOpen) return;
-    reset(defaultValues(editItem));
-    setSelectedTagIds(editItem?.tags?.map((t) => t.id) ?? []);
-    setAllergens(filterAllergenCodes(editItem?.allergens));
-    setShowNewPoc(false); setShowNewVt(false);
-    setNewPocName(''); setNewPocEmail(''); setNewPocPhone('');
-    setNewVtName(''); setNewVtCode('');
-    getAllActivityTags().then((r) => { if (r.success) setAllTags(r.data); });
-  }, [isOpen, editItem, reset]);
+    if (!isOpen) {
+      quickAddKeyRef.current = '';
+      setQaGapFieldKeys(null);
+      return;
+    }
+    if (isEditing) {
+      quickAddKeyRef.current = '';
+      setQaGapFieldKeys(null);
+      reset(defaultValues(editItem));
+      setSelectedTagIds(editItem?.tags?.map((t) => t.id) ?? []);
+      setAllergens(filterAllergenCodes(editItem?.allergens));
+      setShowNewPoc(false);
+      setShowNewVt(false);
+      setNewPocName('');
+      setNewPocEmail('');
+      setNewPocPhone('');
+      setNewVtName('');
+      setNewVtCode('');
+      getAllActivityTags().then((r) => {
+        if (r.success) setAllTags(r.data);
+      });
+      return;
+    }
+    if (quickAdd) {
+      const k = JSON.stringify(quickAdd);
+      if (quickAddKeyRef.current !== k) {
+        quickAddKeyRef.current = k;
+        const d = quickAdd.defaults;
+        reset({
+          title: d.title,
+          description: d.description,
+          startTime: d.startTime,
+          endTime: d.endTime,
+          expectedCovers: d.expectedCovers,
+          venueTypeId: '',
+          pocId: '',
+          notes: d.notes,
+          isRecurring: false,
+          recurrenceFrequency: undefined,
+        });
+        setSelectedTagIds([]);
+        setAllergens(quickAdd.allergens);
+        setQaGapFieldKeys(new Set(quickAdd.gapFieldKeys));
+        setShowNewPoc(false);
+        setShowNewVt(false);
+        getAllActivityTags().then((r) => {
+          if (r.success) setAllTags(r.data);
+        });
+      }
+      return;
+    }
+    quickAddKeyRef.current = '';
+    setQaGapFieldKeys(null);
+    reset(defaultValues(null));
+    setSelectedTagIds([]);
+    setAllergens([]);
+    setShowNewPoc(false);
+    setShowNewVt(false);
+    setNewPocName('');
+    setNewPocEmail('');
+    setNewPocPhone('');
+    setNewVtName('');
+    setNewVtCode('');
+    getAllActivityTags().then((r) => {
+      if (r.success) setAllTags(r.data);
+    });
+  }, [isOpen, editItem, quickAdd, reset]);
 
   const watchIsRecurring = watch('isRecurring');
   const watchFrequency = watch('recurrenceFrequency');
+
+  const qaRing = (field: QuickAddGapId) =>
+    qaGapFieldKeys?.has(field) ? 'rounded-md ring-2 ring-amber-500/40 p-0.5 -m-0.5' : '';
 
   const occurrenceCount = useMemo(() => {
     if (!watchIsRecurring || !watchFrequency) return 0;
@@ -273,7 +347,7 @@ export function ActivityForm({
   const formBody = (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {/* Title */}
-      <div className="space-y-1">
+      <div className={cn('space-y-1', qaRing('title'))}>
         <Label htmlFor="af-title">{t('titleLabel')} *</Label>
         <Input id="af-title" {...register('title')} />
         {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
@@ -301,7 +375,7 @@ export function ActivityForm({
 
       {/* Times */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1">
+        <div className={cn('space-y-1', qaRing('startTime'))}>
           <Label htmlFor="af-start">{t('startTimeLabel')}</Label>
           <Input id="af-start" type="time" {...register('startTime')} />
         </div>
@@ -312,7 +386,7 @@ export function ActivityForm({
       </div>
 
       {/* Expected covers */}
-      <div className="space-y-1">
+      <div className={cn('space-y-1', qaRing('expectedCovers'))}>
         <Label htmlFor="af-covers">{t('expectedCoversLabel')}</Label>
         <Input id="af-covers" type="number" min={0} {...register('expectedCovers')} />
       </div>

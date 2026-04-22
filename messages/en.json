@@ -278,6 +278,18 @@
       "actions": "Suggested actions",
       "meta": "Generated {time} · {model}"
     },
+    "quickAdd": {
+      "openButton": "Quick add",
+      "title": "Quick add",
+      "description": "Describe what to add. We will pre-fill a form for {contextDate}. Nothing is saved until you confirm.",
+      "inputLabel": "What to add",
+      "placeholder": "E.g. Party of 6 at 8pm, Smith, no nuts",
+      "cancel": "Cancel",
+      "submit": "Parse",
+      "parsing": "Parsing…",
+      "dateAmbiguous": "The date or time was not clear, so you are still on the day you were viewing. Fill in times as needed.",
+      "typeDisabled": "That item type is not enabled for this club. The text is in the notes field — pick another way to add or adjust in settings."
+    },
     "shortcuts": {
       "paletteTitle": "Command palette",
       "palettePlaceholder": "Search or jump… ({mod}K)",
@@ -292,6 +304,7 @@
       "cmdHome": "Home",
       "goToDate": "Jump to date…",
       "back": "Back",
+      "cmdQuickAdd": "Quick add…",
       "cmdNewActivity": "New activity",
       "cmdNewReservation": "New reservation",
       "cmdNewBreakfast": "New breakfast",

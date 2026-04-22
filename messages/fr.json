@@ -278,6 +278,18 @@
       "actions": "Actions suggérées",
       "meta": "Généré {time} · {model}"
     },
+    "quickAdd": {
+      "openButton": "Ajout rapide",
+      "title": "Ajout rapide",
+      "description": "Décrivez l'ajout. Nous préremplirons un formulaire pour le {contextDate}. Rien n'est enregistré tant que vous ne validez pas.",
+      "inputLabel": "Quoi ajouter",
+      "placeholder": "Ex. table de 6 à 20h, Martin, sans noix",
+      "cancel": "Annuler",
+      "submit": "Analyser",
+      "parsing": "Analyse…",
+      "dateAmbiguous": "La date ou l'heure n'était pas claire — vous restez sur le jour affiché. Complétez les horaires si besoin.",
+      "typeDisabled": "Ce type d'entrée n'est pas activé pour ce club. Le texte est dans les notes."
+    },
     "shortcuts": {
       "paletteTitle": "Palette de commandes",
       "palettePlaceholder": "Rechercher ou aller à… ({mod}K)",
@@ -292,6 +304,7 @@
       "cmdHome": "Accueil",
       "goToDate": "Aller à une date…",
       "back": "Retour",
+      "cmdQuickAdd": "Ajout rapide…",
       "cmdNewActivity": "Nouvelle activité",
       "cmdNewReservation": "Nouvelle réservation",
       "cmdNewBreakfast": "Nouveau petit-déjeuner",

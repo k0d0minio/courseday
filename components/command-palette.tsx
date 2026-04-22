@@ -64,6 +64,13 @@ export function CommandPalette() {
     close();
   }
 
+  function openQuickAddOnDay() {
+    const q = new URLSearchParams();
+    q.set('openQuickAdd', '1');
+    router.push(`/day/${activeDayYmd}?${q.toString()}`);
+    close();
+  }
+
   function handleSignOut() {
     close();
     void signOut();
@@ -165,6 +172,12 @@ export function CommandPalette() {
 
               {isEditor && (
                 <Command.Group heading={t('groupCreate')}>
+                  <Command.Item
+                    value="quick-add"
+                    onSelect={openQuickAddOnDay}
+                  >
+                    {t('cmdQuickAdd')}
+                  </Command.Item>
                   <Command.Item
                     value="new-activity"
                     onSelect={() => openNewOnDay('activity')}

@@ -67,3 +67,11 @@ export async function dailyBriefRateLimit(
 ): Promise<{ success: boolean }> {
   return checkLimit(`daily-brief:${tenantId}:${dateIso}`, DAILY_BRIEF_LIMIT, DAILY_BRIEF_WINDOW_SEC);
 }
+
+/** LLM quick-add parse: 30 per minute per user (separate from mutation cap). */
+const QUICK_ADD_LIMIT = 30;
+const QUICK_ADD_WINDOW_SEC = 60;
+
+export async function quickAddRateLimit(userId: string): Promise<{ success: boolean }> {
+  return checkLimit(`quick-add:${userId}`, QUICK_ADD_LIMIT, QUICK_ADD_WINDOW_SEC);
+}
