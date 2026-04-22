@@ -52,7 +52,15 @@ export function useDayRealtime(
             const row = payload.new as ActivityWithRelations;
             setActivities((prev) => {
               if (prev.some((a) => a.id === row.id)) return prev;
-              return [...prev, row].sort((a, b) =>
+              const withoutPendingDuplicate = prev.filter((item) => {
+                if (!item.id.startsWith('pending-')) return true;
+                return !(
+                  item.day_id === row.day_id &&
+                  item.title === row.title &&
+                  item.start_time === row.start_time
+                );
+              });
+              return [...withoutPendingDuplicate, row].sort((a, b) =>
                 (a.start_time ?? '').localeCompare(b.start_time ?? '')
               );
             });
@@ -83,7 +91,15 @@ export function useDayRealtime(
             const row = payload.new as Reservation;
             setReservations((prev) => {
               if (prev.some((r) => r.id === row.id)) return prev;
-              return [...prev, row].sort((a, b) =>
+              const withoutPendingDuplicate = prev.filter((item) => {
+                if (!item.id.startsWith('pending-')) return true;
+                return !(
+                  item.day_id === row.day_id &&
+                  item.guest_name === row.guest_name &&
+                  item.start_time === row.start_time
+                );
+              });
+              return [...withoutPendingDuplicate, row].sort((a, b) =>
                 (a.start_time ?? '').localeCompare(b.start_time ?? '')
               );
             });
@@ -112,7 +128,15 @@ export function useDayRealtime(
             const row = payload.new as BreakfastConfiguration;
             setBreakfastConfigs((prev) => {
               if (prev.some((c) => c.id === row.id)) return prev;
-              return [...prev, row];
+              const withoutPendingDuplicate = prev.filter((item) => {
+                if (!item.id.startsWith('pending-')) return true;
+                return !(
+                  item.day_id === row.day_id &&
+                  item.group_name === row.group_name &&
+                  item.start_time === row.start_time
+                );
+              });
+              return [...withoutPendingDuplicate, row];
             });
           } else if (payload.eventType === 'UPDATE') {
             const row = payload.new as BreakfastConfiguration;

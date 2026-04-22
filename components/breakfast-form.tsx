@@ -6,15 +6,13 @@ import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
-import {
-  createBreakfastConfiguration,
-  updateBreakfastConfiguration,
-} from '@/app/actions/breakfast';
 import { TableBreakdownBuilder } from '@/components/table-breakdown-builder';
 import { AllergenMultiSelect } from '@/components/allergen-multi-select';
 import { MoreOptionsSection } from '@/components/more-options-section';
 import { filterAllergenCodes, type AllergenCode } from '@/lib/allergens';
 import type { BreakfastConfiguration } from '@/types/index';
+import { mutateWithOfflineQueue } from '@/lib/day-mutation-client';
+import { useTenant } from '@/lib/tenant-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -81,6 +79,7 @@ export function BreakfastForm({ isOpen, onClose, dayId, editItem, onSuccess }: P
   const [tableBreakdown, setTableBreakdown] = useState<number[]>([]);
   const [allergens, setAllergens] = useState<AllergenCode[]>([]);
   const isEditing = !!editItem;
+  const { tenantSlug } = useTenant();
 
   const { register, handleSubmit, reset } = useForm<FormData>({
     resolver: standardSchemaResolver(formSchema),
@@ -98,29 +97,61 @@ export function BreakfastForm({ isOpen, onClose, dayId, editItem, onSuccess }: P
     startTransition(async () => {
       const guestCount = data.guestCount ? parseInt(data.guestCount, 10) : undefined;
 
-      const result = isEditing
-        ? await updateBreakfastConfiguration(editItem!.id, {
-            groupName: data.groupName || undefined,
-            guestCount,
-            tableBreakdown: tableBreakdown.length > 0 ? tableBreakdown : undefined,
-            startTime: data.startTime || undefined,
-            notes: data.notes || undefined,
-            allergens: allergens.length > 0 ? allergens : undefined,
-          })
-        : await createBreakfastConfiguration({
-            dayId,
-            groupName: data.groupName || undefined,
-            guestCount,
-            tableBreakdown: tableBreakdown.length > 0 ? tableBreakdown : undefined,
-            startTime: data.startTime || undefined,
-            notes: data.notes || undefined,
-            allergens: allergens.length > 0 ? allergens : undefined,
-          });
+      const payload = {
+        dayId,
+        groupName: data.groupName || undefined,
+        guestCount,
+        tableBreakdown: tableBreakdown.length > 0 ? tableBreakdown : undefined,
+        startTime: data.startTime || undefined,
+        notes: data.notes || undefined,
+        allergens: allergens.length > 0 ? allergens : undefined,
+      };
+      const result = await mutateWithOfflineQueue<BreakfastConfiguration>({
+        entity: 'breakfast',
+        operation: isEditing ? 'update' : 'create',
+        tenantSlug,
+        dayId,
+        payload: isEditing ? { ...payload, id: editItem!.id } : payload,
+      });
 
       if (!result.success) { toast.error(result.error); return; }
 
-      toast.success(isEditing ? t('updated') : t('saved'));
-      onSuccess(result.data);
+      if (result.pending && !isEditing) {
+        onSuccess({
+          id: `pending-${result.clientMutationId}`,
+          tenant_id: '',
+          day_id: dayId,
+          breakfast_date: '',
+          group_name: payload.groupName ?? null,
+          table_breakdown: payload.tableBreakdown ?? null,
+          total_guests:
+            (payload.tableBreakdown ?? []).reduce((sum, count) => sum + count, 0) ||
+            payload.guestCount ||
+            0,
+          start_time: payload.startTime ?? null,
+          notes: payload.notes ?? null,
+          allergens: payload.allergens ?? [],
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+      } else if (result.pending && isEditing) {
+        onSuccess({
+          ...editItem!,
+          group_name: payload.groupName ?? null,
+          table_breakdown: payload.tableBreakdown ?? null,
+          total_guests:
+            (payload.tableBreakdown ?? []).reduce((sum, count) => sum + count, 0) ||
+            payload.guestCount ||
+            0,
+          start_time: payload.startTime ?? null,
+          notes: payload.notes ?? null,
+          allergens: payload.allergens ?? [],
+          updated_at: new Date().toISOString(),
+        });
+      } else {
+        onSuccess(result.data);
+      }
+      toast.success(result.pending ? t('saved') : isEditing ? t('updated') : t('saved'));
       onClose();
     });
   }

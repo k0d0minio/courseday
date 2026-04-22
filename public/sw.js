@@ -18,6 +18,23 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+async function broadcastDrainRequest() {
+  const clients = await self.clients.matchAll({ type: 'window' });
+  clients.forEach((client) => {
+    client.postMessage({ type: 'drain-offline-queue' });
+  });
+}
+
+self.addEventListener('sync', (event) => {
+  if (event.tag !== 'drain-offline-queue') return;
+  event.waitUntil(broadcastDrainRequest());
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type !== 'drain-offline-queue') return;
+  event.waitUntil(broadcastDrainRequest());
+});
+
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 

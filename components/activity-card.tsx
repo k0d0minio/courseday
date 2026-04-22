@@ -1,13 +1,14 @@
 'use client';
 
 import { useMemo, useState, useTransition } from 'react';
-import { Pencil, Trash2, RefreshCw } from 'lucide-react';
+import { Pencil, Trash2, RefreshCw, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
-import { deleteActivity, deleteActivityRecurrenceGroup, deleteActivityFromHere } from '@/app/actions/activities';
 import { setChecklistItemDone } from '@/app/actions/checklists';
 import { AllergenBadgeRow } from '@/components/allergen-badge';
 import { filterAllergenCodes } from '@/lib/allergens';
+import { mutateWithOfflineQueue } from '@/lib/day-mutation-client';
+import { useTenant } from '@/lib/tenant-context';
 import type { ActivityWithRelations } from '@/types/index';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -36,7 +37,9 @@ export function ActivityCard({ item, isEditor, onEdit, onDeleted }: Props) {
   const [checklistOpen, setChecklistOpen] = useState(false);
   const [isDeleting, startDeleteTransition] = useTransition();
   const [isToggling, startToggleTransition] = useTransition();
+  const { tenantSlug } = useTenant();
   const isRecurring = !!item.recurrence_group_id;
+  const isPending = item.id.startsWith('pending-');
   const allergens = filterAllergenCodes(item.allergens);
   const checklistItems = item.checklist_items ?? [];
   const checklistDone = useMemo(
@@ -46,14 +49,17 @@ export function ActivityCard({ item, isEditor, onEdit, onDeleted }: Props) {
 
   function handleDelete(mode: 'single' | 'all' | 'from-here') {
     startDeleteTransition(async () => {
-      let result;
-      if (mode === 'all' && item.recurrence_group_id) {
-        result = await deleteActivityRecurrenceGroup(item.recurrence_group_id);
-      } else if (mode === 'from-here' && item.recurrence_group_id) {
-        result = await deleteActivityFromHere(item.id, item.recurrence_group_id);
-      } else {
-        result = await deleteActivity(item.id);
-      }
+      const result = await mutateWithOfflineQueue<void>({
+        entity: 'activities',
+        operation: 'delete',
+        tenantSlug,
+        dayId: item.day_id,
+        payload: {
+          id: item.id,
+          mode,
+          recurrenceGroupId: item.recurrence_group_id,
+        },
+      });
 
       if (!result.success) {
         toast.error(result.error);
@@ -78,7 +84,7 @@ export function ActivityCard({ item, isEditor, onEdit, onDeleted }: Props) {
 
   return (
     <>
-      <Card>
+      <Card className={isPending ? 'opacity-70' : undefined}>
         <CardContent className="py-3 px-4">
           <div className="flex items-start justify-between gap-3">
             {/* Left: details */}
@@ -104,7 +110,10 @@ export function ActivityCard({ item, isEditor, onEdit, onDeleted }: Props) {
               )}
 
               {/* Title */}
-              <p className="font-medium leading-snug truncate">{item.title}</p>
+              <p className="font-medium leading-snug truncate flex items-center gap-2">
+                {item.title}
+                {isPending && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+              </p>
 
               {/* Time range */}
               {(item.start_time || item.end_time) && (

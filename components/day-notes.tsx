@@ -3,8 +3,9 @@
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { Pencil, Trash2, Check, X } from 'lucide-react';
-import { createDayNote, updateDayNote, deleteDayNote } from '@/app/actions/day-notes';
 import type { DayNote } from '@/app/actions/day-notes';
+import { mutateWithOfflineQueue } from '@/lib/day-mutation-client';
+import { useTenant } from '@/lib/tenant-context';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -24,13 +25,36 @@ export function DayNotes({ dayId, initialNotes, isEditor, currentUserId }: DayNo
   const [editDraft, setEditDraft] = useState('');
   const [isSaving, startSaveTransition] = useTransition();
   const [isDeleting, startDeleteTransition] = useTransition();
+  const { tenantSlug } = useTenant();
 
   function handleAdd() {
     if (!draft.trim()) return;
     startSaveTransition(async () => {
-      const result = await createDayNote(dayId, draft);
+      const result = await mutateWithOfflineQueue<DayNote>({
+        entity: 'day-notes',
+        operation: 'create',
+        tenantSlug,
+        dayId,
+        payload: { dayId, content: draft },
+      });
       if (!result.success) { toast.error(result.error); return; }
-      setNotes((prev) => [...prev, result.data]);
+      if (result.pending) {
+        setNotes((prev) => [
+          ...prev,
+          {
+            id: `pending-${result.clientMutationId}`,
+            tenant_id: '',
+            day_id: dayId,
+            user_id: currentUserId ?? '',
+            author_name: 'Pending',
+            content: draft.trim(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        ]);
+      } else {
+        setNotes((prev) => [...prev, result.data]);
+      }
       setDraft('');
       toast.success('Note added.');
     });
@@ -44,9 +68,23 @@ export function DayNotes({ dayId, initialNotes, isEditor, currentUserId }: DayNo
   function handleUpdate(id: string) {
     if (!editDraft.trim()) return;
     startSaveTransition(async () => {
-      const result = await updateDayNote(id, editDraft);
+      const result = await mutateWithOfflineQueue<DayNote>({
+        entity: 'day-notes',
+        operation: 'update',
+        tenantSlug,
+        dayId,
+        payload: { id, content: editDraft },
+      });
       if (!result.success) { toast.error(result.error); return; }
-      setNotes((prev) => prev.map((n) => (n.id === id ? result.data : n)));
+      if (result.pending) {
+        setNotes((prev) =>
+          prev.map((n) =>
+            n.id === id ? { ...n, content: editDraft.trim(), updated_at: new Date().toISOString() } : n
+          )
+        );
+      } else {
+        setNotes((prev) => prev.map((n) => (n.id === id ? result.data : n)));
+      }
       setEditingId(null);
       toast.success('Note updated.');
     });
@@ -54,7 +92,13 @@ export function DayNotes({ dayId, initialNotes, isEditor, currentUserId }: DayNo
 
   function handleDelete(id: string) {
     startDeleteTransition(async () => {
-      const result = await deleteDayNote(id);
+      const result = await mutateWithOfflineQueue<void>({
+        entity: 'day-notes',
+        operation: 'delete',
+        tenantSlug,
+        dayId,
+        payload: { id },
+      });
       if (!result.success) { toast.error(result.error); return; }
       setNotes((prev) => prev.filter((n) => n.id !== id));
       toast.success('Note deleted.');

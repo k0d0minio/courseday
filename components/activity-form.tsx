@@ -7,7 +7,6 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { Check, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { createActivity, updateActivity } from '@/app/actions/activities';
 import { createPOC } from '@/app/actions/poc';
 import { createVenueType } from '@/app/actions/venue-type';
 import { createActivityTag, getAllActivityTags } from '@/app/actions/activity-tags';
@@ -16,6 +15,8 @@ import { filterAllergenCodes, type AllergenCode } from '@/lib/allergens';
 import { AllergenMultiSelect } from '@/components/allergen-multi-select';
 import { MoreOptionsSection } from '@/components/more-options-section';
 import { cn } from '@/lib/utils';
+import { mutateWithOfflineQueue } from '@/lib/day-mutation-client';
+import { useTenant } from '@/lib/tenant-context';
 import type { Activity, ActivityTag, ActivityWithRelations, PointOfContact, VenueType } from '@/types/index';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -136,6 +137,7 @@ export function ActivityForm({
 
   // Allergens
   const [allergens, setAllergens] = useState<AllergenCode[]>([]);
+  const { tenantSlug } = useTenant();
 
   const isEditing = !!editItem;
   const modalTitle = isEditing ? t('editTitle') : t('addTitle');
@@ -213,14 +215,54 @@ export function ActivityForm({
         recurrenceFrequency: data.recurrenceFrequency ?? undefined,
       };
 
-      const result = isEditing
-        ? await updateActivity(editItem!.id, payload)
-        : await createActivity(payload);
+      const result = await mutateWithOfflineQueue<Activity>({
+        entity: 'activities',
+        operation: isEditing ? 'update' : 'create',
+        tenantSlug,
+        dayId,
+        payload: isEditing ? { ...payload, id: editItem!.id } : payload,
+      });
 
       if (!result.success) { toast.error(result.error); return; }
 
-      toast.success(isEditing ? t('updated') : t('saved'));
-      onSuccess(result.data);
+      if (result.pending && !isEditing) {
+        onSuccess({
+          id: `pending-${result.clientMutationId}`,
+          tenant_id: '',
+          day_id: dayId,
+          title: payload.title,
+          description: payload.description ?? null,
+          start_time: payload.startTime ?? null,
+          end_time: payload.endTime ?? null,
+          expected_covers: payload.expectedCovers ?? null,
+          venue_type_id: payload.venueTypeId ?? null,
+          poc_id: payload.pocId ?? null,
+          notes: payload.notes ?? null,
+          allergens: payload.allergens ?? [],
+          is_recurring: payload.isRecurring ?? false,
+          recurrence_frequency: payload.recurrenceFrequency ?? null,
+          recurrence_group_id: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+      } else if (result.pending && isEditing) {
+        onSuccess({
+          ...editItem!,
+          title: payload.title,
+          description: payload.description ?? null,
+          start_time: payload.startTime ?? null,
+          end_time: payload.endTime ?? null,
+          expected_covers: payload.expectedCovers ?? null,
+          venue_type_id: payload.venueTypeId ?? null,
+          poc_id: payload.pocId ?? null,
+          notes: payload.notes ?? null,
+          allergens: payload.allergens ?? [],
+          updated_at: new Date().toISOString(),
+        });
+      } else {
+        onSuccess(result.data);
+      }
+      toast.success(result.pending ? t('saved') : isEditing ? t('updated') : t('saved'));
       onClose();
     });
   }

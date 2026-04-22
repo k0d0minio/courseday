@@ -6,12 +6,13 @@ import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
-import { createReservation, updateReservation } from '@/app/actions/reservations';
 import { TableBreakdownBuilder } from '@/components/table-breakdown-builder';
 import { AllergenMultiSelect } from '@/components/allergen-multi-select';
 import { MoreOptionsSection } from '@/components/more-options-section';
 import { filterAllergenCodes, type AllergenCode } from '@/lib/allergens';
 import type { Reservation } from '@/types/index';
+import { mutateWithOfflineQueue } from '@/lib/day-mutation-client';
+import { useTenant } from '@/lib/tenant-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -79,6 +80,7 @@ export function ReservationForm({ isOpen, onClose, dayId, editItem, onSuccess }:
   const [tableBreakdown, setTableBreakdown] = useState<number[]>([]);
   const [allergens, setAllergens] = useState<AllergenCode[]>([]);
   const isEditing = !!editItem;
+  const { tenantSlug } = useTenant();
 
   const { register, handleSubmit, reset } = useForm<FormData>({
     resolver: standardSchemaResolver(formSchema),
@@ -105,14 +107,48 @@ export function ReservationForm({ isOpen, onClose, dayId, editItem, onSuccess }:
         allergens: allergens.length > 0 ? allergens : undefined,
       };
 
-      const result = isEditing
-        ? await updateReservation(editItem!.id, payload)
-        : await createReservation(payload);
+      const result = await mutateWithOfflineQueue<Reservation>({
+        entity: 'reservations',
+        operation: isEditing ? 'update' : 'create',
+        tenantSlug,
+        dayId,
+        payload: isEditing ? { ...payload, id: editItem!.id } : payload,
+      });
 
       if (!result.success) { toast.error(result.error); return; }
 
-      toast.success(isEditing ? t('updated') : t('saved'));
-      onSuccess(result.data);
+      if (result.pending && !isEditing) {
+        const optimistic: Reservation = {
+          id: `pending-${result.clientMutationId}`,
+          tenant_id: '',
+          day_id: dayId,
+          guest_name: payload.guestName ?? null,
+          guest_count: payload.guestCount ?? null,
+          start_time: payload.startTime ?? null,
+          end_time: payload.endTime ?? null,
+          notes: payload.notes ?? null,
+          table_breakdown: payload.tableBreakdown ?? null,
+          allergens: payload.allergens ?? [],
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        onSuccess(optimistic);
+      } else if (result.pending && isEditing) {
+        onSuccess({
+          ...editItem!,
+          guest_name: payload.guestName ?? null,
+          guest_count: payload.guestCount ?? null,
+          start_time: payload.startTime ?? null,
+          end_time: payload.endTime ?? null,
+          notes: payload.notes ?? null,
+          table_breakdown: payload.tableBreakdown ?? null,
+          allergens: payload.allergens ?? [],
+          updated_at: new Date().toISOString(),
+        });
+      } else {
+        onSuccess(result.data);
+      }
+      toast.success(result.pending ? t('saved') : isEditing ? t('updated') : t('saved'));
       onClose();
     });
   }

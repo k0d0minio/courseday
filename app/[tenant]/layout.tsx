@@ -19,6 +19,7 @@ import { FeatureFlagProvider } from '@/lib/feature-flags-context';
 import { getFeatureFlags } from '@/app/actions/feature-flags';
 import { MobileNav } from '@/components/mobile-nav';
 import { NotificationBell } from '@/components/notification-bell';
+import { OfflineStatusPill } from '@/components/offline-status-pill';
 import { getUnreadCount } from '@/app/actions/notifications';
 import { getTenantToday } from '@/lib/day-utils';
 
@@ -121,6 +122,7 @@ export default async function TenantLayout({
                 <Logo logoUrl={row?.logo_url} tenantName={row?.name} />
               </Link>
               <div className="flex items-center gap-1">
+                <OfflineStatusPill />
                 {/* Theme toggle — visible to all signed-in users */}
                 {user && <ThemeToggle />}
                 {/* Settings dropdown — editors only, desktop */}

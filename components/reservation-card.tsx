@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
-import { deleteReservation } from '@/app/actions/reservations';
 import { TableBreakdownDisplay } from '@/components/table-breakdown-display';
 import { AllergenBadgeRow } from '@/components/allergen-badge';
 import { filterAllergenCodes } from '@/lib/allergens';
+import { mutateWithOfflineQueue } from '@/lib/day-mutation-client';
+import { useTenant } from '@/lib/tenant-context';
 import type { Reservation } from '@/types/index';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -33,20 +34,28 @@ export function ReservationCard({ item, isEditor, onEdit, onDeleted }: Props) {
   const t = useTranslations('Tenant.reservation');
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDeleting, startDeleteTransition] = useTransition();
+  const { tenantSlug } = useTenant();
 
   const breakdown = Array.isArray(item.table_breakdown)
     ? (item.table_breakdown as number[])
     : [];
   const allergens = filterAllergenCodes(item.allergens);
+  const isPending = item.id.startsWith('pending-');
 
   function handleDelete() {
     startDeleteTransition(async () => {
-      const result = await deleteReservation(item.id);
+      const result = await mutateWithOfflineQueue<void>({
+        entity: 'reservations',
+        operation: 'delete',
+        tenantSlug,
+        dayId: item.day_id,
+        payload: { id: item.id },
+      });
       if (!result.success) {
         toast.error(result.error);
         return;
       }
-      toast.success(t('deleted'));
+      toast.success(result.pending ? t('deleted') : t('deleted'));
       setDeleteOpen(false);
       onDeleted(item.id);
     });
@@ -54,14 +63,15 @@ export function ReservationCard({ item, isEditor, onEdit, onDeleted }: Props) {
 
   return (
     <>
-      <Card>
+      <Card className={isPending ? 'opacity-70' : undefined}>
         <CardContent className="py-3 px-4">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0 space-y-1.5">
               {/* Name + count */}
               <div className="flex items-baseline gap-2">
-                <p className="font-medium">
+                <p className="font-medium flex items-center gap-2">
                   {item.guest_name ?? t('fallbackName')}
+                  {isPending && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
                 </p>
                 {item.guest_count != null && (
                   <span className="text-sm text-muted-foreground">
