@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { createSupabaseServiceClient } from '@/lib/supabase-server';
-import { requireSuperadmin } from '@/lib/superadmin';
 import { getFeatureFlagsByTenants } from '@/app/actions/feature-flags';
 import { AdminDashboard } from './dashboard';
 import { AdminFeatureRequests } from '@/components/admin-feature-requests';
@@ -11,8 +10,6 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminPage() {
-  await requireSuperadmin();
-
   const serviceClient = createSupabaseServiceClient();
   const { data: tenants } = await serviceClient
     .from('tenants')
@@ -23,10 +20,10 @@ export default async function AdminPage() {
   const flagsByTenant = await getFeatureFlagsByTenants(tenantList.map((t) => t.id));
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8 space-y-12">
+    <div className="space-y-12">
       <AdminDashboard tenants={tenantList} flagsByTenant={flagsByTenant} />
 
-      <div>
+      <div id="feature-requests">
         <h2 className="text-2xl font-bold mb-6">Feature Requests</h2>
         <AdminFeatureRequests tenants={tenantList.map((t) => ({ id: t.id, name: t.name }))} />
       </div>

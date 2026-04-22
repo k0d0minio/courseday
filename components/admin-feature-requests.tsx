@@ -24,6 +24,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const STATUS_OPTIONS: FeatureRequestStatus[] = [
   'pending', 'reviewing', 'accepted', 'rejected', 'shipped',
@@ -139,25 +140,56 @@ export function AdminFeatureRequests({
     return <p className="text-sm text-muted-foreground">No feature requests yet.</p>;
   }
 
+  const statusCounts = requests.reduce<Record<FeatureRequestStatus, number>>(
+    (acc, request) => {
+      acc[request.status] += 1;
+      return acc;
+    },
+    {
+      pending: 0,
+      reviewing: 0,
+      accepted: 0,
+      rejected: 0,
+      shipped: 0,
+    }
+  );
+
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Request</TableHead>
-          <TableHead>Tenant</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Submitted</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {requests.map((req) => (
-          <FeatureRequestRow
-            key={req.id}
-            request={req}
-            tenantName={tenantMap.get(req.tenant_id) ?? req.tenant_id}
-          />
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        {STATUS_OPTIONS.map((status) => (
+          <Card key={status}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {STATUS_LABELS[status]}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold tabular-nums">{statusCounts[status]}</p>
+            </CardContent>
+          </Card>
         ))}
-      </TableBody>
-    </Table>
+      </div>
+
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Request</TableHead>
+            <TableHead>Tenant</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Submitted</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {requests.map((req) => (
+            <FeatureRequestRow
+              key={req.id}
+              request={req}
+              tenantName={tenantMap.get(req.tenant_id) ?? req.tenant_id}
+            />
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 }

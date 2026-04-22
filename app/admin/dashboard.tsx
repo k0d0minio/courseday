@@ -1,12 +1,19 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -16,7 +23,7 @@ import {
   AlertDialogFooter,
   AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
-import { Trash2, Loader2, ChevronDown, ChevronUp, PauseCircle, PlayCircle, Archive } from 'lucide-react';
+import { Trash2, Loader2, ChevronDown, ChevronUp, PauseCircle, PlayCircle, Archive, Search } from 'lucide-react';
 import Link from 'next/link';
 import { deleteTenant, suspendTenant, reactivateTenant, archiveTenant } from '@/app/actions/tenants';
 import { setFeatureFlag } from '@/app/actions/feature-flags';
@@ -301,6 +308,8 @@ export function AdminDashboard({
   const [list, setList] = useState(tenants);
   const [isPending, startTransition] = useTransition();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | TenantStatus>('all');
 
   function handleDelete(id: string) {
     setDeletingId(id);
@@ -313,9 +322,40 @@ export function AdminDashboard({
     });
   }
 
+  const filteredList = useMemo(() => {
+    return list.filter((tenant) => {
+      const matchesStatus = statusFilter === 'all' || tenant.status === statusFilter;
+      if (!matchesStatus) return false;
+
+      const q = search.trim().toLowerCase();
+      if (!q) return true;
+
+      return tenant.name.toLowerCase().includes(q) || tenant.slug.toLowerCase().includes(q);
+    });
+  }, [list, search, statusFilter]);
+
+  const totalTenants = list.length;
+  const activeCount = list.filter((tenant) => tenant.status === 'active').length;
+  const suspendedCount = list.filter((tenant) => tenant.status === 'suspended').length;
+  const archivedCount = list.filter((tenant) => tenant.status === 'archived').length;
+
+  const featureAdoption = KNOWN_FLAGS.map((key) => {
+    const enabledCount = list.reduce((count, tenant) => {
+      return count + (flagsByTenant[tenant.id]?.[key] ? 1 : 0);
+    }, 0);
+    const adoptionRate = totalTenants === 0 ? 0 : Math.round((enabledCount / totalTenants) * 100);
+
+    return {
+      key,
+      label: FLAG_LABELS[key],
+      enabledCount,
+      adoptionRate,
+    };
+  });
+
   return (
-    <div className="space-y-6 relative p-4 md:p-8">
-      <div className="flex justify-between items-center mb-8">
+    <div id="tenants" className="space-y-6 relative">
+      <div className="flex justify-between items-center mb-4">
         <h1 className="text-3xl font-bold">Tenant Management</h1>
         <Link
           href={`${protocol}://${rootDomain}`}
@@ -325,15 +365,102 @@ export function AdminDashboard({
         </Link>
       </div>
 
-      {list.length === 0 ? (
+      <div id="overview" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Tenants</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold tabular-nums">{totalTenants}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Active</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold tabular-nums">{activeCount}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Suspended</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold tabular-nums">{suspendedCount}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Archived</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold tabular-nums">{archivedCount}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Feature Adoption</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {featureAdoption.map((feature) => (
+            <div key={feature.key} className="space-y-1">
+              <div className="flex items-center justify-between text-sm">
+                <span>{feature.label}</span>
+                <span className="text-muted-foreground">
+                  {feature.enabledCount}/{totalTenants} ({feature.adoptionRate}%)
+                </span>
+              </div>
+              <div className="h-2 w-full rounded bg-muted overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all"
+                  style={{ width: `${feature.adoptionRate}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative w-full sm:max-w-sm">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by tenant name or slug"
+            className="pl-9"
+          />
+        </div>
+        <Select
+          value={statusFilter}
+          onValueChange={(value) => setStatusFilter(value as 'all' | TenantStatus)}
+        >
+          <SelectTrigger className="w-full sm:w-48">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="suspended">Suspended</SelectItem>
+            <SelectItem value="archived">Archived</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {filteredList.length === 0 ? (
         <Card>
           <CardContent className="py-8 text-center">
-            <p className="text-muted-foreground">No tenants yet.</p>
+            <p className="text-muted-foreground">
+              {list.length === 0 ? 'No tenants yet.' : 'No tenants match current filters.'}
+            </p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {list.map((tenant) => (
+          {filteredList.map((tenant) => (
             <TenantCard
               key={tenant.id}
               tenant={tenant}
