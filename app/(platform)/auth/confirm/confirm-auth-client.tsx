@@ -4,7 +4,10 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 import { rootDomain } from '@/lib/utils';
-import { finalizeEmailAuthRedirect } from '@/app/actions/auth-confirm';
+import {
+  finalizeEmailAuthRedirect,
+  finalizeEmailAuthRedirectWithToken,
+} from '@/app/actions/auth-confirm';
 import { Button } from '@/components/ui/button';
 
 type EmailOtpType =
@@ -41,11 +44,17 @@ async function tryVerifyOtpFromHashCandidates(
   const deduped = Array.from(new Set(candidates));
 
   for (const type of deduped) {
-    const { error } = await supabase.auth.verifyOtp({
+    const { data, error } = await supabase.auth.verifyOtp({
       token_hash: tokenHash,
       type,
     });
-    if (!error) return { ok: true as const, type };
+    if (!error) {
+      return {
+        ok: true as const,
+        type,
+        accessToken: data.session?.access_token ?? null,
+      };
+    }
   }
 
   return { ok: false as const };
@@ -112,6 +121,7 @@ export function ConfirmAuthClient() {
       const fragment = hash.startsWith('#') ? hash.slice(1) : hash;
       const hp = new URLSearchParams(fragment);
       const errorCode = queryErrorCode ?? hp.get('error_code');
+      let accessToken: string | null = null;
 
       if (errorCode) {
         router.replace('/auth/sign-in?error=confirm_failed');
@@ -119,8 +129,9 @@ export function ConfirmAuthClient() {
       }
 
       if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
         if (cancelled) return;
+        accessToken = data.session?.access_token ?? null;
         if (error) {
           // Some email templates/providers deliver token hash in `code` query param.
           // Fallback avoids hard-fail when PKCE verifier is unavailable.
@@ -131,13 +142,15 @@ export function ConfirmAuthClient() {
             return;
           }
           authType = fallback.type;
+          accessToken = fallback.accessToken;
         }
       } else if (tokenHash && authType) {
-        const { error } = await supabase.auth.verifyOtp({
+        const { data, error } = await supabase.auth.verifyOtp({
           token_hash: tokenHash,
           type: authType,
         });
         if (cancelled) return;
+        accessToken = data.session?.access_token ?? null;
         if (error) {
           router.replace('/auth/sign-in?error=confirm_failed');
           return;
@@ -147,11 +160,12 @@ export function ConfirmAuthClient() {
         const access_token = hp.get('access_token');
         const refresh_token = hp.get('refresh_token');
         if (access_token && refresh_token) {
-          const { error } = await supabase.auth.setSession({
+          const { data, error } = await supabase.auth.setSession({
             access_token,
             refresh_token,
           });
           if (cancelled) return;
+          accessToken = data.session?.access_token ?? access_token;
           if (error) {
             router.replace('/auth/sign-in?error=confirm_failed');
             return;
@@ -178,11 +192,19 @@ export function ConfirmAuthClient() {
         return;
       }
 
-      let result = await finalizeEmailAuthRedirect(slug, flow);
+      if (!accessToken) {
+        const { data } = await supabase.auth.getSession();
+        accessToken = data.session?.access_token ?? null;
+      }
+
+      let result = accessToken
+        ? await finalizeEmailAuthRedirectWithToken(accessToken, slug, flow)
+        : await finalizeEmailAuthRedirect(slug, flow);
       if (!result.ok && result.error === 'no_session') {
-        // Cookie write from client auth exchange can lag first server action call.
         await wait(350);
-        result = await finalizeEmailAuthRedirect(slug, flow);
+        result = accessToken
+          ? await finalizeEmailAuthRedirectWithToken(accessToken, slug, flow)
+          : await finalizeEmailAuthRedirect(slug, flow);
       }
       if (cancelled) return;
       if (!result.ok) {
