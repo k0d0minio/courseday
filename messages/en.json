@@ -277,6 +277,29 @@
       "summary": "{count, plural, one {# table} other {# tables}} · {covers} covers",
       "seats": "seats"
     },
+    "allergens": {
+      "moreOptions": "More options",
+      "label": "Allergens",
+      "placeholder": "None",
+      "clear": "Clear allergens",
+      "selected": "{count, plural, one {# selected} other {# selected}}",
+      "names": {
+        "gluten": "Gluten",
+        "crustaceans": "Crustaceans",
+        "eggs": "Eggs",
+        "fish": "Fish",
+        "peanuts": "Peanuts",
+        "soy": "Soy",
+        "dairy": "Dairy",
+        "nuts": "Tree nuts",
+        "celery": "Celery",
+        "mustard": "Mustard",
+        "sesame": "Sesame",
+        "sulphites": "Sulphites",
+        "lupin": "Lupin",
+        "molluscs": "Molluscs"
+      }
+    },
     "settings": {
       "title": "Settings",
       "tabPoc": "Points of Contact",

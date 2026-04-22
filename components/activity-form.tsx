@@ -12,6 +12,9 @@ import { createPOC } from '@/app/actions/poc';
 import { createVenueType } from '@/app/actions/venue-type';
 import { createActivityTag, getAllActivityTags } from '@/app/actions/activity-tags';
 import { generateRecurrenceDates } from '@/lib/day-utils';
+import { filterAllergenCodes, type AllergenCode } from '@/lib/allergens';
+import { AllergenMultiSelect } from '@/components/allergen-multi-select';
+import { MoreOptionsSection } from '@/components/more-options-section';
 import { cn } from '@/lib/utils';
 import type { Activity, ActivityTag, ActivityWithRelations, PointOfContact, VenueType } from '@/types/index';
 import { Button } from '@/components/ui/button';
@@ -108,6 +111,7 @@ export function ActivityForm({
   onSuccess,
 }: Props) {
   const t = useTranslations('Tenant.activityForm');
+  const tAllergens = useTranslations('Tenant.allergens');
   const isMobile = useIsMobile();
   const [isPending, startTransition] = useTransition();
 
@@ -130,6 +134,9 @@ export function ActivityForm({
   const [allTags, setAllTags] = useState<ActivityTag[]>([]);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
+  // Allergens
+  const [allergens, setAllergens] = useState<AllergenCode[]>([]);
+
   const isEditing = !!editItem;
   const modalTitle = isEditing ? t('editTitle') : t('addTitle');
 
@@ -147,6 +154,7 @@ export function ActivityForm({
     if (!isOpen) return;
     reset(defaultValues(editItem));
     setSelectedTagIds(editItem?.tags?.map((t) => t.id) ?? []);
+    setAllergens(filterAllergenCodes(editItem?.allergens));
     setShowNewPoc(false); setShowNewVt(false);
     setNewPocName(''); setNewPocEmail(''); setNewPocPhone('');
     setNewVtName(''); setNewVtCode('');
@@ -200,6 +208,7 @@ export function ActivityForm({
         pocId: data.pocId || undefined,
         notes: data.notes || undefined,
         tagIds: selectedTagIds,
+        allergens: allergens.length > 0 ? allergens : undefined,
         isRecurring: data.isRecurring ?? false,
         recurrenceFrequency: data.recurrenceFrequency ?? undefined,
       };
@@ -335,6 +344,13 @@ export function ActivityForm({
         <Label htmlFor="af-notes">{t('notesLabel')}</Label>
         <Textarea id="af-notes" rows={2} {...register('notes')} />
       </div>
+
+      <MoreOptionsSection>
+        <div className="space-y-1">
+          <Label htmlFor="af-allergens">{tAllergens('label')}</Label>
+          <AllergenMultiSelect value={allergens} onChange={setAllergens} />
+        </div>
+      </MoreOptionsSection>
 
       {/* Recurring (create only) */}
       {!isEditing && (

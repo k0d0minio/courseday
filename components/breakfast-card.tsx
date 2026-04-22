@@ -6,6 +6,8 @@ import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { deleteBreakfastConfiguration } from '@/app/actions/breakfast';
 import { TableBreakdownDisplay } from '@/components/table-breakdown-display';
+import { AllergenBadgeRow } from '@/components/allergen-badge';
+import { filterAllergenCodes } from '@/lib/allergens';
 import type { BreakfastConfiguration } from '@/types/index';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -35,6 +37,7 @@ export function BreakfastCard({ item, isEditor, onEdit, onDeleted }: Props) {
   const breakdown = Array.isArray(item.table_breakdown)
     ? (item.table_breakdown as number[])
     : [];
+  const allergens = filterAllergenCodes(item.allergens);
 
   function handleDelete() {
     startDeleteTransition(async () => {
@@ -77,6 +80,11 @@ export function BreakfastCard({ item, isEditor, onEdit, onDeleted }: Props) {
               {/* Table layout */}
               {breakdown.length > 0 && (
                 <TableBreakdownDisplay breakdown={breakdown} />
+              )}
+
+              {/* Allergens */}
+              {allergens.length > 0 && (
+                <AllergenBadgeRow codes={allergens} />
               )}
 
               {/* Notes */}

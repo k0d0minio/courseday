@@ -277,6 +277,29 @@
       "summary": "{count, plural, one {# table} other {# tables}} · {covers} couverts",
       "seats": "places"
     },
+    "allergens": {
+      "moreOptions": "Plus d'options",
+      "label": "Allergènes",
+      "placeholder": "Aucun",
+      "clear": "Effacer les allergènes",
+      "selected": "{count, plural, one {# sélectionné} other {# sélectionnés}}",
+      "names": {
+        "gluten": "Gluten",
+        "crustaceans": "Crustacés",
+        "eggs": "Œufs",
+        "fish": "Poisson",
+        "peanuts": "Arachides",
+        "soy": "Soja",
+        "dairy": "Produits laitiers",
+        "nuts": "Fruits à coque",
+        "celery": "Céleri",
+        "mustard": "Moutarde",
+        "sesame": "Sésame",
+        "sulphites": "Sulfites",
+        "lupin": "Lupin",
+        "molluscs": "Mollusques"
+      }
+    },
     "settings": {
       "title": "Paramètres",
       "tabPoc": "Points de contact",

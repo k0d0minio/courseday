@@ -50,6 +50,7 @@ export async function createBreakfastConfiguration(
       total_guests: totalGuests(d.tableBreakdown, d.guestCount),
       start_time: d.startTime || null,
       notes: d.notes || null,
+      allergens: d.allergens ?? [],
     })
     .select()
     .single();
@@ -87,6 +88,7 @@ export async function updateBreakfastConfiguration(
       total_guests: totalGuests(d.tableBreakdown, d.guestCount),
       start_time: d.startTime || null,
       notes: d.notes || null,
+      allergens: d.allergens ?? [],
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)

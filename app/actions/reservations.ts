@@ -34,6 +34,7 @@ export async function createReservation(
       end_time: d.endTime || null,
       notes: d.notes || null,
       table_breakdown: d.tableBreakdown ?? null,
+      allergens: d.allergens ?? [],
     })
     .select()
     .single();
@@ -74,6 +75,7 @@ export async function updateReservation(
       end_time: d.endTime || null,
       notes: d.notes || null,
       table_breakdown: d.tableBreakdown ?? null,
+      allergens: d.allergens ?? [],
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)

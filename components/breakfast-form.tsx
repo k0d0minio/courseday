@@ -11,6 +11,9 @@ import {
   updateBreakfastConfiguration,
 } from '@/app/actions/breakfast';
 import { TableBreakdownBuilder } from '@/components/table-breakdown-builder';
+import { AllergenMultiSelect } from '@/components/allergen-multi-select';
+import { MoreOptionsSection } from '@/components/more-options-section';
+import { filterAllergenCodes, type AllergenCode } from '@/lib/allergens';
 import type { BreakfastConfiguration } from '@/types/index';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -72,9 +75,11 @@ type Props = {
 
 export function BreakfastForm({ isOpen, onClose, dayId, editItem, onSuccess }: Props) {
   const t = useTranslations('Tenant.breakfastForm');
+  const tAllergens = useTranslations('Tenant.allergens');
   const isMobile = useIsMobile();
   const [isPending, startTransition] = useTransition();
   const [tableBreakdown, setTableBreakdown] = useState<number[]>([]);
+  const [allergens, setAllergens] = useState<AllergenCode[]>([]);
   const isEditing = !!editItem;
 
   const { register, handleSubmit, reset } = useForm<FormData>({
@@ -86,6 +91,7 @@ export function BreakfastForm({ isOpen, onClose, dayId, editItem, onSuccess }: P
     reset(defaultValues(editItem));
     const tb = editItem?.table_breakdown;
     setTableBreakdown(Array.isArray(tb) ? (tb as number[]) : []);
+    setAllergens(filterAllergenCodes(editItem?.allergens));
   }, [isOpen, editItem, reset]);
 
   function onSubmit(data: FormData) {
@@ -99,6 +105,7 @@ export function BreakfastForm({ isOpen, onClose, dayId, editItem, onSuccess }: P
             tableBreakdown: tableBreakdown.length > 0 ? tableBreakdown : undefined,
             startTime: data.startTime || undefined,
             notes: data.notes || undefined,
+            allergens: allergens.length > 0 ? allergens : undefined,
           })
         : await createBreakfastConfiguration({
             dayId,
@@ -107,6 +114,7 @@ export function BreakfastForm({ isOpen, onClose, dayId, editItem, onSuccess }: P
             tableBreakdown: tableBreakdown.length > 0 ? tableBreakdown : undefined,
             startTime: data.startTime || undefined,
             notes: data.notes || undefined,
+            allergens: allergens.length > 0 ? allergens : undefined,
           });
 
       if (!result.success) { toast.error(result.error); return; }
@@ -145,6 +153,13 @@ export function BreakfastForm({ isOpen, onClose, dayId, editItem, onSuccess }: P
         <Label htmlFor="bf-notes">{t('notesLabel')}</Label>
         <Textarea id="bf-notes" rows={2} {...register('notes')} />
       </div>
+
+      <MoreOptionsSection>
+        <div className="space-y-1">
+          <Label htmlFor="bf-allergens">{tAllergens('label')}</Label>
+          <AllergenMultiSelect value={allergens} onChange={setAllergens} />
+        </div>
+      </MoreOptionsSection>
 
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="outline" onClick={onClose}>{t('cancel')}</Button>

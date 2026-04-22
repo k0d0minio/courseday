@@ -8,6 +8,9 @@ import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { createReservation, updateReservation } from '@/app/actions/reservations';
 import { TableBreakdownBuilder } from '@/components/table-breakdown-builder';
+import { AllergenMultiSelect } from '@/components/allergen-multi-select';
+import { MoreOptionsSection } from '@/components/more-options-section';
+import { filterAllergenCodes, type AllergenCode } from '@/lib/allergens';
 import type { Reservation } from '@/types/index';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -70,9 +73,11 @@ type Props = {
 
 export function ReservationForm({ isOpen, onClose, dayId, editItem, onSuccess }: Props) {
   const t = useTranslations('Tenant.reservationForm');
+  const tAllergens = useTranslations('Tenant.allergens');
   const isMobile = useIsMobile();
   const [isPending, startTransition] = useTransition();
   const [tableBreakdown, setTableBreakdown] = useState<number[]>([]);
+  const [allergens, setAllergens] = useState<AllergenCode[]>([]);
   const isEditing = !!editItem;
 
   const { register, handleSubmit, reset } = useForm<FormData>({
@@ -84,6 +89,7 @@ export function ReservationForm({ isOpen, onClose, dayId, editItem, onSuccess }:
     reset(defaultValues(editItem));
     const tb = editItem?.table_breakdown;
     setTableBreakdown(Array.isArray(tb) ? (tb as number[]) : []);
+    setAllergens(filterAllergenCodes(editItem?.allergens));
   }, [isOpen, editItem, reset]);
 
   function onSubmit(data: FormData) {
@@ -96,6 +102,7 @@ export function ReservationForm({ isOpen, onClose, dayId, editItem, onSuccess }:
         endTime: data.endTime || undefined,
         notes: data.notes || undefined,
         tableBreakdown: tableBreakdown.length > 0 ? tableBreakdown : undefined,
+        allergens: allergens.length > 0 ? allergens : undefined,
       };
 
       const result = isEditing
@@ -142,6 +149,13 @@ export function ReservationForm({ isOpen, onClose, dayId, editItem, onSuccess }:
         <Label htmlFor="rf-notes">{t('notesLabel')}</Label>
         <Textarea id="rf-notes" rows={2} {...register('notes')} />
       </div>
+
+      <MoreOptionsSection>
+        <div className="space-y-1">
+          <Label htmlFor="rf-allergens">{tAllergens('label')}</Label>
+          <AllergenMultiSelect value={allergens} onChange={setAllergens} />
+        </div>
+      </MoreOptionsSection>
 
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="outline" onClick={onClose}>{t('cancel')}</Button>

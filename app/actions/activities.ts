@@ -35,6 +35,7 @@ function toRow(
     venue_type_id: data.venueTypeId ?? null,
     poc_id: data.pocId ?? null,
     notes: data.notes?.trim() || null,
+    allergens: data.allergens ?? [],
     is_recurring: overrides.is_recurring ?? data.isRecurring ?? false,
     recurrence_frequency: data.recurrenceFrequency ?? null,
     recurrence_group_id: overrides.recurrence_group_id ?? null,
@@ -195,6 +196,7 @@ export async function updateActivity(
       venue_type_id: data.venueTypeId ?? null,
       poc_id: data.pocId ?? null,
       notes: data.notes?.trim() || null,
+      allergens: data.allergens ?? [],
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)

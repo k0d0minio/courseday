@@ -41,6 +41,7 @@ export type Database = {
     Tables: {
       activity: {
         Row: {
+          allergens: string[]
           created_at: string
           day_id: string
           description: string | null
@@ -59,6 +60,7 @@ export type Database = {
           venue_type_id: string | null
         }
         Insert: {
+          allergens?: string[]
           created_at?: string
           day_id: string
           description?: string | null
@@ -77,6 +79,7 @@ export type Database = {
           venue_type_id?: string | null
         }
         Update: {
+          allergens?: string[]
           created_at?: string
           day_id?: string
           description?: string | null
@@ -186,6 +189,7 @@ export type Database = {
       }
       breakfast_configuration: {
         Row: {
+          allergens: string[]
           breakfast_date: string
           created_at: string
           day_id: string
@@ -199,6 +203,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          allergens?: string[]
           breakfast_date: string
           created_at?: string
           day_id: string
@@ -212,6 +217,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          allergens?: string[]
           breakfast_date?: string
           created_at?: string
           day_id?: string
@@ -345,6 +351,7 @@ export type Database = {
       }
       reservation: {
         Row: {
+          allergens: string[]
           created_at: string
           day_id: string
           end_time: string | null
@@ -358,6 +365,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          allergens?: string[]
           created_at?: string
           day_id: string
           end_time?: string | null
@@ -371,6 +379,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          allergens?: string[]
           created_at?: string
           day_id?: string
           end_time?: string | null

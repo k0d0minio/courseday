@@ -5,6 +5,8 @@ import { Pencil, Trash2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { deleteActivity, deleteActivityRecurrenceGroup, deleteActivityFromHere } from '@/app/actions/activities';
+import { AllergenBadgeRow } from '@/components/allergen-badge';
+import { filterAllergenCodes } from '@/lib/allergens';
 import type { ActivityWithRelations } from '@/types/index';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -31,6 +33,7 @@ export function ActivityCard({ item, isEditor, onEdit, onDeleted }: Props) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDeleting, startDeleteTransition] = useTransition();
   const isRecurring = !!item.recurrence_group_id;
+  const allergens = filterAllergenCodes(item.allergens);
 
   function handleDelete(mode: 'single' | 'all' | 'from-here') {
     startDeleteTransition(async () => {
@@ -106,6 +109,11 @@ export function ActivityCard({ item, isEditor, onEdit, onDeleted }: Props) {
               {/* Point of contact */}
               {item.point_of_contact && (
                 <p className="text-sm text-muted-foreground">{item.point_of_contact.name}</p>
+              )}
+
+              {/* Allergens */}
+              {allergens.length > 0 && (
+                <AllergenBadgeRow codes={allergens} />
               )}
 
               {/* Notes */}
