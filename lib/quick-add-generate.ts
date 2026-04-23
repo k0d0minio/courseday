@@ -32,24 +32,23 @@ export { QUICK_ADD_GAP_ACTIVITY, QUICK_ADD_GAP_RESERVATION, QUICK_ADD_GAP_BREAKF
 // LLM output
 // ---------------------------------------------------------------------------
 
-const strOpt = z.string().optional();
-const intOpt = z.coerce.number().int().optional();
+const strNull = z.string().nullable();
+const intNull = z.coerce.number().int().nullable();
 
-// Single flat field bag — OpenAI structured output requires the root schema
-// to be `type: object`, so we cannot use a discriminated union at the root.
-// The LLM fills only fields relevant to `kind`; the rest stay undefined.
+// OpenAI strict structured output requires root `type: object` AND every key
+// in `required`. To express "absent", use nullable fields instead of optional.
 const allFields = z.object({
-  title: strOpt,
-  description: strOpt,
-  guestName: strOpt,
-  groupName: strOpt,
-  startTime: strOpt,
-  endTime: strOpt,
-  expectedCovers: intOpt,
-  guestCount: intOpt,
-  notes: strOpt,
-  tableBreakdown: z.array(z.number().int().min(1)).max(20).optional(),
-  allergenHints: z.array(z.string()).optional(),
+  title: strNull,
+  description: strNull,
+  guestName: strNull,
+  groupName: strNull,
+  startTime: strNull,
+  endTime: strNull,
+  expectedCovers: intNull,
+  guestCount: intNull,
+  notes: strNull,
+  tableBreakdown: z.array(z.number().int().min(1)).max(20).nullable(),
+  allergenHints: z.array(z.string()).nullable(),
 });
 
 const quickAddLlmSchema = z.object({
@@ -367,24 +366,28 @@ function clampBreakfast(
   };
 }
 
+function nu<T>(v: T | null | undefined): T | undefined {
+  return v ?? undefined;
+}
+
 function buildDataFromLlm(
   out: z.infer<typeof quickAddLlmSchema>,
   dayId: string,
   contextDate: string
 ): QuickAddParseData {
   if (out.kind === 'activity') {
-    const a = mapAllergenHints(out.fields.allergenHints);
+    const a = mapAllergenHints(nu(out.fields.allergenHints));
     const n = appendUnmappedToNotes(out.fields.notes ?? '', a.unmapped);
     const strip = out.dateAmbiguous;
     const st = strip ? undefined : out.fields.startTime ? normalizeToTimeInput(out.fields.startTime) : undefined;
     const en = strip ? undefined : out.fields.endTime ? normalizeToTimeInput(out.fields.endTime) : undefined;
     const defaultsRaw = clampWithActivitySchema({
       dayId,
-      title: out.fields.title,
-      description: out.fields.description,
+      title: nu(out.fields.title),
+      description: nu(out.fields.description),
       startTime: st,
       endTime: en,
-      expectedCovers: out.fields.expectedCovers,
+      expectedCovers: nu(out.fields.expectedCovers),
       notes: n.notes,
       allergens: a.codes,
     });
@@ -408,13 +411,13 @@ function buildDataFromLlm(
     };
   }
   if (out.kind === 'reservation') {
-    const a = mapAllergenHints(out.fields.allergenHints);
+    const a = mapAllergenHints(nu(out.fields.allergenHints));
     const n = appendUnmappedToNotes(out.fields.notes ?? '', a.unmapped);
     const strip = out.dateAmbiguous;
     const merged = {
       dayId,
-      guestName: out.fields.guestName,
-      guestCount: out.fields.guestCount,
+      guestName: nu(out.fields.guestName),
+      guestCount: nu(out.fields.guestCount),
       startTime: strip
         ? undefined
         : out.fields.startTime
@@ -426,7 +429,7 @@ function buildDataFromLlm(
           ? normalizeToTimeInput(out.fields.endTime)
           : undefined,
       notes: n.notes,
-      tableBreakdown: out.fields.tableBreakdown,
+      tableBreakdown: nu(out.fields.tableBreakdown),
       allergens: a.codes,
     };
     const d = clampReservation(merged);
@@ -458,20 +461,20 @@ function buildDataFromLlm(
   }
   if (out.kind === 'breakfast') {
     const f = out.fields;
-    const a = mapAllergenHints(f.allergenHints);
+    const a = mapAllergenHints(nu(f.allergenHints));
     const n = appendUnmappedToNotes(f.notes ?? '', a.unmapped);
     const strip = out.dateAmbiguous;
     const merged: { dayId: string } & Partial<CreateBreakfastFormData> = {
       dayId,
-      groupName: f.groupName,
-      guestCount: f.guestCount,
+      groupName: nu(f.groupName),
+      guestCount: nu(f.guestCount),
       startTime: strip
         ? undefined
         : f.startTime
           ? normalizeToTimeInput(f.startTime)
           : undefined,
       notes: n.notes,
-      tableBreakdown: f.tableBreakdown,
+      tableBreakdown: nu(f.tableBreakdown),
       allergens: a.codes,
     };
     const d = clampBreakfast(merged);
