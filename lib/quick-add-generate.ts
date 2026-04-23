@@ -35,52 +35,28 @@ export { QUICK_ADD_GAP_ACTIVITY, QUICK_ADD_GAP_RESERVATION, QUICK_ADD_GAP_BREAKF
 const strOpt = z.string().optional();
 const intOpt = z.coerce.number().int().optional();
 
-const activityLlm = z.object({
+// Single flat field bag — OpenAI structured output requires the root schema
+// to be `type: object`, so we cannot use a discriminated union at the root.
+// The LLM fills only fields relevant to `kind`; the rest stay undefined.
+const allFields = z.object({
   title: strOpt,
   description: strOpt,
+  guestName: strOpt,
+  groupName: strOpt,
   startTime: strOpt,
   endTime: strOpt,
   expectedCovers: intOpt,
-  notes: strOpt,
-  allergenHints: z.array(z.string()).optional(),
-});
-
-const reservationLlm = z.object({
-  guestName: strOpt,
   guestCount: intOpt,
-  startTime: strOpt,
-  endTime: strOpt,
   notes: strOpt,
   tableBreakdown: z.array(z.number().int().min(1)).max(20).optional(),
   allergenHints: z.array(z.string()).optional(),
 });
 
-const breakfastLlm = z.object({
-  groupName: strOpt,
-  guestCount: intOpt,
-  startTime: strOpt,
-  notes: strOpt,
-  tableBreakdown: z.array(z.number().int().min(1)).max(20).optional(),
-  allergenHints: z.array(z.string()).optional(),
+const quickAddLlmSchema = z.object({
+  kind: z.enum(['activity', 'reservation', 'breakfast']),
+  dateAmbiguous: z.boolean(),
+  fields: allFields,
 });
-
-const quickAddLlmSchema = z.discriminatedUnion('kind', [
-  z.object({
-    kind: z.literal('activity'),
-    dateAmbiguous: z.boolean(),
-    fields: activityLlm,
-  }),
-  z.object({
-    kind: z.literal('reservation'),
-    dateAmbiguous: z.boolean(),
-    fields: reservationLlm,
-  }),
-  z.object({
-    kind: z.literal('breakfast'),
-    dateAmbiguous: z.boolean(),
-    fields: breakfastLlm,
-  }),
-]);
 
 // ---------------------------------------------------------------------------
 // Time + allergen (exported for tests)
