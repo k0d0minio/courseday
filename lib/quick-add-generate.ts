@@ -2,7 +2,6 @@ import { generateObject } from 'ai';
 import { gateway } from '@ai-sdk/gateway';
 import { z } from 'zod';
 import { createBreakfastSchema, type CreateBreakfastFormData } from '@/lib/breakfast-schema';
-import { DAILY_BRIEF_MODEL_ID } from '@/lib/daily-brief-generate';
 import { activitySchema } from '@/lib/program-item-schema';
 import { reservationSchema, type ReservationFormData } from '@/lib/reservation-schema';
 import {
@@ -14,7 +13,11 @@ import {
 import { PROMPT_VERSION, QUICK_ADD_SYSTEM, buildUserPrompt } from './quick-add-prompt';
 import type { QuickAddParseData, QuickAddGapId } from '@/lib/quick-add-types';
 
-export const QUICK_ADD_MODEL_ID = DAILY_BRIEF_MODEL_ID;
+export const QUICK_ADD_MODEL_ID = 'openai/gpt-5.4' as const;
+
+function hasGatewayAuth(): boolean {
+  return Boolean(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN);
+}
 export { PROMPT_VERSION } from './quick-add-prompt';
 export type {
   QuickAddActivityFormDefaults,
@@ -538,8 +541,11 @@ export async function generateQuickAddParse(
     return { success: false, error: 'Text too short.' };
   }
 
-  if (!process.env.AI_GATEWAY_API_KEY) {
-    return { success: false, error: 'AI is not configured (missing AI_GATEWAY_API_KEY).' };
+  if (!hasGatewayAuth()) {
+    return {
+      success: false,
+      error: 'AI is not configured (set AI_GATEWAY_API_KEY or run `vercel env pull`).',
+    };
   }
 
   const prompt = buildUserPrompt(t, dayId, contextDate);
@@ -556,6 +562,7 @@ export async function generateQuickAddParse(
     out = res.object;
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Generation failed.';
+    console.error('[quick-add] generateObject failed:', msg);
     return {
       success: false,
       error: msg.length > 200 ? 'Could not parse quick add. Please try again or add manually.' : msg,

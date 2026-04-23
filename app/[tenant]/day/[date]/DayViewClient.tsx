@@ -438,19 +438,23 @@ function DayViewEditor({
     [showBreakfast, showReservations, tQa]
   );
 
-  const handleQuickAddParseFailed = useCallback((raw: string, error: string) => {
-    if (error.includes('Too many') || error.includes('Not authorized')) {
-      toast.error(error);
-      return;
-    }
-    if (error.includes('AI is not configured') || error.includes('AI_GATEWAY')) {
-      toast.error(error);
-      return;
-    }
-    setReservationQuickAdd({ kind: 'failed', rawText: raw });
-    setEditReservation(null);
-    setReservationModalOpen(true);
-  }, []);
+  const handleQuickAddParseFailed = useCallback(
+    (raw: string, error: string) => {
+      if (error.includes('Too many') || error.includes('Not authorized')) {
+        toast.error(error);
+        return;
+      }
+      if (error.includes('AI is not configured') || error.includes('AI_GATEWAY')) {
+        toast.error(error);
+        return;
+      }
+      toast.error(tQa('parseFailed'));
+      setReservationQuickAdd({ kind: 'failed', rawText: raw });
+      setEditReservation(null);
+      setReservationModalOpen(true);
+    },
+    [tQa]
+  );
 
   useDayViewHotkeys({
     date,

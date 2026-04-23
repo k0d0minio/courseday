@@ -288,7 +288,8 @@
       "submit": "Analyser",
       "parsing": "Analyse…",
       "dateAmbiguous": "La date ou l'heure n'était pas claire — vous restez sur le jour affiché. Complétez les horaires si besoin.",
-      "typeDisabled": "Ce type d'entrée n'est pas activé pour ce club. Le texte est dans les notes."
+      "typeDisabled": "Ce type d'entrée n'est pas activé pour ce club. Le texte est dans les notes.",
+      "parseFailed": "Analyse automatique impossible. Le texte est dans les notes — complétez le reste."
     },
     "shortcuts": {
       "paletteTitle": "Palette de commandes",

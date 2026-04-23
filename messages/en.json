@@ -288,7 +288,8 @@
       "submit": "Parse",
       "parsing": "Parsing…",
       "dateAmbiguous": "The date or time was not clear, so you are still on the day you were viewing. Fill in times as needed.",
-      "typeDisabled": "That item type is not enabled for this club. The text is in the notes field — pick another way to add or adjust in settings."
+      "typeDisabled": "That item type is not enabled for this club. The text is in the notes field — pick another way to add or adjust in settings.",
+      "parseFailed": "Could not parse automatically. Your text is in the notes — fill in the rest."
     },
     "shortcuts": {
       "paletteTitle": "Command palette",

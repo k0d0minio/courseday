@@ -14,8 +14,12 @@ import type { Activity, Reservation, BreakfastConfiguration } from '@/types/inde
 import type { DayNote } from '@/app/actions/day-notes';
 
 const PROMPT_VERSION = 'v1';
-export const DAILY_BRIEF_MODEL_ID = 'openai/gpt-5.4-mini' as const;
+export const DAILY_BRIEF_MODEL_ID = 'openai/gpt-5.4' as const;
 const NOTE_MAX = 200;
+
+function hasGatewayAuth(): boolean {
+  return Boolean(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN);
+}
 
 const narrativeSchema = z.object({
   headline: z.string(),
@@ -186,8 +190,11 @@ export async function generateAndPersistDailyBrief(
     weather: WeatherData | null;
   }
 ): Promise<ActionResponse<DailyBriefRecord>> {
-  if (!process.env.AI_GATEWAY_API_KEY) {
-    return { success: false, error: 'AI brief is not configured (missing AI_GATEWAY_API_KEY).' };
+  if (!hasGatewayAuth()) {
+    return {
+      success: false,
+      error: 'AI brief is not configured (set AI_GATEWAY_API_KEY or run `vercel env pull`).',
+    };
   }
 
   const covers = buildCovers(args.activities, args.reservations, args.breakfasts);
