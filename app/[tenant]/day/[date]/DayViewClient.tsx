@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { useDayRealtime } from './useDayRealtime';
 import { useTranslations } from 'next-intl';
-import { Plus, Copy, Sparkles } from 'lucide-react';
+import { Plus, Copy, Sparkles, SlidersHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 import { DayNav } from '@/components/day-nav';
 import { DaySummaryCard } from '@/components/day-summary-card';
@@ -16,8 +16,7 @@ import { ReservationCard } from '@/components/reservation-card';
 import { BreakfastForm } from '@/components/breakfast-form';
 import { BreakfastCard } from '@/components/breakfast-card';
 import { DayNotes } from '@/components/day-notes';
-import { WeatherCard } from '@/components/weather-card';
-import { DailyBriefCard } from '@/components/daily-brief-card';
+import { DayInfoBanner } from '@/components/day-info-banner';
 import { StaffScheduleSection } from '@/components/staff-schedule-section';
 import { CopyDayDialog } from '@/components/copy-day-dialog';
 import { HandoverControls } from '@/components/handover-controls';
@@ -27,6 +26,7 @@ import type { ReservationQuickAdd } from '@/components/reservation-form';
 import type { BreakfastQuickAdd } from '@/components/breakfast-form';
 import { Button } from '@/components/ui/button';
 import { KbdHint } from '@/components/kbd-hint';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useFeatureFlag } from '@/lib/feature-flags-context';
 import { useActiveDay } from '@/lib/active-day-context';
 import { useDayViewHotkeys } from '@/lib/keyboard-shortcuts';
@@ -516,25 +516,34 @@ function DayViewEditor({
     <div className="max-w-3xl mx-auto px-3 sm:px-6 py-4 sm:py-8 space-y-6">
       <div className="flex flex-wrap items-center gap-2 justify-between">
         <DayNav date={date} today={today} />
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            className="shrink-0"
-            onClick={() => {
-              returnFocusRef.current = null;
-              setQuickAddOpen(true);
-            }}
-          >
-            <Sparkles className="h-4 w-4 mr-1" />
-            {tQa('openButton')}
-          </Button>
-          <Button variant="outline" size="sm" className="shrink-0" onClick={() => setCopyDayOpen(true)}>
-            <Copy className="h-4 w-4 mr-1" />
-            {t('copyDay')}
-          </Button>
-        </div>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="shrink-0">
+              <SlidersHorizontal className="h-4 w-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-44 p-1">
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+              onClick={() => {
+                returnFocusRef.current = null;
+                setQuickAddOpen(true);
+              }}
+            >
+              <Sparkles className="h-4 w-4 shrink-0" />
+              {tQa('openButton')}
+            </button>
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+              onClick={() => setCopyDayOpen(true)}
+            >
+              <Copy className="h-4 w-4 shrink-0" />
+              {t('copyDay')}
+            </button>
+          </PopoverContent>
+        </Popover>
       </div>
 
       <QuickAddInput
@@ -564,16 +573,17 @@ function DayViewEditor({
         showCopyShifts={showStaffSchedule}
       />
 
-      {showDailyBrief && (
-        <DailyBriefCard
+      {(showDailyBrief || showWeatherReporting) && (
+        <DayInfoBanner
+          weather={showWeatherReporting ? weather : null}
+          showWeather={showWeatherReporting}
+          initialBrief={showDailyBrief ? dailyBrief : null}
+          showBrief={showDailyBrief}
           dateIso={date}
           dayId={dayId}
-          initialBrief={dailyBrief}
           isEditor
         />
       )}
-
-      {showWeatherReporting && weather && <WeatherCard weather={weather} />}
 
       <DaySummaryCard
         activities={activities}
