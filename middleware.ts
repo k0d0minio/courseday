@@ -182,6 +182,13 @@ export async function middleware(request: NextRequest) {
   requestHeaders.set('x-tenant-slug', tenant.slug);
   requestHeaders.set('x-tenant-language', tenant.language ?? 'en');
 
+  // API routes: inject tenant headers but skip the page rewrite.
+  if (pathname.startsWith('/api/')) {
+    return applyAuthCookies(
+      NextResponse.next({ request: { headers: requestHeaders } })
+    );
+  }
+
   let superadminRoleCookieValue: string | null = null;
   const requestedRole = request.nextUrl.searchParams.get(SUPERADMIN_ROLE_QUERY_PARAM);
   if ((requestedRole === 'editor' || requestedRole === 'viewer') && user) {
@@ -219,12 +226,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all paths except:
-     * - /api routes
-     * - /_next (Next.js internals)
-     * - Static files (favicon.ico, images, etc.)
-     */
     '/((?!api|_next|[\\w-]+\\.\\w+).*)',
+    '/api/mutations/:path*',
   ],
 };
