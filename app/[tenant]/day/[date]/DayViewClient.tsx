@@ -448,7 +448,7 @@ function DayViewEditor({
         toast.error(error);
         return;
       }
-      toast.error(tQa('parseFailed'));
+      toast.error(error || tQa('parseFailed'));
       setReservationQuickAdd({ kind: 'failed', rawText: raw });
       setEditReservation(null);
       setReservationModalOpen(true);

@@ -562,11 +562,9 @@ export async function generateQuickAddParse(
     out = res.object;
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Generation failed.';
-    console.error('[quick-add] generateObject failed:', msg);
-    return {
-      success: false,
-      error: msg.length > 200 ? 'Could not parse quick add. Please try again or add manually.' : msg,
-    };
+    console.error('[quick-add] generateObject failed:', e);
+    const short = msg.length > 200 ? msg.slice(0, 200) : msg;
+    return { success: false, error: `Quick add AI error: ${short}` };
   }
 
   const data = buildDataFromLlm(out, dayId, contextDate);
