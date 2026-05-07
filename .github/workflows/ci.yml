@@ -54,6 +54,17 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
           NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-anon-key
           NEXT_PUBLIC_ROOT_DOMAIN: localhost:3000
+      - run: pnpm test:coverage
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-anon-key
+          NEXT_PUBLIC_ROOT_DOMAIN: localhost:3000
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 30
   # Build is intentionally not in CI: Vercel's Git integration auto-builds
   # every PR with the real preview environment (correct REDIS_URL, etc.).
   # A GH Actions build can only run with dummy env, which either lies (passes
