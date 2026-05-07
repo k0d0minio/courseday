@@ -260,14 +260,16 @@ function TenantCard({
 
           {/* Feature flags */}
           <div className="mt-4 border-t pt-3">
-            <button
+            <Button
               type="button"
-              className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-sm font-medium"
+              variant="ghost"
+              size="inline"
+              className="text-muted-foreground hover:text-foreground gap-1 text-sm font-medium hover:bg-transparent"
               onClick={() => setExpanded((v) => !v)}
             >
               Feature Flags
               {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </button>
+            </Button>
 
             {expanded && (
               <div className="mt-3 space-y-4">

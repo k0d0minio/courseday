@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { useTheme } from 'next-themes'
 import { signOut } from '@/app/actions/auth'
 import { useAuth } from '@/lib/AuthProvider'
+import { Button } from '@/components/ui/button'
+import { MenuItem } from '@/components/ui/menu-item'
 import { cn } from '@/lib/utils'
 
 const THEMES = ['system', 'light', 'dark'] as const
@@ -36,7 +38,6 @@ export function AdminIndicator() {
     setTheme(THEMES[(idx + 1) % THEMES.length])
   }
 
-  // Close on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -51,59 +52,48 @@ export function AdminIndicator() {
 
   return (
     <div ref={ref} className="fixed right-4 bottom-4 z-50">
-      {/* Expanded panel */}
       {open && (
-        <div className="bg-popover mb-2 w-56 overflow-hidden rounded-lg border shadow-lg">
+        <div className="bg-popover mb-2 w-56 overflow-hidden rounded-lg border p-1 shadow-lg">
           <div className="px-3 py-2.5">
             <p className="text-muted-foreground truncate text-xs">{user?.email}</p>
           </div>
 
-          <div className="bg-border h-px" />
+          <div className="bg-border my-1 h-px" />
 
-          <Link
-            href="/admin/settings"
-            onClick={() => setOpen(false)}
-            className="hover:bg-accent flex items-center gap-2 px-3 py-2.5 text-sm transition-colors"
-          >
-            <Settings className="h-4 w-4 shrink-0" />
-            Settings
-          </Link>
+          <MenuItem asChild>
+            <Link href="/admin/settings" onClick={() => setOpen(false)}>
+              <Settings className="h-4 w-4 shrink-0" />
+              Settings
+            </Link>
+          </MenuItem>
 
-          <div className="bg-border h-px" />
-
-          <button
-            onClick={cycleTheme}
-            className="hover:bg-accent flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors"
-          >
+          <MenuItem onClick={cycleTheme}>
             {themeIcon[currentTheme]}
             {themeLabel[currentTheme]}
-          </button>
+          </MenuItem>
 
-          <div className="bg-border h-px" />
+          <div className="bg-border my-1 h-px" />
 
-          <button
+          <MenuItem
+            variant="destructive"
             onClick={() => startTransition(() => signOut())}
             disabled={isPending}
-            className="text-destructive hover:bg-destructive/10 flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors disabled:opacity-50"
           >
             <LogOut className="h-4 w-4 shrink-0" />
             {isPending ? 'Signing out…' : 'Sign out'}
-          </button>
+          </MenuItem>
         </div>
       )}
 
-      {/* Trigger */}
-      <button
+      <Button
+        variant="outline"
+        size="icon"
         onClick={() => setOpen((v) => !v)}
-        className={cn(
-          'bg-background flex h-9 w-9 items-center justify-center rounded-full border shadow-md',
-          'hover:bg-accent transition-colors',
-          open && 'bg-accent'
-        )}
+        className={cn('rounded-full shadow-md', open && 'bg-accent')}
         aria-label="Admin menu"
       >
         {open ? <ChevronUp className="h-4 w-4" /> : <Settings className="h-4 w-4" />}
-      </button>
+      </Button>
     </div>
   )
 }

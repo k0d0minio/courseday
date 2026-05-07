@@ -171,7 +171,28 @@ All server actions live under `app/actions/`:
 
 ### UI Components
 
-`components/ui/` contains shadcn/ui primitives. Key application components:
+`components/ui/` contains shadcn/ui primitives.
+
+**Button conventions** — `components/ui/button.tsx` is the only button primitive in product UI. Raw `<button>` elements outside `components/ui/` are forbidden by ESLint (`no-restricted-syntax`); whitelist a bespoke surface via `// eslint-disable-next-line no-restricted-syntax` with a one-line reason. Never override `h-*`, `min-h-*`, `px-*`, `py-*`, `text-xs`, or `text-[…]` on `Button` via `className` — extend the variant config instead. Lint enforces this.
+
+| Surface                               | size                               | variant                      |
+| ------------------------------------- | ---------------------------------- | ---------------------------- |
+| Marketing landing CTA (root domain)   | `lg`                               | `default` / `outline`        |
+| CTA on brand-coloured background      | `lg`                               | `onBrand` / `onBrandOutline` |
+| App / auth / onboarding form submit   | `default` + `w-full`               | `default`                    |
+| Dialog/Drawer footer cancel           | `default`                          | `outline`                    |
+| Card "add" / row action               | `sm` or `xs`                       | `default` / `outline`        |
+| Toolbar / popover trigger             | `sm`                               | `outline` / `ghost`          |
+| Icon-only — large                     | `icon` (size-9)                    | `ghost` / `outline`          |
+| Icon-only — small                     | `iconSm` (size-8)                  | `ghost`                      |
+| Icon-only — extra small               | `iconXs` / `iconXxs` / `iconMicro` | `ghost`                      |
+| Icon-only — touch (mobile)            | `iconResponsive`                   | `ghost`                      |
+| Tag/multi-select trigger (multi-line) | `formField`                        | `outline`                    |
+| Inline disclosure / link              | `inline`                           | `ghost` / `link`             |
+
+`components/ui/menu-item.tsx` is the canonical primitive for popover/dropdown menu items. Use it (or `<MenuItem asChild><Link…/></MenuItem>`) instead of styling raw `<button>` or `<Link>` elements with menu-row classes.
+
+Key application components:
 
 - `HomeClient` — calendar + agenda view toggle with localStorage preference
 - `AgendaView` — scrollable upcoming-days list

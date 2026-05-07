@@ -34,8 +34,8 @@ export function OnboardingBanner() {
       </p>
       <Button
         variant="ghost"
-        size="icon"
-        className="h-6 w-6 shrink-0"
+        size="iconXxs"
+        className="shrink-0"
         onClick={dismiss}
         aria-label={t('bannerDismiss')}
       >

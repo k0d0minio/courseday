@@ -177,16 +177,18 @@ export function ActivityCard({
 
               {checklistItems.length > 0 && (
                 <div className="space-y-2 pt-1">
-                  <button
+                  <Button
                     type="button"
+                    variant="link"
+                    size="inline"
                     onClick={() => setChecklistOpen((v) => !v)}
-                    className="text-muted-foreground hover:text-foreground text-xs underline underline-offset-2"
+                    className="text-muted-foreground hover:text-foreground"
                   >
                     {tChecklist('progress', {
                       done: checklistDone,
                       total: checklistItems.length,
                     })}
-                  </button>
+                  </Button>
                   {checklistOpen && (
                     <ul className="space-y-1">
                       {checklistItems.map((checkItem) => (

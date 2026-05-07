@@ -110,10 +110,12 @@ export function HandoverControls({
           </p>
 
           <div className="border-border/60 border-t pt-2">
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="inline"
               onClick={() => setRemovedOpen((o) => !o)}
-              className="text-foreground flex w-full items-center gap-1.5 text-left text-sm font-medium hover:underline"
+              className="text-foreground w-full justify-start gap-1.5 font-medium hover:bg-transparent hover:underline"
               aria-expanded={removedOpen}
             >
               {removedOpen ? (
@@ -122,7 +124,7 @@ export function HandoverControls({
                 <ChevronRight className="h-4 w-4 shrink-0" aria-hidden />
               )}
               {t('removedHeading', { count: removed.length })}
-            </button>
+            </Button>
             {removedOpen && (
               <ul className="text-muted-foreground mt-2 list-disc space-y-1.5 pl-5 text-sm">
                 {removed.length === 0 ? (

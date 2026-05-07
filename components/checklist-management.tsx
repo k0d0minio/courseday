@@ -199,6 +199,8 @@ function TemplateDialog({
             <div className="space-y-2">
               {fields.map((field, idx) => (
                 <div key={field.id} className="flex items-center gap-2">
+                  {/* Drag handle — bespoke grab cursor surface. */}
+                  {/* eslint-disable-next-line no-restricted-syntax */}
                   <button
                     type="button"
                     className="text-muted-foreground cursor-grab"

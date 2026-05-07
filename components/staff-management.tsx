@@ -313,8 +313,7 @@ export function StaffManagement() {
                   <TableCell className="text-right">
                     <Button
                       variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
+                      size="iconSm"
                       onClick={() => {
                         setEditRole(r)
                         setRoleDialogOpen(true)
@@ -325,8 +324,8 @@ export function StaffManagement() {
                     </Button>
                     <Button
                       variant="ghost"
-                      size="icon"
-                      className="text-destructive h-8 w-8"
+                      size="iconSm"
+                      className="text-destructive"
                       onClick={() => setDeleteRoleTarget(r)}
                       aria-label={t('deleteRoleAria')}
                     >
@@ -375,8 +374,7 @@ export function StaffManagement() {
                   <TableCell className="text-right">
                     <Button
                       variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
+                      size="iconSm"
                       onClick={() => {
                         setEditMember(m)
                         setMemberDialogOpen(true)
@@ -387,8 +385,8 @@ export function StaffManagement() {
                     </Button>
                     <Button
                       variant="ghost"
-                      size="icon"
-                      className="text-destructive h-8 w-8"
+                      size="iconSm"
+                      className="text-destructive"
                       onClick={() => setDeleteMemberTarget(m)}
                       aria-label={t('deleteMemberAria')}
                     >

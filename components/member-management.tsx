@@ -115,7 +115,8 @@ function InviteForm({ onInvited }: { onInvited: () => void }) {
             </Select>
             <Button
               type="submit"
-              className="h-10 min-h-10 w-full shrink-0 px-5 sm:w-auto"
+              size="lg"
+              className="w-full shrink-0 sm:w-auto"
               disabled={isPending}
             >
               <UserPlus className="size-4 shrink-0" aria-hidden />
@@ -323,8 +324,6 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
                       <TableCell className="py-3 pr-6 text-right">
                         <Button
                           variant="outline"
-                          size="sm"
-                          className="h-9"
                           disabled={isCancelling}
                           onClick={() => handleCancelInvitation(inv)}
                         >

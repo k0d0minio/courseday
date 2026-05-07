@@ -101,7 +101,7 @@ export function DemoForm({ labels }: { labels: DemoFormLabels }) {
           {error}
         </p>
       ) : null}
-      <Button type="submit" size="lg" disabled={submitting} className="mt-2 w-full sm:w-auto">
+      <Button type="submit" disabled={submitting} className="mt-2 w-full">
         {submitting ? labels.submitting : labels.submit}
       </Button>
     </form>
