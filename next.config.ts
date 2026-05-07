@@ -29,6 +29,7 @@ const nextConfig: NextConfig = {
     // Node.js APIs. The type definition lags the runtime — suppress the error.
     // @ts-expect-error nodeMiddleware is not yet in ExperimentalConfig types
     nodeMiddleware: true,
+    optimizePackageImports: ['date-fns', 'lucide-react'],
   },
   images: {
     remotePatterns: [

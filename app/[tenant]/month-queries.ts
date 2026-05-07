@@ -1,45 +1,48 @@
 import { createSupabaseServerClient } from '@/lib/supabase-server'
-import type { Activity, Reservation, BreakfastConfiguration } from '@/types/index'
+
+export type MonthActivitySummary = { day_id: string }
+export type MonthReservationSummary = { day_id: string }
+export type MonthBreakfastSummary = { breakfast_date: string; total_guests: number }
 
 export async function getProgramItemsForMonth(
   tenantId: string,
   dayIds: string[]
-): Promise<Activity[]> {
+): Promise<MonthActivitySummary[]> {
   if (dayIds.length === 0) return []
   const supabase = await createSupabaseServerClient()
   const { data } = await supabase
     .from('activity')
-    .select('*')
+    .select('day_id')
     .eq('tenant_id', tenantId)
     .in('day_id', dayIds)
-  return (data ?? []) as Activity[]
+  return (data ?? []) as MonthActivitySummary[]
 }
 
 export async function getReservationsForMonth(
   tenantId: string,
   dayIds: string[]
-): Promise<Reservation[]> {
+): Promise<MonthReservationSummary[]> {
   if (dayIds.length === 0) return []
   const supabase = await createSupabaseServerClient()
   const { data } = await supabase
     .from('reservation')
-    .select('*')
+    .select('day_id')
     .eq('tenant_id', tenantId)
     .in('day_id', dayIds)
-  return (data ?? []) as Reservation[]
+  return (data ?? []) as MonthReservationSummary[]
 }
 
 export async function getBreakfastConfigsForMonth(
   tenantId: string,
   start: string,
   end: string
-): Promise<BreakfastConfiguration[]> {
+): Promise<MonthBreakfastSummary[]> {
   const supabase = await createSupabaseServerClient()
   const { data } = await supabase
     .from('breakfast_configuration')
-    .select('*')
+    .select('breakfast_date, total_guests')
     .eq('tenant_id', tenantId)
     .gte('breakfast_date', start)
     .lte('breakfast_date', end)
-  return (data ?? []) as BreakfastConfiguration[]
+  return (data ?? []) as MonthBreakfastSummary[]
 }
