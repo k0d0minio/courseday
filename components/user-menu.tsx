@@ -1,5 +1,3 @@
-'use client'
-
 import type { User } from '@supabase/supabase-js'
 import { LogOut } from 'lucide-react'
 import { signOut } from '@/app/actions/auth'

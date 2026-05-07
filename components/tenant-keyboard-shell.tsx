@@ -1,5 +1,3 @@
-'use client'
-
 import type { ReactNode } from 'react'
 import { ActiveDayProvider } from '@/lib/active-day-context'
 import { KeyboardShortcutsProvider } from '@/lib/keyboard-shortcuts'
