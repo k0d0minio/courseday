@@ -1,12 +1,16 @@
-name: Migration Check
+name: Migrations
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
   pull_request:
     paths:
       - 'supabase/migrations/**'
 
 jobs:
-  validate-migrations:
+  validate:
     name: Validate Migration Files
     runs-on: ubuntu-latest
     steps:
@@ -39,3 +43,21 @@ jobs:
           COUNT=$(find supabase/migrations -name "*.sql" | wc -l | tr -d ' ')
           echo "Total migrations: $COUNT"
           echo "Next migration number: $(printf '%05d' $((COUNT + 1)))"
+
+  deploy:
+    name: Push Migrations to Production
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Push migrations
+        run: supabase db push --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}

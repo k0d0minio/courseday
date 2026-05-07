@@ -51,29 +51,30 @@ Prettier config: `.prettierrc` — no semis, single quotes, 100-char width, Tail
 
 ## Database Migrations
 
-- Location: `supabase/migrations/` — 35 migrations, numbered `00001`–`00035`
+- Location: `supabase/migrations/` — 34 migrations, numbered `00001`–`00034`
 - Naming convention: `NNNNN_description_words.sql` (5 zero-padded digits, lowercase, underscores)
 - Create new: `supabase migration new description_words` (auto-generates correct filename)
 - Apply locally: `supabase db reset` (replays all migrations + seed.sql)
-- Apply to production: `supabase db push --linked` — manual only, never from CI
+- Apply to production: automatically via CI on merge to `main` (see migration workflow)
 - After schema changes: run `pnpm db:types` to regenerate `types/supabase.ts`
-- CI validates naming convention + duplicate numbers on every PR touching migration files
+- CI validates naming + no duplicates on PRs; pushes to prod on merge to main
 
 ## CI/CD
 
 GitHub Actions (`.github/workflows/`):
 
-| Job               | Trigger                              | What it does                                |
-| ----------------- | ------------------------------------ | ------------------------------------------- |
-| `typecheck`       | every PR + push to main              | `tsc --noEmit`                              |
-| `lint`            | every PR + push to main              | `next lint` + `prettier --check`            |
-| `unit-tests`      | every PR + push to main              | `vitest run` (dummy env vars, no DB)        |
-| `build`           | every PR + push to main              | `next build` (after typecheck + unit-tests) |
-| `migration-check` | PR touching `supabase/migrations/**` | validates naming + no duplicates            |
+| Job          | Trigger                          | What it does                                |
+| ------------ | -------------------------------- | ------------------------------------------- |
+| `typecheck`  | every PR + push to main          | `tsc --noEmit`                              |
+| `lint`       | every PR + push to main          | `next lint` + `prettier --check`            |
+| `unit-tests` | every PR + push to main          | `vitest run` (dummy env vars, no DB)        |
+| `build`      | every PR + push to main          | `next build` (after typecheck + unit-tests) |
+| `validate`   | PR or push to main (migrations)  | validates naming + no duplicates            |
+| `deploy`     | push to main touching migrations | `supabase db push` to production            |
 
 Vercel auto-deploys on every push via Git integration (preview for branches, production for `main`).
 
-**Required GitHub Secrets:** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+**Required GitHub Secrets:** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD`
 Set at: `github.com/k0d0minio/courseday/settings/secrets/actions`
 
 ## Environment Variables
@@ -84,8 +85,7 @@ Create `.env.local` with:
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-KV_REST_API_URL=your_upstash_redis_url
-KV_REST_API_TOKEN=your_upstash_redis_token
+REDIS_URL=your_redis_connection_url
 NEXT_PUBLIC_ROOT_DOMAIN=localhost:3000   # or your production domain
 OPENWEATHER_API_KEY=your_openweather_api_key   # used by /api/geocode for city search in branding settings
 CRON_SECRET=long_random_string                  # Vercel Cron: Authorization: Bearer for /api/cron/morning-brief
