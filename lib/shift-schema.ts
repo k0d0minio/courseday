@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const shiftSchema = z.object({
-  staff_member_id: z.string().uuid('Select a staff member'),
+  user_id: z.string().uuid('Select a team member'),
   role: z.string().max(200).optional().or(z.literal('')),
   start_time: z.string().max(20).optional().or(z.literal('')),
   end_time: z.string().max(20).optional().or(z.literal('')),

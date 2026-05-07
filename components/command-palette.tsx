@@ -27,7 +27,6 @@ export function CommandPalette() {
   const { tenantTodayYmd, activeDayYmd } = useActiveDay()
   const { isEditor } = useAuth()
   const showChecklists = useFeatureFlag('checklists')
-  const showStaffSchedule = useFeatureFlag('staff_schedule')
   const showReservations = useFeatureFlag('reservations')
   const showBreakfast = useFeatureFlag('breakfast_config')
   const { commandPaletteOpen, setCommandPaletteOpen } = useKeyboardShortcuts()
@@ -38,9 +37,8 @@ export function CommandPalette() {
     () =>
       getVisibleSettingsRoutes({
         checklists: showChecklists,
-        staffSchedule: showStaffSchedule,
       }),
-    [showChecklists, showStaffSchedule]
+    [showChecklists]
   )
 
   const close = useCallback(() => {

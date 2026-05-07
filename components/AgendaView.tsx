@@ -35,7 +35,7 @@ import type { DaySummary } from '@/components/HomeClient'
 
 type Props = {
   today: string
-  /** When false, hide add-item controls and server forms (viewer home). */
+  /** When false, hide add-item controls and server forms (staff home). */
   isEditor?: boolean
 }
 

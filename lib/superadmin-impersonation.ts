@@ -1,7 +1,7 @@
 export const SUPERADMIN_ROLE_QUERY_PARAM = 'superadmin_as'
 export const SUPERADMIN_ROLE_COOKIE = 'courseday_superadmin_role'
 
-export type SuperadminRole = 'editor' | 'viewer'
+export type SuperadminRole = 'editor' | 'staff'
 
 export function parseSuperadminRoleCookie(
   raw: string | undefined
@@ -9,7 +9,7 @@ export function parseSuperadminRoleCookie(
   if (!raw) return null
   const [userId, tenantId, role] = raw.split(':')
   if (!userId || !tenantId || !role) return null
-  if (role !== 'editor' && role !== 'viewer') return null
+  if (role !== 'editor' && role !== 'staff') return null
   return { userId, tenantId, role }
 }
 

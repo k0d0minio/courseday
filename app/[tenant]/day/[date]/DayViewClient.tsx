@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 import { useDayRealtime } from './useDayRealtime'
 import { useTranslations } from 'next-intl'
-import { Plus, Copy, Sparkles, SlidersHorizontal } from 'lucide-react'
+import { Plus, Sparkles, SlidersHorizontal } from 'lucide-react'
 import { toast } from 'sonner'
 import { DayNav } from '@/components/day-nav'
 import { DaySummaryCard } from '@/components/day-summary-card'
@@ -18,7 +18,6 @@ import { BreakfastCard } from '@/components/breakfast-card'
 import { DayNotes } from '@/components/day-notes'
 import { DayInfoBanner } from '@/components/day-info-banner'
 import { StaffScheduleSection } from '@/components/staff-schedule-section'
-import { CopyDayDialog } from '@/components/copy-day-dialog'
 import { HandoverControls } from '@/components/handover-controls'
 import { QuickAddInput } from '@/components/quick-add-input'
 import type { ActivityQuickAddSeed } from '@/components/activity-form'
@@ -37,7 +36,7 @@ import type {
   ActivityWithRelations,
   Reservation,
   BreakfastConfiguration,
-  ShiftWithStaffMember,
+  ShiftWithAssignee,
 } from '@/types/index'
 import type { DayViewProps } from './page'
 import type { QuickAddParseData } from '@/lib/quick-add-types'
@@ -51,7 +50,7 @@ function useDayViewLiveState(p: DayViewProps, staffScheduleEnabled: boolean) {
   const [breakfastConfigs, setBreakfastConfigs] = useState<BreakfastConfiguration[]>(
     p.breakfastConfigs
   )
-  const [shifts, setShifts] = useState<ShiftWithStaffMember[]>(p.shifts)
+  const [shifts, setShifts] = useState<ShiftWithAssignee[]>(p.shifts)
   const [dayNotes, setDayNotes] = useState<DayNote[]>(p.dayNotes)
 
   useDayRealtime(
@@ -60,7 +59,7 @@ function useDayViewLiveState(p: DayViewProps, staffScheduleEnabled: boolean) {
     setReservations,
     setBreakfastConfigs,
     setShifts,
-    p.staffMembers,
+    p.shiftAssignees,
     staffScheduleEnabled,
     setDayNotes
   )
@@ -209,8 +208,7 @@ function DayViewEditor({
   pocs,
   venueTypes,
   authState,
-  staffMembers,
-  staffRoles,
+  shiftAssignees,
   live,
   showStaffSchedule,
   handoverEnabled,
@@ -262,7 +260,6 @@ function DayViewEditor({
 
   const [breakfastModalOpen, setBreakfastModalOpen] = useState(false)
   const [editBreakfast, setEditBreakfast] = useState<BreakfastConfiguration | null>(null)
-  const [copyDayOpen, setCopyDayOpen] = useState(false)
   const [quickAddOpen, setQuickAddOpen] = useState(false)
   const [activityQuickAdd, setActivityQuickAdd] = useState<ActivityQuickAddSeed | null>(null)
   const [reservationQuickAdd, setReservationQuickAdd] = useState<ReservationQuickAdd | null>(null)
@@ -530,10 +527,6 @@ function DayViewEditor({
               <Sparkles className="h-4 w-4 shrink-0" />
               {tQa('openButton')}
             </MenuItem>
-            <MenuItem type="button" onClick={() => setCopyDayOpen(true)}>
-              <Copy className="h-4 w-4 shrink-0" />
-              {t('copyDay')}
-            </MenuItem>
           </PopoverContent>
         </Popover>
       </div>
@@ -557,14 +550,6 @@ function DayViewEditor({
         />
       )}
 
-      <CopyDayDialog
-        isOpen={copyDayOpen}
-        onClose={() => setCopyDayOpen(false)}
-        sourceDayId={dayId}
-        today={today}
-        showCopyShifts={showStaffSchedule}
-      />
-
       {(showDailyBrief || showWeatherReporting) && (
         <DayInfoBanner
           weather={showWeatherReporting ? weather : null}
@@ -587,8 +572,7 @@ function DayViewEditor({
         <StaffScheduleSection
           dayId={dayId}
           shifts={shifts}
-          staffMembers={staffMembers}
-          staffRoles={staffRoles}
+          assignees={shiftAssignees}
           isEditor={authState.isEditor}
           onShiftsChange={setShifts}
         />

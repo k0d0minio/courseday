@@ -3,7 +3,7 @@ import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { getUser } from '@/app/actions/auth'
 import { getSuperadminImpersonationRole } from '@/lib/superadmin'
 
-export type Role = 'editor' | 'viewer'
+export type Role = 'editor' | 'staff'
 
 /** Returns the current user's role for the given tenant, or null if not a member. */
 export async function getUserRole(tenantId: string): Promise<Role | null> {

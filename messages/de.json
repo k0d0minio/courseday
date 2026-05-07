@@ -127,8 +127,7 @@
       "noReservations": "Noch keine Reservierungen.",
       "addBreakfast": "Frühstück hinzufügen",
       "addActivity": "Aktivität",
-      "addReservation": "Reservierung hinzufügen",
-      "copyDay": "Kopieren"
+      "addReservation": "Reservierung hinzufügen"
     },
     "handover": {
       "toggle": "Übergabe",
@@ -369,7 +368,6 @@
       "tabBranding": "Corporate Design",
       "tabLanguage": "Sprache",
       "tabMembers": "Team",
-      "tabStaff": "Personal",
       "tabFeedback": "Feedback",
       "languageTitle": "Sprache des Betriebs",
       "languageDescription": "Diese Sprache wird für alle Mitglieder Ihres Betriebs verwendet.",
@@ -451,7 +449,7 @@
       "joined": "Beigetreten",
       "noMembers": "Noch keine Mitglieder.",
       "roleEditor": "Editor",
-      "roleViewer": "Betrachter",
+      "roleStaff": "Personal",
       "inviteTitle": "Teammitglied einladen",
       "emailLabel": "E-Mail-Adresse",
       "emailPlaceholder": "kollege@beispiel.de",
@@ -509,32 +507,18 @@
       "bannerLink": "Einrichtung abschließen",
       "bannerDismiss": "Ausblenden"
     },
-    "copyDay": {
-      "title": "Auf einen anderen Tag kopieren",
-      "targetDate": "Zieldatum",
-      "copyActivities": "Aktivitäten kopieren",
-      "copyShifts": "Dienstplan kopieren",
-      "cancel": "Abbrechen",
-      "copy": "Kopieren",
-      "copying": "Wird kopiert\u2026",
-      "copied": "Kopiert.",
-      "copiedActivities": "Aktivitäten kopiert.",
-      "copiedShifts": "Dienstplan kopiert.",
-      "copiedBoth": "Aktivitäten und Dienstplan kopiert."
-    },
     "staff": {
       "section": {
         "title": "Dienstplan",
         "addShift": "Schicht hinzufügen",
         "empty": "Keine Schichten geplant.",
-        "noStaffHint": "Fügen Sie aktives Personal unter Einstellungen → Personal hinzu, bevor Sie Schichten planen."
+        "noStaffHint": "Laden Sie Teammitglieder unter Einstellungen → Team ein, bevor Sie Schichten planen."
       },
       "shiftForm": {
         "addTitle": "Schicht hinzufügen",
         "editTitle": "Schicht bearbeiten",
-        "staffMemberLabel": "Mitarbeitende",
+        "staffMemberLabel": "Teammitglied",
         "staffPlaceholder": "Auswählen…",
-        "inactive": "inaktiv",
         "roleLabel": "Rolle für diese Schicht",
         "rolePlaceholder": "z. B. Küchenchef",
         "startLabel": "Beginn",
@@ -555,58 +539,6 @@
         "delete": "Löschen",
         "deleting": "Wird gelöscht…",
         "deleted": "Schicht entfernt."
-      },
-      "settings": {
-        "loading": "Laden…",
-        "rolesHeading": "Rollen-Vorlagen",
-        "rolesDescription": "Vorschläge für Schichtrollen. Freie Eingabe bleibt möglich.",
-        "addRole": "Rolle hinzufügen",
-        "noRoles": "Noch keine Rollen-Vorlagen.",
-        "roleNameCol": "Rollenname",
-        "actionsCol": "Aktionen",
-        "editRoleAria": "Rolle bearbeiten",
-        "deleteRoleAria": "Rolle löschen",
-        "deleteRoleTitle": "Rollen-Vorlage löschen?",
-        "deleteRoleDescription": "Nur das Label wird entfernt, nicht geplante Schichten.",
-        "membersHeading": "Mitarbeitende",
-        "addMember": "Person hinzufügen",
-        "noMembers": "Noch keine Personen.",
-        "memberNameCol": "Name",
-        "memberRoleCol": "Standardrolle",
-        "memberActiveCol": "Aktiv",
-        "activeYes": "Ja",
-        "activeNo": "Nein",
-        "editMemberAria": "Person bearbeiten",
-        "deleteMemberAria": "Person entfernen",
-        "deleteMemberTitle": "Diese Person löschen?",
-        "deleteMemberDescription": "Nicht möglich, solange noch Schichten existieren. Zuerst Schichten entfernen.",
-        "cancel": "Abbrechen",
-        "delete": "Löschen",
-        "deleting": "Wird gelöscht…",
-        "roleDeleted": "Rollen-Vorlage entfernt.",
-        "memberDeleted": "Person entfernt.",
-        "roleDialog": {
-          "addTitle": "Rollen-Vorlage hinzufügen",
-          "editTitle": "Rollen-Vorlage bearbeiten",
-          "nameLabel": "Name",
-          "cancel": "Abbrechen",
-          "save": "Speichern",
-          "saving": "Wird gespeichert…",
-          "created": "Rolle hinzugefügt.",
-          "updated": "Rolle aktualisiert."
-        },
-        "memberDialog": {
-          "addTitle": "Person hinzufügen",
-          "editTitle": "Person bearbeiten",
-          "nameLabel": "Name",
-          "roleLabel": "Standardrolle",
-          "activeLabel": "Aktiv (kann eingeplant werden)",
-          "cancel": "Abbrechen",
-          "save": "Speichern",
-          "saving": "Wird gespeichert…",
-          "created": "Person hinzugefügt.",
-          "updated": "Person aktualisiert."
-        }
       }
     },
     "venueType": {

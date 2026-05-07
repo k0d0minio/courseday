@@ -159,7 +159,6 @@ All server actions live under `app/actions/`:
 - `shifts.ts` — staff shift CRUD
 - `staff.ts` — staff member CRUD
 - `staff-role.ts` — staff role CRUD
-- `schedule-templates.ts` — copy-day template management
 - `weather.ts` — weather data fetch
 - `daily-brief.ts` — LLM daily brief generation
 - `quick-add.ts` — AI text parsing for quick activity creation
@@ -217,7 +216,7 @@ Per-tenant feature toggles controlled by superadmin via `app/admin/dashboard.tsx
 | `breakfast_config`  | Breakfast Config  | Breakfast CRUD, breakfast counts/pips on calendar/agenda/sidebar, breakfast sections on day views, DaySummaryCard column. Server actions guarded.                        | true    |
 | `weather_reporting` | Weather Reporting | WeatherCard on day views, weather data fetch on day page.                                                                                                                | true    |
 | `checklists`        | Checklists        | Checklists settings page, settings dropdown/mobile-nav/command palette link.                                                                                             | true    |
-| `staff_schedule`    | Staff Schedule    | Staff schedule section on day views, staff settings page, shift data fetch, copy-day shift option.                                                                       | true    |
+| `staff_schedule`    | Staff Schedule    | Staff schedule section on day views, staff settings page, shift data fetch.                                                                                              | true    |
 | `daily_brief`       | Daily Brief       | DailyBriefCard on day views (editor + viewer), `generateDailyBrief` server action, morning brief cron email (skips tenant when off), daily brief data fetch on day page. | true    |
 
 **Always-on modules** (no flag, core functionality):

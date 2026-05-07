@@ -127,8 +127,7 @@
       "noReservations": "Ninguna reserva aún.",
       "addBreakfast": "Añadir desayuno",
       "addActivity": "Actividad",
-      "addReservation": "Añadir reserva",
-      "copyDay": "Copiar"
+      "addReservation": "Añadir reserva"
     },
     "handover": {
       "toggle": "Entrega de turno",
@@ -369,7 +368,6 @@
       "tabBranding": "Imagen de marca",
       "tabLanguage": "Idioma",
       "tabMembers": "Equipo",
-      "tabStaff": "Personal",
       "tabFeedback": "Sugerencias",
       "languageTitle": "Idioma del establecimiento",
       "languageDescription": "Este idioma se usará para todos los miembros de tu establecimiento.",
@@ -451,7 +449,7 @@
       "joined": "Incorporado",
       "noMembers": "Ningún miembro aún.",
       "roleEditor": "Editor",
-      "roleViewer": "Visualizador",
+      "roleStaff": "Personal",
       "inviteTitle": "Invitar a un miembro",
       "emailLabel": "Correo electrónico",
       "emailPlaceholder": "colega@ejemplo.com",
@@ -509,32 +507,18 @@
       "bannerLink": "Completar configuración",
       "bannerDismiss": "Descartar"
     },
-    "copyDay": {
-      "title": "Copiar a otro día",
-      "targetDate": "Fecha destino",
-      "copyActivities": "Copiar actividades",
-      "copyShifts": "Copiar horario de personal",
-      "cancel": "Cancelar",
-      "copy": "Copiar",
-      "copying": "Copiando\u2026",
-      "copied": "Copiado.",
-      "copiedActivities": "Actividades copiadas.",
-      "copiedShifts": "Horario de personal copiado.",
-      "copiedBoth": "Actividades y horario de personal copiados."
-    },
     "staff": {
       "section": {
         "title": "Horario de personal",
         "addShift": "Añadir turno",
         "empty": "No hay turnos planificados.",
-        "noStaffHint": "Añade personal activo en Configuración → Personal antes de planificar turnos."
+        "noStaffHint": "Invita a tu equipo en Configuración → Equipo antes de planificar turnos."
       },
       "shiftForm": {
         "addTitle": "Añadir turno",
         "editTitle": "Editar turno",
-        "staffMemberLabel": "Miembro del personal",
+        "staffMemberLabel": "Miembro del equipo",
         "staffPlaceholder": "Seleccionar…",
-        "inactive": "inactivo",
         "roleLabel": "Rol en este turno",
         "rolePlaceholder": "ej. Jefe de cocina",
         "startLabel": "Inicio",
@@ -555,58 +539,6 @@
         "delete": "Eliminar",
         "deleting": "Eliminando…",
         "deleted": "Turno eliminado."
-      },
-      "settings": {
-        "loading": "Cargando…",
-        "rolesHeading": "Roles predefinidos",
-        "rolesDescription": "Etiquetas sugeridas para roles de turno. Puedes escribir cualquier rol.",
-        "addRole": "Añadir rol",
-        "noRoles": "Aún no hay roles predefinidos.",
-        "roleNameCol": "Nombre del rol",
-        "actionsCol": "Acciones",
-        "editRoleAria": "Editar rol",
-        "deleteRoleAria": "Eliminar rol",
-        "deleteRoleTitle": "¿Eliminar rol predefinido?",
-        "deleteRoleDescription": "Solo se quita la etiqueta, no los turnos planificados.",
-        "membersHeading": "Miembros del personal",
-        "addMember": "Añadir persona",
-        "noMembers": "Ninguna persona aún.",
-        "memberNameCol": "Nombre",
-        "memberRoleCol": "Rol predeterminado",
-        "memberActiveCol": "Activo",
-        "activeYes": "Sí",
-        "activeNo": "No",
-        "editMemberAria": "Editar persona",
-        "deleteMemberAria": "Eliminar persona",
-        "deleteMemberTitle": "¿Eliminar a esta persona?",
-        "deleteMemberDescription": "No es posible si aún tiene turnos. Elimina primero los turnos.",
-        "cancel": "Cancelar",
-        "delete": "Eliminar",
-        "deleting": "Eliminando…",
-        "roleDeleted": "Rol predefinido eliminado.",
-        "memberDeleted": "Persona eliminada.",
-        "roleDialog": {
-          "addTitle": "Añadir rol predefinido",
-          "editTitle": "Editar rol predefinido",
-          "nameLabel": "Nombre",
-          "cancel": "Cancelar",
-          "save": "Guardar",
-          "saving": "Guardando…",
-          "created": "Rol añadido.",
-          "updated": "Rol actualizado."
-        },
-        "memberDialog": {
-          "addTitle": "Añadir miembro",
-          "editTitle": "Editar miembro",
-          "nameLabel": "Nombre",
-          "roleLabel": "Rol predeterminado",
-          "activeLabel": "Activo (puede asignarse a turnos)",
-          "cancel": "Cancelar",
-          "save": "Guardar",
-          "saving": "Guardando…",
-          "created": "Miembro añadido.",
-          "updated": "Miembro actualizado."
-        }
       }
     },
     "venueType": {

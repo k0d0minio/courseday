@@ -61,12 +61,12 @@ describe('getUserRole', () => {
     expect(await getUserRole('tenant-1')).toBe('editor')
   })
 
-  it('returns viewer role', async () => {
+  it('returns staff role', async () => {
     vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never)
     vi.mocked(createSupabaseServerClient).mockResolvedValue(
-      makeChain({ data: { role: 'viewer' } }) as never
+      makeChain({ data: { role: 'staff' } }) as never
     )
-    expect(await getUserRole('tenant-1')).toBe('viewer')
+    expect(await getUserRole('tenant-1')).toBe('staff')
   })
 
   it('returns superadmin impersonation role when present', async () => {
@@ -86,10 +86,10 @@ describe('isEditor', () => {
     expect(await isEditor('tenant-1')).toBe(true)
   })
 
-  it('returns false for viewer', async () => {
+  it('returns false for staff', async () => {
     vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never)
     vi.mocked(createSupabaseServerClient).mockResolvedValue(
-      makeChain({ data: { role: 'viewer' } }) as never
+      makeChain({ data: { role: 'staff' } }) as never
     )
     expect(await isEditor('tenant-1')).toBe(false)
   })
@@ -108,10 +108,10 @@ describe('requireEditor', () => {
     expect(redirect).toHaveBeenCalledWith('/auth/sign-in')
   })
 
-  it('redirects to / when viewer', async () => {
+  it('redirects to / when staff', async () => {
     vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never)
     vi.mocked(createSupabaseServerClient).mockResolvedValue(
-      makeChain({ data: { role: 'viewer' } }) as never
+      makeChain({ data: { role: 'staff' } }) as never
     )
     await requireEditor('tenant-1')
     expect(redirect).toHaveBeenCalledWith('/')

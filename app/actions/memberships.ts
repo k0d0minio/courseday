@@ -7,7 +7,7 @@ import { getUser } from '@/app/actions/auth'
 import { buildAuthConfirmRedirectUrl } from '@/lib/auth-email-redirect'
 import type { ActionResponse } from '@/types/actions'
 
-export type MemberRole = 'editor' | 'viewer'
+export type MemberRole = 'editor' | 'staff'
 
 export interface Member {
   id: string
@@ -22,6 +22,53 @@ export interface PendingInvitation {
   email: string
   role: MemberRole
   created_at: string
+}
+
+export interface TenantMemberAssignee {
+  user_id: string
+  email: string
+  display_name: string
+  role: MemberRole
+}
+
+/**
+ * Returns all tenant members (editors + staff) for use in shift assignee
+ * pickers and shift card display. Available to any tenant member, not just
+ * editors. Names default to the email local-part until full names are added.
+ */
+export async function getTenantMemberAssignees(): Promise<ActionResponse<TenantMemberAssignee[]>> {
+  const tenantId = await getTenantId()
+  const role = await getUserRole(tenantId)
+  if (!role) return { success: false, error: 'Not authorized.' }
+
+  const { supabase } = await createTenantClient()
+  const { data: memberships, error } = await supabase
+    .from('memberships')
+    .select('user_id, role')
+    .eq('tenant_id', tenantId)
+    .order('created_at')
+
+  if (error) return { success: false, error: error.message }
+  if (!memberships?.length) return { success: true, data: [] }
+
+  const serviceClient = createSupabaseServiceClient()
+  const emailResults = await Promise.allSettled(
+    memberships.map((m) => serviceClient.auth.admin.getUserById(m.user_id))
+  )
+
+  return {
+    success: true,
+    data: memberships.map((m, i) => {
+      const settled = emailResults[i]
+      const email = settled.status === 'fulfilled' ? (settled.value.data.user?.email ?? '') : ''
+      return {
+        user_id: m.user_id,
+        email,
+        display_name: email ? email.split('@')[0] : m.user_id.slice(0, 8),
+        role: m.role as MemberRole,
+      }
+    }),
+  }
 }
 
 export async function getMembers(): Promise<ActionResponse<Member[]>> {
@@ -85,7 +132,7 @@ export async function inviteMember(
   if (!trimmedEmail || !trimmedEmail.includes('@')) {
     return { success: false, error: 'Invalid email address.' }
   }
-  if (role !== 'editor' && role !== 'viewer') {
+  if (role !== 'editor' && role !== 'staff') {
     return { success: false, error: 'Invalid role.' }
   }
 
@@ -227,7 +274,7 @@ export async function updateMemberRole(
   membershipId: string,
   newRole: MemberRole
 ): Promise<ActionResponse> {
-  if (newRole !== 'editor' && newRole !== 'viewer') {
+  if (newRole !== 'editor' && newRole !== 'staff') {
     return { success: false, error: 'Invalid role.' }
   }
 
