@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ClipboardCopy, Loader2, RefreshCw, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
@@ -21,6 +21,13 @@ type Props = {
   showBrief: boolean
   briefStale: boolean
   briefIsEmpty: boolean
+  /**
+   * True when the day has at least one activity / reservation / breakfast.
+   * Combined with `isEditor`, this triggers a one-shot client-side brief
+   * generation when no brief exists yet — replaces the previous blocking
+   * `ensureDailyBrief` call on the server render path.
+   */
+  dayHasContent: boolean
   dateIso: string
   dayId: string
   isEditor: boolean
@@ -72,7 +79,9 @@ export function DayInfoBanner({
   showBrief,
   briefStale,
   briefIsEmpty,
+  dayHasContent,
   dateIso,
+  dayId,
   isEditor,
 }: Props) {
   const t = useTranslations('Tenant.dailyBrief')
@@ -82,6 +91,9 @@ export function DayInfoBanner({
   const [loading, setLoading] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const lastGenerateAt = useRef(0)
+  // One-shot guard so we never auto-fire generation more than once per
+  // (dayId, mount) pair.
+  const autoFiredFor = useRef<string | null>(null)
 
   const hasWeather = showWeather && weather !== null
   const hasBrief = brief !== null
@@ -117,6 +129,19 @@ export function DayInfoBanner({
       () => toast.error(t('copyFailed'))
     )
   }, [brief, t])
+
+  // Auto-generate a brief when the page loads with no brief yet for an editor.
+  // The previous server-side ensureDailyBrief call blocked rendering on the
+  // LLM round-trip; now the page renders fast and the brief streams in.
+  useEffect(() => {
+    if (!showBrief || !isEditor) return
+    if (brief) return
+    if (!dayHasContent) return
+    if (loading) return
+    if (autoFiredFor.current === dayId) return
+    autoFiredFor.current = dayId
+    void runRegenerate()
+  }, [showBrief, isEditor, brief, dayHasContent, loading, dayId, runRegenerate])
 
   if (!hasWeather && !showBrief) return null
 

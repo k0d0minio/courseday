@@ -16,6 +16,7 @@ import {
   getReservationsForDay,
   getBreakfastConfigsForDay,
   getDayNotesForDay,
+  getDailyBriefForDay,
   getShiftsForDay,
   getTenantAssigneesList,
 } from './queries'
@@ -32,10 +33,32 @@ import type {
 } from '@/types/index'
 import type { AuthState } from '@/types/actions'
 import type { DayNote } from '@/app/actions/day-notes'
+import type { DailyBriefRecord } from '@/types/daily-brief'
 import { getWeatherForDay } from '@/app/actions/weather'
 import type { WeatherData } from '@/app/actions/weather'
 import { getFeatureFlags } from '@/app/actions/feature-flags'
-import { ensureDailyBrief } from '@/app/actions/daily-brief'
+import { dayHasPlannedContent } from '@/lib/daily-brief-generate'
+
+// Inline stale check to avoid pulling the LLM-generation server action onto
+// the request critical path. Mirrors the helper in app/actions/daily-brief.ts.
+function isBriefStale(
+  brief: DailyBriefRecord,
+  activities: Activity[],
+  reservations: Reservation[],
+  breakfasts: BreakfastConfiguration[],
+  dayNotes: DayNote[]
+): boolean {
+  const briefTime = new Date(brief.generated_at).getTime()
+  const timestamps: string[] = [
+    ...activities.map((a) => a.updated_at),
+    ...reservations.map((r) => r.updated_at),
+    ...breakfasts.map((b) => b.updated_at),
+    ...dayNotes.map((n) => n.updated_at),
+  ]
+  if (timestamps.length === 0) return false
+  const maxUpdated = Math.max(...timestamps.map((t) => new Date(t).getTime()))
+  return maxUpdated > briefTime
+}
 
 export type DayViewProps = {
   date: string
@@ -46,9 +69,16 @@ export type DayViewProps = {
   breakfastConfigs: BreakfastConfiguration[]
   dayNotes: DayNote[]
   weather: WeatherData | null
-  dailyBrief: import('@/types/daily-brief').DailyBriefRecord | null
+  dailyBrief: DailyBriefRecord | null
   briefStale: boolean
   briefIsEmpty: boolean
+  /**
+   * True when the day has at least one activity / reservation / breakfast.
+   * Lets the daily-brief banner trigger client-side generation when no brief
+   * exists yet, replacing the previous synchronous server-side `ensureDailyBrief`
+   * call that was blocking page render on the LLM round-trip.
+   */
+  dayHasContent: boolean
   pocs: PointOfContact[]
   venueTypes: VenueType[]
   authState: AuthState
@@ -106,7 +136,9 @@ export default async function DayPage({ params }: { params: Promise<{ date: stri
   const dailyBriefOn = flags.daily_brief
   const authState = await getAuthState()
 
-  // Load all day data in parallel — skip disabled features
+  // Load all day data in parallel — skip disabled features.
+  // Daily brief is now a fast read-only fetch (no LLM call on the critical path);
+  // generation is triggered client-side from the banner when missing.
   const [
     activities,
     reservations,
@@ -117,6 +149,7 @@ export default async function DayPage({ params }: { params: Promise<{ date: stri
     venueTypesResult,
     shifts,
     shiftAssignees,
+    existingBrief,
   ] = await Promise.all([
     getProgramItemsForDay(tenant.id, day.id),
     flags.reservations ? getReservationsForDay(tenant.id, day.id) : Promise.resolve([]),
@@ -127,24 +160,26 @@ export default async function DayPage({ params }: { params: Promise<{ date: stri
     getAllVenueTypes(),
     staffScheduleOn ? getShiftsForDay(tenant.id, day.id) : Promise.resolve([]),
     staffScheduleOn ? getTenantAssigneesList(tenant.id) : Promise.resolve([]),
+    dailyBriefOn ? getDailyBriefForDay(tenant.id, day.id) : Promise.resolve(null),
   ])
 
-  // Auto-generate brief after data is loaded so we can pass it without duplicate fetches
-  const briefResult = dailyBriefOn
-    ? await ensureDailyBrief({
-        tenantId: tenant.id,
-        dayId: day.id,
-        dateIso: date,
-        activities,
-        reservations: flags.reservations ? reservations : [],
-        breakfasts: flags.breakfast_config ? breakfastConfigs : [],
-        dayNotes,
-        weather,
-      })
-    : null
-  const dailyBrief = briefResult?.status === 'ok' ? briefResult.brief : null
-  const briefStale = briefResult?.status === 'ok' ? briefResult.stale : false
-  const briefIsEmpty = briefResult?.status === 'empty'
+  const dayHasContent = dayHasPlannedContent(
+    activities,
+    flags.reservations ? reservations : [],
+    flags.breakfast_config ? breakfastConfigs : []
+  )
+  const dailyBrief = dailyBriefOn ? existingBrief : null
+  const briefStale =
+    dailyBriefOn && dailyBrief
+      ? isBriefStale(
+          dailyBrief,
+          activities,
+          flags.reservations ? reservations : [],
+          flags.breakfast_config ? breakfastConfigs : [],
+          dayNotes
+        )
+      : false
+  const briefIsEmpty = dailyBriefOn ? !dayHasContent : false
 
   return (
     <Suspense
@@ -162,6 +197,7 @@ export default async function DayPage({ params }: { params: Promise<{ date: stri
         dailyBrief={dailyBrief}
         briefStale={briefStale}
         briefIsEmpty={briefIsEmpty}
+        dayHasContent={dayHasContent}
         pocs={pocsResult.success ? pocsResult.data : []}
         venueTypes={venueTypesResult.success ? venueTypesResult.data : []}
         authState={authState}
