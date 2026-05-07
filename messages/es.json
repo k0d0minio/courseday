@@ -322,8 +322,7 @@
       "venueTypeAdded": "Tipo de espacio añadido.",
       "namePlaceholder": "Nombre *",
       "emailPlaceholder": "Correo (opcional)",
-      "phonePlaceholder": "Teléfono (opcional)",
-      "codePlaceholder": "Código (opcional)"
+      "phonePlaceholder": "Teléfono (opcional)"
     },
     "reservationForm": {
       "addTitle": "Añadir reserva",

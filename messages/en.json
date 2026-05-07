@@ -427,8 +427,7 @@
       "venueTypeAdded": "Venue type added.",
       "namePlaceholder": "Name *",
       "emailPlaceholder": "Email (optional)",
-      "phonePlaceholder": "Phone (optional)",
-      "codePlaceholder": "Code (optional)"
+      "phonePlaceholder": "Phone (optional)"
     },
     "reservationForm": {
       "addTitle": "Add reservation",

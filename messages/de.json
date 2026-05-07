@@ -322,8 +322,7 @@
       "venueTypeAdded": "Raumart hinzugefügt.",
       "namePlaceholder": "Name *",
       "emailPlaceholder": "E-Mail (optional)",
-      "phonePlaceholder": "Telefon (optional)",
-      "codePlaceholder": "Code (optional)"
+      "phonePlaceholder": "Telefon (optional)"
     },
     "reservationForm": {
       "addTitle": "Reservierung hinzufügen",

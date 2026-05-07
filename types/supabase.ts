@@ -1117,7 +1117,6 @@ export type Database = {
       }
       venue_type: {
         Row: {
-          code: string | null
           created_at: string
           id: string
           name: string
@@ -1125,7 +1124,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          code?: string | null
           created_at?: string
           id?: string
           name: string
@@ -1133,7 +1131,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          code?: string | null
           created_at?: string
           id?: string
           name?: string

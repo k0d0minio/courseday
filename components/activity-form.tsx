@@ -136,7 +136,6 @@ export function ActivityForm({
   const [venueTypes, setVenueTypes] = useState(initialVenueTypes)
   const [showNewVt, setShowNewVt] = useState(false)
   const [newVtName, setNewVtName] = useState('')
-  const [newVtCode, setNewVtCode] = useState('')
   const [isSavingVt, startVtTransition] = useTransition()
 
   // Tag multi-select
@@ -192,7 +191,6 @@ export function ActivityForm({
       setNewPocEmail('')
       setNewPocPhone('')
       setNewVtName('')
-      setNewVtCode('')
       getAllActivityTags().then((r) => {
         if (r.success) setAllTags(r.data)
       })
@@ -237,7 +235,6 @@ export function ActivityForm({
     setNewPocEmail('')
     setNewPocPhone('')
     setNewVtName('')
-    setNewVtCode('')
     getAllActivityTags().then((r) => {
       if (r.success) setAllTags(r.data)
     })
@@ -275,7 +272,7 @@ export function ActivityForm({
   function handleSaveVenueType() {
     if (!newVtName.trim()) return
     startVtTransition(async () => {
-      const result = await createVenueType({ name: newVtName, code: newVtCode })
+      const result = await createVenueType({ name: newVtName })
       if (!result.success) {
         toast.error(result.error)
         return
@@ -284,7 +281,6 @@ export function ActivityForm({
       setValue('venueTypeId', result.data.id)
       setShowNewVt(false)
       setNewVtName('')
-      setNewVtCode('')
       toast.success(t('venueTypeAdded'))
     })
   }
@@ -448,11 +444,6 @@ export function ActivityForm({
               placeholder={t('namePlaceholder')}
               value={newVtName}
               onChange={(e) => setNewVtName(e.target.value)}
-            />
-            <Input
-              placeholder={t('codePlaceholder')}
-              value={newVtCode}
-              onChange={(e) => setNewVtCode(e.target.value)}
             />
             <div className="flex justify-end gap-2">
               <Button type="button" size="sm" variant="outline" onClick={() => setShowNewVt(false)}>
