@@ -123,7 +123,7 @@ export async function middleware(request: NextRequest) {
         'active') as TenantRedisData['status'],
     }
     try {
-      await redis.set(cacheKey, JSON.stringify(tenant), { ex: 86400 })
+      await redis.set(cacheKey, JSON.stringify(tenant), 'EX', 86400)
     } catch (err) {
       // Cache write failure is non-fatal — DB lookup succeeded, request continues.
       console.error('[middleware] redis cache write failed', { subdomain, err })

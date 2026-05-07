@@ -77,7 +77,7 @@ export async function createTenant(data: {
     language: (tenant as { language?: string }).language ?? 'en',
     status: ((tenant as { status?: string }).status ?? 'active') as TenantStatus,
   }
-  await redis.set(`subdomain:${tenant.slug}`, JSON.stringify(redisData), { ex: 86400 })
+  await redis.set(`subdomain:${tenant.slug}`, JSON.stringify(redisData), 'EX', 86400)
 
   // Create initial membership row for the creating user with role 'editor'.
   // Must use service client — user has no membership yet so RLS would block.
@@ -133,7 +133,7 @@ export async function getTenantBySlug(slug: string): Promise<ActionResponse<Tena
     language: (tenant as { language?: string }).language ?? 'en',
     status: ((tenant as { status?: string }).status ?? 'active') as TenantStatus,
   }
-  await redis.set(`subdomain:${tenant.slug}`, JSON.stringify(redisData), { ex: 86400 })
+  await redis.set(`subdomain:${tenant.slug}`, JSON.stringify(redisData), 'EX', 86400)
 
   return { success: true, data: redisData }
 }
@@ -223,7 +223,7 @@ export async function updateTenant(
     language: (updated as { language?: string }).language ?? 'en',
     status: ((updated as { status?: string }).status ?? 'active') as TenantStatus,
   }
-  await redis.set(`subdomain:${updated.slug}`, JSON.stringify(redisData), { ex: 86400 })
+  await redis.set(`subdomain:${updated.slug}`, JSON.stringify(redisData), 'EX', 86400)
 
   return { success: true, data: redisData }
 }
@@ -303,7 +303,7 @@ async function setTenantStatus(id: string, status: TenantStatus): Promise<Action
     language: (updated as { language?: string }).language ?? 'en',
     status: ((updated as { status?: string }).status ?? 'active') as TenantStatus,
   }
-  await redis.set(`subdomain:${updated.slug}`, JSON.stringify(redisData), { ex: 86400 })
+  await redis.set(`subdomain:${updated.slug}`, JSON.stringify(redisData), 'EX', 86400)
 
   return { success: true, data: undefined }
 }
