@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { cache } from 'react'
 import { NextIntlClientProvider } from 'next-intl'
 import { getLocale, getMessages, getTranslations } from 'next-intl/server'
 import Link from 'next/link'
@@ -28,15 +29,26 @@ import { getTenantPalette, getTenantThemeCssVariables } from '@/lib/theme/palett
 import { TenantKeyboardShell } from '@/components/tenant-keyboard-shell'
 import { GlobalQuickAdd } from '@/components/global-quick-add'
 
+const getTenantRow = cache(async (tenantId: string) => {
+  const supabase = await createSupabaseServerClient()
+  const { data } = await supabase
+    .from('tenants')
+    .select('name, theme_palette, accent_color, logo_url, timezone')
+    .eq('id', tenantId)
+    .single()
+  return data as {
+    name?: string | null
+    theme_palette?: string | null
+    accent_color?: string | null
+    logo_url?: string | null
+    timezone?: string | null
+  } | null
+})
+
 export async function generateMetadata(): Promise<Metadata> {
   try {
     const tenant = await getTenantFromHeaders()
-    const supabase = await createSupabaseServerClient()
-    const { data } = await supabase
-      .from('tenants')
-      .select('name, theme_palette, accent_color')
-      .eq('id', tenant.id)
-      .single()
+    const data = await getTenantRow(tenant.id)
     const name = data?.name as string | undefined
     const palette = getTenantPalette(
       (data?.theme_palette as string | null) ?? null,
@@ -81,20 +93,7 @@ export default async function TenantLayout({ children }: { children: React.React
 
   const featureFlags = await getFeatureFlags(tenant.id)
 
-  const supabase = await createSupabaseServerClient()
-  const { data: tenantRow } = await supabase
-    .from('tenants')
-    .select('theme_palette, accent_color, logo_url, name, timezone')
-    .eq('id', tenant.id)
-    .single()
-
-  const row = tenantRow as {
-    theme_palette?: string | null
-    accent_color?: string | null
-    logo_url?: string | null
-    name?: string | null
-    timezone?: string | null
-  } | null
+  const row = await getTenantRow(tenant.id)
   const today = getTenantToday(row?.timezone ?? 'UTC')
   const palette = getTenantPalette(row?.theme_palette ?? null, row?.accent_color ?? null)
   const accentStyle = getTenantThemeCssVariables(palette) as React.CSSProperties
