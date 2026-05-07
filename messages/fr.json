@@ -231,8 +231,7 @@
       "noReservations": "Aucune réservation pour l'instant.",
       "addBreakfast": "Ajouter petit-déjeuner",
       "addActivity": "Activité",
-      "addReservation": "Ajouter une réservation",
-      "copyDay": "Copier"
+      "addReservation": "Ajouter une réservation"
     },
     "handover": {
       "toggle": "Passation",
@@ -636,19 +635,6 @@
       "bannerText": "Votre établissement n’est pas encore entièrement configuré.",
       "bannerLink": "Terminer la configuration",
       "bannerDismiss": "Ignorer"
-    },
-    "copyDay": {
-      "title": "Copier vers un autre jour",
-      "targetDate": "Date cible",
-      "copyActivities": "Copier les activités",
-      "copyShifts": "Copier le planning du personnel",
-      "cancel": "Annuler",
-      "copy": "Copier",
-      "copying": "Copie…",
-      "copied": "Copié.",
-      "copiedActivities": "Activités copiées.",
-      "copiedShifts": "Planning du personnel copié.",
-      "copiedBoth": "Activités et planning du personnel copiés."
     },
     "staff": {
       "section": {

@@ -127,8 +127,7 @@
       "noReservations": "Noch keine Reservierungen.",
       "addBreakfast": "Frühstück hinzufügen",
       "addActivity": "Aktivität",
-      "addReservation": "Reservierung hinzufügen",
-      "copyDay": "Kopieren"
+      "addReservation": "Reservierung hinzufügen"
     },
     "handover": {
       "toggle": "Übergabe",
@@ -508,19 +507,6 @@
       "bannerText": "Ihr Betrieb ist noch nicht vollständig eingerichtet.",
       "bannerLink": "Einrichtung abschließen",
       "bannerDismiss": "Ausblenden"
-    },
-    "copyDay": {
-      "title": "Auf einen anderen Tag kopieren",
-      "targetDate": "Zieldatum",
-      "copyActivities": "Aktivitäten kopieren",
-      "copyShifts": "Dienstplan kopieren",
-      "cancel": "Abbrechen",
-      "copy": "Kopieren",
-      "copying": "Wird kopiert\u2026",
-      "copied": "Kopiert.",
-      "copiedActivities": "Aktivitäten kopiert.",
-      "copiedShifts": "Dienstplan kopiert.",
-      "copiedBoth": "Aktivitäten und Dienstplan kopiert."
     },
     "staff": {
       "section": {
