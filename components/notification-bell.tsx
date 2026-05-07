@@ -86,47 +86,58 @@ export function NotificationBell({ initialCount }: { initialCount: number }) {
             <p className="text-muted-foreground py-8 text-center text-sm">No notifications yet.</p>
           ) : (
             notifications.map((n) => {
-              const content = (
-                <div
-                  className={cn(
-                    'border-b px-4 py-3 transition-colors last:border-0',
-                    n.read ? 'bg-background' : 'bg-primary/5',
-                    n.link && 'hover:bg-accent cursor-pointer'
-                  )}
-                  onClick={() => handleClickNotification(n)}
-                >
-                  <div className="flex items-start gap-2">
-                    {!n.read && (
-                      <span className="bg-primary mt-1.5 h-2 w-2 shrink-0 rounded-full" />
+              const rowClass = cn(
+                'border-b px-4 py-3 transition-colors last:border-0',
+                n.read ? 'bg-background' : 'bg-primary/5'
+              )
+              const rowContent = (
+                <div className="flex items-start gap-2">
+                  {!n.read && <span className="bg-primary mt-1.5 h-2 w-2 shrink-0 rounded-full" />}
+                  <div className={cn('flex-1', n.read && 'pl-4')}>
+                    <p className="text-sm leading-snug font-medium">{n.title}</p>
+                    {n.body && (
+                      <p className="text-muted-foreground mt-0.5 line-clamp-2 text-xs">{n.body}</p>
                     )}
-                    <div className={cn('flex-1', n.read && 'pl-4')}>
-                      <p className="text-sm leading-snug font-medium">{n.title}</p>
-                      {n.body && (
-                        <p className="text-muted-foreground mt-0.5 line-clamp-2 text-xs">
-                          {n.body}
-                        </p>
-                      )}
-                      <p className="text-muted-foreground mt-1 text-[10px]">
-                        {new Date(n.created_at).toLocaleString()}
-                      </p>
-                    </div>
+                    <p className="text-muted-foreground mt-1 text-[10px]">
+                      {new Date(n.created_at).toLocaleString()}
+                    </p>
                   </div>
                 </div>
               )
 
-              return n.link ? (
-                <Link
-                  key={n.id}
-                  href={n.link}
-                  onClick={() => {
-                    handleClickNotification(n)
-                    setOpen(false)
-                  }}
-                >
-                  {content}
-                </Link>
-              ) : (
-                <div key={n.id}>{content}</div>
+              if (n.link) {
+                return (
+                  <Link
+                    key={n.id}
+                    href={n.link}
+                    className={cn(rowClass, 'hover:bg-accent block cursor-pointer')}
+                    onClick={() => {
+                      handleClickNotification(n)
+                      setOpen(false)
+                    }}
+                  >
+                    {rowContent}
+                  </Link>
+                )
+              }
+              if (!n.read) {
+                return (
+                  // Bespoke notification row — full-bleed block layout doesn't fit Button primitive.
+                  // eslint-disable-next-line no-restricted-syntax
+                  <button
+                    key={n.id}
+                    type="button"
+                    className={cn(rowClass, 'hover:bg-accent w-full cursor-pointer text-left')}
+                    onClick={() => handleClickNotification(n)}
+                  >
+                    {rowContent}
+                  </button>
+                )
+              }
+              return (
+                <div key={n.id} className={rowClass}>
+                  {rowContent}
+                </div>
               )
             })
           )}

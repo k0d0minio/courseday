@@ -1,8 +1,13 @@
 import nextConfig from 'eslint-config-next'
 import tseslint from 'typescript-eslint'
+import a11y from 'eslint-plugin-jsx-a11y'
+
+// eslint-config-next already registers the jsx-a11y plugin, so spread rules only to avoid re-registration error.
+const a11yRules = { rules: a11y.flatConfigs.recommended.rules }
 
 export default [
   ...nextConfig,
+  a11yRules,
   {
     plugins: { '@typescript-eslint': tseslint.plugin },
     rules: {
@@ -15,6 +20,10 @@ export default [
       // Pre-existing pattern throughout the codebase: syncing props to state in effects.
       // Downgraded from error to warn — address incrementally.
       'react-hooks/set-state-in-effect': 'warn',
+      // Stale-closure bugs land silently; keep this visible at warn level.
+      'react-hooks/exhaustive-deps': 'warn',
+      // autoFocus in dialogs and inline-edit forms is deliberate focus management for keyboard users.
+      'jsx-a11y/no-autofocus': 'warn',
       // Button design-system guardrails. See components/ui/button.tsx for the canonical API.
       'no-restricted-syntax': [
         'error',
