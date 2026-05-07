@@ -231,8 +231,7 @@
       "noReservations": "No reservations yet.",
       "addBreakfast": "Add breakfast",
       "addActivity": "Activity",
-      "addReservation": "Add reservation",
-      "copyDay": "Copy"
+      "addReservation": "Add reservation"
     },
     "handover": {
       "toggle": "Hand-over",
@@ -636,19 +635,6 @@
       "bannerText": "Your venue isn’t fully set up yet.",
       "bannerLink": "Complete setup",
       "bannerDismiss": "Dismiss"
-    },
-    "copyDay": {
-      "title": "Copy to another day",
-      "targetDate": "Target date",
-      "copyActivities": "Copy activities",
-      "copyShifts": "Copy staff schedule",
-      "cancel": "Cancel",
-      "copy": "Copy",
-      "copying": "Copying…",
-      "copied": "Copied.",
-      "copiedActivities": "Activities copied.",
-      "copiedShifts": "Staff schedule copied.",
-      "copiedBoth": "Activities and staff schedule copied."
     },
     "staff": {
       "section": {

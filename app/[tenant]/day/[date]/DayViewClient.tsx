@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 import { useDayRealtime } from './useDayRealtime'
 import { useTranslations } from 'next-intl'
-import { Plus, Copy, Sparkles, SlidersHorizontal } from 'lucide-react'
+import { Plus, Sparkles, SlidersHorizontal } from 'lucide-react'
 import { toast } from 'sonner'
 import { DayNav } from '@/components/day-nav'
 import { DaySummaryCard } from '@/components/day-summary-card'
@@ -18,7 +18,6 @@ import { BreakfastCard } from '@/components/breakfast-card'
 import { DayNotes } from '@/components/day-notes'
 import { DayInfoBanner } from '@/components/day-info-banner'
 import { StaffScheduleSection } from '@/components/staff-schedule-section'
-import { CopyDayDialog } from '@/components/copy-day-dialog'
 import { HandoverControls } from '@/components/handover-controls'
 import { QuickAddInput } from '@/components/quick-add-input'
 import type { ActivityQuickAddSeed } from '@/components/activity-form'
@@ -261,7 +260,6 @@ function DayViewEditor({
 
   const [breakfastModalOpen, setBreakfastModalOpen] = useState(false)
   const [editBreakfast, setEditBreakfast] = useState<BreakfastConfiguration | null>(null)
-  const [copyDayOpen, setCopyDayOpen] = useState(false)
   const [quickAddOpen, setQuickAddOpen] = useState(false)
   const [activityQuickAdd, setActivityQuickAdd] = useState<ActivityQuickAddSeed | null>(null)
   const [reservationQuickAdd, setReservationQuickAdd] = useState<ReservationQuickAdd | null>(null)
@@ -530,14 +528,6 @@ function DayViewEditor({
               <Sparkles className="h-4 w-4 shrink-0" />
               {tQa('openButton')}
             </button>
-            <button
-              type="button"
-              className="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm"
-              onClick={() => setCopyDayOpen(true)}
-            >
-              <Copy className="h-4 w-4 shrink-0" />
-              {t('copyDay')}
-            </button>
           </PopoverContent>
         </Popover>
       </div>
@@ -560,14 +550,6 @@ function DayViewEditor({
           onCaughtUp={onHandoverCaughtUp}
         />
       )}
-
-      <CopyDayDialog
-        isOpen={copyDayOpen}
-        onClose={() => setCopyDayOpen(false)}
-        sourceDayId={dayId}
-        today={today}
-        showCopyShifts={showStaffSchedule}
-      />
 
       {(showDailyBrief || showWeatherReporting) && (
         <DayInfoBanner
