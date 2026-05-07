@@ -91,15 +91,18 @@ const YMD_REGEX = /^\d{4}-\d{2}-\d{2}$/
 export default async function DayPage({ params }: { params: Promise<{ date: string }> }) {
   const { date } = await params
 
-  // Get tenant from headers first (fast — headers only), then run auth check
-  // and tenant DB query in parallel since they are independent.
-  const tenant = await getTenantFromHeaders()
-  const supabase = await createSupabaseServerClient()
-
-  const [, tenantData] = await Promise.all([
+  // All three are independent — run in parallel to shorten critical-path latency.
+  const [tenant, supabase] = await Promise.all([
+    getTenantFromHeaders(),
+    createSupabaseServerClient(),
     requireTenantMember(),
-    supabase.from('tenants').select('timezone, latitude, longitude').eq('id', tenant.id).single(),
-  ])
+  ] as const)
+
+  const tenantData = await supabase
+    .from('tenants')
+    .select('timezone, latitude, longitude')
+    .eq('id', tenant.id)
+    .single()
 
   const tenantRow = tenantData.data as {
     timezone?: string | null
@@ -131,10 +134,9 @@ export default async function DayPage({ params }: { params: Promise<{ date: stri
         }
       : undefined
 
-  const flags = await getFeatureFlags(tenant.id)
+  const [flags, authState] = await Promise.all([getFeatureFlags(tenant.id), getAuthState()])
   const staffScheduleOn = flags.staff_schedule
   const dailyBriefOn = flags.daily_brief
-  const authState = await getAuthState()
 
   // Load all day data in parallel — skip disabled features.
   // Daily brief is now a fast read-only fetch (no LLM call on the critical path);
