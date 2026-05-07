@@ -55,11 +55,11 @@ function VenueTypeDialog({
     formState: { errors },
   } = useForm<VenueTypeFormData>({
     resolver: standardSchemaResolver(venueTypeSchema),
-    defaultValues: { name: '', code: '' },
+    defaultValues: { name: '' },
   })
 
   useEffect(() => {
-    reset(initial ? { name: initial.name, code: initial.code ?? '' } : { name: '', code: '' })
+    reset(initial ? { name: initial.name } : { name: '' })
   }, [initial, open, reset])
 
   function onSubmit(data: VenueTypeFormData) {
@@ -89,11 +89,6 @@ function VenueTypeDialog({
             <Label htmlFor="vt-name">Name *</Label>
             <Input id="vt-name" {...register('name')} />
             {errors.name && <p className="text-destructive text-sm">{errors.name.message}</p>}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="vt-code">Code</Label>
-            <Input id="vt-code" {...register('code')} placeholder="e.g. REST" />
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
@@ -180,7 +175,6 @@ export function VenueTypeManagement() {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead>Code</TableHead>
               <TableHead className="w-24" />
             </TableRow>
           </TableHeader>
@@ -188,7 +182,6 @@ export function VenueTypeManagement() {
             {venueTypes.map((vt) => (
               <TableRow key={vt.id}>
                 <TableCell className="font-medium">{vt.name}</TableCell>
-                <TableCell>{vt.code ?? '—'}</TableCell>
                 <TableCell>
                   <div className="flex justify-end gap-1">
                     <Button

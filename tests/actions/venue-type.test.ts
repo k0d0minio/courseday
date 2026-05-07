@@ -2,18 +2,13 @@ import { describe, it, expect } from 'vitest'
 import { venueTypeSchema } from '@/lib/venue-type-schema'
 
 describe('venueTypeSchema', () => {
-  it('accepts a valid name and code', () => {
-    const result = venueTypeSchema.safeParse({ name: 'Main Restaurant', code: 'REST' })
+  it('accepts a valid name', () => {
+    const result = venueTypeSchema.safeParse({ name: 'Main Restaurant' })
     expect(result.success).toBe(true)
   })
 
-  it('accepts name only (code optional)', () => {
+  it('accepts name only', () => {
     const result = venueTypeSchema.safeParse({ name: 'Terrace' })
-    expect(result.success).toBe(true)
-  })
-
-  it('accepts empty string for code (treated as absent)', () => {
-    const result = venueTypeSchema.safeParse({ name: 'Clubhouse', code: '' })
     expect(result.success).toBe(true)
   })
 
@@ -30,11 +25,6 @@ describe('venueTypeSchema', () => {
 
   it('accepts name with special characters', () => {
     const result = venueTypeSchema.safeParse({ name: '19th Hole Bar & Grill' })
-    expect(result.success).toBe(true)
-  })
-
-  it('accepts a code with spaces', () => {
-    const result = venueTypeSchema.safeParse({ name: 'Pro Shop', code: 'PRO SHOP' })
     expect(result.success).toBe(true)
   })
 })
