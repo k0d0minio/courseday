@@ -6,6 +6,7 @@ import { requireEditor, getUserRole } from '@/lib/membership'
 import { isFeatureEnabled } from '@/app/actions/feature-flags'
 import { createBreakfastSchema, updateBreakfastSchema } from '@/lib/breakfast-schema'
 import { notifyTenantMembers, getDayDate, awaitNotifications } from '@/lib/notifications'
+import { revalidateDay } from '@/lib/revalidate'
 import type { CreateBreakfastFormData, UpdateBreakfastFormData } from '@/lib/breakfast-schema'
 import type { ActionResponse } from '@/types/actions'
 import type { BreakfastConfiguration } from '@/types/index'
@@ -75,6 +76,7 @@ export async function createBreakfastConfiguration(
     'createBreakfastConfiguration'
   )
 
+  revalidateDay()
   return { success: true, data: data as BreakfastConfiguration }
 }
 
@@ -132,6 +134,7 @@ export async function updateBreakfastConfiguration(
     'updateBreakfastConfiguration'
   )
 
+  revalidateDay()
   return { success: true, data: row }
 }
 
@@ -181,6 +184,7 @@ export async function deleteBreakfastConfiguration(id: string): Promise<ActionRe
     )
   }
 
+  revalidateDay()
   return { success: true, data: undefined }
 }
 
