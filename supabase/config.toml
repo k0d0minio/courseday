@@ -222,10 +222,34 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
-# Uncomment to customize email template
-# [auth.email.template.invite]
-# subject = "You have been invited"
-# content_path = "./supabase/templates/invite.html"
+# Custom email templates. These override the default Supabase templates so the
+# confirmation link points directly at our app's /auth/confirm page (with a
+# token_hash query param) instead of going through Supabase's /verify endpoint.
+# This avoids email-scanner pre-fetches (e.g. Outlook safety scanners) burning
+# the one-time token before the user can click the link.
+#
+# Production note: hosted Supabase ignores these paths. The same HTML must be
+# pasted into Auth → Email Templates in the Supabase dashboard for the project.
+
+[auth.email.template.confirmation]
+subject = "Confirm your Courseday signup"
+content_path = "./supabase/templates/confirm.html"
+
+[auth.email.template.magic_link]
+subject = "Sign in to Courseday"
+content_path = "./supabase/templates/magic-link.html"
+
+[auth.email.template.invite]
+subject = "You've been invited to Courseday"
+content_path = "./supabase/templates/invite.html"
+
+[auth.email.template.recovery]
+subject = "Reset your Courseday password"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.email_change]
+subject = "Confirm your Courseday email change"
+content_path = "./supabase/templates/email-change.html"
 
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]

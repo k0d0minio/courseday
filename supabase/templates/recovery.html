@@ -1,0 +1,6 @@
+<h2>Reset your password</h2>
+<p>Click the link below to reset your Courseday password.</p>
+<p><a href="{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=recovery">Reset password</a></p>
+<p>If the button doesn't work, copy and paste this URL into your browser:</p>
+<p>{{ .RedirectTo }}&amp;token_hash={{ .TokenHash }}&amp;type=recovery</p>
+<p>This link expires in 1 hour. If you didn't request this, you can ignore this email.</p>
