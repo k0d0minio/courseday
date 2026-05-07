@@ -148,7 +148,11 @@ export default async function TenantLayout({ children }: { children: React.React
                       </span>
                     )}
                     <NotificationBell initialCount={unreadCount} />
-                    {user && <UserMenu user={user} signOutLabel={t('signOut')} />}
+                    {user && (
+                      <span className={editor ? undefined : 'hidden sm:inline-flex'}>
+                        <UserMenu user={user} signOutLabel={t('signOut')} />
+                      </span>
+                    )}
                   </div>
                 </header>
                 <main id="main-content" className="flex-1 pb-16 sm:pb-0">
