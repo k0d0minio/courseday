@@ -9,7 +9,13 @@ vi.mock('@/lib/superadmin', () => ({
 }))
 
 import { createSupabaseServiceClient } from '@/lib/supabase-server'
-import { getFeatureFlags } from '@/app/actions/feature-flags'
+import { getSuperadminStatus } from '@/lib/superadmin'
+import {
+  getFeatureFlags,
+  getFeatureFlagsByTenants,
+  isFeatureEnabled,
+  setFeatureFlag,
+} from '@/app/actions/feature-flags'
 import { KNOWN_FLAGS } from '@/lib/feature-flags'
 
 const TENANT_ID = 'tenant-abc'
@@ -19,6 +25,20 @@ function makeSupabase(rows: { flag_key: string; enabled: boolean }[]) {
     from: vi.fn().mockReturnValue({
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockResolvedValue({ data: rows, error: null }),
+        in: vi.fn().mockResolvedValue({ data: rows, error: null }),
+      }),
+      upsert: vi.fn().mockResolvedValue({ error: null }),
+    }),
+  }
+}
+
+function makeMultiTenantSupabase(
+  rows: { tenant_id: string; flag_key: string; enabled: boolean }[]
+) {
+  return {
+    from: vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        in: vi.fn().mockResolvedValue({ data: rows, error: null }),
       }),
     }),
   }
@@ -86,5 +106,90 @@ describe('getFeatureFlags', () => {
     for (const key of KNOWN_FLAGS) {
       expect(flags[key]).toBe(true)
     }
+  })
+})
+
+describe('getFeatureFlagsByTenants', () => {
+  it('returns empty object for empty tenantIds array', async () => {
+    const result = await getFeatureFlagsByTenants([])
+    expect(result).toEqual({})
+  })
+
+  it('returns flag maps keyed by tenantId', async () => {
+    vi.mocked(createSupabaseServiceClient).mockReturnValue(
+      makeMultiTenantSupabase([
+        { tenant_id: 'tenant-1', flag_key: 'reservations', enabled: false },
+        { tenant_id: 'tenant-2', flag_key: 'daily_brief', enabled: false },
+      ]) as never
+    )
+
+    const result = await getFeatureFlagsByTenants(['tenant-1', 'tenant-2'])
+
+    expect(result['tenant-1'].reservations).toBe(false)
+    expect(result['tenant-1'].daily_brief).toBe(true)
+    expect(result['tenant-2'].daily_brief).toBe(false)
+    expect(result['tenant-2'].reservations).toBe(true)
+  })
+
+  it('defaults all flags to true when DB has no rows', async () => {
+    vi.mocked(createSupabaseServiceClient).mockReturnValue(makeMultiTenantSupabase([]) as never)
+
+    const result = await getFeatureFlagsByTenants(['tenant-1'])
+
+    for (const key of KNOWN_FLAGS) {
+      expect(result['tenant-1'][key]).toBe(true)
+    }
+  })
+})
+
+describe('isFeatureEnabled', () => {
+  it('returns true when flag is enabled', async () => {
+    vi.mocked(createSupabaseServiceClient).mockReturnValue(makeSupabase([]) as never)
+
+    const enabled = await isFeatureEnabled(TENANT_ID, 'reservations')
+
+    expect(enabled).toBe(true)
+  })
+
+  it('returns false when flag is explicitly disabled', async () => {
+    vi.mocked(createSupabaseServiceClient).mockReturnValue(
+      makeSupabase([{ flag_key: 'reservations', enabled: false }]) as never
+    )
+
+    const enabled = await isFeatureEnabled(TENANT_ID, 'reservations')
+
+    expect(enabled).toBe(false)
+  })
+})
+
+describe('setFeatureFlag', () => {
+  it('returns error when caller is not superadmin', async () => {
+    vi.mocked(getSuperadminStatus).mockResolvedValue(false)
+
+    const result = await setFeatureFlag(TENANT_ID, 'reservations', false)
+
+    expect(result.success).toBe(false)
+    expect((result as { success: false; error: string }).error).toBe('Not authorized.')
+  })
+
+  it('returns error for unknown flag key', async () => {
+    vi.mocked(getSuperadminStatus).mockResolvedValue(true)
+    vi.mocked(createSupabaseServiceClient).mockReturnValue(makeSupabase([]) as never)
+
+    const result = await setFeatureFlag(TENANT_ID, 'unknown_key' as never, true)
+
+    expect(result.success).toBe(false)
+  })
+
+  it('persists flag when caller is superadmin', async () => {
+    vi.mocked(getSuperadminStatus).mockResolvedValue(true)
+    const sb = makeSupabase([])
+    vi.mocked(createSupabaseServiceClient).mockReturnValue(sb as never)
+
+    const result = await setFeatureFlag(TENANT_ID, 'reservations', false)
+
+    expect(result.success).toBe(true)
+    expect(sb.from).toHaveBeenCalledWith('feature_flags')
+    expect(sb.from('feature_flags').upsert).toHaveBeenCalled()
   })
 })
