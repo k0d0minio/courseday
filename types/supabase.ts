@@ -319,7 +319,6 @@ export type Database = {
           activity_tag_id: string | null
           created_at: string
           id: string
-          name: string
           tenant_id: string
           updated_at: string
           venue_type_id: string | null
@@ -328,7 +327,6 @@ export type Database = {
           activity_tag_id?: string | null
           created_at?: string
           id?: string
-          name: string
           tenant_id: string
           updated_at?: string
           venue_type_id?: string | null
@@ -337,7 +335,6 @@ export type Database = {
           activity_tag_id?: string | null
           created_at?: string
           id?: string
-          name?: string
           tenant_id?: string
           updated_at?: string
           venue_type_id?: string | null

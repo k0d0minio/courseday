@@ -76,7 +76,6 @@ function TemplateDialog({
   } = useForm<ChecklistTemplateFormData>({
     resolver: standardSchemaResolver(checklistTemplateSchema),
     defaultValues: {
-      name: '',
       scope: 'venue_type',
       scopeId: '',
       items: [{ label: '' }],
@@ -96,7 +95,6 @@ function TemplateDialog({
       const derivedScope: Scope = initial.venue_type_id ? 'venue_type' : 'activity_tag'
       const derivedScopeId = initial.venue_type_id ?? initial.activity_tag_id ?? ''
       reset({
-        name: initial.name,
         scope: derivedScope,
         scopeId: derivedScopeId,
         items:
@@ -106,7 +104,6 @@ function TemplateDialog({
       })
     } else {
       reset({
-        name: '',
         scope: 'venue_type',
         scopeId: '',
         items: [{ label: '' }],
@@ -152,12 +149,6 @@ function TemplateDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-1">
-            <Label htmlFor="ct-name">{t('nameLabel')} *</Label>
-            <Input id="ct-name" {...register('name')} />
-            {errors.name && <p className="text-destructive text-sm">{errors.name.message}</p>}
-          </div>
-
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label>{t('scopeLabel')} *</Label>
@@ -283,7 +274,7 @@ export function ChecklistManagement() {
         next[idx] = tpl
         return next
       }
-      return [...prev, tpl].sort((a, b) => a.name.localeCompare(b.name))
+      return [...prev, tpl].sort((a, b) => scopeLabelFor(a).localeCompare(scopeLabelFor(b)))
     })
   }
 
@@ -336,7 +327,6 @@ export function ChecklistManagement() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{t('nameHeader')}</TableHead>
               <TableHead>{t('scopeHeader')}</TableHead>
               <TableHead>{t('itemsHeader')}</TableHead>
               <TableHead className="w-24" />
@@ -345,10 +335,7 @@ export function ChecklistManagement() {
           <TableBody>
             {templates.map((tpl) => (
               <TableRow key={tpl.id}>
-                <TableCell className="font-medium">{tpl.name}</TableCell>
-                <TableCell className="text-muted-foreground text-sm">
-                  {scopeLabelFor(tpl)}
-                </TableCell>
+                <TableCell className="font-medium">{scopeLabelFor(tpl)}</TableCell>
                 <TableCell className="text-muted-foreground text-sm">
                   {t('itemCount', { count: tpl.items.length })}
                 </TableCell>
@@ -394,7 +381,9 @@ export function ChecklistManagement() {
           <AlertDialogHeader>
             <AlertDialogTitle>{t('deleteTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t('deleteDescription', { name: deleteTarget?.name ?? '' })}
+              {t('deleteDescription', {
+                scope: deleteTarget ? scopeLabelFor(deleteTarget) : '',
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

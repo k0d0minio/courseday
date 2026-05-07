@@ -27,7 +27,6 @@ function mapTemplate(row: RawTemplateRow): ChecklistTemplateWithItems {
   return {
     id: row.id,
     tenant_id: row.tenant_id,
-    name: row.name,
     venue_type_id: row.venue_type_id,
     activity_tag_id: row.activity_tag_id,
     created_at: row.created_at,
@@ -52,7 +51,7 @@ export async function getAllChecklistTemplates(): Promise<
     .from('checklist_template')
     .select('*, checklist_template_item(*)')
     .eq('tenant_id', tenantId)
-    .order('name')
+    .order('created_at', { ascending: true })
 
   if (error) return { success: false, error: error.message }
 
@@ -98,13 +97,12 @@ export async function createChecklistTemplate(
   await requireEditor(tenantId)
 
   const { supabase } = await createTenantClient()
-  const { name, scope, scopeId, items } = parsed.data
+  const { scope, scopeId, items } = parsed.data
 
   const { data: tplRow, error: tplErr } = await supabase
     .from('checklist_template')
     .insert({
       tenant_id: tenantId,
-      name: name.trim(),
       venue_type_id: scope === 'venue_type' ? scopeId : null,
       activity_tag_id: scope === 'activity_tag' ? scopeId : null,
     })
@@ -149,12 +147,11 @@ export async function updateChecklistTemplate(
   await requireEditor(tenantId)
 
   const { supabase } = await createTenantClient()
-  const { name, scope, scopeId, items } = parsed.data
+  const { scope, scopeId, items } = parsed.data
 
   const { error: updErr } = await supabase
     .from('checklist_template')
     .update({
-      name: name.trim(),
       venue_type_id: scope === 'venue_type' ? scopeId : null,
       activity_tag_id: scope === 'activity_tag' ? scopeId : null,
     })
