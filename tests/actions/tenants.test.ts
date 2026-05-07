@@ -22,6 +22,7 @@ import { getUser } from '@/app/actions/auth'
 import { isUserSuperadmin } from '@/lib/superadmin'
 import { createSupabaseServiceClient } from '@/lib/supabase-server'
 import { deleteTenant } from '@/app/actions/tenants'
+import { assertFailure } from '@/tests/helpers/action-response'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -108,14 +109,14 @@ describe('deleteTenant', () => {
   it('returns error when not authenticated', async () => {
     vi.mocked(getUser).mockResolvedValue(null)
     const res = await deleteTenant(TENANT_ID)
-    expect(res.success).toBe(false)
+    assertFailure(res)
     expect(res.error).toMatch(/not authenticated/i)
   })
 
   it('returns error when caller is not superadmin', async () => {
     vi.mocked(isUserSuperadmin).mockResolvedValue(false)
     const res = await deleteTenant(TENANT_ID)
-    expect(res.success).toBe(false)
+    assertFailure(res)
     expect(res.error).toMatch(/not authorized/i)
   })
 
@@ -132,7 +133,7 @@ describe('deleteTenant', () => {
     } as never)
 
     const res = await deleteTenant(TENANT_ID)
-    expect(res.success).toBe(false)
+    assertFailure(res)
     expect(res.error).toMatch(/not found/i)
   })
 
@@ -305,7 +306,7 @@ describe('deleteTenant', () => {
     } as never)
 
     const res = await deleteTenant(TENANT_ID)
-    expect(res.success).toBe(false)
+    assertFailure(res)
     expect(res.error).toMatch(/failed to delete tenant/i)
   })
 })
