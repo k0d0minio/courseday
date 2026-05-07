@@ -1,20 +1,20 @@
-'use server';
+'use server'
 
-import { randomUUID } from 'crypto';
-import { createTenantClient, createSupabaseServiceClient } from '@/lib/supabase-server';
-import { getTenantId } from '@/lib/tenant';
-import { getUserRole, requireEditor } from '@/lib/membership';
-import { generateRecurrenceDates } from '@/lib/day-utils';
-import { activitySchema } from '@/lib/program-item-schema';
-import { ensureDayExists } from '@/app/actions/days';
-import { notifyTenantMembers, getDayDate } from '@/lib/notifications';
-import { mutationRateLimit } from '@/lib/rate-limit';
-import { snapshotMatchingTemplatesForActivity } from '@/lib/checklist-snapshot';
-import type { ActionResponse } from '@/types/actions';
-import type { Activity, ActivityWithRelations } from '@/types/index';
-import type { ActivityFormData } from '@/lib/program-item-schema';
+import { randomUUID } from 'crypto'
+import { createTenantClient, createSupabaseServiceClient } from '@/lib/supabase-server'
+import { getTenantId } from '@/lib/tenant'
+import { getUserRole, requireEditor } from '@/lib/membership'
+import { generateRecurrenceDates } from '@/lib/day-utils'
+import { activitySchema } from '@/lib/program-item-schema'
+import { ensureDayExists } from '@/app/actions/days'
+import { notifyTenantMembers, getDayDate } from '@/lib/notifications'
+import { mutationRateLimit } from '@/lib/rate-limit'
+import { snapshotMatchingTemplatesForActivity } from '@/lib/checklist-snapshot'
+import type { ActionResponse } from '@/types/actions'
+import type { Activity, ActivityWithRelations } from '@/types/index'
+import type { ActivityFormData } from '@/lib/program-item-schema'
 
-const MAX_RECURRENCE_OCCURRENCES = 52;
+const MAX_RECURRENCE_OCCURRENCES = 52
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -40,80 +40,87 @@ function toRow(
     is_recurring: overrides.is_recurring ?? data.isRecurring ?? false,
     recurrence_frequency: data.recurrenceFrequency ?? null,
     recurrence_group_id: overrides.recurrence_group_id ?? null,
-  };
+  }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function assignTags(supabase: any, activityId: string, tagIds: string[]): Promise<string | null> {
+async function assignTags(
+  supabase: any,
+  activityId: string,
+  tagIds: string[]
+): Promise<string | null> {
   const { error: delErr } = await supabase
     .from('activity_tag_assignment')
     .delete()
-    .eq('activity_id', activityId);
-  if (delErr) return delErr.message;
+    .eq('activity_id', activityId)
+  if (delErr) return delErr.message
 
-  if (tagIds.length === 0) return null;
+  if (tagIds.length === 0) return null
 
   const { error: insErr } = await supabase
     .from('activity_tag_assignment')
-    .insert(tagIds.map((tagId) => ({ activity_id: activityId, tag_id: tagId })));
-  if (insErr) return insErr.message;
+    .insert(tagIds.map((tagId) => ({ activity_id: activityId, tag_id: tagId })))
+  if (insErr) return insErr.message
 
-  return null;
+  return null
 }
 
 // ---------------------------------------------------------------------------
 // Actions
 // ---------------------------------------------------------------------------
 
-export async function createActivity(
-  raw: ActivityFormData
-): Promise<ActionResponse<Activity>> {
-  const parsed = activitySchema.safeParse(raw);
+export async function createActivity(raw: ActivityFormData): Promise<ActionResponse<Activity>> {
+  const parsed = activitySchema.safeParse(raw)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message };
+    return { success: false, error: parsed.error.issues[0].message }
   }
 
-  const tenantId = await getTenantId();
-  const user = await requireEditor(tenantId);
+  const tenantId = await getTenantId()
+  const user = await requireEditor(tenantId)
 
-  const rl = await mutationRateLimit(user.id);
-  if (!rl.success) return { success: false, error: 'Too many requests. Please slow down.' };
+  const rl = await mutationRateLimit(user.id)
+  if (!rl.success) return { success: false, error: 'Too many requests. Please slow down.' }
 
-  const { supabase } = await createTenantClient();
-  const data = parsed.data;
-  const isRecurring = data.isRecurring && !!data.recurrenceFrequency;
-  const tagIds = data.tagIds ?? [];
+  const { supabase } = await createTenantClient()
+  const data = parsed.data
+  const isRecurring = data.isRecurring && !!data.recurrenceFrequency
+  const tagIds = data.tagIds ?? []
 
   if (!isRecurring) {
     const { data: row, error } = await supabase
       .from('activity')
       .insert(toRow(tenantId, data, {}))
       .select()
-      .single();
+      .single()
 
-    if (error) return { success: false, error: error.message };
+    if (error) return { success: false, error: error.message }
 
     if (tagIds.length > 0) {
-      const tagErr = await assignTags(supabase, (row as Activity).id, tagIds);
-      if (tagErr) return { success: false, error: tagErr };
+      const tagErr = await assignTags(supabase, (row as Activity).id, tagIds)
+      if (tagErr) return { success: false, error: tagErr }
     }
 
-    const activity = row as Activity;
+    const activity = row as Activity
     await snapshotMatchingTemplatesForActivity(supabase, {
       tenantId,
       dayId: activity.day_id,
       activityId: activity.id,
       venueTypeId: data.venueTypeId ?? null,
       tagIds,
-    });
+    })
 
     Promise.allSettled([
       getDayDate(data.dayId).then((date) =>
-        notifyTenantMembers(tenantId, user.id, `Activity added: ${data.title}`, undefined, date ? `/day/${date}` : undefined)
+        notifyTenantMembers(
+          tenantId,
+          user.id,
+          `Activity added: ${data.title}`,
+          undefined,
+          date ? `/day/${date}` : undefined
+        )
       ),
-    ]);
+    ])
 
-    return { success: true, data: activity };
+    return { success: true, data: activity }
   }
 
   // Recurring path
@@ -121,31 +128,36 @@ export async function createActivity(
     .from('day')
     .select('date_iso')
     .eq('id', data.dayId)
-    .single();
+    .single()
 
   if (dayErr || !dayRow) {
-    return { success: false, error: 'Could not find the day record.' };
+    return { success: false, error: 'Could not find the day record.' }
   }
 
-  const startDate = (dayRow as { date_iso: string }).date_iso;
-  const futureDates = generateRecurrenceDates(startDate, data.recurrenceFrequency!).slice(0, MAX_RECURRENCE_OCCURRENCES - 1);
-  const allDates = [startDate, ...futureDates];
+  const startDate = (dayRow as { date_iso: string }).date_iso
+  const futureDates = generateRecurrenceDates(startDate, data.recurrenceFrequency!).slice(
+    0,
+    MAX_RECURRENCE_OCCURRENCES - 1
+  )
+  const allDates = [startDate, ...futureDates]
 
-  const recurrenceGroupId = randomUUID();
+  const recurrenceGroupId = randomUUID()
 
-  await Promise.all(futureDates.map((d) => ensureDayExists(d)));
+  await Promise.all(futureDates.map((d) => ensureDayExists(d)))
 
   const { data: dayRows, error: daysErr } = await supabase
     .from('day')
     .select('id, date_iso')
     .eq('tenant_id', tenantId)
-    .in('date_iso', allDates);
+    .in('date_iso', allDates)
 
   if (daysErr || !dayRows) {
-    return { success: false, error: 'Could not resolve day records for recurrence.' };
+    return { success: false, error: 'Could not resolve day records for recurrence.' }
   }
 
-  const dateToId = new Map((dayRows as { id: string; date_iso: string }[]).map((d) => [d.date_iso, d.id]));
+  const dateToId = new Map(
+    (dayRows as { id: string; date_iso: string }[]).map((d) => [d.date_iso, d.id])
+  )
   const rows = allDates
     .map((d) => dateToId.get(d))
     .filter((id): id is string => !!id)
@@ -155,22 +167,22 @@ export async function createActivity(
         recurrence_group_id: recurrenceGroupId,
         is_recurring: true,
       })
-    );
+    )
 
   const { data: insertedRows, error: insertErr } = await supabase
     .from('activity')
     .insert(rows)
-    .select();
+    .select()
 
-  if (insertErr) return { success: false, error: insertErr.message };
+  if (insertErr) return { success: false, error: insertErr.message }
 
-  const allInserted = (insertedRows ?? []) as Activity[];
-  const primary = allInserted.find((r) => r.day_id === data.dayId) ?? allInserted[0];
-  if (!primary) return { success: false, error: 'Failed to insert recurring activity.' };
+  const allInserted = (insertedRows ?? []) as Activity[]
+  const primary = allInserted.find((r) => r.day_id === data.dayId) ?? allInserted[0]
+  if (!primary) return { success: false, error: 'Failed to insert recurring activity.' }
 
   if (tagIds.length > 0) {
-    const tagErr = await assignTags(supabase, primary.id, tagIds);
-    if (tagErr) return { success: false, error: tagErr };
+    const tagErr = await assignTags(supabase, primary.id, tagIds)
+    if (tagErr) return { success: false, error: tagErr }
   }
 
   // Snapshot matching templates onto every occurrence.
@@ -184,31 +196,37 @@ export async function createActivity(
         tagIds,
       })
     )
-  );
+  )
 
   Promise.allSettled([
     getDayDate(data.dayId).then((date) =>
-      notifyTenantMembers(tenantId, user.id, `Activity added: ${data.title}`, undefined, date ? `/day/${date}` : undefined)
+      notifyTenantMembers(
+        tenantId,
+        user.id,
+        `Activity added: ${data.title}`,
+        undefined,
+        date ? `/day/${date}` : undefined
+      )
     ),
-  ]);
+  ])
 
-  return { success: true, data: primary };
+  return { success: true, data: primary }
 }
 
 export async function updateActivity(
   id: string,
   raw: ActivityFormData
 ): Promise<ActionResponse<Activity>> {
-  const parsed = activitySchema.safeParse(raw);
+  const parsed = activitySchema.safeParse(raw)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message };
+    return { success: false, error: parsed.error.issues[0].message }
   }
 
-  const tenantId = await getTenantId();
-  const user = await requireEditor(tenantId);
+  const tenantId = await getTenantId()
+  const user = await requireEditor(tenantId)
 
-  const { supabase } = await createTenantClient();
-  const data = parsed.data;
+  const { supabase } = await createTenantClient()
+  const data = parsed.data
 
   const { data: row, error } = await supabase
     .from('activity')
@@ -228,84 +246,93 @@ export async function updateActivity(
     .eq('tenant_id', tenantId)
     .is('deleted_at', null)
     .select()
-    .single();
+    .single()
 
-  if (error) return { success: false, error: error.message };
+  if (error) return { success: false, error: error.message }
 
-  const tagErr = await assignTags(supabase, id, data.tagIds ?? []);
-  if (tagErr) return { success: false, error: tagErr };
+  const tagErr = await assignTags(supabase, id, data.tagIds ?? [])
+  if (tagErr) return { success: false, error: tagErr }
 
   Promise.allSettled([
     getDayDate(data.dayId).then((date) =>
-      notifyTenantMembers(tenantId, user.id, `Activity updated: ${data.title}`, undefined, date ? `/day/${date}` : undefined)
+      notifyTenantMembers(
+        tenantId,
+        user.id,
+        `Activity updated: ${data.title}`,
+        undefined,
+        date ? `/day/${date}` : undefined
+      )
     ),
-  ]);
+  ])
 
-  return { success: true, data: row as Activity };
+  return { success: true, data: row as Activity }
 }
 
 export async function deleteActivity(id: string): Promise<ActionResponse> {
-  const tenantId = await getTenantId();
-  const user = await requireEditor(tenantId);
+  const tenantId = await getTenantId()
+  const user = await requireEditor(tenantId)
 
-  const { supabase } = await createTenantClient();
+  const { supabase } = await createTenantClient()
 
-  const now = new Date().toISOString();
+  const now = new Date().toISOString()
   const { data: existing } = await supabase
     .from('activity')
     .select('title, day_id')
     .eq('id', id)
     .eq('tenant_id', tenantId)
     .is('deleted_at', null)
-    .maybeSingle();
+    .maybeSingle()
 
   const { error } = await supabase
     .from('activity')
     .update({ deleted_at: now, updated_at: now })
     .eq('id', id)
     .eq('tenant_id', tenantId)
-    .is('deleted_at', null);
+    .is('deleted_at', null)
 
-  if (error) return { success: false, error: error.message };
+  if (error) return { success: false, error: error.message }
 
   if (existing) {
-    const { title, day_id } = existing as { title: string; day_id: string };
+    const { title, day_id } = existing as { title: string; day_id: string }
     Promise.allSettled([
       getDayDate(day_id).then((date) =>
-        notifyTenantMembers(tenantId, user.id, `Activity removed: ${title}`, undefined, date ? `/day/${date}` : undefined)
+        notifyTenantMembers(
+          tenantId,
+          user.id,
+          `Activity removed: ${title}`,
+          undefined,
+          date ? `/day/${date}` : undefined
+        )
       ),
-    ]);
+    ])
   }
 
-  return { success: true, data: undefined };
+  return { success: true, data: undefined }
 }
 
 export async function deleteActivityRecurrenceGroup(groupId: string): Promise<ActionResponse> {
-  const tenantId = await getTenantId();
-  await requireEditor(tenantId);
+  const tenantId = await getTenantId()
+  await requireEditor(tenantId)
 
-  const now = new Date().toISOString();
-  const { supabase } = await createTenantClient();
+  const now = new Date().toISOString()
+  const { supabase } = await createTenantClient()
   const { error } = await supabase
     .from('activity')
     .update({ deleted_at: now, updated_at: now })
     .eq('recurrence_group_id', groupId)
     .eq('tenant_id', tenantId)
-    .is('deleted_at', null);
+    .is('deleted_at', null)
 
-  if (error) return { success: false, error: error.message };
-  return { success: true, data: undefined };
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: undefined }
 }
 
-export async function deleteActivityFromHere(
-  id: string,
-  groupId: string
-): Promise<ActionResponse> {
-  const tenantId = await getTenantId();
-  const user = await requireEditor(tenantId);
+export async function deleteActivityFromHere(id: string, groupId: string): Promise<ActionResponse> {
+  const tenantId = await getTenantId()
+  const user = await requireEditor(tenantId)
 
-  const { supabase } = await createTenantClient();
-  const serviceClient = createSupabaseServiceClient();
+  const { supabase } = await createTenantClient()
+  const serviceClient = createSupabaseServiceClient()
 
   // Get the current activity's day_id and title
   const { data: curr } = await supabase
@@ -314,21 +341,21 @@ export async function deleteActivityFromHere(
     .eq('id', id)
     .eq('tenant_id', tenantId)
     .is('deleted_at', null)
-    .maybeSingle();
+    .maybeSingle()
 
-  if (!curr) return { success: false, error: 'Activity not found.' };
+  if (!curr) return { success: false, error: 'Activity not found.' }
 
-  const { day_id, title } = curr as { day_id: string; title: string };
+  const { day_id, title } = curr as { day_id: string; title: string }
 
   // Resolve the date of this activity's day
   const { data: dayRow } = await serviceClient
     .from('day')
     .select('date_iso')
     .eq('id', day_id)
-    .maybeSingle();
+    .maybeSingle()
 
-  if (!dayRow) return { success: false, error: 'Day not found.' };
-  const currentDate = (dayRow as { date_iso: string }).date_iso;
+  if (!dayRow) return { success: false, error: 'Day not found.' }
+  const currentDate = (dayRow as { date_iso: string }).date_iso
 
   // Get all activities in the recurrence group
   const { data: groupActivities } = await supabase
@@ -336,38 +363,35 @@ export async function deleteActivityFromHere(
     .select('id, day_id')
     .eq('recurrence_group_id', groupId)
     .eq('tenant_id', tenantId)
-    .is('deleted_at', null);
+    .is('deleted_at', null)
 
-  if (!groupActivities?.length) return { success: true, data: undefined };
+  if (!groupActivities?.length) return { success: true, data: undefined }
 
   // Resolve their day dates via service client
-  const dayIds = [...new Set(groupActivities.map((a) => (a as { day_id: string }).day_id))];
-  const { data: days } = await serviceClient
-    .from('day')
-    .select('id, date_iso')
-    .in('id', dayIds);
+  const dayIds = [...new Set(groupActivities.map((a) => (a as { day_id: string }).day_id))]
+  const { data: days } = await serviceClient.from('day').select('id, date_iso').in('id', dayIds)
 
   const futureDayIds = new Set(
     (days ?? [])
       .filter((d) => (d as { date_iso: string }).date_iso >= currentDate)
       .map((d) => (d as { id: string }).id)
-  );
+  )
 
   const toDeleteIds = (groupActivities as { id: string; day_id: string }[])
     .filter((a) => futureDayIds.has(a.day_id))
-    .map((a) => a.id);
+    .map((a) => a.id)
 
-  if (toDeleteIds.length === 0) return { success: true, data: undefined };
+  if (toDeleteIds.length === 0) return { success: true, data: undefined }
 
-  const tombstoneAt = new Date().toISOString();
+  const tombstoneAt = new Date().toISOString()
   const { error } = await supabase
     .from('activity')
     .update({ deleted_at: tombstoneAt, updated_at: tombstoneAt })
     .in('id', toDeleteIds)
     .eq('tenant_id', tenantId)
-    .is('deleted_at', null);
+    .is('deleted_at', null)
 
-  if (error) return { success: false, error: error.message };
+  if (error) return { success: false, error: error.message }
 
   Promise.allSettled([
     notifyTenantMembers(
@@ -377,19 +401,19 @@ export async function deleteActivityFromHere(
       undefined,
       `/day/${currentDate}`
     ),
-  ]);
+  ])
 
-  return { success: true, data: undefined };
+  return { success: true, data: undefined }
 }
 
 export async function getActivitiesForDay(
   dayId: string
 ): Promise<ActionResponse<ActivityWithRelations[]>> {
-  const tenantId = await getTenantId();
-  const role = await getUserRole(tenantId);
-  if (!role) return { success: false, error: 'Not authorized.' };
+  const tenantId = await getTenantId()
+  const role = await getUserRole(tenantId)
+  if (!role) return { success: false, error: 'Not authorized.' }
 
-  const { supabase } = await createTenantClient();
+  const { supabase } = await createTenantClient()
   const { data, error } = await supabase
     .from('activity')
     .select(
@@ -398,9 +422,9 @@ export async function getActivitiesForDay(
     .eq('tenant_id', tenantId)
     .eq('day_id', dayId)
     .is('deleted_at', null)
-    .order('start_time', { nullsFirst: true });
+    .order('start_time', { nullsFirst: true })
 
-  if (error) return { success: false, error: error.message };
+  if (error) return { success: false, error: error.message }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const items = (data as any[]).map((row) => ({
@@ -411,7 +435,7 @@ export async function getActivitiesForDay(
       .slice()
       .sort((a, b) => a.position - b.position),
     activity_checklist_item: undefined,
-  }));
+  }))
 
-  return { success: true, data: items as ActivityWithRelations[] };
+  return { success: true, data: items as ActivityWithRelations[] }
 }

@@ -1,29 +1,29 @@
-'use client';
+'use client'
 
-import { useEffect, useState, useTransition } from 'react';
-import { toast } from 'sonner';
-import { Pencil, Trash2, Check, X } from 'lucide-react';
-import { useTranslations } from 'next-intl';
-import type { DayNote } from '@/app/actions/day-notes';
-import { mutateWithOfflineQueue } from '@/lib/day-mutation-client';
-import { useTenant } from '@/lib/tenant-context';
-import { handoverRowStatus } from '@/lib/handover';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
+import { useEffect, useState, useTransition } from 'react'
+import { toast } from 'sonner'
+import { Pencil, Trash2, Check, X } from 'lucide-react'
+import { useTranslations } from 'next-intl'
+import type { DayNote } from '@/app/actions/day-notes'
+import { mutateWithOfflineQueue } from '@/lib/day-mutation-client'
+import { useTenant } from '@/lib/tenant-context'
+import { handoverRowStatus } from '@/lib/handover'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@/components/ui/badge'
 
-const MAX_LEN = 2000;
+const MAX_LEN = 2000
 
 interface DayNotesProps {
-  dayId: string;
-  initialNotes: DayNote[];
+  dayId: string
+  initialNotes: DayNote[]
   /** When set with `onNotesChange`, notes are controlled (e.g. realtime sync). */
-  notes?: DayNote[];
-  onNotesChange?: React.Dispatch<React.SetStateAction<DayNote[]>>;
-  isEditor: boolean;
-  currentUserId: string | undefined;
-  handoverEnabled?: boolean;
-  handoverBaselineIso?: string | null;
+  notes?: DayNote[]
+  onNotesChange?: React.Dispatch<React.SetStateAction<DayNote[]>>
+  isEditor: boolean
+  currentUserId: string | undefined
+  handoverEnabled?: boolean
+  handoverBaselineIso?: string | null
 }
 
 export function DayNotes({
@@ -36,24 +36,24 @@ export function DayNotes({
   handoverEnabled = false,
   handoverBaselineIso = null,
 }: DayNotesProps) {
-  const th = useTranslations('Tenant.handover');
-  const [internalNotes, setInternalNotes] = useState<DayNote[]>(initialNotes);
-  const isControlled = controlledNotes != null && onNotesChange != null;
-  const notes = isControlled ? controlledNotes : internalNotes;
-  const setNotes = isControlled ? onNotesChange! : setInternalNotes;
+  const th = useTranslations('Tenant.handover')
+  const [internalNotes, setInternalNotes] = useState<DayNote[]>(initialNotes)
+  const isControlled = controlledNotes != null && onNotesChange != null
+  const notes = isControlled ? controlledNotes : internalNotes
+  const setNotes = isControlled ? onNotesChange! : setInternalNotes
 
   useEffect(() => {
-    if (!isControlled) setInternalNotes(initialNotes);
-  }, [initialNotes, dayId, isControlled]);
-  const [draft, setDraft] = useState('');
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editDraft, setEditDraft] = useState('');
-  const [isSaving, startSaveTransition] = useTransition();
-  const [isDeleting, startDeleteTransition] = useTransition();
-  const { tenantSlug } = useTenant();
+    if (!isControlled) setInternalNotes(initialNotes)
+  }, [initialNotes, dayId, isControlled])
+  const [draft, setDraft] = useState('')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editDraft, setEditDraft] = useState('')
+  const [isSaving, startSaveTransition] = useTransition()
+  const [isDeleting, startDeleteTransition] = useTransition()
+  const { tenantSlug } = useTenant()
 
   function handleAdd() {
-    if (!draft.trim()) return;
+    if (!draft.trim()) return
     startSaveTransition(async () => {
       const result = await mutateWithOfflineQueue<DayNote>({
         entity: 'day-notes',
@@ -61,8 +61,11 @@ export function DayNotes({
         tenantSlug,
         dayId,
         payload: { dayId, content: draft },
-      });
-      if (!result.success) { toast.error(result.error); return; }
+      })
+      if (!result.success) {
+        toast.error(result.error)
+        return
+      }
       if (result.pending) {
         setNotes((prev) => [
           ...prev,
@@ -76,22 +79,22 @@ export function DayNotes({
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           },
-        ]);
+        ])
       } else {
-        setNotes((prev) => [...prev, result.data]);
+        setNotes((prev) => [...prev, result.data])
       }
-      setDraft('');
-      toast.success('Note added.');
-    });
+      setDraft('')
+      toast.success('Note added.')
+    })
   }
 
   function startEdit(note: DayNote) {
-    setEditingId(note.id);
-    setEditDraft(note.content);
+    setEditingId(note.id)
+    setEditDraft(note.content)
   }
 
   function handleUpdate(id: string) {
-    if (!editDraft.trim()) return;
+    if (!editDraft.trim()) return
     startSaveTransition(async () => {
       const result = await mutateWithOfflineQueue<DayNote>({
         entity: 'day-notes',
@@ -99,20 +102,25 @@ export function DayNotes({
         tenantSlug,
         dayId,
         payload: { id, content: editDraft },
-      });
-      if (!result.success) { toast.error(result.error); return; }
+      })
+      if (!result.success) {
+        toast.error(result.error)
+        return
+      }
       if (result.pending) {
         setNotes((prev) =>
           prev.map((n) =>
-            n.id === id ? { ...n, content: editDraft.trim(), updated_at: new Date().toISOString() } : n
+            n.id === id
+              ? { ...n, content: editDraft.trim(), updated_at: new Date().toISOString() }
+              : n
           )
-        );
+        )
       } else {
-        setNotes((prev) => prev.map((n) => (n.id === id ? result.data : n)));
+        setNotes((prev) => prev.map((n) => (n.id === id ? result.data : n)))
       }
-      setEditingId(null);
-      toast.success('Note updated.');
-    });
+      setEditingId(null)
+      toast.success('Note updated.')
+    })
   }
 
   function handleDelete(id: string) {
@@ -123,36 +131,34 @@ export function DayNotes({
         tenantSlug,
         dayId,
         payload: { id },
-      });
-      if (!result.success) { toast.error(result.error); return; }
-      setNotes((prev) => prev.filter((n) => n.id !== id));
-      toast.success('Note deleted.');
-    });
+      })
+      if (!result.success) {
+        toast.error(result.error)
+        return
+      }
+      setNotes((prev) => prev.filter((n) => n.id !== id))
+      toast.success('Note deleted.')
+    })
   }
 
-  if (notes.length === 0 && !isEditor) return null;
+  if (notes.length === 0 && !isEditor) return null
 
   return (
     <section className="space-y-3">
-      <h2 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-        Notes
-      </h2>
+      <h2 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">Notes</h2>
 
       {notes.length > 0 && (
         <div className="space-y-2">
           {notes.map((note) => {
-            const isOwn = note.user_id === currentUserId;
-            const isEditing = editingId === note.id;
+            const isOwn = note.user_id === currentUserId
+            const isEditing = editingId === note.id
             const ho =
               handoverEnabled && handoverBaselineIso
                 ? handoverRowStatus(note.created_at, note.updated_at, handoverBaselineIso)
-                : null;
+                : null
 
             return (
-              <div
-                key={note.id}
-                className="rounded-md border bg-muted/30 px-4 py-3 space-y-1.5"
-              >
+              <div key={note.id} className="bg-muted/30 space-y-1.5 rounded-md border px-4 py-3">
                 {isEditing ? (
                   <div className="space-y-2">
                     <Textarea
@@ -184,7 +190,7 @@ export function DayNotes({
                 ) : (
                   <>
                     <div className="flex flex-wrap items-start gap-2">
-                      <p className="text-sm whitespace-pre-wrap flex-1 min-w-0">{note.content}</p>
+                      <p className="min-w-0 flex-1 text-sm whitespace-pre-wrap">{note.content}</p>
                       {ho === 'new' && (
                         <Badge variant="default" className="shrink-0 text-[10px] uppercase">
                           {th('badgeNew')}
@@ -197,7 +203,7 @@ export function DayNotes({
                       )}
                     </div>
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-muted-foreground text-xs">
                         {note.author_name} · {formatDate(note.created_at)}
                         {note.updated_at !== note.created_at && ' (edited)'}
                       </p>
@@ -215,7 +221,7 @@ export function DayNotes({
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6 text-destructive hover:text-destructive"
+                            className="text-destructive hover:text-destructive h-6 w-6"
                             onClick={() => handleDelete(note.id)}
                             disabled={isDeleting}
                           >
@@ -227,7 +233,7 @@ export function DayNotes({
                   </>
                 )}
               </div>
-            );
+            )
           })}
         </div>
       )}
@@ -242,22 +248,18 @@ export function DayNotes({
             maxLength={MAX_LEN}
             className="text-sm"
           />
-          <div className="flex justify-between items-center">
-            <span className="text-xs text-muted-foreground">
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground text-xs">
               {draft.length}/{MAX_LEN}
             </span>
-            <Button
-              size="sm"
-              onClick={handleAdd}
-              disabled={isSaving || !draft.trim()}
-            >
+            <Button size="sm" onClick={handleAdd} disabled={isSaving || !draft.trim()}>
               Add note
             </Button>
           </div>
         </div>
       )}
     </section>
-  );
+  )
 }
 
 function formatDate(iso: string): string {
@@ -266,5 +268,5 @@ function formatDate(iso: string): string {
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  });
+  })
 }

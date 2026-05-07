@@ -1,134 +1,130 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
-vi.mock('next/navigation', () => ({ redirect: vi.fn() }));
+vi.mock('next/navigation', () => ({ redirect: vi.fn() }))
 
 vi.mock('@/app/actions/auth', () => ({
   getUser: vi.fn(),
-}));
+}))
 
 vi.mock('@/lib/supabase-server', () => ({
   createSupabaseServerClient: vi.fn(),
-}));
+}))
 
 vi.mock('@/lib/superadmin', () => ({
   getSuperadminImpersonationRole: vi.fn(),
-}));
+}))
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-import { getUser } from '@/app/actions/auth';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
-import { getSuperadminImpersonationRole } from '@/lib/superadmin';
-import { redirect } from 'next/navigation';
+import { getUser } from '@/app/actions/auth'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { getSuperadminImpersonationRole } from '@/lib/superadmin'
+import { redirect } from 'next/navigation'
 
 function makeChain(result: unknown) {
-  const chain: Record<string, ReturnType<typeof vi.fn>> = {};
-  chain.from = vi.fn().mockReturnValue(chain);
-  chain.select = vi.fn().mockReturnValue(chain);
-  chain.eq = vi.fn().mockReturnValue(chain);
-  chain.maybeSingle = vi.fn().mockResolvedValue(result);
-  return chain;
+  const chain: Record<string, ReturnType<typeof vi.fn>> = {}
+  chain.from = vi.fn().mockReturnValue(chain)
+  chain.select = vi.fn().mockReturnValue(chain)
+  chain.eq = vi.fn().mockReturnValue(chain)
+  chain.maybeSingle = vi.fn().mockResolvedValue(result)
+  return chain
 }
 
 // ── Tests ────────────────────────────────────────────────────────────────────
 
-import { getUserRole, isEditor, requireEditor } from '@/lib/membership';
+import { getUserRole, isEditor, requireEditor } from '@/lib/membership'
 
 beforeEach(() => {
-  vi.clearAllMocks();
-  vi.mocked(getSuperadminImpersonationRole).mockResolvedValue(null);
-});
+  vi.clearAllMocks()
+  vi.mocked(getSuperadminImpersonationRole).mockResolvedValue(null)
+})
 
 describe('getUserRole', () => {
   it('returns null when unauthenticated', async () => {
-    vi.mocked(getUser).mockResolvedValue(null);
-    expect(await getUserRole('tenant-1')).toBeNull();
-  });
+    vi.mocked(getUser).mockResolvedValue(null)
+    expect(await getUserRole('tenant-1')).toBeNull()
+  })
 
   it('returns null when user has no membership', async () => {
-    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never);
-    vi.mocked(createSupabaseServerClient).mockResolvedValue(
-      makeChain({ data: null }) as never
-    );
-    expect(await getUserRole('tenant-1')).toBeNull();
-  });
+    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never)
+    vi.mocked(createSupabaseServerClient).mockResolvedValue(makeChain({ data: null }) as never)
+    expect(await getUserRole('tenant-1')).toBeNull()
+  })
 
   it('returns editor role', async () => {
-    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never);
+    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never)
     vi.mocked(createSupabaseServerClient).mockResolvedValue(
       makeChain({ data: { role: 'editor' } }) as never
-    );
-    expect(await getUserRole('tenant-1')).toBe('editor');
-  });
+    )
+    expect(await getUserRole('tenant-1')).toBe('editor')
+  })
 
   it('returns viewer role', async () => {
-    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never);
+    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never)
     vi.mocked(createSupabaseServerClient).mockResolvedValue(
       makeChain({ data: { role: 'viewer' } }) as never
-    );
-    expect(await getUserRole('tenant-1')).toBe('viewer');
-  });
+    )
+    expect(await getUserRole('tenant-1')).toBe('viewer')
+  })
 
   it('returns superadmin impersonation role when present', async () => {
-    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never);
-    vi.mocked(getSuperadminImpersonationRole).mockResolvedValue('editor');
-    expect(await getUserRole('tenant-1')).toBe('editor');
-    expect(createSupabaseServerClient).not.toHaveBeenCalled();
-  });
-});
+    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never)
+    vi.mocked(getSuperadminImpersonationRole).mockResolvedValue('editor')
+    expect(await getUserRole('tenant-1')).toBe('editor')
+    expect(createSupabaseServerClient).not.toHaveBeenCalled()
+  })
+})
 
 describe('isEditor', () => {
   it('returns true for editor', async () => {
-    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never);
+    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never)
     vi.mocked(createSupabaseServerClient).mockResolvedValue(
       makeChain({ data: { role: 'editor' } }) as never
-    );
-    expect(await isEditor('tenant-1')).toBe(true);
-  });
+    )
+    expect(await isEditor('tenant-1')).toBe(true)
+  })
 
   it('returns false for viewer', async () => {
-    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never);
+    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never)
     vi.mocked(createSupabaseServerClient).mockResolvedValue(
       makeChain({ data: { role: 'viewer' } }) as never
-    );
-    expect(await isEditor('tenant-1')).toBe(false);
-  });
+    )
+    expect(await isEditor('tenant-1')).toBe(false)
+  })
 
   it('returns false when not a member', async () => {
-    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never);
-    vi.mocked(createSupabaseServerClient).mockResolvedValue(
-      makeChain({ data: null }) as never
-    );
-    expect(await isEditor('tenant-1')).toBe(false);
-  });
-});
+    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never)
+    vi.mocked(createSupabaseServerClient).mockResolvedValue(makeChain({ data: null }) as never)
+    expect(await isEditor('tenant-1')).toBe(false)
+  })
+})
 
 describe('requireEditor', () => {
   it('redirects to sign-in when unauthenticated', async () => {
-    vi.mocked(getUser).mockResolvedValue(null);
-    await requireEditor('tenant-1');
-    expect(redirect).toHaveBeenCalledWith('/auth/sign-in');
-  });
+    vi.mocked(getUser).mockResolvedValue(null)
+    await requireEditor('tenant-1')
+    expect(redirect).toHaveBeenCalledWith('/auth/sign-in')
+  })
 
   it('redirects to / when viewer', async () => {
-    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never);
+    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never)
     vi.mocked(createSupabaseServerClient).mockResolvedValue(
       makeChain({ data: { role: 'viewer' } }) as never
-    );
-    await requireEditor('tenant-1');
-    expect(redirect).toHaveBeenCalledWith('/');
-  });
+    )
+    await requireEditor('tenant-1')
+    expect(redirect).toHaveBeenCalledWith('/')
+  })
 
   it('returns the user when editor', async () => {
-    const mockUser = { id: 'user-1', email: 'test@test.com' };
-    vi.mocked(getUser).mockResolvedValue(mockUser as never);
+    const mockUser = { id: 'user-1', email: 'test@test.com' }
+    vi.mocked(getUser).mockResolvedValue(mockUser as never)
     vi.mocked(createSupabaseServerClient).mockResolvedValue(
       makeChain({ data: { role: 'editor' } }) as never
-    );
-    const user = await requireEditor('tenant-1');
-    expect(user).toBe(mockUser);
-    expect(redirect).not.toHaveBeenCalled();
-  });
-});
+    )
+    const user = await requireEditor('tenant-1')
+    expect(user).toBe(mockUser)
+    expect(redirect).not.toHaveBeenCalled()
+  })
+})

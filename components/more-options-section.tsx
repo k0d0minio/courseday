@@ -1,20 +1,20 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
-import { useTranslations } from 'next-intl';
-import { cn } from '@/lib/utils';
+import { useState } from 'react'
+import { ChevronDown } from 'lucide-react'
+import { useTranslations } from 'next-intl'
+import { cn } from '@/lib/utils'
 
 type Props = {
-  children: React.ReactNode;
-  defaultOpen?: boolean;
-  label?: string;
-};
+  children: React.ReactNode
+  defaultOpen?: boolean
+  label?: string
+}
 
 export function MoreOptionsSection({ children, defaultOpen = false, label }: Props) {
-  const t = useTranslations('Tenant.allergens');
-  const [open, setOpen] = useState(defaultOpen);
-  const resolvedLabel = label ?? t('moreOptions');
+  const t = useTranslations('Tenant.allergens')
+  const [open, setOpen] = useState(defaultOpen)
+  const resolvedLabel = label ?? t('moreOptions')
 
   return (
     <div className="space-y-2">
@@ -22,7 +22,7 @@ export function MoreOptionsSection({ children, defaultOpen = false, label }: Pro
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
       >
         <ChevronDown
           aria-hidden="true"
@@ -32,5 +32,5 @@ export function MoreOptionsSection({ children, defaultOpen = false, label }: Pro
       </button>
       <div className={cn('space-y-4', open ? 'block' : 'hidden')}>{children}</div>
     </div>
-  );
+  )
 }

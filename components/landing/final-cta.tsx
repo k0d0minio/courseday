@@ -1,9 +1,9 @@
-import Link from 'next/link';
-import { getTranslations } from 'next-intl/server';
-import { Button } from '@/components/ui/button';
+import Link from 'next/link'
+import { getTranslations } from 'next-intl/server'
+import { Button } from '@/components/ui/button'
 
 export async function FinalCta() {
-  const t = await getTranslations('Platform.landing.finalCta');
+  const t = await getTranslations('Platform.landing.finalCta')
 
   return (
     <section className="relative overflow-hidden bg-[var(--brand)] text-[var(--brand-foreground)]">
@@ -12,7 +12,7 @@ export async function FinalCta() {
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_80%_at_50%_120%,color-mix(in_oklch,var(--brand-foreground)_25%,transparent),transparent_70%)]"
       />
       <div className="relative mx-auto flex max-w-4xl flex-col items-center gap-6 px-6 py-24 text-center sm:py-32">
-        <h2 className="font-display text-3xl font-medium tracking-tight sm:text-5xl text-balance">
+        <h2 className="font-display text-3xl font-medium tracking-tight text-balance sm:text-5xl">
           {t('title')}
         </h2>
         <p className="max-w-xl text-base opacity-80 sm:text-lg">{t('body')}</p>
@@ -37,5 +37,5 @@ export async function FinalCta() {
         </div>
       </div>
     </section>
-  );
+  )
 }

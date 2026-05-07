@@ -1,20 +1,17 @@
-'use client';
+'use client'
 
-import { useEffect, useState, useTransition } from 'react';
-import { toast } from 'sonner';
-import {
-  getAllFeatureRequests,
-  updateFeatureRequestStatus,
-} from '@/app/actions/feature-requests';
-import type { FeatureRequest, FeatureRequestStatus } from '@/app/actions/feature-requests';
-import { Badge } from '@/components/ui/badge';
+import { useEffect, useState, useTransition } from 'react'
+import { toast } from 'sonner'
+import { getAllFeatureRequests, updateFeatureRequestStatus } from '@/app/actions/feature-requests'
+import type { FeatureRequest, FeatureRequestStatus } from '@/app/actions/feature-requests'
+import { Badge } from '@/components/ui/badge'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui/select'
 import {
   Table,
   TableBody,
@@ -22,13 +19,17 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { cn } from '@/lib/utils';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+} from '@/components/ui/table'
+import { cn } from '@/lib/utils'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 const STATUS_OPTIONS: FeatureRequestStatus[] = [
-  'pending', 'reviewing', 'accepted', 'rejected', 'shipped',
-];
+  'pending',
+  'reviewing',
+  'accepted',
+  'rejected',
+  'shipped',
+]
 
 const STATUS_CLASSES: Record<FeatureRequestStatus, string> = {
   pending: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
@@ -36,7 +37,7 @@ const STATUS_CLASSES: Record<FeatureRequestStatus, string> = {
   accepted: 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300',
   rejected: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300',
   shipped: 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300',
-};
+}
 
 const STATUS_LABELS: Record<FeatureRequestStatus, string> = {
   pending: 'Pending',
@@ -44,57 +45,57 @@ const STATUS_LABELS: Record<FeatureRequestStatus, string> = {
   accepted: 'Accepted',
   rejected: 'Rejected',
   shipped: 'Shipped',
-};
+}
 
 function StatusBadge({ status }: { status: FeatureRequestStatus }) {
   return (
     <Badge variant="outline" className={cn('border-0', STATUS_CLASSES[status])}>
       {STATUS_LABELS[status]}
     </Badge>
-  );
+  )
 }
 
 function FeatureRequestRow({
   request,
   tenantName,
 }: {
-  request: FeatureRequest;
-  tenantName: string;
+  request: FeatureRequest
+  tenantName: string
 }) {
-  const [status, setStatus] = useState(request.status);
-  const [isPending, startTransition] = useTransition();
+  const [status, setStatus] = useState(request.status)
+  const [isPending, startTransition] = useTransition()
 
   function handleStatusChange(newStatus: FeatureRequestStatus) {
-    setStatus(newStatus);
+    setStatus(newStatus)
     startTransition(async () => {
-      const result = await updateFeatureRequestStatus(request.id, newStatus);
+      const result = await updateFeatureRequestStatus(request.id, newStatus)
       if (!result.success) {
-        toast.error(result.error);
-        setStatus(request.status);
+        toast.error(result.error)
+        setStatus(request.status)
       }
-    });
+    })
   }
 
   return (
     <TableRow>
-      <TableCell className="font-medium text-sm max-w-xs">
+      <TableCell className="max-w-xs text-sm font-medium">
         <div>
           <p className="font-medium">{request.title}</p>
           {request.description && (
-            <p className="text-muted-foreground text-xs mt-0.5 line-clamp-2">
+            <p className="text-muted-foreground mt-0.5 line-clamp-2 text-xs">
               {request.description}
             </p>
           )}
         </div>
       </TableCell>
-      <TableCell className="text-sm text-muted-foreground">{tenantName}</TableCell>
+      <TableCell className="text-muted-foreground text-sm">{tenantName}</TableCell>
       <TableCell>
         <Select
           value={status}
           onValueChange={(v) => handleStatusChange(v as FeatureRequestStatus)}
           disabled={isPending}
         >
-          <SelectTrigger className="w-32 h-8">
+          <SelectTrigger className="h-8 w-32">
             <SelectValue>
               <StatusBadge status={status} />
             </SelectValue>
@@ -108,42 +109,38 @@ function FeatureRequestRow({
           </SelectContent>
         </Select>
       </TableCell>
-      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+      <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
         {new Date(request.created_at).toLocaleDateString()}
       </TableCell>
     </TableRow>
-  );
+  )
 }
 
-export function AdminFeatureRequests({
-  tenants,
-}: {
-  tenants: { id: string; name: string }[];
-}) {
-  const [requests, setRequests] = useState<FeatureRequest[]>([]);
-  const [loading, setLoading] = useState(true);
+export function AdminFeatureRequests({ tenants }: { tenants: { id: string; name: string }[] }) {
+  const [requests, setRequests] = useState<FeatureRequest[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const tenantMap = new Map(tenants.map((t) => [t.id, t.name]));
+  const tenantMap = new Map(tenants.map((t) => [t.id, t.name]))
 
   useEffect(() => {
     getAllFeatureRequests().then((result) => {
-      if (result.success) setRequests(result.data);
-      setLoading(false);
-    });
-  }, []);
+      if (result.success) setRequests(result.data)
+      setLoading(false)
+    })
+  }, [])
 
   if (loading) {
-    return <p className="text-sm text-muted-foreground">Loading feature requests…</p>;
+    return <p className="text-muted-foreground text-sm">Loading feature requests…</p>
   }
 
   if (requests.length === 0) {
-    return <p className="text-sm text-muted-foreground">No feature requests yet.</p>;
+    return <p className="text-muted-foreground text-sm">No feature requests yet.</p>
   }
 
   const statusCounts = requests.reduce<Record<FeatureRequestStatus, number>>(
     (acc, request) => {
-      acc[request.status] += 1;
-      return acc;
+      acc[request.status] += 1
+      return acc
     },
     {
       pending: 0,
@@ -152,7 +149,7 @@ export function AdminFeatureRequests({
       rejected: 0,
       shipped: 0,
     }
-  );
+  )
 
   return (
     <div className="space-y-4">
@@ -160,7 +157,7 @@ export function AdminFeatureRequests({
         {STATUS_OPTIONS.map((status) => (
           <Card key={status}>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-muted-foreground text-sm font-medium">
                 {STATUS_LABELS[status]}
               </CardTitle>
             </CardHeader>
@@ -191,5 +188,5 @@ export function AdminFeatureRequests({
         </TableBody>
       </Table>
     </div>
-  );
+  )
 }

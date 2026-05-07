@@ -1,21 +1,21 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { useTranslations } from 'next-intl';
-import { Plus } from 'lucide-react';
-import { ShiftCard } from '@/components/shift-card';
-import { ShiftForm } from '@/components/shift-form';
-import { Button } from '@/components/ui/button';
-import type { ShiftWithStaffMember, StaffMember, StaffRole } from '@/types/index';
+import { useState } from 'react'
+import { useTranslations } from 'next-intl'
+import { Plus } from 'lucide-react'
+import { ShiftCard } from '@/components/shift-card'
+import { ShiftForm } from '@/components/shift-form'
+import { Button } from '@/components/ui/button'
+import type { ShiftWithStaffMember, StaffMember, StaffRole } from '@/types/index'
 
 type Props = {
-  dayId: string;
-  shifts: ShiftWithStaffMember[];
-  staffMembers: StaffMember[];
-  staffRoles: StaffRole[];
-  isEditor: boolean;
-  onShiftsChange: React.Dispatch<React.SetStateAction<ShiftWithStaffMember[]>>;
-};
+  dayId: string
+  shifts: ShiftWithStaffMember[]
+  staffMembers: StaffMember[]
+  staffRoles: StaffRole[]
+  isEditor: boolean
+  onShiftsChange: React.Dispatch<React.SetStateAction<ShiftWithStaffMember[]>>
+}
 
 export function StaffScheduleSection({
   dayId,
@@ -25,38 +25,34 @@ export function StaffScheduleSection({
   isEditor,
   onShiftsChange,
 }: Props) {
-  const t = useTranslations('Tenant.staff.section');
-  const [formOpen, setFormOpen] = useState(false);
-  const [editShift, setEditShift] = useState<ShiftWithStaffMember | null>(null);
+  const t = useTranslations('Tenant.staff.section')
+  const [formOpen, setFormOpen] = useState(false)
+  const [editShift, setEditShift] = useState<ShiftWithStaffMember | null>(null)
 
   function openAdd() {
-    setEditShift(null);
-    setFormOpen(true);
+    setEditShift(null)
+    setFormOpen(true)
   }
 
   function openEdit(item: ShiftWithStaffMember) {
-    setEditShift(item);
-    setFormOpen(true);
+    setEditShift(item)
+    setFormOpen(true)
   }
 
   function handleSaved(item: ShiftWithStaffMember) {
     onShiftsChange((prev) => {
-      const idx = prev.findIndex((s) => s.id === item.id);
+      const idx = prev.findIndex((s) => s.id === item.id)
       if (idx >= 0) {
-        const next = [...prev];
-        next[idx] = item;
-        return next.sort((a, b) =>
-          (a.start_time ?? '').localeCompare(b.start_time ?? '')
-        );
+        const next = [...prev]
+        next[idx] = item
+        return next.sort((a, b) => (a.start_time ?? '').localeCompare(b.start_time ?? ''))
       }
-      return [...prev, item].sort((a, b) =>
-        (a.start_time ?? '').localeCompare(b.start_time ?? '')
-      );
-    });
+      return [...prev, item].sort((a, b) => (a.start_time ?? '').localeCompare(b.start_time ?? ''))
+    })
   }
 
   function handleDeleted(id: string) {
-    onShiftsChange((prev) => prev.filter((s) => s.id !== id));
+    onShiftsChange((prev) => prev.filter((s) => s.id !== id))
   }
 
   return (
@@ -75,10 +71,10 @@ export function StaffScheduleSection({
         )}
       </div>
       {staffMembers.filter((m) => m.active).length === 0 && isEditor && (
-        <p className="text-sm text-muted-foreground">{t('noStaffHint')}</p>
+        <p className="text-muted-foreground text-sm">{t('noStaffHint')}</p>
       )}
       {shifts.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t('empty')}</p>
+        <p className="text-muted-foreground text-sm">{t('empty')}</p>
       ) : (
         <div className="space-y-2">
           {shifts.map((item) => (
@@ -106,5 +102,5 @@ export function StaffScheduleSection({
         />
       )}
     </section>
-  );
+  )
 }

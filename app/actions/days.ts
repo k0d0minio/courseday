@@ -1,10 +1,10 @@
-'use server';
+'use server'
 
-import { createSupabaseServiceClient } from '@/lib/supabase-server';
-import { getTenantId } from '@/lib/tenant';
-import { getWeekdayName, datesInRange } from '@/lib/day-utils';
-import type { ActionResponse } from '@/types/actions';
-import type { Day } from '@/types/index';
+import { createSupabaseServiceClient } from '@/lib/supabase-server'
+import { getTenantId } from '@/lib/tenant'
+import { getWeekdayName, datesInRange } from '@/lib/day-utils'
+import type { ActionResponse } from '@/types/actions'
+import type { Day } from '@/types/index'
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -15,7 +15,7 @@ function buildRow(tenantId: string, dateIso: string) {
     tenant_id: tenantId,
     date_iso: dateIso,
     weekday: getWeekdayName(dateIso),
-  };
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -26,11 +26,9 @@ function buildRow(tenantId: string, dateIso: string) {
  * Upserts a Day row for the current tenant + date.
  * Uses the service role client — day creation is a system operation.
  */
-export async function ensureDayExists(
-  dateIso: string
-): Promise<ActionResponse<Day>> {
-  const tenantId = await getTenantId();
-  const supabase = createSupabaseServiceClient();
+export async function ensureDayExists(dateIso: string): Promise<ActionResponse<Day>> {
+  const tenantId = await getTenantId()
+  const supabase = createSupabaseServiceClient()
 
   const { data, error } = await supabase
     .from('day')
@@ -38,10 +36,10 @@ export async function ensureDayExists(
       onConflict: 'tenant_id,date_iso',
     })
     .select()
-    .single();
+    .single()
 
-  if (error) return { success: false, error: error.message };
-  return { success: true, data: data as Day };
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: data as Day }
 }
 
 /**
@@ -52,18 +50,16 @@ export async function ensureDaysRange(
   startDate: string,
   endDate: string
 ): Promise<ActionResponse<Day[]>> {
-  const tenantId = await getTenantId();
-  const supabase = createSupabaseServiceClient();
+  const tenantId = await getTenantId()
+  const supabase = createSupabaseServiceClient()
 
-  const rows = datesInRange(startDate, endDate).map((d) =>
-    buildRow(tenantId, d)
-  );
+  const rows = datesInRange(startDate, endDate).map((d) => buildRow(tenantId, d))
 
   const { data, error } = await supabase
     .from('day')
     .upsert(rows, { onConflict: 'tenant_id,date_iso' })
-    .select();
+    .select()
 
-  if (error) return { success: false, error: error.message };
-  return { success: true, data: data as Day[] };
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: data as Day[] }
 }

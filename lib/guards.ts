@@ -1,17 +1,17 @@
-import { redirect, notFound } from 'next/navigation';
-import { getUser } from '@/app/actions/auth';
-import { getTenantFromHeaders } from '@/lib/tenant';
-import { getUserRole } from '@/lib/membership';
-import { createSupabaseServiceClient } from '@/lib/supabase-server';
-import { normaliseInviteEmail } from '@/lib/pending-invite';
-import type { Role } from '@/lib/membership';
-import type { User } from '@supabase/supabase-js';
+import { redirect, notFound } from 'next/navigation'
+import { getUser } from '@/app/actions/auth'
+import { getTenantFromHeaders } from '@/lib/tenant'
+import { getUserRole } from '@/lib/membership'
+import { createSupabaseServiceClient } from '@/lib/supabase-server'
+import { normaliseInviteEmail } from '@/lib/pending-invite'
+import type { Role } from '@/lib/membership'
+import type { User } from '@supabase/supabase-js'
 
 /** Returns the authenticated user or redirects to sign-in. */
 export async function requireAuth(): Promise<User> {
-  const user = await getUser();
-  if (!user) redirect('/auth/sign-in');
-  return user;
+  const user = await getUser()
+  if (!user) redirect('/auth/sign-in')
+  return user
 }
 
 /**
@@ -23,16 +23,16 @@ export async function requireAuth(): Promise<User> {
  * invitation row is deleted.
  */
 export async function requireTenantMember(): Promise<{ user: User; role: Role }> {
-  const user = await requireAuth();
-  const tenant = await getTenantFromHeaders();
-  const role = await getUserRole(tenant.id);
+  const user = await requireAuth()
+  const tenant = await getTenantFromHeaders()
+  const role = await getUserRole(tenant.id)
 
   if (!role) {
-    if (!user) redirect('/auth/sign-in');
+    if (!user) redirect('/auth/sign-in')
     // Check for a pending invitation matching the user's email.
-    const serviceClient = createSupabaseServiceClient();
-    const { data: authUser } = await serviceClient.auth.admin.getUserById(user.id);
-    const emailNorm = normaliseInviteEmail(authUser.user?.email);
+    const serviceClient = createSupabaseServiceClient()
+    const { data: authUser } = await serviceClient.auth.admin.getUserById(user.id)
+    const emailNorm = normaliseInviteEmail(authUser.user?.email)
 
     if (emailNorm) {
       const { data: invitation } = await serviceClient
@@ -40,7 +40,7 @@ export async function requireTenantMember(): Promise<{ user: User; role: Role }>
         .select('id, role')
         .eq('tenant_id', tenant.id)
         .eq('email', emailNorm)
-        .maybeSingle();
+        .maybeSingle()
 
       if (invitation) {
         // Auto-accept: create membership and remove the invitation.
@@ -48,20 +48,17 @@ export async function requireTenantMember(): Promise<{ user: User; role: Role }>
           tenant_id: tenant.id,
           user_id: user.id,
           role: invitation.role,
-        });
-        await serviceClient
-          .from('pending_invitations')
-          .delete()
-          .eq('id', invitation.id);
+        })
+        await serviceClient.from('pending_invitations').delete().eq('id', invitation.id)
 
-        return { user, role: invitation.role as Role };
+        return { user, role: invitation.role as Role }
       }
     }
 
-    notFound();
+    notFound()
   }
 
-  return { user, role };
+  return { user, role }
 }
 
 /**
@@ -69,7 +66,7 @@ export async function requireTenantMember(): Promise<{ user: User; role: Role }>
  * editor. Renders a 404 if the user is not a member at all.
  */
 export async function requireTenantEditor(): Promise<{ user: User; role: 'editor' }> {
-  const { user, role } = await requireTenantMember();
-  if (role !== 'editor') redirect('/');
-  return { user, role: 'editor' };
+  const { user, role } = await requireTenantMember()
+  if (role !== 'editor') redirect('/')
+  return { user, role: 'editor' }
 }

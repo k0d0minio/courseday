@@ -1,55 +1,55 @@
-'use server';
+'use server'
 
-import { createTenantClient } from '@/lib/supabase-server';
-import { getTenantId } from '@/lib/tenant';
-import { getUserRole, requireEditor } from '@/lib/membership';
-import type { ActionResponse } from '@/types/actions';
+import { createTenantClient } from '@/lib/supabase-server'
+import { getTenantId } from '@/lib/tenant'
+import { getUserRole, requireEditor } from '@/lib/membership'
+import type { ActionResponse } from '@/types/actions'
 
-const MAX_LEN = 2000;
+const MAX_LEN = 2000
 
 export interface DayNote {
-  id: string;
-  tenant_id: string;
-  day_id: string;
-  user_id: string;
-  author_name: string;
-  content: string;
-  created_at: string;
-  updated_at: string;
+  id: string
+  tenant_id: string
+  day_id: string
+  user_id: string
+  author_name: string
+  content: string
+  created_at: string
+  updated_at: string
 }
 
 export async function getDayNotes(dayId: string): Promise<ActionResponse<DayNote[]>> {
-  const tenantId = await getTenantId();
-  const role = await getUserRole(tenantId);
-  if (!role) return { success: false, error: 'Not authorized.' };
+  const tenantId = await getTenantId()
+  const role = await getUserRole(tenantId)
+  if (!role) return { success: false, error: 'Not authorized.' }
 
-  const { supabase } = await createTenantClient();
+  const { supabase } = await createTenantClient()
   const { data, error } = await supabase
     .from('day_notes')
     .select('*')
     .eq('tenant_id', tenantId)
     .eq('day_id', dayId)
     .is('deleted_at', null)
-    .order('created_at', { ascending: true });
+    .order('created_at', { ascending: true })
 
-  if (error) return { success: false, error: error.message };
-  return { success: true, data: (data ?? []) as DayNote[] };
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: (data ?? []) as DayNote[] }
 }
 
 export async function createDayNote(
   dayId: string,
   content: string
 ): Promise<ActionResponse<DayNote>> {
-  const trimmed = content.trim();
+  const trimmed = content.trim()
   if (!trimmed || trimmed.length > MAX_LEN) {
-    return { success: false, error: `Note must be 1–${MAX_LEN} characters.` };
+    return { success: false, error: `Note must be 1–${MAX_LEN} characters.` }
   }
 
-  const tenantId = await getTenantId();
-  const user = await requireEditor(tenantId);
-  const authorName = user.email ?? user.id;
+  const tenantId = await getTenantId()
+  const user = await requireEditor(tenantId)
+  const authorName = user.email ?? user.id
 
-  const { supabase } = await createTenantClient();
+  const { supabase } = await createTenantClient()
   const { data, error } = await supabase
     .from('day_notes')
     .insert({
@@ -60,25 +60,22 @@ export async function createDayNote(
       content: trimmed,
     })
     .select()
-    .single();
+    .single()
 
-  if (error) return { success: false, error: error.message };
-  return { success: true, data: data as DayNote };
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: data as DayNote }
 }
 
-export async function updateDayNote(
-  id: string,
-  content: string
-): Promise<ActionResponse<DayNote>> {
-  const trimmed = content.trim();
+export async function updateDayNote(id: string, content: string): Promise<ActionResponse<DayNote>> {
+  const trimmed = content.trim()
   if (!trimmed || trimmed.length > MAX_LEN) {
-    return { success: false, error: `Note must be 1–${MAX_LEN} characters.` };
+    return { success: false, error: `Note must be 1–${MAX_LEN} characters.` }
   }
 
-  const tenantId = await getTenantId();
-  const user = await requireEditor(tenantId);
+  const tenantId = await getTenantId()
+  const user = await requireEditor(tenantId)
 
-  const { supabase } = await createTenantClient();
+  const { supabase } = await createTenantClient()
   const { data, error } = await supabase
     .from('day_notes')
     .update({ content: trimmed, updated_at: new Date().toISOString() })
@@ -87,26 +84,26 @@ export async function updateDayNote(
     .eq('user_id', user.id)
     .is('deleted_at', null)
     .select()
-    .single();
+    .single()
 
-  if (error) return { success: false, error: error.message };
-  return { success: true, data: data as DayNote };
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: data as DayNote }
 }
 
 export async function deleteDayNote(id: string): Promise<ActionResponse> {
-  const tenantId = await getTenantId();
-  const user = await requireEditor(tenantId);
+  const tenantId = await getTenantId()
+  const user = await requireEditor(tenantId)
 
-  const now = new Date().toISOString();
-  const { supabase } = await createTenantClient();
+  const now = new Date().toISOString()
+  const { supabase } = await createTenantClient()
   const { error } = await supabase
     .from('day_notes')
     .update({ deleted_at: now, updated_at: now })
     .eq('id', id)
     .eq('tenant_id', tenantId)
     .eq('user_id', user.id)
-    .is('deleted_at', null);
+    .is('deleted_at', null)
 
-  if (error) return { success: false, error: error.message };
-  return { success: true, data: undefined };
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: undefined }
 }

@@ -1,5 +1,5 @@
-import { z } from 'zod';
-import { ALLERGEN_CODES } from '@/lib/allergens';
+import { z } from 'zod'
+import { ALLERGEN_CODES } from '@/lib/allergens'
 
 export const createBreakfastSchema = z.object({
   dayId: z.string().uuid('Day ID is required'),
@@ -9,7 +9,7 @@ export const createBreakfastSchema = z.object({
   startTime: z.string().optional(),
   notes: z.string().max(2000).optional(),
   allergens: z.array(z.enum(ALLERGEN_CODES)).max(ALLERGEN_CODES.length).optional(),
-});
+})
 
 export const updateBreakfastSchema = z.object({
   groupName: z.string().max(200).optional(),
@@ -18,7 +18,7 @@ export const updateBreakfastSchema = z.object({
   startTime: z.string().optional(),
   notes: z.string().max(2000).optional(),
   allergens: z.array(z.enum(ALLERGEN_CODES)).max(ALLERGEN_CODES.length).optional(),
-});
+})
 
-export type CreateBreakfastFormData = z.infer<typeof createBreakfastSchema>;
-export type UpdateBreakfastFormData = z.infer<typeof updateBreakfastSchema>;
+export type CreateBreakfastFormData = z.infer<typeof createBreakfastSchema>
+export type UpdateBreakfastFormData = z.infer<typeof updateBreakfastSchema>

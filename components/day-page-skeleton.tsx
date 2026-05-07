@@ -1,14 +1,14 @@
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@/components/ui/skeleton'
 
 export function DayPageSkeleton() {
   return (
-    <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6 px-6 py-8">
       {/* Date nav */}
       <div className="flex items-center gap-3">
         <Skeleton className="h-9 w-9 rounded-md" />
         <Skeleton className="h-7 w-48" />
         <Skeleton className="h-9 w-9 rounded-md" />
-        <Skeleton className="h-9 w-20 rounded-md ml-auto" />
+        <Skeleton className="ml-auto h-9 w-20 rounded-md" />
       </div>
 
       {/* Summary card */}
@@ -29,5 +29,5 @@ export function DayPageSkeleton() {
         <Skeleton className="h-16 w-full rounded-lg" />
       </div>
     </div>
-  );
+  )
 }

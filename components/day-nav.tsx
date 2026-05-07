@@ -1,34 +1,34 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
-import { addDays, parseISO, format } from 'date-fns';
-import { ChevronLeft, ChevronRight, CalendarIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import { addDays, parseISO, format } from 'date-fns'
+import { ChevronLeft, ChevronRight, CalendarIcon } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Calendar } from '@/components/ui/calendar'
 
 type Props = {
-  date: string;
-  today: string;
-};
+  date: string
+  today: string
+}
 
 export function DayNav({ date, today }: Props) {
-  const router = useRouter();
-  const t = useTranslations('Tenant.day');
-  const [calOpen, setCalOpen] = useState(false);
+  const router = useRouter()
+  const t = useTranslations('Tenant.day')
+  const [calOpen, setCalOpen] = useState(false)
 
-  const currentDate = parseISO(date);
-  const todayDate = parseISO(today);
-  const maxDate = addDays(todayDate, 365);
+  const currentDate = parseISO(date)
+  const todayDate = parseISO(today)
+  const maxDate = addDays(todayDate, 365)
 
-  const prevYmd = format(addDays(currentDate, -1), 'yyyy-MM-dd');
-  const nextYmd = format(addDays(currentDate, 1), 'yyyy-MM-dd');
-  const maxYmd = format(maxDate, 'yyyy-MM-dd');
+  const prevYmd = format(addDays(currentDate, -1), 'yyyy-MM-dd')
+  const nextYmd = format(addDays(currentDate, 1), 'yyyy-MM-dd')
+  const maxYmd = format(maxDate, 'yyyy-MM-dd')
 
   function navigate(d: string) {
-    router.push(`/day/${d}`);
+    router.push(`/day/${d}`)
   }
 
   return (
@@ -47,9 +47,9 @@ export function DayNav({ date, today }: Props) {
         <PopoverTrigger asChild>
           <Button
             variant="outline"
-            className="h-9 flex-1 sm:flex-none sm:min-w-44 justify-start gap-2 font-normal"
+            className="h-9 flex-1 justify-start gap-2 font-normal sm:min-w-44 sm:flex-none"
           >
-            <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+            <CalendarIcon className="text-muted-foreground h-4 w-4" />
             {format(currentDate, 'EEE, d MMM yyyy')}
           </Button>
         </PopoverTrigger>
@@ -59,13 +59,13 @@ export function DayNav({ date, today }: Props) {
             selected={currentDate}
             onSelect={(d) => {
               if (d) {
-                navigate(format(d, 'yyyy-MM-dd'));
-                setCalOpen(false);
+                navigate(format(d, 'yyyy-MM-dd'))
+                setCalOpen(false)
               }
             }}
             disabled={(d) => {
-              const ymd = format(d, 'yyyy-MM-dd');
-              return ymd < today || ymd > maxYmd;
+              const ymd = format(d, 'yyyy-MM-dd')
+              return ymd < today || ymd > maxYmd
             }}
           />
         </PopoverContent>
@@ -92,5 +92,5 @@ export function DayNav({ date, today }: Props) {
         </Button>
       )}
     </div>
-  );
+  )
 }

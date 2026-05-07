@@ -1,0 +1,41 @@
+name: Migration Check
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+
+jobs:
+  validate-migrations:
+    name: Validate Migration Files
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check migration naming convention
+        run: |
+          INVALID=$(find supabase/migrations -name "*.sql" | \
+            grep -vE '/[0-9]{5}_[a-z][a-z0-9_]*\.sql$' || true)
+          if [ -n "$INVALID" ]; then
+            echo "ERROR: Invalid migration filenames:"
+            echo "$INVALID"
+            echo "Expected format: NNNNN_description_words.sql (5 digits, lowercase, underscores)"
+            exit 1
+          fi
+          echo "All migration filenames valid."
+
+      - name: Check for duplicate migration numbers
+        run: |
+          DUPES=$(find supabase/migrations -name "*.sql" | \
+            sed 's|.*/\([0-9]\{5\}\)_.*|\1|' | sort | uniq -d)
+          if [ -n "$DUPES" ]; then
+            echo "ERROR: Duplicate migration numbers found: $DUPES"
+            exit 1
+          fi
+          echo "No duplicate migration numbers."
+
+      - name: Report migration count
+        run: |
+          COUNT=$(find supabase/migrations -name "*.sql" | wc -l | tr -d ' ')
+          echo "Total migrations: $COUNT"
+          echo "Next migration number: $(printf '%05d' $((COUNT + 1)))"

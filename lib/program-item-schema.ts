@@ -1,5 +1,5 @@
-import { z } from 'zod';
-import { ALLERGEN_CODES } from '@/lib/allergens';
+import { z } from 'zod'
+import { ALLERGEN_CODES } from '@/lib/allergens'
 
 export const activitySchema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
@@ -14,10 +14,7 @@ export const activitySchema = z.object({
   allergens: z.array(z.enum(ALLERGEN_CODES)).max(ALLERGEN_CODES.length).optional(),
   notes: z.string().max(2000).optional(),
   isRecurring: z.boolean().optional(),
-  recurrenceFrequency: z
-    .enum(['weekly', 'biweekly', 'monthly', 'yearly'])
-    .optional()
-    .nullable(),
-});
+  recurrenceFrequency: z.enum(['weekly', 'biweekly', 'monthly', 'yearly']).optional().nullable(),
+})
 
-export type ActivityFormData = z.infer<typeof activitySchema>;
+export type ActivityFormData = z.infer<typeof activitySchema>

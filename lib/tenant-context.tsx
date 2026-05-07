@@ -1,13 +1,13 @@
-'use client';
+'use client'
 
-import { createContext, useContext, type ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from 'react'
 
 type TenantContextValue = {
-  tenantId: string;
-  tenantSlug: string;
-};
+  tenantId: string
+  tenantSlug: string
+}
 
-const TenantContext = createContext<TenantContextValue | null>(null);
+const TenantContext = createContext<TenantContextValue | null>(null)
 
 export function TenantProvider({
   tenantId,
@@ -15,10 +15,8 @@ export function TenantProvider({
   children,
 }: TenantContextValue & { children: ReactNode }) {
   return (
-    <TenantContext.Provider value={{ tenantId, tenantSlug }}>
-      {children}
-    </TenantContext.Provider>
-  );
+    <TenantContext.Provider value={{ tenantId, tenantSlug }}>{children}</TenantContext.Provider>
+  )
 }
 
 /**
@@ -26,16 +24,17 @@ export function TenantProvider({
  * Must be used inside a component rendered within app/[tenant]/ routes.
  */
 export function useTenant(): TenantContextValue {
-  const ctx = useContext(TenantContext);
+  const ctx = useContext(TenantContext)
   if (!ctx) {
-    throw new Error('useTenant() must be used within a TenantProvider');
+    throw new Error('useTenant() must be used within a TenantProvider')
   }
-  return ctx;
+  return ctx
 }
 
 /**
  * Returns just the tenant ID for client components that need it for queries.
  */
 export function getTenantIdClient(): string {
-  return useTenant().tenantId;
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  return useTenant().tenantId
 }

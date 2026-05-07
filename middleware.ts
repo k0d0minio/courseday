@@ -1,36 +1,40 @@
-import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
-import { createClient } from '@supabase/supabase-js';
-import { redis } from '@/lib/redis';
-import { extractSubdomain } from '@/lib/subdomain';
-import { protocol, rootDomain, sharedCookieDomain } from '@/lib/utils';
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
+import { redis } from '@/lib/redis'
+import { extractSubdomain } from '@/lib/subdomain'
+import { protocol, rootDomain, sharedCookieDomain } from '@/lib/utils'
 import {
   SUPERADMIN_ROLE_COOKIE,
   SUPERADMIN_ROLE_QUERY_PARAM,
   buildSuperadminRoleCookie,
-} from '@/lib/superadmin-impersonation';
-import type { TenantRedisData } from '@/app/actions/tenants';
+} from '@/lib/superadmin-impersonation'
+import type { TenantRedisData } from '@/app/actions/tenants'
 
 // Node.js runtime required for ioredis (TCP sockets).
-export const runtime = 'nodejs';
+export const runtime = 'nodejs'
 
 export async function middleware(request: NextRequest) {
-  const host = request.headers.get('host') || '';
-  const { pathname } = request.nextUrl;
+  const host = request.headers.get('host') || ''
+  const { pathname } = request.nextUrl
   const serviceClient = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { autoRefreshToken: false, persistSession: false } }
-  );
+  )
 
   // -------------------------------------------------------------------------
   // 1. Refresh Supabase auth session on every request.
   //    We collect any cookies Supabase wants to set and apply them to the
   //    final response (which may be a rewrite, redirect, or next).
   // -------------------------------------------------------------------------
-  type AuthCookie = { name: string; value: string; options: Parameters<NextResponse['cookies']['set']>[2] };
-  const authCookies: AuthCookie[] = [];
+  type AuthCookie = {
+    name: string
+    value: string
+    options: Parameters<NextResponse['cookies']['set']>[2]
+  }
+  const authCookies: AuthCookie[] = []
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -39,58 +43,56 @@ export async function middleware(request: NextRequest) {
       cookies: {
         getAll: () => request.cookies.getAll(),
         setAll: (cookies) => {
-          cookies.forEach((c) => authCookies.push(c as AuthCookie));
+          cookies.forEach((c) => authCookies.push(c as AuthCookie))
         },
       },
     }
-  );
+  )
 
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await supabase.auth.getUser()
 
   function applyAuthCookies(response: NextResponse): NextResponse {
     authCookies.forEach(({ name, value, options }) =>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       response.cookies.set(name, value, { ...(options as any), domain: sharedCookieDomain })
-    );
-    return response;
+    )
+    return response
   }
 
   // -------------------------------------------------------------------------
   // 2. Subdomain detection.
   // -------------------------------------------------------------------------
-  const subdomain = extractSubdomain(host, rootDomain);
+  const subdomain = extractSubdomain(host, rootDomain)
 
   // Root domain — pass through to platform pages.
   if (!subdomain) {
-    return applyAuthCookies(NextResponse.next());
+    return applyAuthCookies(NextResponse.next())
   }
 
   // www — redirect to root domain.
   if (subdomain === 'www') {
-    const url = request.nextUrl.clone();
-    url.host = rootDomain;
-    return applyAuthCookies(NextResponse.redirect(url));
+    const url = request.nextUrl.clone()
+    url.host = rootDomain
+    return applyAuthCookies(NextResponse.redirect(url))
   }
 
   // Block /admin (exactly) on tenant subdomains — platform admin is root-domain only.
   // Note: /admin/settings is the tenant settings path and must not be blocked.
   if (pathname === '/admin') {
-    const url = request.nextUrl.clone();
-    url.host = rootDomain;
-    url.pathname = '/';
-    return applyAuthCookies(NextResponse.redirect(url));
+    const url = request.nextUrl.clone()
+    url.host = rootDomain
+    url.pathname = '/'
+    return applyAuthCookies(NextResponse.redirect(url))
   }
 
   // -------------------------------------------------------------------------
   // 3. Tenant resolution via Redis.
   // -------------------------------------------------------------------------
-  const cacheKey = `subdomain:${subdomain}`;
-  const cached = await redis.get(cacheKey);
-  let tenant: TenantRedisData | null = cached
-    ? (JSON.parse(cached) as TenantRedisData)
-    : null;
+  const cacheKey = `subdomain:${subdomain}`
+  const cached = await redis.get(cacheKey)
+  let tenant: TenantRedisData | null = cached ? (JSON.parse(cached) as TenantRedisData) : null
 
   // Supabase is source of truth. Redis is routing cache only.
   if (!tenant) {
@@ -98,10 +100,10 @@ export async function middleware(request: NextRequest) {
       .from('tenants')
       .select('id, name, slug, language, status')
       .eq('slug', subdomain)
-      .maybeSingle();
+      .maybeSingle()
 
     if (!tenantFromDb) {
-      return new NextResponse('Not found', { status: 404 });
+      return new NextResponse('Not found', { status: 404 })
     }
 
     tenant = {
@@ -109,16 +111,17 @@ export async function middleware(request: NextRequest) {
       name: tenantFromDb.name,
       slug: tenantFromDb.slug,
       language: (tenantFromDb as { language?: string }).language ?? 'en',
-      status: ((tenantFromDb as { status?: string }).status ?? 'active') as TenantRedisData['status'],
-    };
-    await redis.set(cacheKey, JSON.stringify(tenant));
+      status: ((tenantFromDb as { status?: string }).status ??
+        'active') as TenantRedisData['status'],
+    }
+    await redis.set(cacheKey, JSON.stringify(tenant))
   }
 
   // -------------------------------------------------------------------------
   // 3b. Suspended / archived tenants — show a branded gate page.
   // -------------------------------------------------------------------------
   if (tenant.status === 'suspended' || tenant.status === 'archived') {
-    const isSuspended = tenant.status === 'suspended';
+    const isSuspended = tenant.status === 'suspended'
     const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -138,22 +141,22 @@ export async function middleware(request: NextRequest) {
     <p>${isSuspended ? 'This venue has been temporarily suspended.' : 'This venue is no longer active.'}</p>
   </div>
 </body>
-</html>`;
+</html>`
     return new NextResponse(html, {
       status: 403,
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
-    });
+    })
   }
 
-  const platformSignInUrl = new URL(`${protocol}://${rootDomain}/auth/sign-in`);
-  platformSignInUrl.searchParams.set('slug', subdomain);
-  const redirectTo = request.nextUrl.searchParams.get('redirectTo');
+  const platformSignInUrl = new URL(`${protocol}://${rootDomain}/auth/sign-in`)
+  platformSignInUrl.searchParams.set('slug', subdomain)
+  const redirectTo = request.nextUrl.searchParams.get('redirectTo')
   if (redirectTo) {
-    platformSignInUrl.searchParams.set('redirectTo', redirectTo);
+    platformSignInUrl.searchParams.set('redirectTo', redirectTo)
   }
 
   if (pathname === '/auth/sign-in' || pathname === '/auth/sign-up') {
-    return applyAuthCookies(NextResponse.redirect(platformSignInUrl));
+    return applyAuthCookies(NextResponse.redirect(platformSignInUrl))
   }
 
   // -------------------------------------------------------------------------
@@ -161,15 +164,13 @@ export async function middleware(request: NextRequest) {
   //    Public paths (no login required): /auth/*
   // -------------------------------------------------------------------------
   const isPublicPath =
-    pathname === '/auth/sign-in' ||
-    pathname.startsWith('/auth/') ||
-    pathname.startsWith('/pwa/');
+    pathname === '/auth/sign-in' || pathname.startsWith('/auth/') || pathname.startsWith('/pwa/')
 
   if (!user && !isPublicPath) {
-    const signInUrl = new URL(`${protocol}://${rootDomain}/auth/sign-in`);
-    signInUrl.searchParams.set('slug', subdomain);
-    signInUrl.searchParams.set('redirectTo', pathname);
-    return applyAuthCookies(NextResponse.redirect(signInUrl));
+    const signInUrl = new URL(`${protocol}://${rootDomain}/auth/sign-in`)
+    signInUrl.searchParams.set('slug', subdomain)
+    signInUrl.searchParams.set('redirectTo', pathname)
+    return applyAuthCookies(NextResponse.redirect(signInUrl))
   }
 
   // -------------------------------------------------------------------------
@@ -177,38 +178,35 @@ export async function middleware(request: NextRequest) {
   //    e.g. pierpont.example.com/dashboard → example.com/pierpont/dashboard
   //    handled by app/[tenant]/dashboard/page.tsx
   // -------------------------------------------------------------------------
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set('x-tenant-id', tenant.id);
-  requestHeaders.set('x-tenant-slug', tenant.slug);
-  requestHeaders.set('x-tenant-language', tenant.language ?? 'en');
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-tenant-id', tenant.id)
+  requestHeaders.set('x-tenant-slug', tenant.slug)
+  requestHeaders.set('x-tenant-language', tenant.language ?? 'en')
 
   // API routes: inject tenant headers but skip the page rewrite.
   if (pathname.startsWith('/api/')) {
-    return applyAuthCookies(
-      NextResponse.next({ request: { headers: requestHeaders } })
-    );
+    return applyAuthCookies(NextResponse.next({ request: { headers: requestHeaders } }))
   }
 
-  let superadminRoleCookieValue: string | null = null;
-  const requestedRole = request.nextUrl.searchParams.get(SUPERADMIN_ROLE_QUERY_PARAM);
+  let superadminRoleCookieValue: string | null = null
+  const requestedRole = request.nextUrl.searchParams.get(SUPERADMIN_ROLE_QUERY_PARAM)
   if ((requestedRole === 'editor' || requestedRole === 'viewer') && user) {
     const { data: superadminRow } = await serviceClient
       .from('superadmins')
       .select('id')
       .eq('user_id', user.id)
-      .maybeSingle();
+      .maybeSingle()
 
     if (superadminRow) {
-      superadminRoleCookieValue = buildSuperadminRoleCookie(user.id, tenant.id, requestedRole);
+      superadminRoleCookieValue = buildSuperadminRoleCookie(user.id, tenant.id, requestedRole)
     }
   }
 
   const response = applyAuthCookies(
-    NextResponse.rewrite(
-      new URL(`/${tenant.slug}${pathname}`, request.url),
-      { request: { headers: requestHeaders } }
-    )
-  );
+    NextResponse.rewrite(new URL(`/${tenant.slug}${pathname}`, request.url), {
+      request: { headers: requestHeaders },
+    })
+  )
 
   if (superadminRoleCookieValue) {
     response.cookies.set(SUPERADMIN_ROLE_COOKIE, superadminRoleCookieValue, {
@@ -218,15 +216,12 @@ export async function middleware(request: NextRequest) {
       path: '/',
       maxAge: 60 * 60 * 8,
       domain: sharedCookieDomain,
-    });
+    })
   }
 
-  return response;
+  return response
 }
 
 export const config = {
-  matcher: [
-    '/((?!api|_next|[\\w-]+\\.\\w+).*)',
-    '/api/mutations/:path*',
-  ],
-};
+  matcher: ['/((?!api|_next|[\\w-]+\\.\\w+).*)', '/api/mutations/:path*'],
+}

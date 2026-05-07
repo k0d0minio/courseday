@@ -1,31 +1,31 @@
-'use server';
+'use server'
 
-import { createTenantClient } from '@/lib/supabase-server';
-import { getTenantId } from '@/lib/tenant';
-import { getUserRole, requireEditor } from '@/lib/membership';
-import { isFeatureEnabled } from '@/app/actions/feature-flags';
-import { reservationSchema } from '@/lib/reservation-schema';
-import { notifyTenantMembers, getDayDate } from '@/lib/notifications';
-import type { ReservationFormData } from '@/lib/reservation-schema';
-import type { ActionResponse } from '@/types/actions';
-import type { Reservation } from '@/types/index';
+import { createTenantClient } from '@/lib/supabase-server'
+import { getTenantId } from '@/lib/tenant'
+import { getUserRole, requireEditor } from '@/lib/membership'
+import { isFeatureEnabled } from '@/app/actions/feature-flags'
+import { reservationSchema } from '@/lib/reservation-schema'
+import { notifyTenantMembers, getDayDate } from '@/lib/notifications'
+import type { ReservationFormData } from '@/lib/reservation-schema'
+import type { ActionResponse } from '@/types/actions'
+import type { Reservation } from '@/types/index'
 
 export async function createReservation(
   raw: ReservationFormData
 ): Promise<ActionResponse<Reservation>> {
-  const parsed = reservationSchema.safeParse(raw);
+  const parsed = reservationSchema.safeParse(raw)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message };
+    return { success: false, error: parsed.error.issues[0].message }
   }
 
-  const tenantId = await getTenantId();
+  const tenantId = await getTenantId()
   if (!(await isFeatureEnabled(tenantId, 'reservations'))) {
-    return { success: false, error: 'Reservations are disabled for this venue.' };
+    return { success: false, error: 'Reservations are disabled for this venue.' }
   }
-  const user = await requireEditor(tenantId);
+  const user = await requireEditor(tenantId)
 
-  const { supabase } = await createTenantClient();
-  const d = parsed.data;
+  const { supabase } = await createTenantClient()
+  const d = parsed.data
 
   const { data, error } = await supabase
     .from('reservation')
@@ -41,37 +41,43 @@ export async function createReservation(
       allergens: d.allergens ?? [],
     })
     .select()
-    .single();
+    .single()
 
-  if (error) return { success: false, error: error.message };
+  if (error) return { success: false, error: error.message }
 
-  const name = d.guestName?.trim() || 'Guest';
+  const name = d.guestName?.trim() || 'Guest'
   Promise.allSettled([
     getDayDate(d.dayId).then((date) =>
-      notifyTenantMembers(tenantId, user.id, `Reservation added: ${name}`, undefined, date ? `/day/${date}` : undefined)
+      notifyTenantMembers(
+        tenantId,
+        user.id,
+        `Reservation added: ${name}`,
+        undefined,
+        date ? `/day/${date}` : undefined
+      )
     ),
-  ]);
+  ])
 
-  return { success: true, data: data as Reservation };
+  return { success: true, data: data as Reservation }
 }
 
 export async function updateReservation(
   id: string,
   raw: ReservationFormData
 ): Promise<ActionResponse<Reservation>> {
-  const parsed = reservationSchema.safeParse(raw);
+  const parsed = reservationSchema.safeParse(raw)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message };
+    return { success: false, error: parsed.error.issues[0].message }
   }
 
-  const tenantId = await getTenantId();
+  const tenantId = await getTenantId()
   if (!(await isFeatureEnabled(tenantId, 'reservations'))) {
-    return { success: false, error: 'Reservations are disabled for this venue.' };
+    return { success: false, error: 'Reservations are disabled for this venue.' }
   }
-  const user = await requireEditor(tenantId);
+  const user = await requireEditor(tenantId)
 
-  const { supabase } = await createTenantClient();
-  const d = parsed.data;
+  const { supabase } = await createTenantClient()
+  const d = parsed.data
 
   const { data, error } = await supabase
     .from('reservation')
@@ -89,76 +95,86 @@ export async function updateReservation(
     .eq('tenant_id', tenantId)
     .is('deleted_at', null)
     .select()
-    .single();
+    .single()
 
-  if (error) return { success: false, error: error.message };
+  if (error) return { success: false, error: error.message }
 
-  const name = d.guestName?.trim() || 'Guest';
+  const name = d.guestName?.trim() || 'Guest'
   Promise.allSettled([
     getDayDate(d.dayId).then((date) =>
-      notifyTenantMembers(tenantId, user.id, `Reservation updated: ${name}`, undefined, date ? `/day/${date}` : undefined)
+      notifyTenantMembers(
+        tenantId,
+        user.id,
+        `Reservation updated: ${name}`,
+        undefined,
+        date ? `/day/${date}` : undefined
+      )
     ),
-  ]);
+  ])
 
-  return { success: true, data: data as Reservation };
+  return { success: true, data: data as Reservation }
 }
 
 export async function deleteReservation(id: string): Promise<ActionResponse> {
-  const tenantId = await getTenantId();
+  const tenantId = await getTenantId()
   if (!(await isFeatureEnabled(tenantId, 'reservations'))) {
-    return { success: false, error: 'Reservations are disabled for this venue.' };
+    return { success: false, error: 'Reservations are disabled for this venue.' }
   }
-  const user = await requireEditor(tenantId);
+  const user = await requireEditor(tenantId)
 
-  const { supabase } = await createTenantClient();
+  const { supabase } = await createTenantClient()
 
-  const now = new Date().toISOString();
+  const now = new Date().toISOString()
   const { data: existing } = await supabase
     .from('reservation')
     .select('guest_name, day_id')
     .eq('id', id)
     .eq('tenant_id', tenantId)
     .is('deleted_at', null)
-    .maybeSingle();
+    .maybeSingle()
 
   const { error } = await supabase
     .from('reservation')
     .update({ deleted_at: now, updated_at: now })
     .eq('id', id)
     .eq('tenant_id', tenantId)
-    .is('deleted_at', null);
+    .is('deleted_at', null)
 
-  if (error) return { success: false, error: error.message };
+  if (error) return { success: false, error: error.message }
 
   if (existing) {
-    const { guest_name, day_id } = existing as { guest_name: string | null; day_id: string };
-    const name = guest_name?.trim() || 'Guest';
+    const { guest_name, day_id } = existing as { guest_name: string | null; day_id: string }
+    const name = guest_name?.trim() || 'Guest'
     Promise.allSettled([
       getDayDate(day_id).then((date) =>
-        notifyTenantMembers(tenantId, user.id, `Reservation removed: ${name}`, undefined, date ? `/day/${date}` : undefined)
+        notifyTenantMembers(
+          tenantId,
+          user.id,
+          `Reservation removed: ${name}`,
+          undefined,
+          date ? `/day/${date}` : undefined
+        )
       ),
-    ]);
+    ])
   }
 
-  return { success: true, data: undefined };
+  return { success: true, data: undefined }
 }
 
-export async function getReservationsForDay(
-  dayId: string
-): Promise<ActionResponse<Reservation[]>> {
-  const tenantId = await getTenantId();
-  const role = await getUserRole(tenantId);
-  if (!role) return { success: false, error: 'Not authorized.' };
+export async function getReservationsForDay(dayId: string): Promise<ActionResponse<Reservation[]>> {
+  const tenantId = await getTenantId()
+  const role = await getUserRole(tenantId)
+  if (!role) return { success: false, error: 'Not authorized.' }
 
-  const { supabase } = await createTenantClient();
+  const { supabase } = await createTenantClient()
   const { data, error } = await supabase
     .from('reservation')
     .select('*')
     .eq('tenant_id', tenantId)
     .eq('day_id', dayId)
     .is('deleted_at', null)
-    .order('start_time', { nullsFirst: true });
+    .order('start_time', { nullsFirst: true })
 
-  if (error) return { success: false, error: error.message };
-  return { success: true, data: data as Reservation[] };
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: data as Reservation[] }
 }

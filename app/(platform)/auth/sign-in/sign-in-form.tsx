@@ -1,76 +1,76 @@
-'use client';
+'use client'
 
-import { useActionState, useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
-import { platformSignIn } from '@/app/actions/auth';
-import { Logo } from '@/components/logo';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { createSupabaseBrowserClient } from '@/lib/supabase-client';
+import { useActionState, useEffect, useState } from 'react'
+import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import { platformSignIn } from '@/app/actions/auth'
+import { Logo } from '@/components/logo'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { createSupabaseBrowserClient } from '@/lib/supabase-client'
 
 export function SignInForm() {
-  const [state, action, isPending] = useActionState(platformSignIn, null);
-  const [magicState, setMagicState] = useState<{ error?: string; success?: string } | null>(null);
-  const [isMagicPending, setIsMagicPending] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState('');
-  const searchParams = useSearchParams();
-  const slug = searchParams.get('slug')?.trim() ?? '';
-  const t = useTranslations('Platform.auth');
+  const [state, action, isPending] = useActionState(platformSignIn, null)
+  const [magicState, setMagicState] = useState<{ error?: string; success?: string } | null>(null)
+  const [isMagicPending, setIsMagicPending] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [email, setEmail] = useState('')
+  const searchParams = useSearchParams()
+  const slug = searchParams.get('slug')?.trim() ?? ''
+  const t = useTranslations('Platform.auth')
 
   // Invite / magic links sometimes land on Site URL (sign-in) with tokens in the
   // hash after a failed server-only confirm — forward to client confirm handler.
   useEffect(() => {
-    const query = new URLSearchParams(window.location.search);
+    const query = new URLSearchParams(window.location.search)
     if (query.get('code')) {
-      window.location.replace(`${window.location.origin}/auth/confirm${window.location.search}`);
-      return;
+      window.location.replace(`${window.location.origin}/auth/confirm${window.location.search}`)
+      return
     }
     if (query.get('token_hash')) {
-      window.location.replace(`${window.location.origin}/auth/confirm${window.location.search}`);
-      return;
+      window.location.replace(`${window.location.origin}/auth/confirm${window.location.search}`)
+      return
     }
-    const hash = window.location.hash;
-    if (!hash || !hash.includes('access_token')) return;
-    window.location.replace(`${window.location.origin}/auth/confirm${hash}`);
-  }, []);
+    const hash = window.location.hash
+    if (!hash || !hash.includes('access_token')) return
+    window.location.replace(`${window.location.origin}/auth/confirm${hash}`)
+  }, [])
 
   async function handleMagicLink() {
-    const trimmedEmail = email.trim();
+    const trimmedEmail = email.trim()
     if (!trimmedEmail) {
-      setMagicState({ error: 'Email is required.' });
-      return;
+      setMagicState({ error: 'Email is required.' })
+      return
     }
 
-    setIsMagicPending(true);
-    setMagicState(null);
+    setIsMagicPending(true)
+    setMagicState(null)
 
-    const redirectUrl = new URL('/auth/confirm', window.location.origin);
-    redirectUrl.searchParams.set('flow', 'magic');
-    if (slug) redirectUrl.searchParams.set('slug', slug);
+    const redirectUrl = new URL('/auth/confirm', window.location.origin)
+    redirectUrl.searchParams.set('flow', 'magic')
+    if (slug) redirectUrl.searchParams.set('slug', slug)
 
     const supabase = createSupabaseBrowserClient({
       flowType: 'implicit',
       isSingleton: false,
-    });
+    })
     const { error } = await supabase.auth.signInWithOtp({
       email: trimmedEmail,
       options: {
         shouldCreateUser: false,
         emailRedirectTo: redirectUrl.toString(),
       },
-    });
+    })
 
     if (error) {
-      setMagicState({ error: error.message });
+      setMagicState({ error: error.message })
     } else {
-      setMagicState({ success: 'Check your email for a sign-in link.' });
+      setMagicState({ success: 'Check your email for a sign-in link.' })
     }
-    setIsMagicPending(false);
+    setIsMagicPending(false)
   }
 
   return (
@@ -84,20 +84,14 @@ export function SignInForm() {
 
         <Card>
           <CardHeader>
-            <h1 className="text-xl font-semibold tracking-tight text-center">
-              {t('signInTitle')}
-            </h1>
+            <h1 className="text-center text-xl font-semibold tracking-tight">{t('signInTitle')}</h1>
           </CardHeader>
 
           <form action={action}>
             <input type="hidden" name="slug" value={slug} />
             <CardContent className="space-y-4">
-              {state?.error && (
-                <p className="text-sm text-destructive">{state.error}</p>
-              )}
-              {magicState?.error && (
-                <p className="text-sm text-destructive">{magicState.error}</p>
-              )}
+              {state?.error && <p className="text-destructive text-sm">{state.error}</p>}
+              {magicState?.error && <p className="text-destructive text-sm">{magicState.error}</p>}
               {magicState?.success && (
                 <p className="text-sm text-green-700">{magicState.success}</p>
               )}
@@ -156,7 +150,7 @@ export function SignInForm() {
               <Link href="/auth/forgot-password" className="text-sm underline underline-offset-4">
                 {t('forgotPasswordLink')}
               </Link>
-              <p className="text-sm text-muted-foreground text-center">
+              <p className="text-muted-foreground text-center text-sm">
                 {t('createVenuePrompt')}{' '}
                 <Link href="/new" className="underline underline-offset-4">
                   {t('createVenueLink')}
@@ -167,5 +161,5 @@ export function SignInForm() {
         </Card>
       </div>
     </div>
-  );
+  )
 }

@@ -2,69 +2,73 @@
  * Seeds a "test" tenant into both Supabase and Redis.
  * Run once: node scripts/seed-test-tenant.mjs
  */
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
+import { readFileSync } from 'fs'
+import { resolve } from 'path'
 
 // Load .env.local manually
-const envFile = readFileSync(resolve(process.cwd(), '.env.local'), 'utf8');
+const envFile = readFileSync(resolve(process.cwd(), '.env.local'), 'utf8')
 for (const line of envFile.split('\n')) {
-  const match = line.match(/^([^#=]+)=(.*)$/);
+  const match = line.match(/^([^#=]+)=(.*)$/)
   if (match) {
-    const key = match[1].trim();
-    const value = match[2].trim().replace(/^"|"$/g, '');
-    process.env[key] = value;
+    const key = match[1].trim()
+    const value = match[2].trim().replace(/^"|"$/g, '')
+    process.env[key] = value
   }
 }
 
-const TENANT_ID   = '11111111-1111-1111-1111-111111111111';
-const TENANT_NAME = 'Test Golf Club';
-const TENANT_SLUG = 'test';
+const TENANT_ID = '11111111-1111-1111-1111-111111111111'
+const TENANT_NAME = 'Test Golf Club'
+const TENANT_SLUG = 'test'
 
 // ── Supabase ──────────────────────────────────────────────────────────────
-const { createClient } = await import('@supabase/supabase-js');
+const { createClient } = await import('@supabase/supabase-js')
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY,
   { auth: { autoRefreshToken: false, persistSession: false } }
-);
+)
 
-const { error } = await supabase.from('tenants').upsert(
-  { id: TENANT_ID, name: TENANT_NAME, slug: TENANT_SLUG, timezone: 'Europe/Brussels' },
-  { onConflict: 'slug' }
-);
+const { error } = await supabase
+  .from('tenants')
+  .upsert(
+    { id: TENANT_ID, name: TENANT_NAME, slug: TENANT_SLUG, timezone: 'Europe/Brussels' },
+    { onConflict: 'slug' }
+  )
 
 if (error) {
-  console.error('Supabase insert failed:', error.message);
-  process.exit(1);
+  console.error('Supabase insert failed:', error.message)
+  process.exit(1)
 }
-console.log('✓ Tenant inserted into Supabase');
+console.log('✓ Tenant inserted into Supabase')
 
 // ── Redis ─────────────────────────────────────────────────────────────────
-const { default: Redis } = await import('ioredis');
-const redis = new Redis(process.env.REDIS_URL);
+const { default: Redis } = await import('ioredis')
+const redis = new Redis(process.env.REDIS_URL)
 
 await redis.set(
   `subdomain:${TENANT_SLUG}`,
   JSON.stringify({ id: TENANT_ID, name: TENANT_NAME, slug: TENANT_SLUG })
-);
-console.log('✓ Tenant inserted into Redis');
+)
+console.log('✓ Tenant inserted into Redis')
 
-await redis.quit();
+await redis.quit()
 
 // ── Optional: seed editor membership ─────────────────────────────────────
-const userId = process.env.USER_ID;
+const userId = process.env.USER_ID
 if (userId) {
-  const { error: memberError } = await supabase.from('memberships').upsert(
-    { user_id: userId, tenant_id: TENANT_ID, role: 'editor' },
-    { onConflict: 'user_id,tenant_id' }
-  );
+  const { error: memberError } = await supabase
+    .from('memberships')
+    .upsert(
+      { user_id: userId, tenant_id: TENANT_ID, role: 'editor' },
+      { onConflict: 'user_id,tenant_id' }
+    )
   if (memberError) {
-    console.error('Membership insert failed:', memberError.message);
-    process.exit(1);
+    console.error('Membership insert failed:', memberError.message)
+    process.exit(1)
   }
-  console.log(`✓ Editor membership created for user ${userId}`);
+  console.log(`✓ Editor membership created for user ${userId}`)
 } else {
-  console.log('  (Skip membership — set USER_ID=<uuid> to seed an editor)');
+  console.log('  (Skip membership — set USER_ID=<uuid> to seed an editor)')
 }
 
-console.log('\nDone. Visit test.localhost:3000 (dev) or test.<your-domain> (prod).');
+console.log('\nDone. Visit test.localhost:3000 (dev) or test.<your-domain> (prod).')

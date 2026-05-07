@@ -1,12 +1,12 @@
-import { redirect } from 'next/navigation';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
-import { getTenantFromHeaders } from '@/lib/tenant';
-import { requireTenantMember } from '@/lib/guards';
-import { getAuthState } from '@/app/actions/auth';
-import { ensureDayExists } from '@/app/actions/days';
-import { getAllPOCs } from '@/app/actions/poc';
-import { getAllVenueTypes } from '@/app/actions/venue-type';
-import { isPastDate, isDateWithinOneYear, getTenantToday } from '@/lib/day-utils';
+import { redirect } from 'next/navigation'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { getTenantFromHeaders } from '@/lib/tenant'
+import { requireTenantMember } from '@/lib/guards'
+import { getAuthState } from '@/app/actions/auth'
+import { ensureDayExists } from '@/app/actions/days'
+import { getAllPOCs } from '@/app/actions/poc'
+import { getAllVenueTypes } from '@/app/actions/venue-type'
+import { isPastDate, isDateWithinOneYear, getTenantToday } from '@/lib/day-utils'
 import {
   getProgramItemsForDay,
   getReservationsForDay,
@@ -16,9 +16,9 @@ import {
   getShiftsForDay,
   getStaffMembersForTenant,
   getStaffRolesForTenant,
-} from './queries';
-import { Suspense } from 'react';
-import { DayViewClient } from './DayViewClient';
+} from './queries'
+import { Suspense } from 'react'
+import { DayViewClient } from './DayViewClient'
 import type {
   Activity,
   Reservation,
@@ -28,84 +28,72 @@ import type {
   ShiftWithStaffMember,
   StaffMember,
   StaffRole,
-} from '@/types/index';
-import type { AuthState } from '@/types/actions';
-import type { DayNote } from '@/app/actions/day-notes';
-import { getWeatherForDay } from '@/app/actions/weather';
-import type { WeatherData } from '@/app/actions/weather';
-import { getFeatureFlags } from '@/app/actions/feature-flags';
+} from '@/types/index'
+import type { AuthState } from '@/types/actions'
+import type { DayNote } from '@/app/actions/day-notes'
+import { getWeatherForDay } from '@/app/actions/weather'
+import type { WeatherData } from '@/app/actions/weather'
+import { getFeatureFlags } from '@/app/actions/feature-flags'
 import {
   ensureDayViewReceipt,
   getSoftDeletedSince,
   type HandoverRemovedItem,
-} from '@/app/actions/day-view-receipts';
-import type { DailyBriefRecord } from '@/types/daily-brief';
+} from '@/app/actions/day-view-receipts'
+import type { DailyBriefRecord } from '@/types/daily-brief'
 
 export type DayViewProps = {
-  date: string;
-  dayId: string;
-  today: string;
-  activities: Activity[];
-  reservations: Reservation[];
-  breakfastConfigs: BreakfastConfiguration[];
-  dayNotes: DayNote[];
-  weather: WeatherData | null;
-  dailyBrief: DailyBriefRecord | null;
-  pocs: PointOfContact[];
-  venueTypes: VenueType[];
-  authState: AuthState;
-  shifts: ShiftWithStaffMember[];
-  staffMembers: StaffMember[];
-  staffRoles: StaffRole[];
-  handoverLastViewedAt: string | null;
-  handoverRemoved: HandoverRemovedItem[];
-};
+  date: string
+  dayId: string
+  today: string
+  activities: Activity[]
+  reservations: Reservation[]
+  breakfastConfigs: BreakfastConfiguration[]
+  dayNotes: DayNote[]
+  weather: WeatherData | null
+  dailyBrief: DailyBriefRecord | null
+  pocs: PointOfContact[]
+  venueTypes: VenueType[]
+  authState: AuthState
+  shifts: ShiftWithStaffMember[]
+  staffMembers: StaffMember[]
+  staffRoles: StaffRole[]
+  handoverLastViewedAt: string | null
+  handoverRemoved: HandoverRemovedItem[]
+}
 
-const YMD_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const YMD_REGEX = /^\d{4}-\d{2}-\d{2}$/
 
-export default async function DayPage({
-  params,
-}: {
-  params: Promise<{ date: string }>;
-}) {
-  const { date } = await params;
+export default async function DayPage({ params }: { params: Promise<{ date: string }> }) {
+  const { date } = await params
 
   // Get tenant from headers first (fast — headers only), then run auth check
   // and tenant DB query in parallel since they are independent.
-  const tenant = await getTenantFromHeaders();
-  const supabase = await createSupabaseServerClient();
+  const tenant = await getTenantFromHeaders()
+  const supabase = await createSupabaseServerClient()
 
   const [, tenantData] = await Promise.all([
     requireTenantMember(),
-    supabase
-      .from('tenants')
-      .select('timezone, latitude, longitude')
-      .eq('id', tenant.id)
-      .single(),
-  ]);
+    supabase.from('tenants').select('timezone, latitude, longitude').eq('id', tenant.id).single(),
+  ])
 
   const tenantRow = tenantData.data as {
-    timezone?: string | null;
-    latitude?: number | null;
-    longitude?: number | null;
-  } | null;
-  const timezone = tenantRow?.timezone ?? 'UTC';
+    timezone?: string | null
+    latitude?: number | null
+    longitude?: number | null
+  } | null
+  const timezone = tenantRow?.timezone ?? 'UTC'
 
-  const today = getTenantToday(timezone);
+  const today = getTenantToday(timezone)
 
   // Validate date — redirect to today on any invalid input
-  if (
-    !YMD_REGEX.test(date) ||
-    isPastDate(date, timezone) ||
-    !isDateWithinOneYear(date, timezone)
-  ) {
-    redirect(`/day/${today}`);
+  if (!YMD_REGEX.test(date) || isPastDate(date, timezone) || !isDateWithinOneYear(date, timezone)) {
+    redirect(`/day/${today}`)
   }
 
   // Ensure Day row exists (idempotent)
-  const dayResult = await ensureDayExists(date);
-  if (!dayResult.success) redirect(`/day/${today}`);
-  const day = dayResult.data;
+  const dayResult = await ensureDayExists(date)
+  if (!dayResult.success) redirect(`/day/${today}`)
+  const day = dayResult.data
 
   // Pass coordinates from the already-fetched tenant row so getWeatherForDay
   // can skip its own DB query (saves one round-trip inside the parallel block).
@@ -116,12 +104,12 @@ export default async function DayPage({
           longitude: tenantRow.longitude,
           timezone,
         }
-      : undefined;
+      : undefined
 
-  const flags = await getFeatureFlags(tenant.id);
-  const staffScheduleOn = flags.staff_schedule;
-  const dailyBriefOn = flags.daily_brief;
-  const authState = await getAuthState();
+  const flags = await getFeatureFlags(tenant.id)
+  const staffScheduleOn = flags.staff_schedule
+  const dailyBriefOn = flags.daily_brief
+  const authState = await getAuthState()
 
   // Load all day data in parallel — skip disabled features
   const [
@@ -148,26 +136,24 @@ export default async function DayPage({
     staffScheduleOn ? getShiftsForDay(tenant.id, day.id) : Promise.resolve([]),
     staffScheduleOn ? getStaffMembersForTenant(tenant.id) : Promise.resolve([]),
     staffScheduleOn ? getStaffRolesForTenant(tenant.id) : Promise.resolve([]),
-  ]);
+  ])
 
-  let handoverLastViewedAt: string | null = null;
-  let handoverRemoved: HandoverRemovedItem[] = [];
-  const uid = authState.user?.id;
+  let handoverLastViewedAt: string | null = null
+  let handoverRemoved: HandoverRemovedItem[] = []
+  const uid = authState.user?.id
   if (uid) {
-    const receipt = await ensureDayViewReceipt(tenant.id, day.id, uid);
+    const receipt = await ensureDayViewReceipt(tenant.id, day.id, uid)
     if (receipt.success) {
-      handoverLastViewedAt = receipt.data.last_viewed_at;
-      const removed = await getSoftDeletedSince(
-        tenant.id,
-        day.id,
-        receipt.data.last_viewed_at
-      );
-      if (removed.success) handoverRemoved = removed.data;
+      handoverLastViewedAt = receipt.data.last_viewed_at
+      const removed = await getSoftDeletedSince(tenant.id, day.id, receipt.data.last_viewed_at)
+      if (removed.success) handoverRemoved = removed.data
     }
   }
 
   return (
-    <Suspense fallback={<div className="max-w-3xl mx-auto px-3 py-8 text-sm text-muted-foreground" />}>
+    <Suspense
+      fallback={<div className="text-muted-foreground mx-auto max-w-3xl px-3 py-8 text-sm" />}
+    >
       <DayViewClient
         date={date}
         dayId={day.id}
@@ -188,5 +174,5 @@ export default async function DayPage({
         handoverRemoved={handoverRemoved}
       />
     </Suspense>
-  );
+  )
 }

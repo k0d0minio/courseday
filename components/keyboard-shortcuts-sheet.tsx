@@ -1,55 +1,50 @@
-'use client';
+'use client'
 
-import { useTranslations } from 'next-intl';
-import { useAuth } from '@/lib/AuthProvider';
-import { useFeatureFlag } from '@/lib/feature-flags-context';
-import { useKeyboardShortcuts } from '@/lib/keyboard-shortcuts';
-import { modKeyLabel } from '@/lib/mod-key';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { useTranslations } from 'next-intl'
+import { useAuth } from '@/lib/AuthProvider'
+import { useFeatureFlag } from '@/lib/feature-flags-context'
+import { useKeyboardShortcuts } from '@/lib/keyboard-shortcuts'
+import { modKeyLabel } from '@/lib/mod-key'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 function Row({ keys, label }: { keys: string; label: string }) {
   return (
     <div className="flex items-start justify-between gap-4 py-1.5 text-sm">
       <span className="text-muted-foreground">{label}</span>
       <kbd
-        className="shrink-0 rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground"
+        className="bg-muted text-muted-foreground shrink-0 rounded border px-1.5 py-0.5 font-mono text-[10px]"
         aria-hidden
       >
         {keys}
       </kbd>
     </div>
-  );
+  )
 }
 
 export function KeyboardShortcutsSheet() {
-  const t = useTranslations('Tenant.shortcuts');
-  const { isEditor, impersonationRole } = useAuth();
-  const showReservations = useFeatureFlag('reservations');
-  const showBreakfast = useFeatureFlag('breakfast_config');
-  const { shortcutsSheetOpen, setShortcutsSheetOpen } = useKeyboardShortcuts();
-  const mod = modKeyLabel();
+  const t = useTranslations('Tenant.shortcuts')
+  const { isEditor, impersonationRole } = useAuth()
+  const showReservations = useFeatureFlag('reservations')
+  const showBreakfast = useFeatureFlag('breakfast_config')
+  const { shortcutsSheetOpen, setShortcutsSheetOpen } = useKeyboardShortcuts()
+  const mod = modKeyLabel()
 
   return (
     <Dialog open={shortcutsSheetOpen} onOpenChange={setShortcutsSheetOpen}>
-      <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto" aria-describedby={undefined}>
+      <DialogContent className="max-h-[85vh] max-w-md overflow-y-auto" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>{t('sheetTitle')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 pt-1">
           <section>
-            <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <h3 className="text-muted-foreground mb-1 text-xs font-semibold tracking-wide uppercase">
               {t('sheetGlobal')}
             </h3>
             <Row keys={`${mod} K`} label={t('sheetOpenPalette')} />
           </section>
 
           <section>
-            <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <h3 className="text-muted-foreground mb-1 text-xs font-semibold tracking-wide uppercase">
               {t('sheetDayNav')}
             </h3>
             <Row keys="J / ←" label={t('sheetPrevDay')} />
@@ -60,7 +55,7 @@ export function KeyboardShortcutsSheet() {
 
           {isEditor && (
             <section>
-              <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <h3 className="text-muted-foreground mb-1 text-xs font-semibold tracking-wide uppercase">
                 {t('sheetEditor')}
               </h3>
               <Row keys="A" label={t('sheetNewActivity')} />
@@ -71,7 +66,7 @@ export function KeyboardShortcutsSheet() {
 
           {impersonationRole ? (
             <section>
-              <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <h3 className="text-muted-foreground mb-1 text-xs font-semibold tracking-wide uppercase">
                 {t('sheetPreview')}
               </h3>
               <Row keys="E" label={t('sheetTogglePreview')} />
@@ -80,5 +75,5 @@ export function KeyboardShortcutsSheet() {
         </div>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

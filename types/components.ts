@@ -1,9 +1,9 @@
-import type { ActivityWithRelations, Reservation } from './index';
+import type { ActivityWithRelations, Reservation } from './index'
 
-export type { ActivityWithRelations };
+export type { ActivityWithRelations }
 
-export type DayEntry = ActivityWithRelations | Reservation;
+export type DayEntry = ActivityWithRelations | Reservation
 
 export function isActivity(entry: DayEntry): entry is ActivityWithRelations {
-  return 'title' in entry;
+  return 'title' in entry
 }

@@ -5,10 +5,10 @@ export const KNOWN_FLAGS = [
   'checklists',
   'staff_schedule',
   'daily_brief',
-] as const;
+] as const
 
-export type FlagKey = (typeof KNOWN_FLAGS)[number];
-export type FlagMap = Record<FlagKey, boolean>;
+export type FlagKey = (typeof KNOWN_FLAGS)[number]
+export type FlagMap = Record<FlagKey, boolean>
 
 export const FLAG_LABELS: Record<FlagKey, string> = {
   reservations: 'Reservations',
@@ -17,7 +17,7 @@ export const FLAG_LABELS: Record<FlagKey, string> = {
   checklists: 'Checklists',
   staff_schedule: 'Staff schedule',
   daily_brief: 'Daily Brief',
-};
+}
 
 export const FLAG_DESCRIPTIONS: Record<FlagKey, string> = {
   reservations: 'Show reservations on tenant day views.',
@@ -26,4 +26,4 @@ export const FLAG_DESCRIPTIONS: Record<FlagKey, string> = {
   checklists: 'Show checklists in tenant settings.',
   staff_schedule: 'Show staff scheduling on day views and Staff settings.',
   daily_brief: 'Show AI daily brief card and enable morning brief email.',
-};
+}

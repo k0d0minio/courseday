@@ -1,22 +1,17 @@
-'use client';
+'use client'
 
-import { useEffect, useState, useTransition } from 'react';
-import { useForm } from 'react-hook-form';
-import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { toast } from 'sonner';
-import { Pencil, Trash2, Plus } from 'lucide-react';
-import { getAllPOCs, createPOC, updatePOC, deletePOC } from '@/app/actions/poc';
-import { pocSchema, type PocFormData } from '@/lib/poc-schema';
-import type { PointOfContact } from '@/types/index';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { useEffect, useState, useTransition } from 'react'
+import { useForm } from 'react-hook-form'
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
+import { toast } from 'sonner'
+import { Pencil, Trash2, Plus } from 'lucide-react'
+import { getAllPOCs, createPOC, updatePOC, deletePOC } from '@/app/actions/poc'
+import { pocSchema, type PocFormData } from '@/lib/poc-schema'
+import type { PointOfContact } from '@/types/index'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,7 +21,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from '@/components/ui/alert-dialog'
 import {
   Table,
   TableBody,
@@ -34,7 +29,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from '@/components/ui/table'
 
 // ---------------------------------------------------------------------------
 // Form dialog
@@ -46,12 +41,12 @@ function PocDialog({
   initial,
   onSaved,
 }: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  initial: PointOfContact | null;
-  onSaved: (poc: PointOfContact) => void;
+  open: boolean
+  onOpenChange: (v: boolean) => void
+  initial: PointOfContact | null
+  onSaved: (poc: PointOfContact) => void
 }) {
-  const [isPending, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition()
   const {
     register,
     handleSubmit,
@@ -60,31 +55,29 @@ function PocDialog({
   } = useForm<PocFormData>({
     resolver: standardSchemaResolver(pocSchema),
     defaultValues: { name: '', email: '', phone: '' },
-  });
+  })
 
   useEffect(() => {
     reset(
       initial
         ? { name: initial.name, email: initial.email ?? '', phone: initial.phone ?? '' }
         : { name: '', email: '', phone: '' }
-    );
-  }, [initial, open, reset]);
+    )
+  }, [initial, open, reset])
 
   function onSubmit(data: PocFormData) {
     startTransition(async () => {
-      const result = initial
-        ? await updatePOC(initial.id, data)
-        : await createPOC(data);
+      const result = initial ? await updatePOC(initial.id, data) : await createPOC(data)
 
       if (!result.success) {
-        toast.error(result.error);
-        return;
+        toast.error(result.error)
+        return
       }
 
-      toast.success(initial ? 'Contact updated.' : 'Contact added.');
-      onSaved(result.data);
-      onOpenChange(false);
-    });
+      toast.success(initial ? 'Contact updated.' : 'Contact added.')
+      onSaved(result.data)
+      onOpenChange(false)
+    })
   }
 
   return (
@@ -98,17 +91,13 @@ function PocDialog({
           <div className="space-y-2">
             <Label htmlFor="poc-name">Name *</Label>
             <Input id="poc-name" {...register('name')} />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
+            {errors.name && <p className="text-destructive text-sm">{errors.name.message}</p>}
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="poc-email">Email</Label>
             <Input id="poc-email" type="email" {...register('email')} />
-            {errors.email && (
-              <p className="text-sm text-destructive">{errors.email.message}</p>
-            )}
+            {errors.email && <p className="text-destructive text-sm">{errors.email.message}</p>}
           </div>
 
           <div className="space-y-2">
@@ -117,11 +106,7 @@ function PocDialog({
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button type="submit" disabled={isPending}>
@@ -131,7 +116,7 @@ function PocDialog({
         </form>
       </DialogContent>
     </Dialog>
-  );
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -139,54 +124,54 @@ function PocDialog({
 // ---------------------------------------------------------------------------
 
 export function PocManagement() {
-  const [pocs, setPocs] = useState<PointOfContact[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<PointOfContact | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<PointOfContact | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [isDeleting, startDeleteTransition] = useTransition();
+  const [pocs, setPocs] = useState<PointOfContact[]>([])
+  const [loading, setLoading] = useState(true)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editing, setEditing] = useState<PointOfContact | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<PointOfContact | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [isDeleting, startDeleteTransition] = useTransition()
 
   useEffect(() => {
     getAllPOCs().then((result) => {
       if (result.success) {
-        setPocs(result.data);
+        setPocs(result.data)
       } else {
-        toast.error(result.error);
+        toast.error(result.error)
       }
-      setLoading(false);
-    });
-  }, []);
+      setLoading(false)
+    })
+  }, [])
 
   function handleSaved(poc: PointOfContact) {
     setPocs((prev) => {
-      const idx = prev.findIndex((p) => p.id === poc.id);
+      const idx = prev.findIndex((p) => p.id === poc.id)
       if (idx >= 0) {
-        const next = [...prev];
-        next[idx] = poc;
-        return next;
+        const next = [...prev]
+        next[idx] = poc
+        return next
       }
-      return [...prev, poc].sort((a, b) => a.name.localeCompare(b.name));
-    });
+      return [...prev, poc].sort((a, b) => a.name.localeCompare(b.name))
+    })
   }
 
   function handleDelete(poc: PointOfContact) {
-    setDeleteTarget(poc);
-    setDeleteError(null);
+    setDeleteTarget(poc)
+    setDeleteError(null)
   }
 
   function confirmDelete() {
-    if (!deleteTarget) return;
+    if (!deleteTarget) return
     startDeleteTransition(async () => {
-      const result = await deletePOC(deleteTarget.id);
+      const result = await deletePOC(deleteTarget.id)
       if (!result.success) {
-        setDeleteError(result.error);
-        return;
+        setDeleteError(result.error)
+        return
       }
-      setPocs((prev) => prev.filter((p) => p.id !== deleteTarget.id));
-      toast.success('Contact deleted.');
-      setDeleteTarget(null);
-    });
+      setPocs((prev) => prev.filter((p) => p.id !== deleteTarget.id))
+      toast.success('Contact deleted.')
+      setDeleteTarget(null)
+    })
   }
 
   return (
@@ -195,16 +180,19 @@ export function PocManagement() {
         <h2 className="text-lg font-semibold">Points of Contact</h2>
         <Button
           size="sm"
-          onClick={() => { setEditing(null); setDialogOpen(true); }}
+          onClick={() => {
+            setEditing(null)
+            setDialogOpen(true)
+          }}
         >
-          <Plus className="w-4 h-4 mr-1" /> Add contact
+          <Plus className="mr-1 h-4 w-4" /> Add contact
         </Button>
       </div>
 
       {loading ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <p className="text-muted-foreground text-sm">Loading…</p>
       ) : pocs.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No contacts yet.</p>
+        <p className="text-muted-foreground text-sm">No contacts yet.</p>
       ) : (
         <Table>
           <TableHeader>
@@ -222,20 +210,19 @@ export function PocManagement() {
                 <TableCell>{poc.email ?? '—'}</TableCell>
                 <TableCell>{poc.phone ?? '—'}</TableCell>
                 <TableCell>
-                  <div className="flex gap-1 justify-end">
+                  <div className="flex justify-end gap-1">
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => { setEditing(poc); setDialogOpen(true); }}
+                      onClick={() => {
+                        setEditing(poc)
+                        setDialogOpen(true)
+                      }}
                     >
-                      <Pencil className="w-4 h-4" />
+                      <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(poc)}
-                    >
-                      <Trash2 className="w-4 h-4" />
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(poc)}>
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </TableCell>
@@ -254,7 +241,9 @@ export function PocManagement() {
 
       <AlertDialog
         open={!!deleteTarget}
-        onOpenChange={(v) => { if (!v) setDeleteTarget(null); }}
+        onOpenChange={(v) => {
+          if (!v) setDeleteTarget(null)
+        }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -264,8 +253,7 @@ export function PocManagement() {
                 <span className="text-destructive">{deleteError}</span>
               ) : (
                 <>
-                  This will permanently delete{' '}
-                  <strong>{deleteTarget?.name}</strong>.
+                  This will permanently delete <strong>{deleteTarget?.name}</strong>.
                 </>
               )}
             </AlertDialogDescription>
@@ -285,5 +273,5 @@ export function PocManagement() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  );
+  )
 }

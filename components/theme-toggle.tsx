@@ -1,35 +1,35 @@
-'use client';
+'use client'
 
-import { Sun, Moon, Monitor } from 'lucide-react';
-import { useTheme } from 'next-themes';
-import { useTranslations } from 'next-intl';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Sun, Moon, Monitor } from 'lucide-react'
+import { useTheme } from 'next-themes'
+import { useTranslations } from 'next-intl'
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 
-const THEMES = ['system', 'light', 'dark'] as const;
-type ThemeValue = (typeof THEMES)[number];
+const THEMES = ['system', 'light', 'dark'] as const
+type ThemeValue = (typeof THEMES)[number]
 
 const THEME_ICON: Record<ThemeValue, React.ReactNode> = {
   system: <Monitor className="h-4 w-4" />,
   light: <Sun className="h-4 w-4" />,
   dark: <Moon className="h-4 w-4" />,
-};
+}
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
-  const t = useTranslations('Tenant.nav');
-  const current = (theme as ThemeValue | undefined) ?? 'system';
+  const { theme, setTheme } = useTheme()
+  const t = useTranslations('Tenant.nav')
+  const current = (theme as ThemeValue | undefined) ?? 'system'
 
   const label: Record<ThemeValue, string> = {
     system: t('themeSystem'),
     light: t('themeLight'),
     dark: t('themeDark'),
-  };
+  }
 
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button
-          className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          className="text-muted-foreground hover:text-foreground hover:bg-accent flex h-8 w-8 items-center justify-center rounded-md transition-colors"
           aria-label={label[current]}
           title={label[current]}
         >
@@ -41,7 +41,7 @@ export function ThemeToggle() {
           <button
             key={value}
             onClick={() => setTheme(value)}
-            className={`flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm transition-colors hover:bg-accent ${current === value ? 'font-medium' : ''}`}
+            className={`hover:bg-accent flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm transition-colors ${current === value ? 'font-medium' : ''}`}
           >
             {THEME_ICON[value]}
             {label[value]}
@@ -49,5 +49,5 @@ export function ThemeToggle() {
         ))}
       </PopoverContent>
     </Popover>
-  );
+  )
 }

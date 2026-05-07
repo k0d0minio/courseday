@@ -1,31 +1,29 @@
-'use server';
+'use server'
 
-import { createTenantClient } from '@/lib/supabase-server';
-import { getTenantId } from '@/lib/tenant';
-import { getUserRole, requireEditor } from '@/lib/membership';
-import { checklistTemplateSchema } from '@/lib/checklist-schema';
-import { snapshotTemplateIdsForActivity } from '@/lib/checklist-snapshot';
-import type { ChecklistTemplateFormData } from '@/lib/checklist-schema';
-import type { ActionResponse } from '@/types/actions';
+import { createTenantClient } from '@/lib/supabase-server'
+import { getTenantId } from '@/lib/tenant'
+import { getUserRole, requireEditor } from '@/lib/membership'
+import { checklistTemplateSchema } from '@/lib/checklist-schema'
+import { snapshotTemplateIdsForActivity } from '@/lib/checklist-snapshot'
+import type { ChecklistTemplateFormData } from '@/lib/checklist-schema'
+import type { ActionResponse } from '@/types/actions'
 import type {
   ActivityChecklistItem,
   ChecklistTemplate,
   ChecklistTemplateItem,
   ChecklistTemplateWithItems,
-} from '@/types/index';
+} from '@/types/index'
 
 // ---------------------------------------------------------------------------
 // Internal mapping
 // ---------------------------------------------------------------------------
 
 type RawTemplateRow = ChecklistTemplate & {
-  checklist_template_item: ChecklistTemplateItem[] | null;
-};
+  checklist_template_item: ChecklistTemplateItem[] | null
+}
 
 function mapTemplate(row: RawTemplateRow): ChecklistTemplateWithItems {
-  const items = (row.checklist_template_item ?? [])
-    .slice()
-    .sort((a, b) => a.position - b.position);
+  const items = (row.checklist_template_item ?? []).slice().sort((a, b) => a.position - b.position)
   return {
     id: row.id,
     tenant_id: row.tenant_id,
@@ -35,7 +33,7 @@ function mapTemplate(row: RawTemplateRow): ChecklistTemplateWithItems {
     created_at: row.created_at,
     updated_at: row.updated_at,
     items,
-  };
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -45,43 +43,43 @@ function mapTemplate(row: RawTemplateRow): ChecklistTemplateWithItems {
 export async function getAllChecklistTemplates(): Promise<
   ActionResponse<ChecklistTemplateWithItems[]>
 > {
-  const tenantId = await getTenantId();
-  const role = await getUserRole(tenantId);
-  if (!role) return { success: false, error: 'Not authorized.' };
+  const tenantId = await getTenantId()
+  const role = await getUserRole(tenantId)
+  if (!role) return { success: false, error: 'Not authorized.' }
 
-  const { supabase } = await createTenantClient();
+  const { supabase } = await createTenantClient()
   const { data, error } = await supabase
     .from('checklist_template')
     .select('*, checklist_template_item(*)')
     .eq('tenant_id', tenantId)
-    .order('name');
+    .order('name')
 
-  if (error) return { success: false, error: error.message };
+  if (error) return { success: false, error: error.message }
 
   return {
     success: true,
     data: (data as RawTemplateRow[]).map(mapTemplate),
-  };
+  }
 }
 
 export async function getChecklistItemsForActivities(
   activityIds: string[]
 ): Promise<ActionResponse<ActivityChecklistItem[]>> {
-  const tenantId = await getTenantId();
-  const role = await getUserRole(tenantId);
-  if (!role) return { success: false, error: 'Not authorized.' };
-  if (activityIds.length === 0) return { success: true, data: [] };
+  const tenantId = await getTenantId()
+  const role = await getUserRole(tenantId)
+  if (!role) return { success: false, error: 'Not authorized.' }
+  if (activityIds.length === 0) return { success: true, data: [] }
 
-  const { supabase } = await createTenantClient();
+  const { supabase } = await createTenantClient()
   const { data, error } = await supabase
     .from('activity_checklist_item')
     .select('*')
     .eq('tenant_id', tenantId)
     .in('activity_id', activityIds)
-    .order('position');
+    .order('position')
 
-  if (error) return { success: false, error: error.message };
-  return { success: true, data: (data ?? []) as ActivityChecklistItem[] };
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: (data ?? []) as ActivityChecklistItem[] }
 }
 
 // ---------------------------------------------------------------------------
@@ -91,16 +89,16 @@ export async function getChecklistItemsForActivities(
 export async function createChecklistTemplate(
   raw: ChecklistTemplateFormData
 ): Promise<ActionResponse<ChecklistTemplateWithItems>> {
-  const parsed = checklistTemplateSchema.safeParse(raw);
+  const parsed = checklistTemplateSchema.safeParse(raw)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message };
+    return { success: false, error: parsed.error.issues[0].message }
   }
 
-  const tenantId = await getTenantId();
-  await requireEditor(tenantId);
+  const tenantId = await getTenantId()
+  await requireEditor(tenantId)
 
-  const { supabase } = await createTenantClient();
-  const { name, scope, scopeId, items } = parsed.data;
+  const { supabase } = await createTenantClient()
+  const { name, scope, scopeId, items } = parsed.data
 
   const { data: tplRow, error: tplErr } = await supabase
     .from('checklist_template')
@@ -111,49 +109,47 @@ export async function createChecklistTemplate(
       activity_tag_id: scope === 'activity_tag' ? scopeId : null,
     })
     .select()
-    .single();
+    .single()
 
-  if (tplErr) return { success: false, error: tplErr.message };
+  if (tplErr) return { success: false, error: tplErr.message }
 
-  const template = tplRow as ChecklistTemplate;
+  const template = tplRow as ChecklistTemplate
 
   if (items.length > 0) {
-    const { error: itemsErr } = await supabase
-      .from('checklist_template_item')
-      .insert(
-        items.map((it, idx) => ({
-          template_id: template.id,
-          label: it.label.trim(),
-          position: idx,
-        }))
-      );
-    if (itemsErr) return { success: false, error: itemsErr.message };
+    const { error: itemsErr } = await supabase.from('checklist_template_item').insert(
+      items.map((it, idx) => ({
+        template_id: template.id,
+        label: it.label.trim(),
+        position: idx,
+      }))
+    )
+    if (itemsErr) return { success: false, error: itemsErr.message }
   }
 
   const { data: fullRow, error: fetchErr } = await supabase
     .from('checklist_template')
     .select('*, checklist_template_item(*)')
     .eq('id', template.id)
-    .single();
+    .single()
 
-  if (fetchErr) return { success: false, error: fetchErr.message };
-  return { success: true, data: mapTemplate(fullRow as RawTemplateRow) };
+  if (fetchErr) return { success: false, error: fetchErr.message }
+  return { success: true, data: mapTemplate(fullRow as RawTemplateRow) }
 }
 
 export async function updateChecklistTemplate(
   id: string,
   raw: ChecklistTemplateFormData
 ): Promise<ActionResponse<ChecklistTemplateWithItems>> {
-  const parsed = checklistTemplateSchema.safeParse(raw);
+  const parsed = checklistTemplateSchema.safeParse(raw)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message };
+    return { success: false, error: parsed.error.issues[0].message }
   }
 
-  const tenantId = await getTenantId();
-  await requireEditor(tenantId);
+  const tenantId = await getTenantId()
+  await requireEditor(tenantId)
 
-  const { supabase } = await createTenantClient();
-  const { name, scope, scopeId, items } = parsed.data;
+  const { supabase } = await createTenantClient()
+  const { name, scope, scopeId, items } = parsed.data
 
   const { error: updErr } = await supabase
     .from('checklist_template')
@@ -163,9 +159,9 @@ export async function updateChecklistTemplate(
       activity_tag_id: scope === 'activity_tag' ? scopeId : null,
     })
     .eq('id', id)
-    .eq('tenant_id', tenantId);
+    .eq('tenant_id', tenantId)
 
-  if (updErr) return { success: false, error: updErr.message };
+  if (updErr) return { success: false, error: updErr.message }
 
   // Replace items: delete existing, insert new in order.
   // Historical activities are unaffected because their items live on
@@ -173,48 +169,44 @@ export async function updateChecklistTemplate(
   const { error: delErr } = await supabase
     .from('checklist_template_item')
     .delete()
-    .eq('template_id', id);
+    .eq('template_id', id)
 
-  if (delErr) return { success: false, error: delErr.message };
+  if (delErr) return { success: false, error: delErr.message }
 
   if (items.length > 0) {
-    const { error: insErr } = await supabase
-      .from('checklist_template_item')
-      .insert(
-        items.map((it, idx) => ({
-          template_id: id,
-          label: it.label.trim(),
-          position: idx,
-        }))
-      );
-    if (insErr) return { success: false, error: insErr.message };
+    const { error: insErr } = await supabase.from('checklist_template_item').insert(
+      items.map((it, idx) => ({
+        template_id: id,
+        label: it.label.trim(),
+        position: idx,
+      }))
+    )
+    if (insErr) return { success: false, error: insErr.message }
   }
 
   const { data: fullRow, error: fetchErr } = await supabase
     .from('checklist_template')
     .select('*, checklist_template_item(*)')
     .eq('id', id)
-    .single();
+    .single()
 
-  if (fetchErr) return { success: false, error: fetchErr.message };
-  return { success: true, data: mapTemplate(fullRow as RawTemplateRow) };
+  if (fetchErr) return { success: false, error: fetchErr.message }
+  return { success: true, data: mapTemplate(fullRow as RawTemplateRow) }
 }
 
-export async function deleteChecklistTemplate(
-  id: string
-): Promise<ActionResponse> {
-  const tenantId = await getTenantId();
-  await requireEditor(tenantId);
+export async function deleteChecklistTemplate(id: string): Promise<ActionResponse> {
+  const tenantId = await getTenantId()
+  await requireEditor(tenantId)
 
-  const { supabase } = await createTenantClient();
+  const { supabase } = await createTenantClient()
   const { error } = await supabase
     .from('checklist_template')
     .delete()
     .eq('id', id)
-    .eq('tenant_id', tenantId);
+    .eq('tenant_id', tenantId)
 
-  if (error) return { success: false, error: error.message };
-  return { success: true, data: undefined };
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: undefined }
 }
 
 // ---------------------------------------------------------------------------
@@ -230,11 +222,11 @@ export async function attachChecklistTemplatesToActivity(
   activityId: string,
   templateIds: string[]
 ): Promise<ActionResponse<ActivityChecklistItem[]>> {
-  const tenantId = await getTenantId();
-  await requireEditor(tenantId);
-  if (templateIds.length === 0) return { success: true, data: [] };
+  const tenantId = await getTenantId()
+  await requireEditor(tenantId)
+  if (templateIds.length === 0) return { success: true, data: [] }
 
-  const { supabase } = await createTenantClient();
+  const { supabase } = await createTenantClient()
 
   const { data: activityRow, error: activityErr } = await supabase
     .from('activity')
@@ -242,22 +234,20 @@ export async function attachChecklistTemplatesToActivity(
     .eq('id', activityId)
     .eq('tenant_id', tenantId)
     .is('deleted_at', null)
-    .single();
+    .single()
 
   if (activityErr || !activityRow) {
-    return { success: false, error: 'Activity not found.' };
+    return { success: false, error: 'Activity not found.' }
   }
 
   const { data: existing } = await supabase
     .from('activity_checklist_item')
     .select('position')
-    .eq('activity_id', activityId);
+    .eq('activity_id', activityId)
 
   const startPos =
-    ((existing ?? []) as { position: number }[]).reduce(
-      (max, r) => Math.max(max, r.position),
-      -1
-    ) + 1;
+    ((existing ?? []) as { position: number }[]).reduce((max, r) => Math.max(max, r.position), -1) +
+    1
 
   const inserted = await snapshotTemplateIdsForActivity(supabase, {
     tenantId,
@@ -265,10 +255,10 @@ export async function attachChecklistTemplatesToActivity(
     activityId,
     templateIds,
     startPosition: startPos,
-  });
+  })
 
-  if (!inserted.success) return inserted;
-  return { success: true, data: inserted.data };
+  if (!inserted.success) return inserted
+  return { success: true, data: inserted.data }
 }
 
 // ---------------------------------------------------------------------------
@@ -279,10 +269,10 @@ export async function setChecklistItemDone(
   itemId: string,
   done: boolean
 ): Promise<ActionResponse<ActivityChecklistItem>> {
-  const tenantId = await getTenantId();
-  const user = await requireEditor(tenantId);
+  const tenantId = await getTenantId()
+  const user = await requireEditor(tenantId)
 
-  const { supabase } = await createTenantClient();
+  const { supabase } = await createTenantClient()
   const { data, error } = await supabase
     .from('activity_checklist_item')
     .update({
@@ -293,8 +283,8 @@ export async function setChecklistItemDone(
     .eq('id', itemId)
     .eq('tenant_id', tenantId)
     .select()
-    .single();
+    .single()
 
-  if (error) return { success: false, error: error.message };
-  return { success: true, data: data as ActivityChecklistItem };
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: data as ActivityChecklistItem }
 }

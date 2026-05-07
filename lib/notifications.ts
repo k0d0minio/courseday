@@ -1,4 +1,4 @@
-import { createSupabaseServiceClient } from '@/lib/supabase-server';
+import { createSupabaseServiceClient } from '@/lib/supabase-server'
 
 /**
  * Sends a notification to all members of a tenant except the actor.
@@ -17,15 +17,15 @@ export async function notifyTenantMembers(
   body?: string,
   link?: string
 ): Promise<void> {
-  const serviceClient = createSupabaseServiceClient();
+  const serviceClient = createSupabaseServiceClient()
 
   const { data: members } = await serviceClient
     .from('memberships')
     .select('user_id')
     .eq('tenant_id', tenantId)
-    .neq('user_id', actorId);
+    .neq('user_id', actorId)
 
-  if (!members?.length) return;
+  if (!members?.length) return
 
   const rows = members.map((m) => ({
     tenant_id: tenantId,
@@ -33,9 +33,9 @@ export async function notifyTenantMembers(
     title,
     body: body ?? null,
     link: link ?? null,
-  }));
+  }))
 
-  await serviceClient.from('notifications').insert(rows);
+  await serviceClient.from('notifications').insert(rows)
 }
 
 /**
@@ -43,11 +43,7 @@ export async function notifyTenantMembers(
  * Returns null if the day is not found.
  */
 export async function getDayDate(dayId: string): Promise<string | null> {
-  const serviceClient = createSupabaseServiceClient();
-  const { data } = await serviceClient
-    .from('day')
-    .select('date_iso')
-    .eq('id', dayId)
-    .maybeSingle();
-  return (data as { date_iso: string } | null)?.date_iso ?? null;
+  const serviceClient = createSupabaseServiceClient()
+  const { data } = await serviceClient.from('day').select('date_iso').eq('id', dayId).maybeSingle()
+  return (data as { date_iso: string } | null)?.date_iso ?? null
 }

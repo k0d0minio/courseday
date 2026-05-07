@@ -1,9 +1,9 @@
-import { getTranslations } from 'next-intl/server';
-import { Plus } from 'lucide-react';
-import { Eyebrow, SectionShell, SectionTitle } from '@/components/landing/section-shell';
+import { getTranslations } from 'next-intl/server'
+import { Plus } from 'lucide-react'
+import { Eyebrow, SectionShell, SectionTitle } from '@/components/landing/section-shell'
 
 export async function Faq() {
-  const t = await getTranslations('Platform.landing.faq');
+  const t = await getTranslations('Platform.landing.faq')
 
   const items = [
     { q: t('q1'), a: t('a1') },
@@ -12,7 +12,7 @@ export async function Faq() {
     { q: t('q4'), a: t('a4') },
     { q: t('q5'), a: t('a5') },
     { q: t('q6'), a: t('a6') },
-  ];
+  ]
 
   return (
     <SectionShell id="faq">
@@ -24,13 +24,13 @@ export async function Faq() {
         {items.map(({ q, a }) => (
           <details key={q} className="group py-5">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left">
-              <span className="font-display text-lg font-medium leading-snug">{q}</span>
-              <Plus className="size-5 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-45" />
+              <span className="font-display text-lg leading-snug font-medium">{q}</span>
+              <Plus className="text-muted-foreground size-5 shrink-0 transition-transform duration-200 group-open:rotate-45" />
             </summary>
-            <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">{a}</p>
+            <p className="text-muted-foreground mt-3 max-w-3xl text-sm leading-relaxed">{a}</p>
           </details>
         ))}
       </div>
     </SectionShell>
-  );
+  )
 }

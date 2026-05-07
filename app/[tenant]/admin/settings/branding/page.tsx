@@ -1,32 +1,32 @@
-import { getTranslations } from 'next-intl/server';
-import { requireTenantEditor } from '@/lib/guards';
-import { getTenantFromHeaders } from '@/lib/tenant';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
-import { SettingsForm } from '../settings-form';
+import { getTranslations } from 'next-intl/server'
+import { requireTenantEditor } from '@/lib/guards'
+import { getTenantFromHeaders } from '@/lib/tenant'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { SettingsForm } from '../settings-form'
 
 export default async function BrandingSettingsPage() {
-  await requireTenantEditor();
-  const tenant = await getTenantFromHeaders();
-  const t = await getTranslations('Tenant.settings');
+  await requireTenantEditor()
+  const tenant = await getTenantFromHeaders()
+  const t = await getTranslations('Tenant.settings')
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient()
   const { data } = await supabase
     .from('tenants')
     .select('theme_palette, accent_color, logo_url, latitude, longitude')
     .eq('id', tenant.id)
-    .single();
+    .single()
 
   const row = data as {
-    theme_palette?: string | null;
-    accent_color?: string | null;
-    logo_url?: string | null;
-    latitude?: number | null;
-    longitude?: number | null;
-  } | null;
+    theme_palette?: string | null
+    accent_color?: string | null
+    logo_url?: string | null
+    latitude?: number | null
+    longitude?: number | null
+  } | null
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-8">
-      <h1 className="text-2xl font-semibold mb-6">{t('tabBranding')}</h1>
+    <div className="mx-auto max-w-3xl px-6 py-8">
+      <h1 className="mb-6 text-2xl font-semibold">{t('tabBranding')}</h1>
       <SettingsForm
         tenantId={tenant.id}
         initialPaletteId={row?.theme_palette ?? null}
@@ -36,5 +36,5 @@ export default async function BrandingSettingsPage() {
         initialLongitude={row?.longitude ?? null}
       />
     </div>
-  );
+  )
 }

@@ -1,48 +1,48 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
-import { toast } from 'sonner';
-import { copyDaySections } from '@/app/actions/schedule-templates';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import { toast } from 'sonner'
+import { copyDaySections } from '@/app/actions/schedule-templates'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
+} from '@/components/ui/dialog'
 import {
   Drawer,
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
   DrawerFooter,
-} from '@/components/ui/drawer';
+} from '@/components/ui/drawer'
 
 function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(false)
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 639px)');
-    setIsMobile(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
-  return isMobile;
+    const mq = window.matchMedia('(max-width: 639px)')
+    setIsMobile(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+  return isMobile
 }
 
 interface Props {
-  isOpen: boolean;
-  onClose: () => void;
-  sourceDayId: string;
-  today: string;
+  isOpen: boolean
+  onClose: () => void
+  sourceDayId: string
+  today: string
   /** When false, staff schedule is not copied and the toggle is hidden. */
-  showCopyShifts?: boolean;
+  showCopyShifts?: boolean
 }
 
 export function CopyDayDialog({
@@ -52,50 +52,49 @@ export function CopyDayDialog({
   today,
   showCopyShifts = true,
 }: Props) {
-  const t = useTranslations('Tenant.copyDay');
-  const isMobile = useIsMobile();
-  const router = useRouter();
-  const [targetDate, setTargetDate] = useState('');
-  const [copyActivities, setCopyActivities] = useState(true);
-  const [copyShifts, setCopyShifts] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const t = useTranslations('Tenant.copyDay')
+  const isMobile = useIsMobile()
+  const router = useRouter()
+  const [targetDate, setTargetDate] = useState('')
+  const [copyActivities, setCopyActivities] = useState(true)
+  const [copyShifts, setCopyShifts] = useState(false)
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (!isOpen) return;
-    setTargetDate('');
-    setCopyActivities(true);
-    setCopyShifts(false);
-  }, [isOpen]);
+    if (!isOpen) return
+    setTargetDate('')
+    setCopyActivities(true)
+    setCopyShifts(false)
+  }, [isOpen])
 
   useEffect(() => {
-    if (!showCopyShifts) setCopyShifts(false);
-  }, [showCopyShifts]);
+    if (!showCopyShifts) setCopyShifts(false)
+  }, [showCopyShifts])
 
   async function handleSubmit() {
-    if (!targetDate) return;
-    setSaving(true);
+    if (!targetDate) return
+    setSaving(true)
     try {
       const result = await copyDaySections(sourceDayId, targetDate, {
         copyActivities,
         copyShifts: showCopyShifts && copyShifts,
-      });
+      })
       if (!result.success) {
-        toast.error(result.error);
-        return;
+        toast.error(result.error)
+        return
       }
-      const didCopyShifts = showCopyShifts && copyShifts;
-      if (copyActivities && didCopyShifts) toast.success(t('copiedBoth'));
-      else if (copyActivities) toast.success(t('copiedActivities'));
-      else toast.success(t('copiedShifts'));
-      onClose();
-      router.push(`/day/${targetDate}`);
+      const didCopyShifts = showCopyShifts && copyShifts
+      if (copyActivities && didCopyShifts) toast.success(t('copiedBoth'))
+      else if (copyActivities) toast.success(t('copiedActivities'))
+      else toast.success(t('copiedShifts'))
+      onClose()
+      router.push(`/day/${targetDate}`)
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
   }
 
-  const canSubmit =
-    targetDate && (copyActivities || (showCopyShifts && copyShifts));
+  const canSubmit = targetDate && (copyActivities || (showCopyShifts && copyShifts))
 
   const body = (
     <div className="space-y-4 py-2">
@@ -113,11 +112,7 @@ export function CopyDayDialog({
         <Label htmlFor="copy-activities" className="cursor-pointer">
           {t('copyActivities')}
         </Label>
-        <Switch
-          id="copy-activities"
-          checked={copyActivities}
-          onCheckedChange={setCopyActivities}
-        />
+        <Switch id="copy-activities" checked={copyActivities} onCheckedChange={setCopyActivities} />
       </div>
       {showCopyShifts && (
         <div className="flex items-center justify-between gap-4 rounded-md border p-3">
@@ -128,7 +123,7 @@ export function CopyDayDialog({
         </div>
       )}
     </div>
-  );
+  )
 
   const footer = (
     <>
@@ -139,7 +134,7 @@ export function CopyDayDialog({
         {saving ? t('copying') : t('copy')}
       </Button>
     </>
-  );
+  )
 
   if (isMobile) {
     return (
@@ -152,7 +147,7 @@ export function CopyDayDialog({
           <DrawerFooter className="flex-row justify-end gap-2">{footer}</DrawerFooter>
         </DrawerContent>
       </Drawer>
-    );
+    )
   }
 
   return (
@@ -165,5 +160,5 @@ export function CopyDayDialog({
         <DialogFooter>{footer}</DialogFooter>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

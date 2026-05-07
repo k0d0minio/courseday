@@ -30,9 +30,9 @@ export type TenantThemeToken =
   | 'warning'
   | 'warning-foreground'
   | 'info'
-  | 'info-foreground';
+  | 'info-foreground'
 
-export type TenantThemeTokens = Record<TenantThemeToken, string>;
+export type TenantThemeTokens = Record<TenantThemeToken, string>
 
 export type TenantPaletteId =
   | 'evergreen'
@@ -40,18 +40,18 @@ export type TenantPaletteId =
   | 'sunset'
   | 'violet'
   | 'charcoal'
-  | 'terracotta';
+  | 'terracotta'
 
 export type TenantPalette = {
-  id: TenantPaletteId;
-  label: string;
-  description: string;
-  legacyAccentHex: string;
-  light: TenantThemeTokens;
-  dark: TenantThemeTokens;
-};
+  id: TenantPaletteId
+  label: string
+  description: string
+  legacyAccentHex: string
+  light: TenantThemeTokens
+  dark: TenantThemeTokens
+}
 
-export const DEFAULT_TENANT_PALETTE_ID: TenantPaletteId = 'evergreen';
+export const DEFAULT_TENANT_PALETTE_ID: TenantPaletteId = 'evergreen'
 
 const BASE_LIGHT = {
   background: 'oklch(1 0 0)',
@@ -88,7 +88,7 @@ const BASE_LIGHT = {
   | 'sidebar-accent'
   | 'sidebar-accent-foreground'
   | 'sidebar-ring'
->;
+>
 
 const BASE_DARK = {
   background: 'oklch(0.141 0.005 285.823)',
@@ -125,7 +125,7 @@ const BASE_DARK = {
   | 'sidebar-accent'
   | 'sidebar-accent-foreground'
   | 'sidebar-ring'
->;
+>
 
 const PALETTES: readonly TenantPalette[] = [
   {
@@ -332,7 +332,7 @@ const PALETTES: readonly TenantPalette[] = [
       'success-foreground': 'oklch(0.18 0.03 154)',
     },
   },
-] as const;
+] as const
 
 const PALETTE_BY_ID: Record<TenantPaletteId, TenantPalette> = {
   evergreen: PALETTES[0],
@@ -341,55 +341,54 @@ const PALETTE_BY_ID: Record<TenantPaletteId, TenantPalette> = {
   violet: PALETTES[3],
   charcoal: PALETTES[4],
   terracotta: PALETTES[5],
-};
+}
 
-const LEGACY_ACCENT_TO_ID: Record<string, TenantPaletteId> = Object.values(PALETTE_BY_ID).reduce<Record<string, TenantPaletteId>>(
-  (acc, palette) => {
-    acc[palette.legacyAccentHex.toLowerCase()] = palette.id;
-    return acc;
-  },
-  {}
-);
+const LEGACY_ACCENT_TO_ID: Record<string, TenantPaletteId> = Object.values(PALETTE_BY_ID).reduce<
+  Record<string, TenantPaletteId>
+>((acc, palette) => {
+  acc[palette.legacyAccentHex.toLowerCase()] = palette.id
+  return acc
+}, {})
 
-export const TENANT_PALETTES = PALETTES;
+export const TENANT_PALETTES = PALETTES
 
 export function isTenantPaletteId(value: string | null | undefined): value is TenantPaletteId {
-  if (!value) return false;
-  return value in PALETTE_BY_ID;
+  if (!value) return false
+  return value in PALETTE_BY_ID
 }
 
 export function resolveTenantPaletteId(
   paletteId: string | null | undefined,
   legacyAccentColor?: string | null
 ): TenantPaletteId {
-  if (isTenantPaletteId(paletteId)) return paletteId;
+  if (isTenantPaletteId(paletteId)) return paletteId
 
-  const normalizedAccent = legacyAccentColor?.trim().toLowerCase();
+  const normalizedAccent = legacyAccentColor?.trim().toLowerCase()
   if (normalizedAccent && normalizedAccent in LEGACY_ACCENT_TO_ID) {
-    return LEGACY_ACCENT_TO_ID[normalizedAccent];
+    return LEGACY_ACCENT_TO_ID[normalizedAccent]
   }
 
-  return DEFAULT_TENANT_PALETTE_ID;
+  return DEFAULT_TENANT_PALETTE_ID
 }
 
 export function getTenantPalette(
   paletteId: string | null | undefined,
   legacyAccentColor?: string | null
 ): TenantPalette {
-  const resolvedId = resolveTenantPaletteId(paletteId, legacyAccentColor);
-  return PALETTE_BY_ID[resolvedId];
+  const resolvedId = resolveTenantPaletteId(paletteId, legacyAccentColor)
+  return PALETTE_BY_ID[resolvedId]
 }
 
 function mapTokenVars(prefix: string, tokens: TenantThemeTokens): Record<string, string> {
   return Object.entries(tokens).reduce<Record<string, string>>((acc, [token, value]) => {
-    acc[`--tenant-${prefix}-${token}`] = value;
-    return acc;
-  }, {});
+    acc[`--tenant-${prefix}-${token}`] = value
+    return acc
+  }, {})
 }
 
 export function getTenantThemeCssVariables(palette: TenantPalette): Record<string, string> {
   return {
     ...mapTokenVars('light', palette.light),
     ...mapTokenVars('dark', palette.dark),
-  };
+  }
 }

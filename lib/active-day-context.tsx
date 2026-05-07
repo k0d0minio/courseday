@@ -1,48 +1,41 @@
-'use client';
+'use client'
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-  type ReactNode,
-} from 'react';
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
 
 type ActiveDayContextValue = {
   /** Tenant calendar "today" from server (navigation lower bound). */
-  tenantTodayYmd: string;
-  activeDayYmd: string;
-  setActiveDayYmd: (ymd: string) => void;
-};
+  tenantTodayYmd: string
+  activeDayYmd: string
+  setActiveDayYmd: (ymd: string) => void
+}
 
-const ActiveDayContext = createContext<ActiveDayContextValue | null>(null);
+const ActiveDayContext = createContext<ActiveDayContextValue | null>(null)
 
 export function ActiveDayProvider({
   tenantTodayYmd,
   children,
 }: {
-  tenantTodayYmd: string;
-  children: ReactNode;
+  tenantTodayYmd: string
+  children: ReactNode
 }) {
-  const [activeDayYmd, setState] = useState(tenantTodayYmd);
+  const [activeDayYmd, setState] = useState(tenantTodayYmd)
 
   const setActiveDayYmd = useCallback((ymd: string) => {
-    setState(ymd);
-  }, []);
+    setState(ymd)
+  }, [])
 
   const value = useMemo(
     () => ({ tenantTodayYmd, activeDayYmd, setActiveDayYmd }),
     [tenantTodayYmd, activeDayYmd, setActiveDayYmd]
-  );
+  )
 
-  return <ActiveDayContext.Provider value={value}>{children}</ActiveDayContext.Provider>;
+  return <ActiveDayContext.Provider value={value}>{children}</ActiveDayContext.Provider>
 }
 
 export function useActiveDay(): ActiveDayContextValue {
-  const ctx = useContext(ActiveDayContext);
+  const ctx = useContext(ActiveDayContext)
   if (!ctx) {
-    throw new Error('useActiveDay must be used within ActiveDayProvider');
+    throw new Error('useActiveDay must be used within ActiveDayProvider')
   }
-  return ctx;
+  return ctx
 }

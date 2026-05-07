@@ -1,142 +1,133 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { format, getDay, addMonths, subMonths, parseISO } from 'date-fns';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
-import { CalendarDaySidebar } from '@/components/CalendarDaySidebar';
-import { AgendaView } from '@/components/AgendaView';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { useActiveDay } from '@/lib/active-day-context';
-import { useFeatureFlag } from '@/lib/feature-flags-context';
+import { useState, useEffect } from 'react'
+import { format, getDay, addMonths, subMonths, parseISO } from 'date-fns'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import { CalendarDaySidebar } from '@/components/CalendarDaySidebar'
+import { AgendaView } from '@/components/AgendaView'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+import { useActiveDay } from '@/lib/active-day-context'
+import { useFeatureFlag } from '@/lib/feature-flags-context'
 
-const VIEW_PREF_KEY = 'editor-home-view-preference';
-type ViewMode = 'calendar' | 'agenda';
+const VIEW_PREF_KEY = 'editor-home-view-preference'
+type ViewMode = 'calendar' | 'agenda'
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 export type DaySummary = {
-  date: string; // YYYY-MM-DD
-  dayId: string;
-  golfCount: number;
-  reservationCount: number;
-  breakfastCount: number;
-};
+  date: string // YYYY-MM-DD
+  dayId: string
+  golfCount: number
+  reservationCount: number
+  breakfastCount: number
+}
 
 type Props = {
-  month: string; // YYYY-MM
-  today: string; // YYYY-MM-DD
-  days: DaySummary[];
+  month: string // YYYY-MM
+  today: string // YYYY-MM-DD
+  days: DaySummary[]
   /** Viewers only see agenda; editors get calendar + agenda toggle. */
-  variant?: 'editor' | 'viewer';
-};
+  variant?: 'editor' | 'viewer'
+}
 
 // Day-of-week header label keys — Monday first (resolved via translations)
-const DOW_KEYS = ['dowMon', 'dowTue', 'dowWed', 'dowThu', 'dowFri', 'dowSat', 'dowSun'] as const;
+const DOW_KEYS = ['dowMon', 'dowTue', 'dowWed', 'dowThu', 'dowFri', 'dowSat', 'dowSun'] as const
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export function HomeClient({
-  month,
-  today,
-  days: initialDays,
-  variant = 'editor',
-}: Props) {
-  const router = useRouter();
-  const t = useTranslations('Tenant.home');
-  const isEditor = variant === 'editor';
-  const { setActiveDayYmd } = useActiveDay();
-  const showReservations = useFeatureFlag('reservations');
-  const showBreakfast = useFeatureFlag('breakfast_config');
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [days, setDays] = useState<DaySummary[]>(initialDays);
+export function HomeClient({ month, today, days: initialDays, variant = 'editor' }: Props) {
+  const router = useRouter()
+  const t = useTranslations('Tenant.home')
+  const isEditor = variant === 'editor'
+  const { setActiveDayYmd } = useActiveDay()
+  const showReservations = useFeatureFlag('reservations')
+  const showBreakfast = useFeatureFlag('breakfast_config')
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [days, setDays] = useState<DaySummary[]>(initialDays)
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
-    if (variant === 'viewer') return 'agenda';
+    if (variant === 'viewer') return 'agenda'
     if (typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches) {
-      return 'agenda';
+      return 'agenda'
     }
-    return 'calendar';
-  });
+    return 'calendar'
+  })
   /** Below Tailwind `sm` (640px): calendar day cells go straight to full day page. */
-  const [isNarrowScreen, setIsNarrowScreen] = useState(false);
+  const [isNarrowScreen, setIsNarrowScreen] = useState(false)
 
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 639px)');
-    const sync = () => setIsNarrowScreen(mq.matches);
-    sync();
-    mq.addEventListener('change', sync);
-    return () => mq.removeEventListener('change', sync);
-  }, []);
+    const mq = window.matchMedia('(max-width: 639px)')
+    const sync = () => setIsNarrowScreen(mq.matches)
+    sync()
+    mq.addEventListener('change', sync)
+    return () => mq.removeEventListener('change', sync)
+  }, [])
 
   useEffect(() => {
-    setActiveDayYmd(selectedDate ?? today);
-  }, [selectedDate, today, setActiveDayYmd]);
+    setActiveDayYmd(selectedDate ?? today)
+  }, [selectedDate, today, setActiveDayYmd])
 
   // Restore view preference from localStorage (editors only)
   useEffect(() => {
-    if (!isEditor) return;
-    const saved = localStorage.getItem(VIEW_PREF_KEY);
-    if (saved === 'agenda' || saved === 'calendar') setViewMode(saved);
-  }, [isEditor]);
+    if (!isEditor) return
+    const saved = localStorage.getItem(VIEW_PREF_KEY)
+    if (saved === 'agenda' || saved === 'calendar') setViewMode(saved)
+  }, [isEditor])
 
   function changeViewMode(mode: ViewMode) {
-    if (!isEditor) return;
-    setViewMode(mode);
-    localStorage.setItem(VIEW_PREF_KEY, mode);
+    if (!isEditor) return
+    setViewMode(mode)
+    localStorage.setItem(VIEW_PREF_KEY, mode)
   }
 
   function handleDayCellClick(dateStr: string, isSelected: boolean) {
     if (isEditor && viewMode === 'calendar' && isNarrowScreen) {
-      router.push(`/day/${dateStr}`);
-      return;
+      router.push(`/day/${dateStr}`)
+      return
     }
-    setSelectedDate(isSelected ? null : dateStr);
+    setSelectedDate(isSelected ? null : dateStr)
   }
 
-  const dayMap = new Map(days.map((d) => [d.date, d]));
+  const dayMap = new Map(days.map((d) => [d.date, d]))
 
   function handleSummaryChanged(date: string, patch: Partial<DaySummary>) {
-    setDays((prev) =>
-      prev.map((d) => (d.date === date ? { ...d, ...patch } : d))
-    );
+    setDays((prev) => prev.map((d) => (d.date === date ? { ...d, ...patch } : d)))
   }
 
   // Compute grid layout
-  const [year, monthNum] = month.split('-').map(Number);
-  const firstOfMonth = new Date(year, monthNum - 1, 1);
-  const daysInMonth = new Date(year, monthNum, 0).getDate();
+  const [year, monthNum] = month.split('-').map(Number)
+  const firstOfMonth = new Date(year, monthNum - 1, 1)
+  const daysInMonth = new Date(year, monthNum, 0).getDate()
 
   // Monday-start: Mon=0, Tue=1, ..., Sun=6
-  const startPadding = (getDay(firstOfMonth) + 6) % 7;
+  const startPadding = (getDay(firstOfMonth) + 6) % 7
 
   // Month navigation
-  const todayMonth = today.slice(0, 7); // YYYY-MM
-  const maxMonth = format(addMonths(new Date(`${todayMonth}-01`), 12), 'yyyy-MM');
-  const prevMonthStr = format(subMonths(firstOfMonth, 1), 'yyyy-MM');
-  const nextMonthStr = format(addMonths(firstOfMonth, 1), 'yyyy-MM');
-  const isPrevDisabled = month <= todayMonth;
-  const isNextDisabled = nextMonthStr > maxMonth;
-  const isCurrentMonth = month === todayMonth;
+  const todayMonth = today.slice(0, 7) // YYYY-MM
+  const maxMonth = format(addMonths(new Date(`${todayMonth}-01`), 12), 'yyyy-MM')
+  const prevMonthStr = format(subMonths(firstOfMonth, 1), 'yyyy-MM')
+  const nextMonthStr = format(addMonths(firstOfMonth, 1), 'yyyy-MM')
+  const isPrevDisabled = month <= todayMonth
+  const isNextDisabled = nextMonthStr > maxMonth
+  const isCurrentMonth = month === todayMonth
 
   function navigate(target: string) {
-    setSelectedDate(null);
-    router.push(`?month=${target}`);
+    setSelectedDate(null)
+    router.push(`?month=${target}`)
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
+    <div className="mx-auto max-w-5xl px-3 py-4 sm:px-6 sm:py-8">
       {/* Heading row */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex items-center justify-between">
         {viewMode === 'calendar' && isEditor ? (
-          <h1 className="text-xl font-semibold">
-            {format(firstOfMonth, 'MMMM yyyy')}
-          </h1>
+          <h1 className="text-xl font-semibold">{format(firstOfMonth, 'MMMM yyyy')}</h1>
         ) : (
           <h1 className="text-xl font-semibold">{t('agenda')}</h1>
         )}
@@ -144,14 +135,14 @@ export function HomeClient({
           <div className="flex items-center gap-2">
             {/* View toggle */}
             <div
-              className="flex rounded-md border overflow-hidden"
+              className="flex overflow-hidden rounded-md border"
               role="group"
               aria-label="View mode"
             >
               <Button
                 variant={viewMode === 'calendar' ? 'secondary' : 'ghost'}
                 size="sm"
-                className="rounded-none border-0 h-8 px-3"
+                className="h-8 rounded-none border-0 px-3"
                 onClick={() => changeViewMode('calendar')}
                 aria-pressed={viewMode === 'calendar'}
               >
@@ -160,7 +151,7 @@ export function HomeClient({
               <Button
                 variant={viewMode === 'agenda' ? 'secondary' : 'ghost'}
                 size="sm"
-                className="rounded-none border-0 border-l h-8 px-3"
+                className="h-8 rounded-none border-0 border-l px-3"
                 onClick={() => changeViewMode('agenda')}
                 aria-pressed={viewMode === 'agenda'}
               >
@@ -172,11 +163,7 @@ export function HomeClient({
             {viewMode === 'calendar' && (
               <div className="flex items-center gap-1">
                 {!isCurrentMonth && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate(todayMonth)}
-                  >
+                  <Button variant="ghost" size="sm" onClick={() => navigate(todayMonth)}>
                     {t('today')}
                   </Button>
                 )}
@@ -209,139 +196,151 @@ export function HomeClient({
       {/* Agenda view */}
       {viewMode === 'agenda' && <AgendaView today={today} isEditor={isEditor} />}
 
-      {viewMode === 'calendar' && <div className={cn('flex gap-6', selectedDate && 'lg:gap-8')}>
-        {/* Calendar grid */}
-        <div className="flex-1 min-w-0">
-          {/* Day-of-week header */}
-          <div className="grid grid-cols-7 mb-1" role="row">
-            {DOW_KEYS.map((key) => (
-              <div
-                key={key}
-                role="columnheader"
-                className="text-center text-xs font-medium text-muted-foreground py-1"
-              >
-                {t(key)}
-              </div>
-            ))}
-          </div>
-
-          {/* Day cells */}
-          <div className="grid grid-cols-7 border-l border-t" role="grid" aria-label={format(firstOfMonth, 'MMMM yyyy')}>
-            {/* Leading empty cells */}
-            {Array.from({ length: startPadding }).map((_, i) => (
-              <div
-                key={`pad-${i}`}
-                className="border-r border-b min-h-[60px] sm:min-h-[80px] bg-muted/20"
-              />
-            ))}
+      {viewMode === 'calendar' && (
+        <div className={cn('flex gap-6', selectedDate && 'lg:gap-8')}>
+          {/* Calendar grid */}
+          <div className="min-w-0 flex-1">
+            {/* Day-of-week header */}
+            <div className="mb-1 grid grid-cols-7" role="row">
+              {DOW_KEYS.map((key) => (
+                <div
+                  key={key}
+                  role="columnheader"
+                  className="text-muted-foreground py-1 text-center text-xs font-medium"
+                >
+                  {t(key)}
+                </div>
+              ))}
+            </div>
 
             {/* Day cells */}
-            {Array.from({ length: daysInMonth }).map((_, i) => {
-              const dayNum = i + 1;
-              const dateStr = `${month}-${String(dayNum).padStart(2, '0')}`;
-              const summary = dayMap.get(dateStr);
-              const isToday = dateStr === today;
-              const isSelected = dateStr === selectedDate;
+            <div
+              className="grid grid-cols-7 border-t border-l"
+              role="grid"
+              aria-label={format(firstOfMonth, 'MMMM yyyy')}
+            >
+              {/* Leading empty cells */}
+              {Array.from({ length: startPadding }).map((_, i) => (
+                <div
+                  key={`pad-${i}`}
+                  className="bg-muted/20 min-h-[60px] border-r border-b sm:min-h-[80px]"
+                />
+              ))}
 
-              const cellLabel = [
-                format(parseISO(dateStr), 'EEEE, MMMM d'),
-                ...(summary ? [
-                  summary.golfCount > 0 ? `${summary.golfCount} activities` : '',
-                  showReservations && summary.reservationCount > 0 ? `${summary.reservationCount} reservations` : '',
-                  showBreakfast && summary.breakfastCount > 0 ? `${summary.breakfastCount} breakfast covers` : '',
-                ].filter(Boolean) : []),
-              ].join(', ');
+              {/* Day cells */}
+              {Array.from({ length: daysInMonth }).map((_, i) => {
+                const dayNum = i + 1
+                const dateStr = `${month}-${String(dayNum).padStart(2, '0')}`
+                const summary = dayMap.get(dateStr)
+                const isToday = dateStr === today
+                const isSelected = dateStr === selectedDate
 
-              return (
-                <button
-                  key={dateStr}
-                  onClick={() => handleDayCellClick(dateStr, isSelected)}
-                  aria-pressed={isSelected}
-                  aria-current={isToday ? 'date' : undefined}
-                  aria-label={cellLabel}
-                  className={cn(
-                    'border-r border-b min-h-[60px] sm:min-h-[80px] p-1 sm:p-1.5 text-left transition-colors',
-                    'hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
-                    isSelected && 'bg-accent',
-                    !isSelected && 'bg-background'
-                  )}
-                >
-                  {/* Date number */}
-                  <span
+                const cellLabel = [
+                  format(parseISO(dateStr), 'EEEE, MMMM d'),
+                  ...(summary
+                    ? [
+                        summary.golfCount > 0 ? `${summary.golfCount} activities` : '',
+                        showReservations && summary.reservationCount > 0
+                          ? `${summary.reservationCount} reservations`
+                          : '',
+                        showBreakfast && summary.breakfastCount > 0
+                          ? `${summary.breakfastCount} breakfast covers`
+                          : '',
+                      ].filter(Boolean)
+                    : []),
+                ].join(', ')
+
+                return (
+                  <button
+                    key={dateStr}
+                    onClick={() => handleDayCellClick(dateStr, isSelected)}
+                    aria-pressed={isSelected}
+                    aria-current={isToday ? 'date' : undefined}
+                    aria-label={cellLabel}
                     className={cn(
-                      'flex h-6 w-6 items-center justify-center rounded-full text-sm font-medium mb-1',
-                      isToday && 'bg-primary text-primary-foreground',
-                      !isToday && 'text-foreground'
+                      'min-h-[60px] border-r border-b p-1 text-left transition-colors sm:min-h-[80px] sm:p-1.5',
+                      'hover:bg-accent/50 focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset',
+                      isSelected && 'bg-accent',
+                      !isSelected && 'bg-background'
                     )}
                   >
-                    {dayNum}
-                  </span>
+                    {/* Date number */}
+                    <span
+                      className={cn(
+                        'mb-1 flex h-6 w-6 items-center justify-center rounded-full text-sm font-medium',
+                        isToday && 'bg-primary text-primary-foreground',
+                        !isToday && 'text-foreground'
+                      )}
+                    >
+                      {dayNum}
+                    </span>
 
-                  {/* Summary badges */}
-                  {summary && (
-                    <div className="flex flex-col gap-0.5">
-                      {summary.golfCount > 0 && (
-                        <SummaryPip label={`${summary.golfCount}A`} color="emerald" />
-                      )}
-                      {showReservations && summary.reservationCount > 0 && (
-                        <SummaryPip label={`${summary.reservationCount}R`} color="amber" />
-                      )}
-                      {showBreakfast && summary.breakfastCount > 0 && (
-                        <SummaryPip label={`${summary.breakfastCount}B`} color="blue" />
-                      )}
-                    </div>
-                  )}
-                </button>
-              );
-            })}
+                    {/* Summary badges */}
+                    {summary && (
+                      <div className="flex flex-col gap-0.5">
+                        {summary.golfCount > 0 && (
+                          <SummaryPip label={`${summary.golfCount}A`} color="emerald" />
+                        )}
+                        {showReservations && summary.reservationCount > 0 && (
+                          <SummaryPip label={`${summary.reservationCount}R`} color="amber" />
+                        )}
+                        {showBreakfast && summary.breakfastCount > 0 && (
+                          <SummaryPip label={`${summary.breakfastCount}B`} color="blue" />
+                        )}
+                      </div>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
           </div>
-        </div>
 
-        {/* Day sidebar */}
-        {selectedDate && (
-          <CalendarDaySidebar
-            date={selectedDate}
-            onClose={() => setSelectedDate(null)}
-            onSummaryChanged={handleSummaryChanged}
-          />
-        )}
-      </div>}
+          {/* Day sidebar */}
+          {selectedDate && (
+            <CalendarDaySidebar
+              date={selectedDate}
+              onClose={() => setSelectedDate(null)}
+              onSummaryChanged={handleSummaryChanged}
+            />
+          )}
+        </div>
+      )}
 
       {/* Legend — calendar mode only */}
       {viewMode === 'calendar' && (
-        <div className="mt-4 flex flex-wrap gap-3 text-xs text-muted-foreground">
+        <div className="text-muted-foreground mt-4 flex flex-wrap gap-3 text-xs">
           <LegendItem color="emerald" label={t('legendActivity')} />
           {showReservations && <LegendItem color="amber" label={t('legendReservation')} />}
           {showBreakfast && <LegendItem color="blue" label={t('legendBreakfast')} />}
         </div>
       )}
     </div>
-  );
+  )
 }
 
 // ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
 
-type PipColor = 'emerald' | 'blue' | 'amber';
+type PipColor = 'emerald' | 'blue' | 'amber'
 
 const PIP_CLASSES: Record<PipColor, string> = {
   emerald: 'bg-success/15 text-success',
   blue: 'bg-info/15 text-info',
   amber: 'bg-warning/20 text-warning-foreground',
-};
+}
 
 function SummaryPip({ label, color }: { label: string; color: PipColor }) {
   return (
     <span
       className={cn(
-        'inline-block rounded px-1 py-0.5 text-[10px] font-medium leading-none',
+        'inline-block rounded px-1 py-0.5 text-[10px] leading-none font-medium',
         PIP_CLASSES[color]
       )}
     >
       {label}
     </span>
-  );
+  )
 }
 
 function LegendItem({ color, label }: { color: PipColor; label: string }) {
@@ -352,5 +351,5 @@ function LegendItem({ color, label }: { color: PipColor; label: string }) {
       </span>
       {label}
     </span>
-  );
+  )
 }

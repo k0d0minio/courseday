@@ -1,60 +1,60 @@
-'use client';
+'use client'
 
-import { useState, useTransition } from 'react';
-import { useTranslations } from 'next-intl';
-import Link from 'next/link';
-import { createCourse } from '@/app/actions/courses';
-import { Logo } from '@/components/logo';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { protocol, rootDomain } from '@/lib/utils';
+import { useState, useTransition } from 'react'
+import { useTranslations } from 'next-intl'
+import Link from 'next/link'
+import { createCourse } from '@/app/actions/courses'
+import { Logo } from '@/components/logo'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { protocol, rootDomain } from '@/lib/utils'
 
 function toSlug(value: string) {
   return value
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-    .slice(0, 63);
+    .slice(0, 63)
 }
 
 export function NewTenantForm() {
-  const t = useTranslations('Platform.new');
-  const [isPending, startTransition] = useTransition();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [slug, setSlug] = useState('');
-  const [slugEdited, setSlugEdited] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [createdSlug, setCreatedSlug] = useState<string | null>(null);
+  const t = useTranslations('Platform.new')
+  const [isPending, startTransition] = useTransition()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [name, setName] = useState('')
+  const [slug, setSlug] = useState('')
+  const [slugEdited, setSlugEdited] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [createdSlug, setCreatedSlug] = useState<string | null>(null)
 
   function handleNameChange(value: string) {
-    setName(value);
-    if (!slugEdited) setSlug(toSlug(value));
+    setName(value)
+    if (!slugEdited) setSlug(toSlug(value))
   }
 
   function handleSlugChange(value: string) {
-    setSlug(toSlug(value));
-    setSlugEdited(true);
+    setSlug(toSlug(value))
+    setSlugEdited(true)
   }
 
   function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
+    e.preventDefault()
+    setError(null)
     startTransition(async () => {
-      const result = await createCourse({ email, password, name: name.trim(), slug });
+      const result = await createCourse({ email, password, name: name.trim(), slug })
       if (!result.success) {
-        setError(result.error);
-        return;
+        setError(result.error)
+        return
       }
       if (!result.data.requiresConfirmation) {
-        window.location.href = `${protocol}://${slug}.${rootDomain}/admin/onboarding`;
+        window.location.href = `${protocol}://${slug}.${rootDomain}/admin/onboarding`
       } else {
-        setCreatedSlug(slug);
+        setCreatedSlug(slug)
       }
-    });
+    })
   }
 
   if (createdSlug) {
@@ -67,23 +67,23 @@ export function NewTenantForm() {
             </Link>
           </div>
           <Card>
-            <CardContent className="pt-6 text-center space-y-3">
+            <CardContent className="space-y-3 pt-6 text-center">
               <p className="font-medium">{t('checkEmail')}</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 {t('checkEmailBodyPrefix')} <strong>{email}</strong>. {t('checkEmailBodySuffix')}
               </p>
-              <p className="text-sm text-muted-foreground">
-                {t('checkEmailSpamHint')}
-              </p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">{t('checkEmailSpamHint')}</p>
+              <p className="text-muted-foreground text-sm">
                 {t('checkEmailDomainPrefix')}{' '}
-                <strong>{createdSlug}.{rootDomain}</strong>
+                <strong>
+                  {createdSlug}.{rootDomain}
+                </strong>
               </p>
             </CardContent>
           </Card>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -97,14 +97,12 @@ export function NewTenantForm() {
 
         <Card>
           <CardHeader>
-            <h1 className="text-xl font-semibold tracking-tight text-center">
-              {t('title')}
-            </h1>
+            <h1 className="text-center text-xl font-semibold tracking-tight">{t('title')}</h1>
           </CardHeader>
 
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
-              {error && <p className="text-sm text-destructive">{error}</p>}
+              {error && <p className="text-destructive text-sm">{error}</p>}
 
               <div className="space-y-2">
                 <Label htmlFor="email">{t('emailLabel')}</Label>
@@ -130,7 +128,7 @@ export function NewTenantForm() {
                 />
               </div>
 
-              <div className="border-t pt-4 space-y-4">
+              <div className="space-y-4 border-t pt-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">{t('nameLabel')}</Label>
                   <Input
@@ -144,22 +142,20 @@ export function NewTenantForm() {
 
                 <div className="space-y-2">
                   <Label htmlFor="slug">{t('slugLabel')}</Label>
-                  <div className="flex items-center rounded-md border bg-background focus-within:ring-1 focus-within:ring-ring overflow-hidden">
+                  <div className="bg-background focus-within:ring-ring flex items-center overflow-hidden rounded-md border focus-within:ring-1">
                     <input
                       id="slug"
-                      className="flex-1 min-w-0 px-3 py-2 text-sm bg-transparent outline-none"
+                      className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm outline-none"
                       value={slug}
                       onChange={(e) => handleSlugChange(e.target.value)}
                       placeholder="pierpont"
                       required
                     />
-                    <span className="px-3 py-2 text-sm text-muted-foreground bg-muted border-l whitespace-nowrap">
+                    <span className="text-muted-foreground bg-muted border-l px-3 py-2 text-sm whitespace-nowrap">
                       .{rootDomain}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    {t('slugHint')}
-                  </p>
+                  <p className="text-muted-foreground text-xs">{t('slugHint')}</p>
                 </div>
               </div>
             </CardContent>
@@ -177,5 +173,5 @@ export function NewTenantForm() {
         </Card>
       </div>
     </div>
-  );
+  )
 }

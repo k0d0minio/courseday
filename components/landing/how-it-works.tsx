@@ -1,14 +1,14 @@
-import { getTranslations } from 'next-intl/server';
-import { Eyebrow, SectionShell, SectionTitle } from '@/components/landing/section-shell';
+import { getTranslations } from 'next-intl/server'
+import { Eyebrow, SectionShell, SectionTitle } from '@/components/landing/section-shell'
 
 export async function HowItWorks() {
-  const t = await getTranslations('Platform.landing.howItWorks');
+  const t = await getTranslations('Platform.landing.howItWorks')
 
   const steps = [
     { num: '01', title: t('step1Title'), body: t('step1Body') },
     { num: '02', title: t('step2Title'), body: t('step2Body') },
     { num: '03', title: t('step3Title'), body: t('step3Body') },
-  ];
+  ]
 
   return (
     <SectionShell>
@@ -21,11 +21,11 @@ export async function HowItWorks() {
           <li key={s.num} className="flex flex-col gap-3">
             <span className="font-display text-3xl font-medium text-[var(--brand)]">{s.num}</span>
             <div className="h-px w-10 bg-[var(--brand)]/40" />
-            <h3 className="font-display text-xl font-medium leading-snug">{s.title}</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">{s.body}</p>
+            <h3 className="font-display text-xl leading-snug font-medium">{s.title}</h3>
+            <p className="text-muted-foreground text-sm leading-relaxed">{s.body}</p>
           </li>
         ))}
       </ol>
     </SectionShell>
-  );
+  )
 }

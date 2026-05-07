@@ -1,24 +1,18 @@
-'use client';
+'use client'
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from 'react';
-import type { User } from '@supabase/supabase-js';
-import { getAuthState } from '@/app/actions/auth';
-import type { Role } from '@/lib/membership';
-import type { SuperadminRole } from '@/lib/superadmin-impersonation';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import type { User } from '@supabase/supabase-js'
+import { getAuthState } from '@/app/actions/auth'
+import type { Role } from '@/lib/membership'
+import type { SuperadminRole } from '@/lib/superadmin-impersonation'
 
 type AuthState = {
-  user: User | null;
-  role: Role | null;
-  isEditor: boolean;
-  impersonationRole: SuperadminRole | null;
-  isLoading: boolean;
-};
+  user: User | null
+  role: Role | null
+  isEditor: boolean
+  impersonationRole: SuperadminRole | null
+  isLoading: boolean
+}
 
 const AuthContext = createContext<AuthState>({
   user: null,
@@ -26,7 +20,7 @@ const AuthContext = createContext<AuthState>({
   isEditor: false,
   impersonationRole: null,
   isLoading: true,
-});
+})
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
@@ -35,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isEditor: false,
     impersonationRole: null,
     isLoading: true,
-  });
+  })
 
   useEffect(() => {
     getAuthState().then((result) => {
@@ -45,13 +39,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isEditor: result.isEditor,
         impersonationRole: result.impersonationRole,
         isLoading: false,
-      });
-    });
-  }, []);
+      })
+    })
+  }, [])
 
-  return <AuthContext.Provider value={state}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={state}>{children}</AuthContext.Provider>
 }
 
 export function useAuth(): AuthState {
-  return useContext(AuthContext);
+  return useContext(AuthContext)
 }

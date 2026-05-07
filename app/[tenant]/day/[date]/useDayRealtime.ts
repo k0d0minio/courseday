@@ -1,8 +1,8 @@
-'use client';
+'use client'
 
-import { useEffect, useRef } from 'react';
-import { createSupabaseBrowserClient } from '@/lib/supabase-client';
-import type { DayNote } from '@/app/actions/day-notes';
+import { useEffect, useRef } from 'react'
+import { createSupabaseBrowserClient } from '@/lib/supabase-client'
+import type { DayNote } from '@/app/actions/day-notes'
 import type {
   ActivityWithRelations,
   ActivityChecklistItem,
@@ -11,13 +11,13 @@ import type {
   Shift,
   ShiftWithStaffMember,
   StaffMember,
-} from '@/types/index';
+} from '@/types/index'
 
-type SetActivities = React.Dispatch<React.SetStateAction<ActivityWithRelations[]>>;
-type SetReservations = React.Dispatch<React.SetStateAction<Reservation[]>>;
-type SetBreakfastConfigs = React.Dispatch<React.SetStateAction<BreakfastConfiguration[]>>;
-type SetShifts = React.Dispatch<React.SetStateAction<ShiftWithStaffMember[]>>;
-type SetDayNotes = React.Dispatch<React.SetStateAction<DayNote[]>>;
+type SetActivities = React.Dispatch<React.SetStateAction<ActivityWithRelations[]>>
+type SetReservations = React.Dispatch<React.SetStateAction<Reservation[]>>
+type SetBreakfastConfigs = React.Dispatch<React.SetStateAction<BreakfastConfiguration[]>>
+type SetShifts = React.Dispatch<React.SetStateAction<ShiftWithStaffMember[]>>
+type SetDayNotes = React.Dispatch<React.SetStateAction<DayNote[]>>
 
 /**
  * Subscribes to Postgres changes for the three day-view tables scoped to the
@@ -43,9 +43,9 @@ function shiftWithMemberFromRow(row: Shift, members: StaffMember[]): ShiftWithSt
       role: '',
       active: false,
       created_at: row.created_at,
-    } satisfies StaffMember);
+    } satisfies StaffMember)
 
-  return { ...row, staff_member };
+  return { ...row, staff_member }
 }
 
 export function useDayRealtime(
@@ -58,11 +58,12 @@ export function useDayRealtime(
   subscribeShifts: boolean,
   setDayNotes: SetDayNotes
 ) {
-  const staffRef = useRef(staffMembers);
-  staffRef.current = staffMembers;
+  const staffRef = useRef(staffMembers)
+  // eslint-disable-next-line react-hooks/refs
+  staffRef.current = staffMembers
 
   useEffect(() => {
-    const supabase = createSupabaseBrowserClient();
+    const supabase = createSupabaseBrowserClient()
 
     let channel = supabase
       .channel(`day-${dayId}`)
@@ -77,36 +78,34 @@ export function useDayRealtime(
         },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            const row = payload.new as ActivityWithRelations & { deleted_at?: string | null };
-            if (row.deleted_at) return;
+            const row = payload.new as ActivityWithRelations & { deleted_at?: string | null }
+            if (row.deleted_at) return
             setActivities((prev) => {
-              if (prev.some((a) => a.id === row.id)) return prev;
+              if (prev.some((a) => a.id === row.id)) return prev
               const withoutPendingDuplicate = prev.filter((item) => {
-                if (!item.id.startsWith('pending-')) return true;
+                if (!item.id.startsWith('pending-')) return true
                 return !(
                   item.day_id === row.day_id &&
                   item.title === row.title &&
                   item.start_time === row.start_time
-                );
-              });
+                )
+              })
               return [...withoutPendingDuplicate, row].sort((a, b) =>
                 (a.start_time ?? '').localeCompare(b.start_time ?? '')
-              );
-            });
+              )
+            })
           } else if (payload.eventType === 'UPDATE') {
-            const row = payload.new as ActivityWithRelations & { deleted_at?: string | null };
+            const row = payload.new as ActivityWithRelations & { deleted_at?: string | null }
             if (row.deleted_at) {
-              setActivities((prev) => prev.filter((a) => a.id !== row.id));
-              return;
+              setActivities((prev) => prev.filter((a) => a.id !== row.id))
+              return
             }
             // Merge to preserve joined fields (venue_type, poc, tags) that
             // the realtime payload doesn't include.
-            setActivities((prev) =>
-              prev.map((a) => (a.id === row.id ? { ...a, ...row } : a))
-            );
+            setActivities((prev) => prev.map((a) => (a.id === row.id ? { ...a, ...row } : a)))
           } else if (payload.eventType === 'DELETE') {
-            const id = (payload.old as { id: string }).id;
-            setActivities((prev) => prev.filter((a) => a.id !== id));
+            const id = (payload.old as { id: string }).id
+            setActivities((prev) => prev.filter((a) => a.id !== id))
           }
         }
       )
@@ -121,34 +120,32 @@ export function useDayRealtime(
         },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            const row = payload.new as Reservation & { deleted_at?: string | null };
-            if (row.deleted_at) return;
+            const row = payload.new as Reservation & { deleted_at?: string | null }
+            if (row.deleted_at) return
             setReservations((prev) => {
-              if (prev.some((r) => r.id === row.id)) return prev;
+              if (prev.some((r) => r.id === row.id)) return prev
               const withoutPendingDuplicate = prev.filter((item) => {
-                if (!item.id.startsWith('pending-')) return true;
+                if (!item.id.startsWith('pending-')) return true
                 return !(
                   item.day_id === row.day_id &&
                   item.guest_name === row.guest_name &&
                   item.start_time === row.start_time
-                );
-              });
+                )
+              })
               return [...withoutPendingDuplicate, row].sort((a, b) =>
                 (a.start_time ?? '').localeCompare(b.start_time ?? '')
-              );
-            });
+              )
+            })
           } else if (payload.eventType === 'UPDATE') {
-            const row = payload.new as Reservation & { deleted_at?: string | null };
+            const row = payload.new as Reservation & { deleted_at?: string | null }
             if (row.deleted_at) {
-              setReservations((prev) => prev.filter((r) => r.id !== row.id));
-              return;
+              setReservations((prev) => prev.filter((r) => r.id !== row.id))
+              return
             }
-            setReservations((prev) =>
-              prev.map((r) => (r.id === row.id ? row : r))
-            );
+            setReservations((prev) => prev.map((r) => (r.id === row.id ? row : r)))
           } else if (payload.eventType === 'DELETE') {
-            const id = (payload.old as { id: string }).id;
-            setReservations((prev) => prev.filter((r) => r.id !== id));
+            const id = (payload.old as { id: string }).id
+            setReservations((prev) => prev.filter((r) => r.id !== id))
           }
         }
       )
@@ -163,32 +160,30 @@ export function useDayRealtime(
         },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            const row = payload.new as BreakfastConfiguration & { deleted_at?: string | null };
-            if (row.deleted_at) return;
+            const row = payload.new as BreakfastConfiguration & { deleted_at?: string | null }
+            if (row.deleted_at) return
             setBreakfastConfigs((prev) => {
-              if (prev.some((c) => c.id === row.id)) return prev;
+              if (prev.some((c) => c.id === row.id)) return prev
               const withoutPendingDuplicate = prev.filter((item) => {
-                if (!item.id.startsWith('pending-')) return true;
+                if (!item.id.startsWith('pending-')) return true
                 return !(
                   item.day_id === row.day_id &&
                   item.group_name === row.group_name &&
                   item.start_time === row.start_time
-                );
-              });
-              return [...withoutPendingDuplicate, row];
-            });
+                )
+              })
+              return [...withoutPendingDuplicate, row]
+            })
           } else if (payload.eventType === 'UPDATE') {
-            const row = payload.new as BreakfastConfiguration & { deleted_at?: string | null };
+            const row = payload.new as BreakfastConfiguration & { deleted_at?: string | null }
             if (row.deleted_at) {
-              setBreakfastConfigs((prev) => prev.filter((c) => c.id !== row.id));
-              return;
+              setBreakfastConfigs((prev) => prev.filter((c) => c.id !== row.id))
+              return
             }
-            setBreakfastConfigs((prev) =>
-              prev.map((c) => (c.id === row.id ? row : c))
-            );
+            setBreakfastConfigs((prev) => prev.map((c) => (c.id === row.id ? row : c)))
           } else if (payload.eventType === 'DELETE') {
-            const id = (payload.old as { id: string }).id;
-            setBreakfastConfigs((prev) => prev.filter((c) => c.id !== id));
+            const id = (payload.old as { id: string }).id
+            setBreakfastConfigs((prev) => prev.filter((c) => c.id !== id))
           }
         }
       )
@@ -203,26 +198,24 @@ export function useDayRealtime(
         },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            const row = payload.new as DayNote & { deleted_at?: string | null };
-            if (row.deleted_at) return;
+            const row = payload.new as DayNote & { deleted_at?: string | null }
+            if (row.deleted_at) return
             setDayNotes((prev) => {
-              if (prev.some((n) => n.id === row.id)) return prev;
+              if (prev.some((n) => n.id === row.id)) return prev
               return [...prev, row as DayNote].sort((a, b) =>
                 a.created_at.localeCompare(b.created_at)
-              );
-            });
+              )
+            })
           } else if (payload.eventType === 'UPDATE') {
-            const row = payload.new as DayNote & { deleted_at?: string | null };
+            const row = payload.new as DayNote & { deleted_at?: string | null }
             if (row.deleted_at) {
-              setDayNotes((prev) => prev.filter((n) => n.id !== row.id));
-              return;
+              setDayNotes((prev) => prev.filter((n) => n.id !== row.id))
+              return
             }
-            setDayNotes((prev) =>
-              prev.map((n) => (n.id === row.id ? (row as DayNote) : n))
-            );
+            setDayNotes((prev) => prev.map((n) => (n.id === row.id ? (row as DayNote) : n)))
           } else if (payload.eventType === 'DELETE') {
-            const id = (payload.old as { id: string }).id;
-            setDayNotes((prev) => prev.filter((n) => n.id !== id));
+            const id = (payload.old as { id: string }).id
+            setDayNotes((prev) => prev.filter((n) => n.id !== id))
           }
         }
       )
@@ -237,53 +230,49 @@ export function useDayRealtime(
         },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            const row = payload.new as ActivityChecklistItem;
+            const row = payload.new as ActivityChecklistItem
             setActivities((prev) =>
               prev.map((activity) => {
-                if (activity.id !== row.activity_id) return activity;
-                const checklist = activity.checklist_items ?? [];
-                if (checklist.some((item) => item.id === row.id)) return activity;
+                if (activity.id !== row.activity_id) return activity
+                const checklist = activity.checklist_items ?? []
+                if (checklist.some((item) => item.id === row.id)) return activity
                 return {
                   ...activity,
-                  checklist_items: [...checklist, row].sort(
-                    (a, b) => a.position - b.position
-                  ),
-                };
+                  checklist_items: [...checklist, row].sort((a, b) => a.position - b.position),
+                }
               })
-            );
+            )
           } else if (payload.eventType === 'UPDATE') {
-            const row = payload.new as ActivityChecklistItem;
+            const row = payload.new as ActivityChecklistItem
             setActivities((prev) =>
               prev.map((activity) => {
-                if (activity.id !== row.activity_id) return activity;
-                const checklist = activity.checklist_items ?? [];
+                if (activity.id !== row.activity_id) return activity
+                const checklist = activity.checklist_items ?? []
                 return {
                   ...activity,
-                  checklist_items: checklist.map((item) =>
-                    item.id === row.id ? row : item
-                  ),
-                };
+                  checklist_items: checklist.map((item) => (item.id === row.id ? row : item)),
+                }
               })
-            );
+            )
           } else if (payload.eventType === 'DELETE') {
             const old = payload.old as {
-              id: string;
-              activity_id: string;
-            };
+              id: string
+              activity_id: string
+            }
             setActivities((prev) =>
               prev.map((activity) => {
-                if (activity.id !== old.activity_id) return activity;
+                if (activity.id !== old.activity_id) return activity
                 return {
                   ...activity,
                   checklist_items: (activity.checklist_items ?? []).filter(
                     (item) => item.id !== old.id
                   ),
-                };
+                }
               })
-            );
+            )
           }
         }
-      );
+      )
 
     if (subscribeShifts) {
       channel = channel.on(
@@ -296,16 +285,16 @@ export function useDayRealtime(
         },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            const row = payload.new as Shift;
+            const row = payload.new as Shift
             setShifts((prev) => {
-              if (prev.some((s) => s.id === row.id)) return prev;
-              const withMember = shiftWithMemberFromRow(row, staffRef.current);
+              if (prev.some((s) => s.id === row.id)) return prev
+              const withMember = shiftWithMemberFromRow(row, staffRef.current)
               return [...prev, withMember].sort((a, b) =>
                 (a.start_time ?? '').localeCompare(b.start_time ?? '')
-              );
-            });
+              )
+            })
           } else if (payload.eventType === 'UPDATE') {
-            const row = payload.new as Shift;
+            const row = payload.new as Shift
             setShifts((prev) =>
               prev.map((s) =>
                 s.id === row.id
@@ -318,20 +307,20 @@ export function useDayRealtime(
                     }
                   : s
               )
-            );
+            )
           } else if (payload.eventType === 'DELETE') {
-            const id = (payload.old as { id: string }).id;
-            setShifts((prev) => prev.filter((s) => s.id !== id));
+            const id = (payload.old as { id: string }).id
+            setShifts((prev) => prev.filter((s) => s.id !== id))
           }
         }
-      );
+      )
     }
 
-    channel.subscribe();
+    channel.subscribe()
 
     return () => {
-      supabase.removeChannel(channel);
-    };
+      supabase.removeChannel(channel)
+    }
   }, [
     dayId,
     setActivities,
@@ -340,5 +329,5 @@ export function useDayRealtime(
     setShifts,
     subscribeShifts,
     setDayNotes,
-  ]);
+  ])
 }

@@ -1,45 +1,43 @@
-'use server';
+'use server'
 
-import { createTenantClient } from '@/lib/supabase-server';
-import { getTenantId } from '@/lib/tenant';
-import { getUserRole, requireEditor } from '@/lib/membership';
-import { venueTypeSchema } from '@/lib/venue-type-schema';
-import type { VenueTypeFormData } from '@/lib/venue-type-schema';
-import type { ActionResponse } from '@/types/actions';
-import type { VenueType } from '@/types/index';
+import { createTenantClient } from '@/lib/supabase-server'
+import { getTenantId } from '@/lib/tenant'
+import { getUserRole, requireEditor } from '@/lib/membership'
+import { venueTypeSchema } from '@/lib/venue-type-schema'
+import type { VenueTypeFormData } from '@/lib/venue-type-schema'
+import type { ActionResponse } from '@/types/actions'
+import type { VenueType } from '@/types/index'
 
 function normaliseEmpty(s: string | undefined | null): string | null {
-  return s && s.trim() !== '' ? s.trim() : null;
+  return s && s.trim() !== '' ? s.trim() : null
 }
 
 export async function getAllVenueTypes(): Promise<ActionResponse<VenueType[]>> {
-  const tenantId = await getTenantId();
-  const role = await getUserRole(tenantId);
-  if (!role) return { success: false, error: 'Not authorized.' };
+  const tenantId = await getTenantId()
+  const role = await getUserRole(tenantId)
+  if (!role) return { success: false, error: 'Not authorized.' }
 
-  const { supabase } = await createTenantClient();
+  const { supabase } = await createTenantClient()
   const { data, error } = await supabase
     .from('venue_type')
     .select('*')
     .eq('tenant_id', tenantId)
-    .order('name');
+    .order('name')
 
-  if (error) return { success: false, error: error.message };
-  return { success: true, data: data as VenueType[] };
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: data as VenueType[] }
 }
 
-export async function createVenueType(
-  raw: VenueTypeFormData
-): Promise<ActionResponse<VenueType>> {
-  const parsed = venueTypeSchema.safeParse(raw);
+export async function createVenueType(raw: VenueTypeFormData): Promise<ActionResponse<VenueType>> {
+  const parsed = venueTypeSchema.safeParse(raw)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message };
+    return { success: false, error: parsed.error.issues[0].message }
   }
 
-  const tenantId = await getTenantId();
-  await requireEditor(tenantId);
+  const tenantId = await getTenantId()
+  await requireEditor(tenantId)
 
-  const { supabase } = await createTenantClient();
+  const { supabase } = await createTenantClient()
   const { data, error } = await supabase
     .from('venue_type')
     .insert({
@@ -48,34 +46,32 @@ export async function createVenueType(
       code: normaliseEmpty(parsed.data.code),
     })
     .select()
-    .single();
+    .single()
 
   if (error) {
-    const isDupe = error.code === '23505';
+    const isDupe = error.code === '23505'
     return {
       success: false,
-      error: isDupe
-        ? 'A venue type with that name or code already exists.'
-        : error.message,
-    };
+      error: isDupe ? 'A venue type with that name or code already exists.' : error.message,
+    }
   }
 
-  return { success: true, data: data as VenueType };
+  return { success: true, data: data as VenueType }
 }
 
 export async function updateVenueType(
   id: string,
   raw: VenueTypeFormData
 ): Promise<ActionResponse<VenueType>> {
-  const parsed = venueTypeSchema.safeParse(raw);
+  const parsed = venueTypeSchema.safeParse(raw)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message };
+    return { success: false, error: parsed.error.issues[0].message }
   }
 
-  const tenantId = await getTenantId();
-  await requireEditor(tenantId);
+  const tenantId = await getTenantId()
+  await requireEditor(tenantId)
 
-  const { supabase } = await createTenantClient();
+  const { supabase } = await createTenantClient()
   const { data, error } = await supabase
     .from('venue_type')
     .update({
@@ -86,33 +82,31 @@ export async function updateVenueType(
     .eq('id', id)
     .eq('tenant_id', tenantId)
     .select()
-    .single();
+    .single()
 
   if (error) {
-    const isDupe = error.code === '23505';
+    const isDupe = error.code === '23505'
     return {
       success: false,
-      error: isDupe
-        ? 'A venue type with that name or code already exists.'
-        : error.message,
-    };
+      error: isDupe ? 'A venue type with that name or code already exists.' : error.message,
+    }
   }
 
-  return { success: true, data: data as VenueType };
+  return { success: true, data: data as VenueType }
 }
 
 export async function deleteVenueType(id: string): Promise<ActionResponse> {
-  const tenantId = await getTenantId();
-  await requireEditor(tenantId);
+  const tenantId = await getTenantId()
+  await requireEditor(tenantId)
 
-  const { supabase } = await createTenantClient();
+  const { supabase } = await createTenantClient()
 
   const { error } = await supabase
     .from('venue_type')
     .delete()
     .eq('id', id)
-    .eq('tenant_id', tenantId);
+    .eq('tenant_id', tenantId)
 
-  if (error) return { success: false, error: error.message };
-  return { success: true, data: undefined };
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: undefined }
 }

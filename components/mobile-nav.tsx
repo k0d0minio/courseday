@@ -1,10 +1,10 @@
-'use client';
+'use client'
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Home, CalendarDays, Settings } from 'lucide-react';
-import { useTranslations } from 'next-intl';
-import { cn } from '@/lib/utils';
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { Home, CalendarDays, Settings } from 'lucide-react'
+import { useTranslations } from 'next-intl'
+import { cn } from '@/lib/utils'
 import {
   Drawer,
   DrawerTrigger,
@@ -12,25 +12,25 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerClose,
-} from '@/components/ui/drawer';
-import { getVisibleSettingsRoutes } from '@/components/settings-dropdown';
-import { useFeatureFlag } from '@/lib/feature-flags-context';
+} from '@/components/ui/drawer'
+import { getVisibleSettingsRoutes } from '@/components/settings-dropdown'
+import { useFeatureFlag } from '@/lib/feature-flags-context'
 
 interface MobileNavProps {
-  today: string;
-  isEditor: boolean;
+  today: string
+  isEditor: boolean
 }
 
 export function MobileNav({ today, isEditor }: MobileNavProps) {
-  const pathname = usePathname();
-  const navT = useTranslations('Tenant.nav');
-  const settingsT = useTranslations('Tenant.settings');
-  const showChecklists = useFeatureFlag('checklists');
-  const showStaffSchedule = useFeatureFlag('staff_schedule');
+  const pathname = usePathname()
+  const navT = useTranslations('Tenant.nav')
+  const settingsT = useTranslations('Tenant.settings')
+  const showChecklists = useFeatureFlag('checklists')
+  const showStaffSchedule = useFeatureFlag('staff_schedule')
   const settingsRoutes = getVisibleSettingsRoutes({
     checklists: showChecklists,
     staffSchedule: showStaffSchedule,
-  });
+  })
 
   const navItems = [
     { href: '/', label: navT('home'), icon: Home, active: pathname === '/' },
@@ -40,14 +40,14 @@ export function MobileNav({ today, isEditor }: MobileNavProps) {
       icon: CalendarDays,
       active: pathname.startsWith('/day/'),
     },
-  ];
+  ]
 
-  const settingsActive = pathname.startsWith('/admin/');
+  const settingsActive = pathname.startsWith('/admin/')
 
   return (
     <nav
       aria-label="Main navigation"
-      className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background sm:hidden"
+      className="bg-background fixed right-0 bottom-0 left-0 z-50 border-t sm:hidden"
     >
       <div className="flex h-16">
         {navItems.map(({ href, label, icon: Icon, active }) => (
@@ -87,12 +87,12 @@ export function MobileNav({ today, isEditor }: MobileNavProps) {
               <DrawerHeader>
                 <DrawerTitle>{settingsT('title')}</DrawerTitle>
               </DrawerHeader>
-              <div className="px-4 pb-8 flex flex-col gap-1">
+              <div className="flex flex-col gap-1 px-4 pb-8">
                 {settingsRoutes.map(({ href, labelKey }) => (
                   <DrawerClose key={href} asChild>
                     <Link
                       href={href}
-                      className="flex items-center rounded-md px-3 py-3 text-sm hover:bg-accent transition-colors"
+                      className="hover:bg-accent flex items-center rounded-md px-3 py-3 text-sm transition-colors"
                     >
                       {settingsT(labelKey as Parameters<typeof settingsT>[0])}
                     </Link>
@@ -104,5 +104,5 @@ export function MobileNav({ today, isEditor }: MobileNavProps) {
         )}
       </div>
     </nav>
-  );
+  )
 }

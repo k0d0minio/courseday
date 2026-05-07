@@ -1,48 +1,48 @@
-'use client';
+'use client'
 
-import { useTransition } from 'react';
-import { useTranslations } from 'next-intl';
-import { useLocale } from 'next-intl';
-import { toast } from 'sonner';
-import { useTenant } from '@/lib/tenant-context';
-import { updateTenant } from '@/app/actions/tenants';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import { useTransition } from 'react'
+import { useTranslations } from 'next-intl'
+import { useLocale } from 'next-intl'
+import { toast } from 'sonner'
+import { useTenant } from '@/lib/tenant-context'
+import { updateTenant } from '@/app/actions/tenants'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { useState } from 'react';
+} from '@/components/ui/select'
+import { useState } from 'react'
 
 export function LanguageSettings() {
-  const t = useTranslations('Tenant.settings');
-  const { tenantId } = useTenant();
-  const currentLocale = useLocale();
+  const t = useTranslations('Tenant.settings')
+  const { tenantId } = useTenant()
+  const currentLocale = useLocale()
 
-  const [selected, setSelected] = useState(currentLocale);
-  const [isPending, startTransition] = useTransition();
+  const [selected, setSelected] = useState(currentLocale)
+  const [isPending, startTransition] = useTransition()
 
   function handleSave() {
     startTransition(async () => {
-      const result = await updateTenant(tenantId, { language: selected });
+      const result = await updateTenant(tenantId, { language: selected })
       if (!result.success) {
-        toast.error(result.error);
-        return;
+        toast.error(result.error)
+        return
       }
-      toast.success(t('languageSaved'));
+      toast.success(t('languageSaved'))
       // Reload to apply new language from updated Redis/headers
-      window.location.reload();
-    });
+      window.location.reload()
+    })
   }
 
   return (
-    <div className="space-y-6 max-w-sm">
+    <div className="max-w-sm space-y-6">
       <div>
         <h2 className="text-base font-semibold">{t('languageTitle')}</h2>
-        <p className="text-sm text-muted-foreground mt-1">{t('languageDescription')}</p>
+        <p className="text-muted-foreground mt-1 text-sm">{t('languageDescription')}</p>
       </div>
 
       <div className="space-y-2">
@@ -64,5 +64,5 @@ export function LanguageSettings() {
         {isPending ? t('savingLanguage') : t('saveLanguage')}
       </Button>
     </div>
-  );
+  )
 }

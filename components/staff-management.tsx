@@ -1,36 +1,31 @@
-'use client';
+'use client'
 
-import { useEffect, useState, useTransition } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { toast } from 'sonner';
-import { useTranslations } from 'next-intl';
-import { Pencil, Trash2, Plus } from 'lucide-react';
+import { useEffect, useState, useTransition } from 'react'
+import { useForm, Controller } from 'react-hook-form'
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
+import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
+import { Pencil, Trash2, Plus } from 'lucide-react'
 import {
   getAllStaffMembers,
   createStaffMember,
   updateStaffMember,
   deleteStaffMember,
-} from '@/app/actions/staff';
+} from '@/app/actions/staff'
 import {
   getAllStaffRoles,
   createStaffRole,
   updateStaffRole,
   deleteStaffRole,
-} from '@/app/actions/staff-role';
-import { staffMemberSchema, type StaffMemberFormData } from '@/lib/staff-schema';
-import { staffRoleSchema, type StaffRoleFormData } from '@/lib/staff-role-schema';
-import type { StaffMember, StaffRole } from '@/types/index';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+} from '@/app/actions/staff-role'
+import { staffMemberSchema, type StaffMemberFormData } from '@/lib/staff-schema'
+import { staffRoleSchema, type StaffRoleFormData } from '@/lib/staff-role-schema'
+import type { StaffMember, StaffRole } from '@/types/index'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,7 +35,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from '@/components/ui/alert-dialog'
 import {
   Table,
   TableBody,
@@ -48,7 +43,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from '@/components/ui/table'
 
 function StaffRoleDialog({
   open,
@@ -56,13 +51,13 @@ function StaffRoleDialog({
   initial,
   onSaved,
 }: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  initial: StaffRole | null;
-  onSaved: (r: StaffRole) => void;
+  open: boolean
+  onOpenChange: (v: boolean) => void
+  initial: StaffRole | null
+  onSaved: (r: StaffRole) => void
 }) {
-  const t = useTranslations('Tenant.staff.settings.roleDialog');
-  const [isPending, startTransition] = useTransition();
+  const t = useTranslations('Tenant.staff.settings.roleDialog')
+  const [isPending, startTransition] = useTransition()
   const {
     register,
     handleSubmit,
@@ -71,27 +66,25 @@ function StaffRoleDialog({
   } = useForm<StaffRoleFormData>({
     resolver: standardSchemaResolver(staffRoleSchema),
     defaultValues: { name: '' },
-  });
+  })
 
   useEffect(() => {
-    reset(initial ? { name: initial.name } : { name: '' });
-  }, [initial, open, reset]);
+    reset(initial ? { name: initial.name } : { name: '' })
+  }, [initial, open, reset])
 
   function onSubmit(data: StaffRoleFormData) {
     startTransition(async () => {
-      const result = initial
-        ? await updateStaffRole(initial.id, data)
-        : await createStaffRole(data);
+      const result = initial ? await updateStaffRole(initial.id, data) : await createStaffRole(data)
 
       if (!result.success) {
-        toast.error(result.error);
-        return;
+        toast.error(result.error)
+        return
       }
 
-      toast.success(initial ? t('updated') : t('created'));
-      onSaved(result.data);
-      onOpenChange(false);
-    });
+      toast.success(initial ? t('updated') : t('created'))
+      onSaved(result.data)
+      onOpenChange(false)
+    })
   }
 
   return (
@@ -104,9 +97,7 @@ function StaffRoleDialog({
           <div className="space-y-2">
             <Label htmlFor="sr-name">{t('nameLabel')}</Label>
             <Input id="sr-name" {...register('name')} />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
+            {errors.name && <p className="text-destructive text-sm">{errors.name.message}</p>}
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
@@ -119,7 +110,7 @@ function StaffRoleDialog({
         </form>
       </DialogContent>
     </Dialog>
-  );
+  )
 }
 
 function StaffMemberDialog({
@@ -129,15 +120,15 @@ function StaffMemberDialog({
   rolePresets,
   onSaved,
 }: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  initial: StaffMember | null;
-  rolePresets: StaffRole[];
-  onSaved: (m: StaffMember) => void;
+  open: boolean
+  onOpenChange: (v: boolean) => void
+  initial: StaffMember | null
+  rolePresets: StaffRole[]
+  onSaved: (m: StaffMember) => void
 }) {
-  const t = useTranslations('Tenant.staff.settings.memberDialog');
-  const [isPending, startTransition] = useTransition();
-  const datalistId = 'staff-settings-role-presets';
+  const t = useTranslations('Tenant.staff.settings.memberDialog')
+  const [isPending, startTransition] = useTransition()
+  const datalistId = 'staff-settings-role-presets'
   const {
     register,
     handleSubmit,
@@ -147,31 +138,31 @@ function StaffMemberDialog({
   } = useForm<StaffMemberFormData>({
     resolver: standardSchemaResolver(staffMemberSchema),
     defaultValues: { name: '', role: '', active: true },
-  });
+  })
 
   useEffect(() => {
     reset(
       initial
         ? { name: initial.name, role: initial.role ?? '', active: initial.active }
         : { name: '', role: '', active: true }
-    );
-  }, [initial, open, reset]);
+    )
+  }, [initial, open, reset])
 
   function onSubmit(data: StaffMemberFormData) {
     startTransition(async () => {
       const result = initial
         ? await updateStaffMember(initial.id, data)
-        : await createStaffMember(data);
+        : await createStaffMember(data)
 
       if (!result.success) {
-        toast.error(result.error);
-        return;
+        toast.error(result.error)
+        return
       }
 
-      toast.success(initial ? t('updated') : t('created'));
-      onSaved(result.data);
-      onOpenChange(false);
-    });
+      toast.success(initial ? t('updated') : t('created'))
+      onSaved(result.data)
+      onOpenChange(false)
+    })
   }
 
   return (
@@ -184,9 +175,7 @@ function StaffMemberDialog({
           <div className="space-y-2">
             <Label htmlFor="sm-name">{t('nameLabel')}</Label>
             <Input id="sm-name" {...register('name')} />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
+            {errors.name && <p className="text-destructive text-sm">{errors.name.message}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="sm-role">{t('roleLabel')}</Label>
@@ -224,70 +213,70 @@ function StaffMemberDialog({
         </form>
       </DialogContent>
     </Dialog>
-  );
+  )
 }
 
 export function StaffManagement() {
-  const t = useTranslations('Tenant.staff.settings');
-  const [members, setMembers] = useState<StaffMember[]>([]);
-  const [roles, setRoles] = useState<StaffRole[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [roleDialogOpen, setRoleDialogOpen] = useState(false);
-  const [editRole, setEditRole] = useState<StaffRole | null>(null);
-  const [memberDialogOpen, setMemberDialogOpen] = useState(false);
-  const [editMember, setEditMember] = useState<StaffMember | null>(null);
-  const [deleteRoleTarget, setDeleteRoleTarget] = useState<StaffRole | null>(null);
-  const [deleteMemberTarget, setDeleteMemberTarget] = useState<StaffMember | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const t = useTranslations('Tenant.staff.settings')
+  const [members, setMembers] = useState<StaffMember[]>([])
+  const [roles, setRoles] = useState<StaffRole[]>([])
+  const [loading, setLoading] = useState(true)
+  const [roleDialogOpen, setRoleDialogOpen] = useState(false)
+  const [editRole, setEditRole] = useState<StaffRole | null>(null)
+  const [memberDialogOpen, setMemberDialogOpen] = useState(false)
+  const [editMember, setEditMember] = useState<StaffMember | null>(null)
+  const [deleteRoleTarget, setDeleteRoleTarget] = useState<StaffRole | null>(null)
+  const [deleteMemberTarget, setDeleteMemberTarget] = useState<StaffMember | null>(null)
+  const [isPending, startTransition] = useTransition()
 
   async function refresh() {
-    const [mr, rr] = await Promise.all([getAllStaffMembers(), getAllStaffRoles()]);
-    if (mr.success && mr.data) setMembers(mr.data);
-    if (rr.success && rr.data) setRoles(rr.data);
+    const [mr, rr] = await Promise.all([getAllStaffMembers(), getAllStaffRoles()])
+    if (mr.success && mr.data) setMembers(mr.data)
+    if (rr.success && rr.data) setRoles(rr.data)
   }
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      await refresh();
-      if (!cancelled) setLoading(false);
-    })();
+    let cancelled = false
+    ;(async () => {
+      setLoading(true)
+      await refresh()
+      if (!cancelled) setLoading(false)
+    })()
     return () => {
-      cancelled = true;
-    };
-  }, []);
+      cancelled = true
+    }
+  }, [])
 
   function handleDeleteRole() {
-    if (!deleteRoleTarget) return;
+    if (!deleteRoleTarget) return
     startTransition(async () => {
-      const result = await deleteStaffRole(deleteRoleTarget.id);
+      const result = await deleteStaffRole(deleteRoleTarget.id)
       if (!result.success) {
-        toast.error(result.error);
-        return;
+        toast.error(result.error)
+        return
       }
-      setRoles((prev) => prev.filter((r) => r.id !== deleteRoleTarget.id));
-      toast.success(t('roleDeleted'));
-      setDeleteRoleTarget(null);
-    });
+      setRoles((prev) => prev.filter((r) => r.id !== deleteRoleTarget.id))
+      toast.success(t('roleDeleted'))
+      setDeleteRoleTarget(null)
+    })
   }
 
   function handleDeleteMember() {
-    if (!deleteMemberTarget) return;
+    if (!deleteMemberTarget) return
     startTransition(async () => {
-      const result = await deleteStaffMember(deleteMemberTarget.id);
+      const result = await deleteStaffMember(deleteMemberTarget.id)
       if (!result.success) {
-        toast.error(result.error);
-        return;
+        toast.error(result.error)
+        return
       }
-      setMembers((prev) => prev.filter((m) => m.id !== deleteMemberTarget.id));
-      toast.success(t('memberDeleted'));
-      setDeleteMemberTarget(null);
-    });
+      setMembers((prev) => prev.filter((m) => m.id !== deleteMemberTarget.id))
+      toast.success(t('memberDeleted'))
+      setDeleteMemberTarget(null)
+    })
   }
 
   if (loading) {
-    return <p className="text-sm text-muted-foreground">{t('loading')}</p>;
+    return <p className="text-muted-foreground text-sm">{t('loading')}</p>
   }
 
   return (
@@ -298,17 +287,17 @@ export function StaffManagement() {
           <Button
             size="sm"
             onClick={() => {
-              setEditRole(null);
-              setRoleDialogOpen(true);
+              setEditRole(null)
+              setRoleDialogOpen(true)
             }}
           >
-            <Plus className="w-4 h-4 mr-1" />
+            <Plus className="mr-1 h-4 w-4" />
             {t('addRole')}
           </Button>
         </div>
-        <p className="text-sm text-muted-foreground">{t('rolesDescription')}</p>
+        <p className="text-muted-foreground text-sm">{t('rolesDescription')}</p>
         {roles.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t('noRoles')}</p>
+          <p className="text-muted-foreground text-sm">{t('noRoles')}</p>
         ) : (
           <Table>
             <TableHeader>
@@ -327,8 +316,8 @@ export function StaffManagement() {
                       size="icon"
                       className="h-8 w-8"
                       onClick={() => {
-                        setEditRole(r);
-                        setRoleDialogOpen(true);
+                        setEditRole(r)
+                        setRoleDialogOpen(true)
                       }}
                       aria-label={t('editRoleAria')}
                     >
@@ -337,7 +326,7 @@ export function StaffManagement() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-destructive"
+                      className="text-destructive h-8 w-8"
                       onClick={() => setDeleteRoleTarget(r)}
                       aria-label={t('deleteRoleAria')}
                     >
@@ -357,16 +346,16 @@ export function StaffManagement() {
           <Button
             size="sm"
             onClick={() => {
-              setEditMember(null);
-              setMemberDialogOpen(true);
+              setEditMember(null)
+              setMemberDialogOpen(true)
             }}
           >
-            <Plus className="w-4 h-4 mr-1" />
+            <Plus className="mr-1 h-4 w-4" />
             {t('addMember')}
           </Button>
         </div>
         {members.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t('noMembers')}</p>
+          <p className="text-muted-foreground text-sm">{t('noMembers')}</p>
         ) : (
           <Table>
             <TableHeader>
@@ -389,8 +378,8 @@ export function StaffManagement() {
                       size="icon"
                       className="h-8 w-8"
                       onClick={() => {
-                        setEditMember(m);
-                        setMemberDialogOpen(true);
+                        setEditMember(m)
+                        setMemberDialogOpen(true)
                       }}
                       aria-label={t('editMemberAria')}
                     >
@@ -399,7 +388,7 @@ export function StaffManagement() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-destructive"
+                      className="text-destructive h-8 w-8"
                       onClick={() => setDeleteMemberTarget(m)}
                       aria-label={t('deleteMemberAria')}
                     >
@@ -419,14 +408,14 @@ export function StaffManagement() {
         initial={editRole}
         onSaved={(r) => {
           setRoles((prev) => {
-            const idx = prev.findIndex((x) => x.id === r.id);
+            const idx = prev.findIndex((x) => x.id === r.id)
             if (idx >= 0) {
-              const next = [...prev];
-              next[idx] = r;
-              return next.sort((a, b) => a.name.localeCompare(b.name));
+              const next = [...prev]
+              next[idx] = r
+              return next.sort((a, b) => a.name.localeCompare(b.name))
             }
-            return [...prev, r].sort((a, b) => a.name.localeCompare(b.name));
-          });
+            return [...prev, r].sort((a, b) => a.name.localeCompare(b.name))
+          })
         }}
       />
 
@@ -437,21 +426,18 @@ export function StaffManagement() {
         rolePresets={roles}
         onSaved={(m) => {
           setMembers((prev) => {
-            const idx = prev.findIndex((x) => x.id === m.id);
+            const idx = prev.findIndex((x) => x.id === m.id)
             if (idx >= 0) {
-              const next = [...prev];
-              next[idx] = m;
-              return next;
+              const next = [...prev]
+              next[idx] = m
+              return next
             }
-            return [...prev, m];
-          });
+            return [...prev, m]
+          })
         }}
       />
 
-      <AlertDialog
-        open={!!deleteRoleTarget}
-        onOpenChange={(o) => !o && setDeleteRoleTarget(null)}
-      >
+      <AlertDialog open={!!deleteRoleTarget} onOpenChange={(o) => !o && setDeleteRoleTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t('deleteRoleTitle')}</AlertDialogTitle>
@@ -484,5 +470,5 @@ export function StaffManagement() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  );
+  )
 }

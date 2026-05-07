@@ -12,9 +12,69 @@ Caveman mode is always enabled in this project. Follow all rules from the `cavem
 pnpm dev        # Start dev server with Turbopack on localhost:3000
 pnpm build      # Production build
 pnpm start      # Start production server
+pnpm test       # Unit tests in watch mode (Vitest)
+pnpm test:run   # Unit tests single run
+pnpm test:coverage  # Unit tests with coverage report
+pnpm test:e2e   # E2E tests (Playwright — requires local Supabase + dev server)
+pnpm test:e2e:ui    # Playwright UI mode
+pnpm lint       # ESLint via next lint
+pnpm lint:fix   # Auto-fix lint errors
+pnpm format     # Prettier format all files
+pnpm format:check   # Check formatting without writing
+pnpm db:types   # Re-generate types/supabase.ts from linked Supabase project
 ```
 
-No test runner is configured.
+## Code Quality
+
+Pre-commit hook (husky + lint-staged) runs automatically on `git commit`. It formats staged files with Prettier and lints with ESLint (`--max-warnings=0` — warnings become errors at commit time).
+
+ESLint config: `eslint.config.mjs` — extends `next/core-web-vitals`, adds TypeScript-aware rules. `types/supabase.ts` is excluded (generated file).
+
+Prettier config: `.prettierrc` — no semis, single quotes, 100-char width, Tailwind class sorting.
+
+## Testing
+
+### Unit Tests (Vitest)
+
+- Location: `tests/lib/`, `tests/actions/`, `tests/quick-add-normalize.test.ts`, `lib/*.test.ts`
+- No running DB required — all tests mock Supabase, Redis, and Next.js internals
+- Mock pattern: `vi.mock('@/lib/supabase-server', () => ({ createSupabaseServerClient: vi.fn() }))`
+- Setup file: `tests/setup.ts` (imports `@testing-library/jest-dom`)
+- Config: `vitest.config.ts` — jsdom environment, globals enabled, alias `@/` → root
+
+### E2E Tests (Playwright)
+
+- Location: `tests/e2e/` — specs: `auth.spec.ts`, `day.spec.ts`, `routing.spec.ts`, `settings.spec.ts`
+- Requires: local Supabase running (`supabase start`), dev server running (`pnpm dev`)
+- Uses Supabase service role key to create/teardown test tenants — never run against production
+- E2E is excluded from CI (needs full local stack); run locally before merging auth/routing changes
+
+## Database Migrations
+
+- Location: `supabase/migrations/` — 35 migrations, numbered `00001`–`00035`
+- Naming convention: `NNNNN_description_words.sql` (5 zero-padded digits, lowercase, underscores)
+- Create new: `supabase migration new description_words` (auto-generates correct filename)
+- Apply locally: `supabase db reset` (replays all migrations + seed.sql)
+- Apply to production: `supabase db push --linked` — manual only, never from CI
+- After schema changes: run `pnpm db:types` to regenerate `types/supabase.ts`
+- CI validates naming convention + duplicate numbers on every PR touching migration files
+
+## CI/CD
+
+GitHub Actions (`.github/workflows/`):
+
+| Job               | Trigger                              | What it does                                |
+| ----------------- | ------------------------------------ | ------------------------------------------- |
+| `typecheck`       | every PR + push to main              | `tsc --noEmit`                              |
+| `lint`            | every PR + push to main              | `next lint` + `prettier --check`            |
+| `unit-tests`      | every PR + push to main              | `vitest run` (dummy env vars, no DB)        |
+| `build`           | every PR + push to main              | `next build` (after typecheck + unit-tests) |
+| `migration-check` | PR touching `supabase/migrations/**` | validates naming + no duplicates            |
+
+Vercel auto-deploys on every push via Git integration (preview for branches, production for `main`).
+
+**Required GitHub Secrets:** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+Set at: `github.com/k0d0minio/courseday/settings/secrets/actions`
 
 ## Environment Variables
 
@@ -32,7 +92,6 @@ CRON_SECRET=long_random_string                  # Vercel Cron: Authorization: Be
 RESEND_API_KEY=...                              # morning brief + demo emails; RESEND_FROM_EMAIL optional
 AI_GATEWAY_API_KEY=...                          # LLM daily brief (editor button + morning email)
 ```
-
 
 ## Architecture
 
@@ -52,6 +111,7 @@ This is a **multi-tenant golf course operations platform**. Each tenant (venue) 
 `middleware.ts` intercepts all requests and determines whether the host is the root domain or a tenant subdomain. Tenant requests are resolved via **Upstash Redis** (`subdomain:{slug}` keys → `TenantRedisData`) and internally rewritten to `/{slug}{pathname}` — that is, `app/[tenant]/` routes. The URL never changes in the browser.
 
 The middleware handles three environments:
+
 - **Local**: `tenant.localhost:3000`
 - **Production**: `tenant.yourdomain.com`
 - **Vercel preview**: `tenant---branch.vercel.app`
@@ -66,21 +126,22 @@ Admin routes (`/admin`) are on the root domain only.
 
 ### Route Structure
 
-| Route | Purpose |
-|-------|---------|
-| `/` | Platform landing page |
-| `/new` | Create a new venue (tenant sign-up) |
-| `/auth/sign-in` | Platform-level sign-in |
-| `/admin` | Superadmin dashboard (no auth yet — see T-16) |
-| `/[tenant]/` | Tenant home — monthly calendar + agenda view |
-| `/[tenant]/day/[date]` | Day view — activities, reservations, breakfasts |
-| `/[tenant]/auth/sign-in` | Tenant-scoped sign-in |
-| `/[tenant]/auth/sign-up` | Tenant-scoped sign-up |
+| Route                      | Purpose                                             |
+| -------------------------- | --------------------------------------------------- |
+| `/`                        | Platform landing page                               |
+| `/new`                     | Create a new venue (tenant sign-up)                 |
+| `/auth/sign-in`            | Platform-level sign-in                              |
+| `/admin`                   | Superadmin dashboard (no auth yet — see T-16)       |
+| `/[tenant]/`               | Tenant home — monthly calendar + agenda view        |
+| `/[tenant]/day/[date]`     | Day view — activities, reservations, breakfasts     |
+| `/[tenant]/auth/sign-in`   | Tenant-scoped sign-in                               |
+| `/[tenant]/auth/sign-up`   | Tenant-scoped sign-up                               |
 | `/[tenant]/admin/settings` | Tenant settings (POCs, venue types, tags, language) |
 
 ### Server Actions
 
 All server actions live under `app/actions/`:
+
 - `activities.ts` — CRUD for activities and recurrence groups
 - `reservations.ts` — CRUD for reservations
 - `breakfast.ts` — CRUD for breakfast configurations
@@ -89,11 +150,29 @@ All server actions live under `app/actions/`:
 - `activity-tags.ts` — CRUD for activity tags
 - `tenants.ts` — `createTenant`, `getTenantBySlug`, `updateTenant`, `deleteTenant`
 - `auth.ts` — `getUser`, sign-in/sign-up helpers
+- `auth-confirm.ts` — email confirmation flow
 - `agenda.ts` — `getDaySummaries` (aggregated counts for calendar/agenda views)
+- `days.ts` — day record management
+- `day-notes.ts` — day notes CRUD
+- `day-view-receipts.ts` — handover receipts + soft deletes
+- `checklists.ts` — checklist template CRUD with nested items
+- `shifts.ts` — staff shift CRUD
+- `staff.ts` — staff member CRUD
+- `staff-role.ts` — staff role CRUD
+- `schedule-templates.ts` — copy-day template management
+- `weather.ts` — weather data fetch
+- `daily-brief.ts` — LLM daily brief generation
+- `quick-add.ts` — AI text parsing for quick activity creation
+- `feature-flags.ts` — per-tenant feature flag toggles (superadmin)
+- `feature-requests.ts` — user feedback submission
+- `memberships.ts` — team membership management
+- `notifications.ts` — user notification management
+- `courses.ts` — golf course data
 
 ### UI Components
 
 `components/ui/` contains shadcn/ui primitives. Key application components:
+
 - `HomeClient` — calendar + agenda view toggle with localStorage preference
 - `AgendaView` — scrollable upcoming-days list
 - `CalendarDaySidebar` — sidebar shown when a calendar day is selected
@@ -105,25 +184,26 @@ All server actions live under `app/actions/`:
 
 ### i18n
 
-`next-intl` is used for all user-visible strings. Translation files are at `messages/en.json` and `messages/fr.json`. Tenant language is stored in the `tenants.language` column and passed via the `x-tenant-language` request header by middleware. Namespace structure: `Platform.*` (root domain) and `Tenant.*` (tenant app).
+`next-intl` is used for all user-visible strings. Translation files are at `messages/en.json`, `messages/fr.json`, `messages/de.json`, and `messages/es.json`. Tenant language is stored in the `tenants.language` column and passed via the `x-tenant-language` request header by middleware. Namespace structure: `Platform.*` (root domain) and `Tenant.*` (tenant app).
 
 ### Feature Flags
 
 Per-tenant feature toggles controlled by superadmin via `app/admin/dashboard.tsx`. Source of truth: `lib/feature-flags.ts` (KNOWN_FLAGS, labels, descriptions). Stored in `feature_flags` table; missing rows default to **enabled**.
 
-| Flag Key | Label | What it gates | Default |
-|----------|-------|---------------|---------|
-| `reservations` | Reservations | Reservation CRUD, reservation counts/pips on calendar/agenda/sidebar, reservation sections on day views, DaySummaryCard column. Server actions guarded. | true |
-| `breakfast_config` | Breakfast Config | Breakfast CRUD, breakfast counts/pips on calendar/agenda/sidebar, breakfast sections on day views, DaySummaryCard column. Server actions guarded. | true |
-| `weather_reporting` | Weather Reporting | WeatherCard on day views, weather data fetch on day page. | true |
-| `checklists` | Checklists | Checklists settings page, settings dropdown/mobile-nav/command palette link. | true |
-| `staff_schedule` | Staff Schedule | Staff schedule section on day views, staff settings page, shift data fetch, copy-day shift option. | true |
-| `daily_brief` | Daily Brief | DailyBriefCard on day views (editor + viewer), `generateDailyBrief` server action, morning brief cron email (skips tenant when off), daily brief data fetch on day page. | true |
+| Flag Key            | Label             | What it gates                                                                                                                                                            | Default |
+| ------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- |
+| `reservations`      | Reservations      | Reservation CRUD, reservation counts/pips on calendar/agenda/sidebar, reservation sections on day views, DaySummaryCard column. Server actions guarded.                  | true    |
+| `breakfast_config`  | Breakfast Config  | Breakfast CRUD, breakfast counts/pips on calendar/agenda/sidebar, breakfast sections on day views, DaySummaryCard column. Server actions guarded.                        | true    |
+| `weather_reporting` | Weather Reporting | WeatherCard on day views, weather data fetch on day page.                                                                                                                | true    |
+| `checklists`        | Checklists        | Checklists settings page, settings dropdown/mobile-nav/command palette link.                                                                                             | true    |
+| `staff_schedule`    | Staff Schedule    | Staff schedule section on day views, staff settings page, shift data fetch, copy-day shift option.                                                                       | true    |
+| `daily_brief`       | Daily Brief       | DailyBriefCard on day views (editor + viewer), `generateDailyBrief` server action, morning brief cron email (skips tenant when off), daily brief data fetch on day page. | true    |
 
 **Always-on modules** (no flag, core functionality):
 Activities, day notes, notifications, templates, feedback, branding, members, onboarding, PWA, realtime, language settings.
 
 **Enforcement layers:**
+
 - **UI**: Components use `useFeatureFlag()` from `lib/feature-flags-context.tsx`. Hidden from settings-dropdown, mobile-nav, command-palette, calendar pips, agenda counts, day view sections, DaySummaryCard columns.
 - **Server pages**: `app/[tenant]/page.tsx` and `app/[tenant]/day/[date]/page.tsx` skip DB queries for disabled features.
 - **Server actions**: Mutation actions (`create*`, `update*`, `delete*`) return error when feature is disabled. Read actions are not guarded (harmless, may be needed for admin).

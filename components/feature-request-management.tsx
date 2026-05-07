@@ -1,22 +1,19 @@
-'use client';
+'use client'
 
-import { useEffect, useState, useTransition } from 'react';
-import { useForm } from 'react-hook-form';
-import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { toast } from 'sonner';
-import { useTranslations } from 'next-intl';
-import { createFeatureRequest, getTenantFeatureRequests } from '@/app/actions/feature-requests';
-import type { FeatureRequest, FeatureRequestStatus } from '@/app/actions/feature-requests';
-import {
-  featureRequestSchema,
-  type FeatureRequestFormData,
-} from '@/lib/feature-request-schema';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { useEffect, useState, useTransition } from 'react'
+import { useForm } from 'react-hook-form'
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
+import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
+import { createFeatureRequest, getTenantFeatureRequests } from '@/app/actions/feature-requests'
+import type { FeatureRequest, FeatureRequestStatus } from '@/app/actions/feature-requests'
+import { featureRequestSchema, type FeatureRequestFormData } from '@/lib/feature-request-schema'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
 
 // ---------------------------------------------------------------------------
 // Status badge
@@ -28,14 +25,14 @@ const STATUS_CLASSES: Record<FeatureRequestStatus, string> = {
   accepted: 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300',
   rejected: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300',
   shipped: 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300',
-};
+}
 
 function StatusBadge({ status, label }: { status: FeatureRequestStatus; label: string }) {
   return (
     <Badge variant="outline" className={cn('border-0', STATUS_CLASSES[status])}>
       {label}
     </Badge>
-  );
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -43,10 +40,10 @@ function StatusBadge({ status, label }: { status: FeatureRequestStatus; label: s
 // ---------------------------------------------------------------------------
 
 export function FeatureRequestManagement() {
-  const t = useTranslations('Tenant.featureRequests');
-  const [requests, setRequests] = useState<FeatureRequest[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isPending, startTransition] = useTransition();
+  const t = useTranslations('Tenant.featureRequests')
+  const [requests, setRequests] = useState<FeatureRequest[]>([])
+  const [loading, setLoading] = useState(true)
+  const [isPending, startTransition] = useTransition()
 
   const {
     register,
@@ -56,35 +53,41 @@ export function FeatureRequestManagement() {
   } = useForm<FeatureRequestFormData>({
     resolver: standardSchemaResolver(featureRequestSchema),
     defaultValues: { title: '', description: '' },
-  });
+  })
 
   useEffect(() => {
     getTenantFeatureRequests().then((result) => {
       if (result.success) {
-        setRequests(result.data);
+        setRequests(result.data)
       } else {
-        toast.error(result.error);
+        toast.error(result.error)
       }
-      setLoading(false);
-    });
-  }, []);
+      setLoading(false)
+    })
+  }, [])
 
   function onSubmit(data: FeatureRequestFormData) {
     startTransition(async () => {
-      const result = await createFeatureRequest(data);
+      const result = await createFeatureRequest(data)
       if (!result.success) {
-        toast.error(result.error);
-        return;
+        toast.error(result.error)
+        return
       }
-      toast.success(t('submitted'));
-      reset();
-      setRequests((prev) => [result.data, ...prev]);
-    });
+      toast.success(t('submitted'))
+      reset()
+      setRequests((prev) => [result.data, ...prev])
+    })
   }
 
   const statusLabel = (status: FeatureRequestStatus) =>
-    t(`status${status.charAt(0).toUpperCase() + status.slice(1)}` as
-      'statusPending' | 'statusReviewing' | 'statusAccepted' | 'statusRejected' | 'statusShipped');
+    t(
+      `status${status.charAt(0).toUpperCase() + status.slice(1)}` as
+        | 'statusPending'
+        | 'statusReviewing'
+        | 'statusAccepted'
+        | 'statusRejected'
+        | 'statusShipped'
+    )
 
   return (
     <div className="space-y-8">
@@ -94,14 +97,8 @@ export function FeatureRequestManagement() {
 
         <div className="space-y-2">
           <Label htmlFor="fr-title">{t('titleLabel')}</Label>
-          <Input
-            id="fr-title"
-            placeholder={t('titlePlaceholder')}
-            {...register('title')}
-          />
-          {errors.title && (
-            <p className="text-sm text-destructive">{errors.title.message}</p>
-          )}
+          <Input id="fr-title" placeholder={t('titlePlaceholder')} {...register('title')} />
+          {errors.title && <p className="text-destructive text-sm">{errors.title.message}</p>}
         </div>
 
         <div className="space-y-2">
@@ -113,7 +110,7 @@ export function FeatureRequestManagement() {
             {...register('description')}
           />
           {errors.description && (
-            <p className="text-sm text-destructive">{errors.description.message}</p>
+            <p className="text-destructive text-sm">{errors.description.message}</p>
           )}
         </div>
 
@@ -126,24 +123,21 @@ export function FeatureRequestManagement() {
       <div className="space-y-3">
         <h3 className="text-base font-medium">{t('title')}</h3>
         {loading ? (
-          <p className="text-sm text-muted-foreground">{t('loading')}</p>
+          <p className="text-muted-foreground text-sm">{t('loading')}</p>
         ) : requests.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t('noRequests')}</p>
+          <p className="text-muted-foreground text-sm">{t('noRequests')}</p>
         ) : (
           <div className="space-y-3">
             {requests.map((req) => (
-              <div
-                key={req.id}
-                className="rounded-lg border p-4 space-y-1"
-              >
+              <div key={req.id} className="space-y-1 rounded-lg border p-4">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="font-medium text-sm">{req.title}</p>
+                  <p className="text-sm font-medium">{req.title}</p>
                   <StatusBadge status={req.status} label={statusLabel(req.status)} />
                 </div>
                 {req.description && (
-                  <p className="text-sm text-muted-foreground">{req.description}</p>
+                  <p className="text-muted-foreground text-sm">{req.description}</p>
                 )}
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   {new Date(req.created_at).toLocaleDateString()}
                 </p>
               </div>
@@ -152,5 +146,5 @@ export function FeatureRequestManagement() {
         )}
       </div>
     </div>
-  );
+  )
 }

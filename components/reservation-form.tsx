@@ -1,36 +1,26 @@
-'use client';
+'use client'
 
-import { useEffect, useRef, useState, useTransition, type RefObject } from 'react';
-import { useForm } from 'react-hook-form';
-import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { z } from 'zod';
-import { toast } from 'sonner';
-import { useTranslations } from 'next-intl';
-import { TableBreakdownBuilder } from '@/components/table-breakdown-builder';
-import { AllergenMultiSelect } from '@/components/allergen-multi-select';
-import { MoreOptionsSection } from '@/components/more-options-section';
-import { filterAllergenCodes, type AllergenCode } from '@/lib/allergens';
-import type { QuickAddGapId, QuickAddReservationFormDefaults } from '@/lib/quick-add-types';
-import { cn } from '@/lib/utils';
-import type { Reservation } from '@/types/index';
-import { mutateWithOfflineQueue } from '@/lib/day-mutation-client';
-import { useTenant } from '@/lib/tenant-context';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from '@/components/ui/drawer';
+import { useEffect, useRef, useState, useTransition, type RefObject } from 'react'
+import { useForm } from 'react-hook-form'
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
+import { z } from 'zod'
+import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
+import { TableBreakdownBuilder } from '@/components/table-breakdown-builder'
+import { AllergenMultiSelect } from '@/components/allergen-multi-select'
+import { MoreOptionsSection } from '@/components/more-options-section'
+import { filterAllergenCodes, type AllergenCode } from '@/lib/allergens'
+import type { QuickAddGapId, QuickAddReservationFormDefaults } from '@/lib/quick-add-types'
+import { cn } from '@/lib/utils'
+import type { Reservation } from '@/types/index'
+import { mutateWithOfflineQueue } from '@/lib/day-mutation-client'
+import { useTenant } from '@/lib/tenant-context'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer'
 
 // ---------------------------------------------------------------------------
 // Schema & types
@@ -42,20 +32,20 @@ const formSchema = z.object({
   startTime: z.string().optional(),
   endTime: z.string().optional(),
   notes: z.string().optional(),
-});
+})
 
-type FormData = z.infer<typeof formSchema>;
+type FormData = z.infer<typeof formSchema>
 
 function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(false)
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 639px)');
-    setIsMobile(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
-  return isMobile;
+    const mq = window.matchMedia('(max-width: 639px)')
+    setIsMobile(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+  return isMobile
 }
 
 // ---------------------------------------------------------------------------
@@ -64,23 +54,23 @@ function useIsMobile() {
 
 export type ReservationQuickAdd =
   | {
-      kind: 'parsed';
-      defaults: QuickAddReservationFormDefaults;
-      tableBreakdown: number[];
-      allergens: AllergenCode[];
-      gapFieldKeys: readonly QuickAddGapId[];
+      kind: 'parsed'
+      defaults: QuickAddReservationFormDefaults
+      tableBreakdown: number[]
+      allergens: AllergenCode[]
+      gapFieldKeys: readonly QuickAddGapId[]
     }
-  | { kind: 'failed'; rawText: string };
+  | { kind: 'failed'; rawText: string }
 
 type Props = {
-  isOpen: boolean;
-  onClose: () => void;
-  dayId: string;
-  editItem?: Reservation | null;
-  onSuccess: (item: Reservation) => void;
-  returnFocusRef?: RefObject<HTMLElement | null>;
-  quickAdd?: ReservationQuickAdd | null;
-};
+  isOpen: boolean
+  onClose: () => void
+  dayId: string
+  editItem?: Reservation | null
+  onSuccess: (item: Reservation) => void
+  returnFocusRef?: RefObject<HTMLElement | null>
+  quickAdd?: ReservationQuickAdd | null
+}
 
 // ---------------------------------------------------------------------------
 // Component
@@ -95,44 +85,44 @@ export function ReservationForm({
   returnFocusRef,
   quickAdd,
 }: Props) {
-  const t = useTranslations('Tenant.reservationForm');
-  const tAllergens = useTranslations('Tenant.allergens');
-  const isMobile = useIsMobile();
-  const [isPending, startTransition] = useTransition();
-  const [tableBreakdown, setTableBreakdown] = useState<number[]>([]);
-  const [allergens, setAllergens] = useState<AllergenCode[]>([]);
-  const isEditing = !!editItem;
-  const { tenantSlug } = useTenant();
+  const t = useTranslations('Tenant.reservationForm')
+  const tAllergens = useTranslations('Tenant.allergens')
+  const isMobile = useIsMobile()
+  const [isPending, startTransition] = useTransition()
+  const [tableBreakdown, setTableBreakdown] = useState<number[]>([])
+  const [allergens, setAllergens] = useState<AllergenCode[]>([])
+  const isEditing = !!editItem
+  const { tenantSlug } = useTenant()
 
-  const quickAddKeyRef = useRef<string>('');
-  const [qaGaps, setQaGaps] = useState<ReadonlySet<QuickAddGapId> | null>(null);
+  const quickAddKeyRef = useRef<string>('')
+  const [qaGaps, setQaGaps] = useState<ReadonlySet<QuickAddGapId> | null>(null)
   const qaRing = (field: QuickAddGapId) =>
-    qaGaps?.has(field) ? 'rounded-md ring-2 ring-amber-500/40 p-0.5 -m-0.5' : '';
+    qaGaps?.has(field) ? 'rounded-md ring-2 ring-amber-500/40 p-0.5 -m-0.5' : ''
 
   const { register, handleSubmit, reset } = useForm<FormData>({
     resolver: standardSchemaResolver(formSchema),
     defaultValues: defaultValues(editItem),
-  });
+  })
 
   useEffect(() => {
     if (!isOpen) {
-      quickAddKeyRef.current = '';
-      setQaGaps(null);
-      return;
+      quickAddKeyRef.current = ''
+      setQaGaps(null)
+      return
     }
     if (isEditing) {
-      quickAddKeyRef.current = '';
-      setQaGaps(null);
-      reset(defaultValues(editItem));
-      const tb = editItem?.table_breakdown;
-      setTableBreakdown(Array.isArray(tb) ? (tb as number[]) : []);
-      setAllergens(filterAllergenCodes(editItem?.allergens));
-      return;
+      quickAddKeyRef.current = ''
+      setQaGaps(null)
+      reset(defaultValues(editItem))
+      const tb = editItem?.table_breakdown
+      setTableBreakdown(Array.isArray(tb) ? (tb as number[]) : [])
+      setAllergens(filterAllergenCodes(editItem?.allergens))
+      return
     }
     if (quickAdd) {
-      const k = JSON.stringify(quickAdd);
-      if (quickAddKeyRef.current === k) return;
-      quickAddKeyRef.current = k;
+      const k = JSON.stringify(quickAdd)
+      if (quickAddKeyRef.current === k) return
+      quickAddKeyRef.current = k
       if (quickAdd.kind === 'failed') {
         reset({
           guestName: '',
@@ -140,31 +130,31 @@ export function ReservationForm({
           startTime: '',
           endTime: '',
           notes: quickAdd.rawText,
-        });
-        setTableBreakdown([]);
-        setAllergens([]);
-        setQaGaps(null);
-        return;
+        })
+        setTableBreakdown([])
+        setAllergens([])
+        setQaGaps(null)
+        return
       }
-      const d = quickAdd.defaults;
+      const d = quickAdd.defaults
       reset({
         guestName: d.guestName,
         guestCount: d.guestCount,
         startTime: d.startTime,
         endTime: d.endTime,
         notes: d.notes,
-      });
-      setTableBreakdown(quickAdd.tableBreakdown);
-      setAllergens(quickAdd.allergens);
-      setQaGaps(new Set(quickAdd.gapFieldKeys));
-      return;
+      })
+      setTableBreakdown(quickAdd.tableBreakdown)
+      setAllergens(quickAdd.allergens)
+      setQaGaps(new Set(quickAdd.gapFieldKeys))
+      return
     }
-    quickAddKeyRef.current = '';
-    setQaGaps(null);
-    reset(defaultValues(null));
-    setTableBreakdown([]);
-    setAllergens([]);
-  }, [isOpen, editItem, quickAdd, reset]);
+    quickAddKeyRef.current = ''
+    setQaGaps(null)
+    reset(defaultValues(null))
+    setTableBreakdown([])
+    setAllergens([])
+  }, [isOpen, editItem, quickAdd, reset])
 
   function onSubmit(data: FormData) {
     startTransition(async () => {
@@ -177,7 +167,7 @@ export function ReservationForm({
         notes: data.notes || undefined,
         tableBreakdown: tableBreakdown.length > 0 ? tableBreakdown : undefined,
         allergens: allergens.length > 0 ? allergens : undefined,
-      };
+      }
 
       const result = await mutateWithOfflineQueue<Reservation>({
         entity: 'reservations',
@@ -185,9 +175,12 @@ export function ReservationForm({
         tenantSlug,
         dayId,
         payload: isEditing ? { ...payload, id: editItem!.id } : payload,
-      });
+      })
 
-      if (!result.success) { toast.error(result.error); return; }
+      if (!result.success) {
+        toast.error(result.error)
+        return
+      }
 
       if (result.pending && !isEditing) {
         const optimistic: Reservation = {
@@ -204,8 +197,8 @@ export function ReservationForm({
           deleted_at: null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        };
-        onSuccess(optimistic);
+        }
+        onSuccess(optimistic)
       } else if (result.pending && isEditing) {
         onSuccess({
           ...editItem!,
@@ -217,13 +210,13 @@ export function ReservationForm({
           table_breakdown: payload.tableBreakdown ?? null,
           allergens: payload.allergens ?? [],
           updated_at: new Date().toISOString(),
-        });
+        })
       } else {
-        onSuccess(result.data);
+        onSuccess(result.data)
       }
-      toast.success(result.pending ? t('saved') : isEditing ? t('updated') : t('saved'));
-      onClose();
-    });
+      toast.success(result.pending ? t('saved') : isEditing ? t('updated') : t('saved'))
+      onClose()
+    })
   }
 
   const formBody = (
@@ -267,13 +260,17 @@ export function ReservationForm({
       </MoreOptionsSection>
 
       <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onClose}>{t('cancel')}</Button>
-        <Button type="submit" disabled={isPending}>{isPending ? t('saving') : t('save')}</Button>
+        <Button type="button" variant="outline" onClick={onClose}>
+          {t('cancel')}
+        </Button>
+        <Button type="submit" disabled={isPending}>
+          {isPending ? t('saving') : t('save')}
+        </Button>
       </div>
     </form>
-  );
+  )
 
-  const title = isEditing ? t('editTitle') : t('addTitle');
+  const title = isEditing ? t('editTitle') : t('addTitle')
 
   if (isMobile) {
     return (
@@ -281,37 +278,46 @@ export function ReservationForm({
         open={isOpen}
         onOpenChange={(v) => {
           if (!v) {
-            onClose();
+            onClose()
             if (returnFocusRef?.current) {
-              queueMicrotask(() => returnFocusRef.current?.focus());
+              queueMicrotask(() => returnFocusRef.current?.focus())
             }
           }
         }}
       >
         <DrawerContent>
-          <DrawerHeader><DrawerTitle>{title}</DrawerTitle></DrawerHeader>
-          <div className="px-4 pb-6 overflow-y-auto max-h-[70vh]">{formBody}</div>
+          <DrawerHeader>
+            <DrawerTitle>{title}</DrawerTitle>
+          </DrawerHeader>
+          <div className="max-h-[70vh] overflow-y-auto px-4 pb-6">{formBody}</div>
         </DrawerContent>
       </Drawer>
-    );
+    )
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(v) => { if (!v) onClose(); }}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(v) => {
+        if (!v) onClose()
+      }}
+    >
       <DialogContent
-        className="sm:max-w-md max-h-[90vh] overflow-y-auto"
+        className="max-h-[90vh] overflow-y-auto sm:max-w-md"
         onCloseAutoFocus={(e) => {
           if (returnFocusRef?.current) {
-            e.preventDefault();
-            returnFocusRef.current.focus();
+            e.preventDefault()
+            returnFocusRef.current.focus()
           }
         }}
       >
-        <DialogHeader><DialogTitle>{title}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
         {formBody}
       </DialogContent>
     </Dialog>
-  );
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -319,12 +325,12 @@ export function ReservationForm({
 // ---------------------------------------------------------------------------
 
 function defaultValues(editItem?: Reservation | null): FormData {
-  if (!editItem) return { guestName: '', guestCount: '', startTime: '', endTime: '', notes: '' };
+  if (!editItem) return { guestName: '', guestCount: '', startTime: '', endTime: '', notes: '' }
   return {
     guestName: editItem.guest_name ?? '',
     guestCount: editItem.guest_count != null ? String(editItem.guest_count) : '',
     startTime: editItem.start_time ?? '',
     endTime: editItem.end_time ?? '',
     notes: editItem.notes ?? '',
-  };
+  }
 }

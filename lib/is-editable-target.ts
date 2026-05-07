@@ -1,12 +1,10 @@
 /** True when the user is likely typing in a control; day hotkeys should not fire. */
 export function isEditableTarget(el: EventTarget | null): boolean {
-  if (!el || !(el instanceof Element)) return false;
-  const node = el.closest(
-    'input, textarea, select, [contenteditable="true"], [contenteditable=""]'
-  );
+  if (!el || !(el instanceof Element)) return false
+  const node = el.closest('input, textarea, select, [contenteditable="true"], [contenteditable=""]')
   if (node) {
     if (node instanceof HTMLInputElement) {
-      const type = node.type;
+      const type = node.type
       if (
         type === 'button' ||
         type === 'submit' ||
@@ -16,11 +14,11 @@ export function isEditableTarget(el: EventTarget | null): boolean {
         type === 'radio' ||
         type === 'file'
       ) {
-        return false;
+        return false
       }
     }
-    return true;
+    return true
   }
-  const role = el instanceof Element ? el.closest('[role="combobox"]') : null;
-  return !!role;
+  const role = el instanceof Element ? el.closest('[role="combobox"]') : null
+  return !!role
 }

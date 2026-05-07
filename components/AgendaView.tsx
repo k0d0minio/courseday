@@ -1,24 +1,24 @@
-'use client';
+'use client'
 
-import { useState, useTransition, useEffect, useRef } from 'react';
-import { format, addDays, parseISO } from 'date-fns';
-import { ChevronDown, ChevronRight, ArrowRight, Plus } from 'lucide-react';
-import Link from 'next/link';
-import { useTranslations } from 'next-intl';
-import { getDaySummaries } from '@/app/actions/agenda';
-import { getActivitiesForDay } from '@/app/actions/activities';
-import { getReservationsForDay } from '@/app/actions/reservations';
-import { getBreakfastConfigurationsForDay } from '@/app/actions/breakfast';
-import { getAllPOCs } from '@/app/actions/poc';
-import { getAllVenueTypes } from '@/app/actions/venue-type';
-import { ActivityForm } from '@/components/activity-form';
-import { ReservationForm } from '@/components/reservation-form';
-import { BreakfastForm } from '@/components/breakfast-form';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
-import { useFeatureFlag } from '@/lib/feature-flags-context';
+import { useState, useTransition, useEffect, useRef } from 'react'
+import { format, addDays, parseISO } from 'date-fns'
+import { ChevronDown, ChevronRight, ArrowRight, Plus } from 'lucide-react'
+import Link from 'next/link'
+import { useTranslations } from 'next-intl'
+import { getDaySummaries } from '@/app/actions/agenda'
+import { getActivitiesForDay } from '@/app/actions/activities'
+import { getReservationsForDay } from '@/app/actions/reservations'
+import { getBreakfastConfigurationsForDay } from '@/app/actions/breakfast'
+import { getAllPOCs } from '@/app/actions/poc'
+import { getAllVenueTypes } from '@/app/actions/venue-type'
+import { ActivityForm } from '@/components/activity-form'
+import { ReservationForm } from '@/components/reservation-form'
+import { BreakfastForm } from '@/components/breakfast-form'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
+import { Skeleton } from '@/components/ui/skeleton'
+import { cn } from '@/lib/utils'
+import { useFeatureFlag } from '@/lib/feature-flags-context'
 import type {
   Activity,
   ActivityWithRelations,
@@ -26,70 +26,68 @@ import type {
   BreakfastConfiguration,
   PointOfContact,
   VenueType,
-} from '@/types/index';
-import type { DaySummary } from '@/components/HomeClient';
+} from '@/types/index'
+import type { DaySummary } from '@/components/HomeClient'
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 type Props = {
-  today: string;
+  today: string
   /** When false, hide add-item controls and server forms (viewer home). */
-  isEditor?: boolean;
-};
+  isEditor?: boolean
+}
 
 type ExpandedData = {
-  activities: ActivityWithRelations[];
-  reservations: Reservation[];
-  breakfastConfigs: BreakfastConfiguration[];
-  pocs: PointOfContact[];
-  venueTypes: VenueType[];
-};
+  activities: ActivityWithRelations[]
+  reservations: Reservation[]
+  breakfastConfigs: BreakfastConfiguration[]
+  pocs: PointOfContact[]
+  venueTypes: VenueType[]
+}
 
-const PAGE_SIZE = 14;
+const PAGE_SIZE = 14
 
 // ---------------------------------------------------------------------------
 // AgendaView
 // ---------------------------------------------------------------------------
 
 export function AgendaView({ today, isEditor = true }: Props) {
-  const t = useTranslations('Tenant.home');
-  const ts = useTranslations('Tenant.sidebar');
-  const showReservations = useFeatureFlag('reservations');
-  const showBreakfast = useFeatureFlag('breakfast_config');
-  const [summaries, setSummaries] = useState<DaySummary[]>([]);
-  const [initialLoading, startInitialLoad] = useTransition();
-  const [loadingMore, startLoadMore] = useTransition();
-  const [expandedDate, setExpandedDate] = useState<string | null>(null);
-  const initialized = useRef(false);
+  const t = useTranslations('Tenant.home')
+  const ts = useTranslations('Tenant.sidebar')
+  const showReservations = useFeatureFlag('reservations')
+  const showBreakfast = useFeatureFlag('breakfast_config')
+  const [summaries, setSummaries] = useState<DaySummary[]>([])
+  const [initialLoading, startInitialLoad] = useTransition()
+  const [loadingMore, startLoadMore] = useTransition()
+  const [expandedDate, setExpandedDate] = useState<string | null>(null)
+  const initialized = useRef(false)
 
   // Load initial 14 days on mount
   useEffect(() => {
-    if (initialized.current) return;
-    initialized.current = true;
-    const end = format(addDays(parseISO(today), PAGE_SIZE - 1), 'yyyy-MM-dd');
+    if (initialized.current) return
+    initialized.current = true
+    const end = format(addDays(parseISO(today), PAGE_SIZE - 1), 'yyyy-MM-dd')
     startInitialLoad(async () => {
-      const result = await getDaySummaries(today, end);
-      if (result.success) setSummaries(result.data);
-    });
-  }, [today]);
+      const result = await getDaySummaries(today, end)
+      if (result.success) setSummaries(result.data)
+    })
+  }, [today])
 
   function handleSummaryChanged(date: string, patch: Partial<DaySummary>) {
-    setSummaries((prev) =>
-      prev.map((s) => (s.date === date ? { ...s, ...patch } : s))
-    );
+    setSummaries((prev) => prev.map((s) => (s.date === date ? { ...s, ...patch } : s)))
   }
 
   function loadMore() {
-    if (summaries.length === 0) return;
-    const lastDate = summaries[summaries.length - 1].date;
-    const nextStart = format(addDays(parseISO(lastDate), 1), 'yyyy-MM-dd');
-    const nextEnd = format(addDays(parseISO(lastDate), PAGE_SIZE), 'yyyy-MM-dd');
+    if (summaries.length === 0) return
+    const lastDate = summaries[summaries.length - 1].date
+    const nextStart = format(addDays(parseISO(lastDate), 1), 'yyyy-MM-dd')
+    const nextEnd = format(addDays(parseISO(lastDate), PAGE_SIZE), 'yyyy-MM-dd')
     startLoadMore(async () => {
-      const result = await getDaySummaries(nextStart, nextEnd);
-      if (result.success) setSummaries((prev) => [...prev, ...result.data]);
-    });
+      const result = await getDaySummaries(nextStart, nextEnd)
+      if (result.success) setSummaries((prev) => [...prev, ...result.data])
+    })
   }
 
   if (initialLoading && summaries.length === 0) {
@@ -99,7 +97,7 @@ export function AgendaView({ today, isEditor = true }: Props) {
           <Skeleton key={i} className="h-14 w-full rounded-lg" />
         ))}
       </div>
-    );
+    )
   }
 
   return (
@@ -111,11 +109,7 @@ export function AgendaView({ today, isEditor = true }: Props) {
           today={today}
           isEditor={isEditor}
           isExpanded={expandedDate === summary.date}
-          onToggle={() =>
-            setExpandedDate((prev) =>
-              prev === summary.date ? null : summary.date
-            )
-          }
+          onToggle={() => setExpandedDate((prev) => (prev === summary.date ? null : summary.date))}
           onSummaryChanged={(patch) => handleSummaryChanged(summary.date, patch)}
           showReservations={showReservations}
           showBreakfast={showBreakfast}
@@ -133,7 +127,7 @@ export function AgendaView({ today, isEditor = true }: Props) {
         </Button>
       </div>
     </div>
-  );
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -141,15 +135,15 @@ export function AgendaView({ today, isEditor = true }: Props) {
 // ---------------------------------------------------------------------------
 
 type RowProps = {
-  summary: DaySummary;
-  today: string;
-  isEditor: boolean;
-  isExpanded: boolean;
-  onToggle: () => void;
-  onSummaryChanged: (patch: Partial<DaySummary>) => void;
-  showReservations: boolean;
-  showBreakfast: boolean;
-};
+  summary: DaySummary
+  today: string
+  isEditor: boolean
+  isExpanded: boolean
+  onToggle: () => void
+  onSummaryChanged: (patch: Partial<DaySummary>) => void
+  showReservations: boolean
+  showBreakfast: boolean
+}
 
 function AgendaDayRow({
   summary,
@@ -161,107 +155,96 @@ function AgendaDayRow({
   showReservations,
   showBreakfast,
 }: RowProps) {
-  const ts = useTranslations('Tenant.sidebar');
-  const [expandedData, setExpandedData] = useState<ExpandedData | null>(null);
-  const [dataLoading, startDataLoad] = useTransition();
-  const hasLoaded = useRef(false);
+  const ts = useTranslations('Tenant.sidebar')
+  const [expandedData, setExpandedData] = useState<ExpandedData | null>(null)
+  const [dataLoading, startDataLoad] = useTransition()
+  const hasLoaded = useRef(false)
 
   // Activity modal
-  const [activityOpen, setActivityOpen] = useState(false);
-  const [reservationOpen, setReservationOpen] = useState(false);
-  const [breakfastOpen, setBreakfastOpen] = useState(false);
+  const [activityOpen, setActivityOpen] = useState(false)
+  const [reservationOpen, setReservationOpen] = useState(false)
+  const [breakfastOpen, setBreakfastOpen] = useState(false)
 
   // Lazy-load day data on first expand
   useEffect(() => {
-    if (!isExpanded || hasLoaded.current) return;
-    hasLoaded.current = true;
+    if (!isExpanded || hasLoaded.current) return
+    hasLoaded.current = true
     startDataLoad(async () => {
-      const noRes = { success: true as const, data: [] as Reservation[] };
-      const noBf = { success: true as const, data: [] as BreakfastConfiguration[] };
+      const noRes = { success: true as const, data: [] as Reservation[] }
+      const noBf = { success: true as const, data: [] as BreakfastConfiguration[] }
 
       if (isEditor) {
-        const [activitiesRes, reservationsRes, bfRes, pocsRes, venuesRes] =
-          await Promise.all([
-            getActivitiesForDay(summary.dayId),
-            showReservations ? getReservationsForDay(summary.dayId) : Promise.resolve(noRes),
-            showBreakfast ? getBreakfastConfigurationsForDay(summary.dayId) : Promise.resolve(noBf),
-            getAllPOCs(),
-            getAllVenueTypes(),
-          ]);
+        const [activitiesRes, reservationsRes, bfRes, pocsRes, venuesRes] = await Promise.all([
+          getActivitiesForDay(summary.dayId),
+          showReservations ? getReservationsForDay(summary.dayId) : Promise.resolve(noRes),
+          showBreakfast ? getBreakfastConfigurationsForDay(summary.dayId) : Promise.resolve(noBf),
+          getAllPOCs(),
+          getAllVenueTypes(),
+        ])
         setExpandedData({
-          activities: (activitiesRes.success
-            ? activitiesRes.data
-            : []) as ActivityWithRelations[],
+          activities: (activitiesRes.success ? activitiesRes.data : []) as ActivityWithRelations[],
           reservations: reservationsRes.success ? reservationsRes.data : [],
           breakfastConfigs: bfRes.success ? bfRes.data : [],
           pocs: pocsRes.success ? pocsRes.data : [],
           venueTypes: venuesRes.success ? venuesRes.data : [],
-        });
+        })
       } else {
         const [activitiesRes, reservationsRes, bfRes] = await Promise.all([
           getActivitiesForDay(summary.dayId),
           showReservations ? getReservationsForDay(summary.dayId) : Promise.resolve(noRes),
           showBreakfast ? getBreakfastConfigurationsForDay(summary.dayId) : Promise.resolve(noBf),
-        ]);
+        ])
         setExpandedData({
-          activities: (activitiesRes.success
-            ? activitiesRes.data
-            : []) as ActivityWithRelations[],
+          activities: (activitiesRes.success ? activitiesRes.data : []) as ActivityWithRelations[],
           reservations: reservationsRes.success ? reservationsRes.data : [],
           breakfastConfigs: bfRes.success ? bfRes.data : [],
           pocs: [],
           venueTypes: [],
-        });
+        })
       }
-    });
-  }, [isExpanded, isEditor, summary.dayId, showReservations, showBreakfast]);
+    })
+  }, [isExpanded, isEditor, summary.dayId, showReservations, showBreakfast])
 
-  const isToday = summary.date === today;
-  const formattedDate = format(parseISO(summary.date), 'EEEE d MMMM');
+  const isToday = summary.date === today
+  const formattedDate = format(parseISO(summary.date), 'EEEE d MMMM')
 
-  const countParts: string[] = [];
-  if (summary.golfCount > 0)
-    countParts.push(ts('activityCount', { count: summary.golfCount }));
+  const countParts: string[] = []
+  if (summary.golfCount > 0) countParts.push(ts('activityCount', { count: summary.golfCount }))
   if (showReservations && summary.reservationCount > 0)
-    countParts.push(ts('reservationCount', { count: summary.reservationCount }));
+    countParts.push(ts('reservationCount', { count: summary.reservationCount }))
   if (showBreakfast && summary.breakfastCount > 0)
-    countParts.push(ts('breakfastCoverCount', { count: summary.breakfastCount }));
+    countParts.push(ts('breakfastCoverCount', { count: summary.breakfastCount }))
 
   return (
     <>
-      <div className={cn('rounded-lg border bg-card', isToday && 'border-primary/60')}>
+      <div className={cn('bg-card rounded-lg border', isToday && 'border-primary/60')}>
         {/* Row header — always visible */}
         <button
-          className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-accent/50 transition-colors rounded-lg"
+          className="hover:bg-accent/50 flex w-full items-center justify-between rounded-lg px-4 py-3 text-left transition-colors"
           onClick={onToggle}
         >
           <div className="min-w-0">
-            <span
-              className={cn(
-                'font-medium text-sm',
-                isToday && 'text-primary'
-              )}
-            >
+            <span className={cn('text-sm font-medium', isToday && 'text-primary')}>
               {formattedDate}
             </span>
             {countParts.length > 0 ? (
-              <p className="text-xs text-muted-foreground mt-0.5 truncate">
+              <p className="text-muted-foreground mt-0.5 truncate text-xs">
                 {countParts.join(' · ')}
               </p>
             ) : (
-              <p className="text-xs text-muted-foreground mt-0.5">{ts('nothingScheduled')}</p>
+              <p className="text-muted-foreground mt-0.5 text-xs">{ts('nothingScheduled')}</p>
             )}
           </div>
           {isExpanded ? (
-            <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground ml-2" />
+            <ChevronDown className="text-muted-foreground ml-2 h-4 w-4 shrink-0" />
           ) : (
-            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground ml-2" />
+            <ChevronRight className="text-muted-foreground ml-2 h-4 w-4 shrink-0" />
           )}
         </button>
 
         {/* Expanded content */}
         {isExpanded && (
-          <div className="px-4 pb-4 space-y-4 border-t">
+          <div className="space-y-4 border-t px-4 pb-4">
             {dataLoading && !expandedData && (
               <div className="space-y-2 pt-3">
                 <Skeleton className="h-3 w-full" />
@@ -280,7 +263,7 @@ function AgendaDayRow({
                       className="h-7 text-xs"
                       onClick={() => setActivityOpen(true)}
                     >
-                      <Plus className="h-3 w-3 mr-1" /> {ts('activity')}
+                      <Plus className="mr-1 h-3 w-3" /> {ts('activity')}
                     </Button>
                     {showReservations && (
                       <Button
@@ -289,7 +272,7 @@ function AgendaDayRow({
                         className="h-7 text-xs"
                         onClick={() => setReservationOpen(true)}
                       >
-                        <Plus className="h-3 w-3 mr-1" /> {ts('reservation')}
+                        <Plus className="mr-1 h-3 w-3" /> {ts('reservation')}
                       </Button>
                     )}
                     {showBreakfast && (
@@ -299,7 +282,7 @@ function AgendaDayRow({
                         className="h-7 text-xs"
                         onClick={() => setBreakfastOpen(true)}
                       >
-                        <Plus className="h-3 w-3 mr-1" /> {ts('breakfast')}
+                        <Plus className="mr-1 h-3 w-3" /> {ts('breakfast')}
                       </Button>
                     )}
                   </div>
@@ -313,9 +296,7 @@ function AgendaDayRow({
                         key={item.id}
                         className="flex items-baseline justify-between gap-2 text-sm"
                       >
-                        <span className="truncate flex-1">
-                          {item.group_name ?? 'Unnamed'}
-                        </span>
+                        <span className="flex-1 truncate">{item.group_name ?? 'Unnamed'}</span>
                         {item.total_guests > 0 && (
                           <span className="text-muted-foreground shrink-0">
                             {item.total_guests} guests
@@ -330,11 +311,8 @@ function AgendaDayRow({
                 {expandedData.activities.length > 0 && (
                   <InlineSection title={ts('activities')}>
                     {expandedData.activities.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-baseline gap-2 text-sm"
-                      >
-                        <span className="truncate flex-1">{item.title}</span>
+                      <div key={item.id} className="flex items-baseline gap-2 text-sm">
+                        <span className="flex-1 truncate">{item.title}</span>
                         {item.start_time && (
                           <span className="text-muted-foreground shrink-0">
                             {item.start_time.slice(0, 5)}
@@ -353,9 +331,7 @@ function AgendaDayRow({
                         key={item.id}
                         className="flex items-baseline justify-between gap-2 text-sm"
                       >
-                        <span className="truncate flex-1">
-                          {item.guest_name ?? 'Guest'}
-                        </span>
+                        <span className="flex-1 truncate">{item.guest_name ?? 'Guest'}</span>
                         {item.start_time && (
                           <span className="text-muted-foreground shrink-0">
                             {item.start_time.slice(0, 5)}
@@ -395,14 +371,11 @@ function AgendaDayRow({
                 prev
                   ? {
                       ...prev,
-                      activities: [
-                        ...prev.activities,
-                        item as ActivityWithRelations,
-                      ],
+                      activities: [...prev.activities, item as ActivityWithRelations],
                     }
                   : prev
-              );
-              onSummaryChanged({ golfCount: summary.golfCount + 1 });
+              )
+              onSummaryChanged({ golfCount: summary.golfCount + 1 })
             }}
           />
           {showReservations && (
@@ -413,13 +386,11 @@ function AgendaDayRow({
               editItem={null}
               onSuccess={(item: Reservation) => {
                 setExpandedData((prev) =>
-                  prev
-                    ? { ...prev, reservations: [...prev.reservations, item] }
-                    : prev
-                );
+                  prev ? { ...prev, reservations: [...prev.reservations, item] } : prev
+                )
                 onSummaryChanged({
                   reservationCount: summary.reservationCount + 1,
-                });
+                })
               }}
             />
           )}
@@ -437,34 +408,28 @@ function AgendaDayRow({
                         breakfastConfigs: [...prev.breakfastConfigs, item],
                       }
                     : prev
-                );
+                )
                 onSummaryChanged({
                   breakfastCount: summary.breakfastCount + item.total_guests,
-                });
+                })
               }}
             />
           )}
         </>
       )}
     </>
-  );
+  )
 }
 
 // ---------------------------------------------------------------------------
 // InlineSection
 // ---------------------------------------------------------------------------
 
-function InlineSection({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+function InlineSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <p className="text-xs font-medium text-muted-foreground">{title}</p>
+      <p className="text-muted-foreground text-xs font-medium">{title}</p>
       <div className="space-y-1">{children}</div>
     </div>
-  );
+  )
 }

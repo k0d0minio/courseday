@@ -1,37 +1,25 @@
-'use client';
+'use client'
 
-import { useEffect, useMemo, useState, useTransition } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
-import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { toast } from 'sonner';
-import { Pencil, Trash2, Plus, GripVertical, X } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useEffect, useMemo, useState, useTransition } from 'react'
+import { useForm, useFieldArray } from 'react-hook-form'
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
+import { toast } from 'sonner'
+import { Pencil, Trash2, Plus, GripVertical, X } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import {
   getAllChecklistTemplates,
   createChecklistTemplate,
   updateChecklistTemplate,
   deleteChecklistTemplate,
-} from '@/app/actions/checklists';
-import { getAllVenueTypes } from '@/app/actions/venue-type';
-import { getAllActivityTags } from '@/app/actions/activity-tags';
-import {
-  checklistTemplateSchema,
-  type ChecklistTemplateFormData,
-} from '@/lib/checklist-schema';
-import type {
-  ActivityTag,
-  ChecklistTemplateWithItems,
-  VenueType,
-} from '@/types/index';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+} from '@/app/actions/checklists'
+import { getAllVenueTypes } from '@/app/actions/venue-type'
+import { getAllActivityTags } from '@/app/actions/activity-tags'
+import { checklistTemplateSchema, type ChecklistTemplateFormData } from '@/lib/checklist-schema'
+import type { ActivityTag, ChecklistTemplateWithItems, VenueType } from '@/types/index'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,14 +29,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from '@/components/ui/alert-dialog'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui/select'
 import {
   Table,
   TableBody,
@@ -56,9 +44,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from '@/components/ui/table'
 
-type Scope = 'venue_type' | 'activity_tag';
+type Scope = 'venue_type' | 'activity_tag'
 
 function TemplateDialog({
   open,
@@ -68,15 +56,15 @@ function TemplateDialog({
   activityTags,
   onSaved,
 }: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  initial: ChecklistTemplateWithItems | null;
-  venueTypes: VenueType[];
-  activityTags: ActivityTag[];
-  onSaved: (tpl: ChecklistTemplateWithItems) => void;
+  open: boolean
+  onOpenChange: (v: boolean) => void
+  initial: ChecklistTemplateWithItems | null
+  venueTypes: VenueType[]
+  activityTags: ActivityTag[]
+  onSaved: (tpl: ChecklistTemplateWithItems) => void
 }) {
-  const t = useTranslations('Tenant.checklists');
-  const [isPending, startTransition] = useTransition();
+  const t = useTranslations('Tenant.checklists')
+  const [isPending, startTransition] = useTransition()
   const {
     register,
     handleSubmit,
@@ -93,21 +81,20 @@ function TemplateDialog({
       scopeId: '',
       items: [{ label: '' }],
     },
-  });
+  })
 
   const { fields, append, remove, move } = useFieldArray({
     control,
     name: 'items',
-  });
+  })
 
-  const scope = watch('scope');
+  const scope = watch('scope')
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) return
     if (initial) {
-      const derivedScope: Scope = initial.venue_type_id ? 'venue_type' : 'activity_tag';
-      const derivedScopeId =
-        initial.venue_type_id ?? initial.activity_tag_id ?? '';
+      const derivedScope: Scope = initial.venue_type_id ? 'venue_type' : 'activity_tag'
+      const derivedScopeId = initial.venue_type_id ?? initial.activity_tag_id ?? ''
       reset({
         name: initial.name,
         scope: derivedScope,
@@ -116,63 +103,59 @@ function TemplateDialog({
           initial.items.length > 0
             ? initial.items.map((i) => ({ label: i.label }))
             : [{ label: '' }],
-      });
+      })
     } else {
       reset({
         name: '',
         scope: 'venue_type',
         scopeId: '',
         items: [{ label: '' }],
-      });
+      })
     }
-  }, [initial, open, reset]);
+  }, [initial, open, reset])
 
   const scopeOptions = useMemo(() => {
     if (scope === 'venue_type') {
-      return venueTypes.map((vt) => ({ id: vt.id, label: vt.name }));
+      return venueTypes.map((vt) => ({ id: vt.id, label: vt.name }))
     }
-    return activityTags.map((tag) => ({ id: tag.id, label: tag.name }));
-  }, [scope, venueTypes, activityTags]);
+    return activityTags.map((tag) => ({ id: tag.id, label: tag.name }))
+  }, [scope, venueTypes, activityTags])
 
   function onSubmit(raw: ChecklistTemplateFormData) {
     const data: ChecklistTemplateFormData = {
       ...raw,
       items: raw.items.filter((i) => i.label.trim().length > 0),
-    };
+    }
     if (data.items.length === 0) {
-      toast.error(t('atLeastOneItem'));
-      return;
+      toast.error(t('atLeastOneItem'))
+      return
     }
     startTransition(async () => {
       const result = initial
         ? await updateChecklistTemplate(initial.id, data)
-        : await createChecklistTemplate(data);
+        : await createChecklistTemplate(data)
       if (!result.success) {
-        toast.error(result.error);
-        return;
+        toast.error(result.error)
+        return
       }
-      toast.success(initial ? t('updated') : t('saved'));
-      onSaved(result.data);
-      onOpenChange(false);
-    });
+      toast.success(initial ? t('updated') : t('saved'))
+      onSaved(result.data)
+      onOpenChange(false)
+    })
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>
-            {initial ? t('editTitle') : t('addTitle')}
-          </DialogTitle>
+          <DialogTitle>{initial ? t('editTitle') : t('addTitle')}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-1">
             <Label htmlFor="ct-name">{t('nameLabel')} *</Label>
             <Input id="ct-name" {...register('name')} />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
+            {errors.name && <p className="text-destructive text-sm">{errors.name.message}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -181,8 +164,8 @@ function TemplateDialog({
               <Select
                 value={scope}
                 onValueChange={(v) => {
-                  setValue('scope', v as Scope);
-                  setValue('scopeId', '');
+                  setValue('scope', v as Scope)
+                  setValue('scopeId', '')
                 }}
               >
                 <SelectTrigger>
@@ -196,10 +179,7 @@ function TemplateDialog({
             </div>
             <div className="space-y-1">
               <Label>{t('scopeTargetLabel')} *</Label>
-              <Select
-                value={watch('scopeId') || ''}
-                onValueChange={(v) => setValue('scopeId', v)}
-              >
+              <Select value={watch('scopeId') || ''} onValueChange={(v) => setValue('scopeId', v)}>
                 <SelectTrigger>
                   <SelectValue
                     placeholder={
@@ -218,9 +198,7 @@ function TemplateDialog({
                 </SelectContent>
               </Select>
               {errors.scopeId && (
-                <p className="text-sm text-destructive">
-                  {errors.scopeId.message}
-                </p>
+                <p className="text-destructive text-sm">{errors.scopeId.message}</p>
               )}
             </div>
           </div>
@@ -236,7 +214,7 @@ function TemplateDialog({
                     onClick={() => idx > 0 && move(idx, idx - 1)}
                     aria-label={t('moveUp')}
                   >
-                    <GripVertical className="w-4 h-4" />
+                    <GripVertical className="h-4 w-4" />
                   </button>
                   <Input
                     {...register(`items.${idx}.label` as const)}
@@ -250,27 +228,18 @@ function TemplateDialog({
                     aria-label={t('removeItem')}
                     disabled={fields.length === 1}
                   >
-                    <X className="w-4 h-4" />
+                    <X className="h-4 w-4" />
                   </Button>
                 </div>
               ))}
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => append({ label: '' })}
-            >
-              <Plus className="w-3 h-3 mr-1" /> {t('addItem')}
+            <Button type="button" variant="outline" size="sm" onClick={() => append({ label: '' })}>
+              <Plus className="mr-1 h-3 w-3" /> {t('addItem')}
             </Button>
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {t('cancel')}
             </Button>
             <Button type="submit" disabled={isPending}>
@@ -280,68 +249,65 @@ function TemplateDialog({
         </form>
       </DialogContent>
     </Dialog>
-  );
+  )
 }
 
 export function ChecklistManagement() {
-  const t = useTranslations('Tenant.checklists');
-  const [templates, setTemplates] = useState<ChecklistTemplateWithItems[]>([]);
-  const [venueTypes, setVenueTypes] = useState<VenueType[]>([]);
-  const [activityTags, setActivityTags] = useState<ActivityTag[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<ChecklistTemplateWithItems | null>(null);
-  const [deleteTarget, setDeleteTarget] =
-    useState<ChecklistTemplateWithItems | null>(null);
-  const [isDeleting, startDeleteTransition] = useTransition();
+  const t = useTranslations('Tenant.checklists')
+  const [templates, setTemplates] = useState<ChecklistTemplateWithItems[]>([])
+  const [venueTypes, setVenueTypes] = useState<VenueType[]>([])
+  const [activityTags, setActivityTags] = useState<ActivityTag[]>([])
+  const [loading, setLoading] = useState(true)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editing, setEditing] = useState<ChecklistTemplateWithItems | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<ChecklistTemplateWithItems | null>(null)
+  const [isDeleting, startDeleteTransition] = useTransition()
 
   useEffect(() => {
-    Promise.all([
-      getAllChecklistTemplates(),
-      getAllVenueTypes(),
-      getAllActivityTags(),
-    ]).then(([tplsR, vtR, tagR]) => {
-      if (tplsR.success) setTemplates(tplsR.data);
-      else toast.error(tplsR.error);
-      if (vtR.success) setVenueTypes(vtR.data);
-      if (tagR.success) setActivityTags(tagR.data);
-      setLoading(false);
-    });
-  }, []);
+    Promise.all([getAllChecklistTemplates(), getAllVenueTypes(), getAllActivityTags()]).then(
+      ([tplsR, vtR, tagR]) => {
+        if (tplsR.success) setTemplates(tplsR.data)
+        else toast.error(tplsR.error)
+        if (vtR.success) setVenueTypes(vtR.data)
+        if (tagR.success) setActivityTags(tagR.data)
+        setLoading(false)
+      }
+    )
+  }, [])
 
   function handleSaved(tpl: ChecklistTemplateWithItems) {
     setTemplates((prev) => {
-      const idx = prev.findIndex((p) => p.id === tpl.id);
+      const idx = prev.findIndex((p) => p.id === tpl.id)
       if (idx >= 0) {
-        const next = [...prev];
-        next[idx] = tpl;
-        return next;
+        const next = [...prev]
+        next[idx] = tpl
+        return next
       }
-      return [...prev, tpl].sort((a, b) => a.name.localeCompare(b.name));
-    });
+      return [...prev, tpl].sort((a, b) => a.name.localeCompare(b.name))
+    })
   }
 
   function confirmDelete() {
-    if (!deleteTarget) return;
+    if (!deleteTarget) return
     startDeleteTransition(async () => {
-      const result = await deleteChecklistTemplate(deleteTarget.id);
+      const result = await deleteChecklistTemplate(deleteTarget.id)
       if (!result.success) {
-        toast.error(result.error);
-        return;
+        toast.error(result.error)
+        return
       }
-      setTemplates((prev) => prev.filter((p) => p.id !== deleteTarget.id));
-      toast.success(t('deleted'));
-      setDeleteTarget(null);
-    });
+      setTemplates((prev) => prev.filter((p) => p.id !== deleteTarget.id))
+      toast.success(t('deleted'))
+      setDeleteTarget(null)
+    })
   }
 
   function scopeLabelFor(tpl: ChecklistTemplateWithItems): string {
     if (tpl.venue_type_id) {
-      const vt = venueTypes.find((v) => v.id === tpl.venue_type_id);
-      return `${t('scopeVenueType')}: ${vt?.name ?? '—'}`;
+      const vt = venueTypes.find((v) => v.id === tpl.venue_type_id)
+      return `${t('scopeVenueType')}: ${vt?.name ?? '—'}`
     }
-    const tag = activityTags.find((a) => a.id === tpl.activity_tag_id);
-    return `${t('scopeActivityTag')}: ${tag?.name ?? '—'}`;
+    const tag = activityTags.find((a) => a.id === tpl.activity_tag_id)
+    return `${t('scopeActivityTag')}: ${tag?.name ?? '—'}`
   }
 
   return (
@@ -349,23 +315,23 @@ export function ChecklistManagement() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold">{t('title')}</h2>
-          <p className="text-sm text-muted-foreground">{t('description')}</p>
+          <p className="text-muted-foreground text-sm">{t('description')}</p>
         </div>
         <Button
           size="sm"
           onClick={() => {
-            setEditing(null);
-            setDialogOpen(true);
+            setEditing(null)
+            setDialogOpen(true)
           }}
         >
-          <Plus className="w-4 h-4 mr-1" /> {t('add')}
+          <Plus className="mr-1 h-4 w-4" /> {t('add')}
         </Button>
       </div>
 
       {loading ? (
-        <p className="text-sm text-muted-foreground">{t('loading')}</p>
+        <p className="text-muted-foreground text-sm">{t('loading')}</p>
       ) : templates.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t('noRecords')}</p>
+        <p className="text-muted-foreground text-sm">{t('noRecords')}</p>
       ) : (
         <Table>
           <TableHeader>
@@ -380,30 +346,26 @@ export function ChecklistManagement() {
             {templates.map((tpl) => (
               <TableRow key={tpl.id}>
                 <TableCell className="font-medium">{tpl.name}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">
+                <TableCell className="text-muted-foreground text-sm">
                   {scopeLabelFor(tpl)}
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
+                <TableCell className="text-muted-foreground text-sm">
                   {t('itemCount', { count: tpl.items.length })}
                 </TableCell>
                 <TableCell>
-                  <div className="flex gap-1 justify-end">
+                  <div className="flex justify-end gap-1">
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => {
-                        setEditing(tpl);
-                        setDialogOpen(true);
+                        setEditing(tpl)
+                        setDialogOpen(true)
                       }}
                     >
-                      <Pencil className="w-4 h-4" />
+                      <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setDeleteTarget(tpl)}
-                    >
-                      <Trash2 className="w-4 h-4" />
+                    <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(tpl)}>
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </TableCell>
@@ -425,7 +387,7 @@ export function ChecklistManagement() {
       <AlertDialog
         open={!!deleteTarget}
         onOpenChange={(v) => {
-          if (!v) setDeleteTarget(null);
+          if (!v) setDeleteTarget(null)
         }}
       >
         <AlertDialogContent>
@@ -448,5 +410,5 @@ export function ChecklistManagement() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  );
+  )
 }

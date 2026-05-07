@@ -1,22 +1,22 @@
-'use client';
+'use client'
 
-import { useEffect, useState, useTransition } from 'react';
-import { useForm } from 'react-hook-form';
-import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { toast } from 'sonner';
-import { Pencil, Trash2, Plus } from 'lucide-react';
-import { getAllVenueTypes, createVenueType, updateVenueType, deleteVenueType } from '@/app/actions/venue-type';
-import { venueTypeSchema, type VenueTypeFormData } from '@/lib/venue-type-schema';
-import type { VenueType } from '@/types/index';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useEffect, useState, useTransition } from 'react'
+import { useForm } from 'react-hook-form'
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
+import { toast } from 'sonner'
+import { Pencil, Trash2, Plus } from 'lucide-react'
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  getAllVenueTypes,
+  createVenueType,
+  updateVenueType,
+  deleteVenueType,
+} from '@/app/actions/venue-type'
+import { venueTypeSchema, type VenueTypeFormData } from '@/lib/venue-type-schema'
+import type { VenueType } from '@/types/index'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,7 +26,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from '@/components/ui/alert-dialog'
 import {
   Table,
   TableBody,
@@ -34,7 +34,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from '@/components/ui/table'
 
 function VenueTypeDialog({
   open,
@@ -42,12 +42,12 @@ function VenueTypeDialog({
   initial,
   onSaved,
 }: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  initial: VenueType | null;
-  onSaved: (vt: VenueType) => void;
+  open: boolean
+  onOpenChange: (v: boolean) => void
+  initial: VenueType | null
+  onSaved: (vt: VenueType) => void
 }) {
-  const [isPending, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition()
   const {
     register,
     handleSubmit,
@@ -56,31 +56,25 @@ function VenueTypeDialog({
   } = useForm<VenueTypeFormData>({
     resolver: standardSchemaResolver(venueTypeSchema),
     defaultValues: { name: '', code: '' },
-  });
+  })
 
   useEffect(() => {
-    reset(
-      initial
-        ? { name: initial.name, code: initial.code ?? '' }
-        : { name: '', code: '' }
-    );
-  }, [initial, open, reset]);
+    reset(initial ? { name: initial.name, code: initial.code ?? '' } : { name: '', code: '' })
+  }, [initial, open, reset])
 
   function onSubmit(data: VenueTypeFormData) {
     startTransition(async () => {
-      const result = initial
-        ? await updateVenueType(initial.id, data)
-        : await createVenueType(data);
+      const result = initial ? await updateVenueType(initial.id, data) : await createVenueType(data)
 
       if (!result.success) {
-        toast.error(result.error);
-        return;
+        toast.error(result.error)
+        return
       }
 
-      toast.success(initial ? 'Venue type updated.' : 'Venue type added.');
-      onSaved(result.data);
-      onOpenChange(false);
-    });
+      toast.success(initial ? 'Venue type updated.' : 'Venue type added.')
+      onSaved(result.data)
+      onOpenChange(false)
+    })
   }
 
   return (
@@ -94,9 +88,7 @@ function VenueTypeDialog({
           <div className="space-y-2">
             <Label htmlFor="vt-name">Name *</Label>
             <Input id="vt-name" {...register('name')} />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
+            {errors.name && <p className="text-destructive text-sm">{errors.name.message}</p>}
           </div>
 
           <div className="space-y-2">
@@ -115,53 +107,53 @@ function VenueTypeDialog({
         </form>
       </DialogContent>
     </Dialog>
-  );
+  )
 }
 
 export function VenueTypeManagement() {
-  const [venueTypes, setVenueTypes] = useState<VenueType[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<VenueType | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<VenueType | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [isDeleting, startDeleteTransition] = useTransition();
+  const [venueTypes, setVenueTypes] = useState<VenueType[]>([])
+  const [loading, setLoading] = useState(true)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editing, setEditing] = useState<VenueType | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<VenueType | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [isDeleting, startDeleteTransition] = useTransition()
 
   useEffect(() => {
     getAllVenueTypes().then((result) => {
       if (result.success) {
-        setVenueTypes(result.data);
+        setVenueTypes(result.data)
       } else {
-        toast.error(result.error);
+        toast.error(result.error)
       }
-      setLoading(false);
-    });
-  }, []);
+      setLoading(false)
+    })
+  }, [])
 
   function handleSaved(vt: VenueType) {
     setVenueTypes((prev) => {
-      const idx = prev.findIndex((v) => v.id === vt.id);
+      const idx = prev.findIndex((v) => v.id === vt.id)
       if (idx >= 0) {
-        const next = [...prev];
-        next[idx] = vt;
-        return next;
+        const next = [...prev]
+        next[idx] = vt
+        return next
       }
-      return [...prev, vt].sort((a, b) => a.name.localeCompare(b.name));
-    });
+      return [...prev, vt].sort((a, b) => a.name.localeCompare(b.name))
+    })
   }
 
   function confirmDelete() {
-    if (!deleteTarget) return;
+    if (!deleteTarget) return
     startDeleteTransition(async () => {
-      const result = await deleteVenueType(deleteTarget.id);
+      const result = await deleteVenueType(deleteTarget.id)
       if (!result.success) {
-        setDeleteError(result.error);
-        return;
+        setDeleteError(result.error)
+        return
       }
-      setVenueTypes((prev) => prev.filter((v) => v.id !== deleteTarget.id));
-      toast.success('Venue type deleted.');
-      setDeleteTarget(null);
-    });
+      setVenueTypes((prev) => prev.filter((v) => v.id !== deleteTarget.id))
+      toast.success('Venue type deleted.')
+      setDeleteTarget(null)
+    })
   }
 
   return (
@@ -170,16 +162,19 @@ export function VenueTypeManagement() {
         <h2 className="text-lg font-semibold">Venue Types</h2>
         <Button
           size="sm"
-          onClick={() => { setEditing(null); setDialogOpen(true); }}
+          onClick={() => {
+            setEditing(null)
+            setDialogOpen(true)
+          }}
         >
-          <Plus className="w-4 h-4 mr-1" /> Add venue type
+          <Plus className="mr-1 h-4 w-4" /> Add venue type
         </Button>
       </div>
 
       {loading ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <p className="text-muted-foreground text-sm">Loading…</p>
       ) : venueTypes.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No venue types yet.</p>
+        <p className="text-muted-foreground text-sm">No venue types yet.</p>
       ) : (
         <Table>
           <TableHeader>
@@ -195,20 +190,26 @@ export function VenueTypeManagement() {
                 <TableCell className="font-medium">{vt.name}</TableCell>
                 <TableCell>{vt.code ?? '—'}</TableCell>
                 <TableCell>
-                  <div className="flex gap-1 justify-end">
+                  <div className="flex justify-end gap-1">
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => { setEditing(vt); setDialogOpen(true); }}
+                      onClick={() => {
+                        setEditing(vt)
+                        setDialogOpen(true)
+                      }}
                     >
-                      <Pencil className="w-4 h-4" />
+                      <Pencil className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => { setDeleteTarget(vt); setDeleteError(null); }}
+                      onClick={() => {
+                        setDeleteTarget(vt)
+                        setDeleteError(null)
+                      }}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </TableCell>
@@ -227,7 +228,9 @@ export function VenueTypeManagement() {
 
       <AlertDialog
         open={!!deleteTarget}
-        onOpenChange={(v) => { if (!v) setDeleteTarget(null); }}
+        onOpenChange={(v) => {
+          if (!v) setDeleteTarget(null)
+        }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -236,7 +239,9 @@ export function VenueTypeManagement() {
               {deleteError ? (
                 <span className="text-destructive">{deleteError}</span>
               ) : (
-                <>This will permanently delete <strong>{deleteTarget?.name}</strong>.</>
+                <>
+                  This will permanently delete <strong>{deleteTarget?.name}</strong>.
+                </>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -255,5 +260,5 @@ export function VenueTypeManagement() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  );
+  )
 }

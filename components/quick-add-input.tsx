@@ -1,29 +1,24 @@
-'use client';
+'use client'
 
-import { useState, useTransition, type FormEvent, useId } from 'react';
-import { useTranslations } from 'next-intl';
-import { Loader2, Sparkles } from 'lucide-react';
-import { parseQuickAdd } from '@/app/actions/quick-add';
-import type { QuickAddParseData } from '@/lib/quick-add-types';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
+import { useState, useTransition, type FormEvent, useId } from 'react'
+import { useTranslations } from 'next-intl'
+import { Loader2, Sparkles } from 'lucide-react'
+import { parseQuickAdd } from '@/app/actions/quick-add'
+import type { QuickAddParseData } from '@/lib/quick-add-types'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 
 type Props = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  contextDate: string;
-  onSuccess: (data: QuickAddParseData, raw: string) => void;
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  contextDate: string
+  onSuccess: (data: QuickAddParseData, raw: string) => void
   /** Any server failure: parent decides (toast only vs open form with raw in notes). */
-  onParseFailed: (raw: string, errorMessage: string) => void;
-  disabled?: boolean;
-};
+  onParseFailed: (raw: string, errorMessage: string) => void
+  disabled?: boolean
+}
 
 export function QuickAddInput({
   open,
@@ -33,30 +28,30 @@ export function QuickAddInput({
   onParseFailed,
   disabled,
 }: Props) {
-  const t = useTranslations('Tenant.quickAdd');
-  const [text, setText] = useState('');
-  const [isPending, startTransition] = useTransition();
-  const errId = useId();
+  const t = useTranslations('Tenant.quickAdd')
+  const [text, setText] = useState('')
+  const [isPending, startTransition] = useTransition()
+  const errId = useId()
 
   function close() {
-    onOpenChange(false);
-    setText('');
+    onOpenChange(false)
+    setText('')
   }
 
   function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    const v = text.trim();
-    if (!v || isPending) return;
+    e.preventDefault()
+    const v = text.trim()
+    if (!v || isPending) return
     startTransition(async () => {
-      const r = await parseQuickAdd(v, contextDate);
+      const r = await parseQuickAdd(v, contextDate)
       if (!r.success) {
-        onParseFailed(v, r.error);
-        close();
-        return;
+        onParseFailed(v, r.error)
+        close()
+        return
       }
-      onSuccess(r.data, v);
-      close();
-    });
+      onSuccess(r.data, v)
+      close()
+    })
   }
 
   return (
@@ -64,9 +59,9 @@ export function QuickAddInput({
       open={open}
       onOpenChange={(o) => {
         if (!o) {
-          onOpenChange(false);
-          setText('');
-        } else onOpenChange(true);
+          onOpenChange(false)
+          setText('')
+        } else onOpenChange(true)
       }}
     >
       <DialogContent className="sm:max-w-md" aria-describedby={errId}>
@@ -76,7 +71,7 @@ export function QuickAddInput({
             {t('title')}
           </DialogTitle>
         </DialogHeader>
-        <p id={errId} className="text-sm text-muted-foreground">
+        <p id={errId} className="text-muted-foreground text-sm">
           {t('description', { contextDate })}
         </p>
         <form onSubmit={handleSubmit} className="space-y-3">
@@ -96,13 +91,10 @@ export function QuickAddInput({
             <Button type="button" variant="outline" onClick={close} disabled={isPending}>
               {t('cancel')}
             </Button>
-            <Button
-              type="submit"
-              disabled={isPending || !text.trim() || disabled}
-            >
+            <Button type="submit" disabled={isPending || !text.trim() || disabled}>
               {isPending ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
                   {t('parsing')}
                 </>
               ) : (
@@ -113,5 +105,5 @@ export function QuickAddInput({
         </form>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

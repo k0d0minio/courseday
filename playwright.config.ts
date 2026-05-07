@@ -1,8 +1,8 @@
-import { defineConfig, devices } from '@playwright/test';
-import { config as loadDotenv } from 'dotenv';
+import { defineConfig, devices } from '@playwright/test'
+import { config as loadDotenv } from 'dotenv'
 
 // Load .env.local so fixtures can use Supabase service role key
-loadDotenv({ path: '.env.local' });
+loadDotenv({ path: '.env.local' })
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -31,4 +31,4 @@ export default defineConfig({
     reuseExistingServer: true,
     timeout: 60_000,
   },
-});
+})

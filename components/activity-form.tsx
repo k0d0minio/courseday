@@ -1,50 +1,46 @@
-'use client';
+'use client'
 
-import { useEffect, useMemo, useRef, useState, useTransition, type RefObject } from 'react';
-import { useForm } from 'react-hook-form';
-import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { z } from 'zod';
-import { toast } from 'sonner';
-import { Check, Plus } from 'lucide-react';
-import { useTranslations } from 'next-intl';
-import { createPOC } from '@/app/actions/poc';
-import { createVenueType } from '@/app/actions/venue-type';
-import { createActivityTag, getAllActivityTags } from '@/app/actions/activity-tags';
-import { generateRecurrenceDates } from '@/lib/day-utils';
-import { filterAllergenCodes, type AllergenCode } from '@/lib/allergens';
-import type { QuickAddActivityFormDefaults, QuickAddGapId } from '@/lib/quick-add-types';
-import { AllergenMultiSelect } from '@/components/allergen-multi-select';
-import { MoreOptionsSection } from '@/components/more-options-section';
-import { cn } from '@/lib/utils';
-import { mutateWithOfflineQueue } from '@/lib/day-mutation-client';
-import { useTenant } from '@/lib/tenant-context';
-import type { Activity, ActivityTag, ActivityWithRelations, PointOfContact, VenueType } from '@/types/index';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from '@/components/ui/drawer';
+import { useEffect, useMemo, useRef, useState, useTransition, type RefObject } from 'react'
+import { useForm } from 'react-hook-form'
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
+import { z } from 'zod'
+import { toast } from 'sonner'
+import { Check, Plus } from 'lucide-react'
+import { useTranslations } from 'next-intl'
+import { createPOC } from '@/app/actions/poc'
+import { createVenueType } from '@/app/actions/venue-type'
+import { createActivityTag, getAllActivityTags } from '@/app/actions/activity-tags'
+import { generateRecurrenceDates } from '@/lib/day-utils'
+import { filterAllergenCodes, type AllergenCode } from '@/lib/allergens'
+import type { QuickAddActivityFormDefaults, QuickAddGapId } from '@/lib/quick-add-types'
+import { AllergenMultiSelect } from '@/components/allergen-multi-select'
+import { MoreOptionsSection } from '@/components/more-options-section'
+import { cn } from '@/lib/utils'
+import { mutateWithOfflineQueue } from '@/lib/day-mutation-client'
+import { useTenant } from '@/lib/tenant-context'
+import type {
+  Activity,
+  ActivityTag,
+  ActivityWithRelations,
+  PointOfContact,
+  VenueType,
+} from '@/types/index'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
+import { Separator } from '@/components/ui/separator'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui/select'
 
 // ---------------------------------------------------------------------------
 // Schema & types
@@ -61,26 +57,26 @@ const formSchema = z.object({
   notes: z.string().optional(),
   isRecurring: z.boolean().optional(),
   recurrenceFrequency: z.enum(['weekly', 'biweekly', 'monthly', 'yearly']).optional(),
-});
+})
 
-type FormData = z.infer<typeof formSchema>;
+type FormData = z.infer<typeof formSchema>
 
-const NEW_VALUE = '__new__';
+const NEW_VALUE = '__new__'
 
 // ---------------------------------------------------------------------------
 // Hooks
 // ---------------------------------------------------------------------------
 
 function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(false)
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 639px)');
-    setIsMobile(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
-  return isMobile;
+    const mq = window.matchMedia('(max-width: 639px)')
+    setIsMobile(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+  return isMobile
 }
 
 // ---------------------------------------------------------------------------
@@ -88,24 +84,24 @@ function useIsMobile() {
 // ---------------------------------------------------------------------------
 
 export type ActivityQuickAddSeed = {
-  defaults: QuickAddActivityFormDefaults;
-  allergens: AllergenCode[];
-  gapFieldKeys: readonly QuickAddGapId[];
-};
+  defaults: QuickAddActivityFormDefaults
+  allergens: AllergenCode[]
+  gapFieldKeys: readonly QuickAddGapId[]
+}
 
 type Props = {
-  isOpen: boolean;
-  onClose: () => void;
-  date: string;
-  dayId: string;
-  pocs: PointOfContact[];
-  venueTypes: VenueType[];
-  editItem?: ActivityWithRelations | null;
-  onSuccess: (item: Activity) => void;
-  returnFocusRef?: RefObject<HTMLElement | null>;
+  isOpen: boolean
+  onClose: () => void
+  date: string
+  dayId: string
+  pocs: PointOfContact[]
+  venueTypes: VenueType[]
+  editItem?: ActivityWithRelations | null
+  onSuccess: (item: Activity) => void
+  returnFocusRef?: RefObject<HTMLElement | null>
   /** Create flow only: pre-fill from quick add parse. */
-  quickAdd?: ActivityQuickAddSeed | null;
-};
+  quickAdd?: ActivityQuickAddSeed | null
+}
 
 // ---------------------------------------------------------------------------
 // ActivityForm
@@ -123,79 +119,90 @@ export function ActivityForm({
   returnFocusRef,
   quickAdd,
 }: Props) {
-  const t = useTranslations('Tenant.activityForm');
-  const tAllergens = useTranslations('Tenant.allergens');
-  const isMobile = useIsMobile();
-  const [isPending, startTransition] = useTransition();
+  const t = useTranslations('Tenant.activityForm')
+  const tAllergens = useTranslations('Tenant.allergens')
+  const isMobile = useIsMobile()
+  const [isPending, startTransition] = useTransition()
 
   // POC inline creation
-  const [pocs, setPocs] = useState(initialPocs);
-  const [showNewPoc, setShowNewPoc] = useState(false);
-  const [newPocName, setNewPocName] = useState('');
-  const [newPocEmail, setNewPocEmail] = useState('');
-  const [newPocPhone, setNewPocPhone] = useState('');
-  const [isSavingPoc, startPocTransition] = useTransition();
+  const [pocs, setPocs] = useState(initialPocs)
+  const [showNewPoc, setShowNewPoc] = useState(false)
+  const [newPocName, setNewPocName] = useState('')
+  const [newPocEmail, setNewPocEmail] = useState('')
+  const [newPocPhone, setNewPocPhone] = useState('')
+  const [isSavingPoc, startPocTransition] = useTransition()
 
   // Venue type inline creation
-  const [venueTypes, setVenueTypes] = useState(initialVenueTypes);
-  const [showNewVt, setShowNewVt] = useState(false);
-  const [newVtName, setNewVtName] = useState('');
-  const [newVtCode, setNewVtCode] = useState('');
-  const [isSavingVt, startVtTransition] = useTransition();
+  const [venueTypes, setVenueTypes] = useState(initialVenueTypes)
+  const [showNewVt, setShowNewVt] = useState(false)
+  const [newVtName, setNewVtName] = useState('')
+  const [newVtCode, setNewVtCode] = useState('')
+  const [isSavingVt, startVtTransition] = useTransition()
 
   // Tag multi-select
-  const [allTags, setAllTags] = useState<ActivityTag[]>([]);
-  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [allTags, setAllTags] = useState<ActivityTag[]>([])
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
 
   // Allergens
-  const [allergens, setAllergens] = useState<AllergenCode[]>([]);
-  const { tenantSlug } = useTenant();
+  const [allergens, setAllergens] = useState<AllergenCode[]>([])
+  const { tenantSlug } = useTenant()
 
-  const isEditing = !!editItem;
-  const modalTitle = isEditing ? t('editTitle') : t('addTitle');
+  const isEditing = !!editItem
+  const modalTitle = isEditing ? t('editTitle') : t('addTitle')
 
-  const quickAddKeyRef = useRef<string>('');
-  const [qaGapFieldKeys, setQaGapFieldKeys] = useState<ReadonlySet<QuickAddGapId> | null>(null);
+  const quickAddKeyRef = useRef<string>('')
+  const [qaGapFieldKeys, setQaGapFieldKeys] = useState<ReadonlySet<QuickAddGapId> | null>(null)
 
-  const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<FormData>({
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    reset,
+    formState: { errors },
+  } = useForm<FormData>({
     resolver: standardSchemaResolver(formSchema),
     defaultValues: defaultValues(editItem),
-  });
+  })
 
   // Sync props
-  useEffect(() => { setPocs(initialPocs); }, [initialPocs]);
-  useEffect(() => { setVenueTypes(initialVenueTypes); }, [initialVenueTypes]);
+  useEffect(() => {
+    setPocs(initialPocs)
+  }, [initialPocs])
+  useEffect(() => {
+    setVenueTypes(initialVenueTypes)
+  }, [initialVenueTypes])
 
   // Reset on open / edit / quick add
   useEffect(() => {
     if (!isOpen) {
-      quickAddKeyRef.current = '';
-      setQaGapFieldKeys(null);
-      return;
+      quickAddKeyRef.current = ''
+      setQaGapFieldKeys(null)
+      return
     }
     if (isEditing) {
-      quickAddKeyRef.current = '';
-      setQaGapFieldKeys(null);
-      reset(defaultValues(editItem));
-      setSelectedTagIds(editItem?.tags?.map((t) => t.id) ?? []);
-      setAllergens(filterAllergenCodes(editItem?.allergens));
-      setShowNewPoc(false);
-      setShowNewVt(false);
-      setNewPocName('');
-      setNewPocEmail('');
-      setNewPocPhone('');
-      setNewVtName('');
-      setNewVtCode('');
+      quickAddKeyRef.current = ''
+      setQaGapFieldKeys(null)
+      reset(defaultValues(editItem))
+      setSelectedTagIds(editItem?.tags?.map((t) => t.id) ?? [])
+      setAllergens(filterAllergenCodes(editItem?.allergens))
+      setShowNewPoc(false)
+      setShowNewVt(false)
+      setNewPocName('')
+      setNewPocEmail('')
+      setNewPocPhone('')
+      setNewVtName('')
+      setNewVtCode('')
       getAllActivityTags().then((r) => {
-        if (r.success) setAllTags(r.data);
-      });
-      return;
+        if (r.success) setAllTags(r.data)
+      })
+      return
     }
     if (quickAdd) {
-      const k = JSON.stringify(quickAdd);
+      const k = JSON.stringify(quickAdd)
       if (quickAddKeyRef.current !== k) {
-        quickAddKeyRef.current = k;
-        const d = quickAdd.defaults;
+        quickAddKeyRef.current = k
+        const d = quickAdd.defaults
         reset({
           title: d.title,
           description: d.description,
@@ -207,70 +214,79 @@ export function ActivityForm({
           notes: d.notes,
           isRecurring: false,
           recurrenceFrequency: undefined,
-        });
-        setSelectedTagIds([]);
-        setAllergens(quickAdd.allergens);
-        setQaGapFieldKeys(new Set(quickAdd.gapFieldKeys));
-        setShowNewPoc(false);
-        setShowNewVt(false);
+        })
+        setSelectedTagIds([])
+        setAllergens(quickAdd.allergens)
+        setQaGapFieldKeys(new Set(quickAdd.gapFieldKeys))
+        setShowNewPoc(false)
+        setShowNewVt(false)
         getAllActivityTags().then((r) => {
-          if (r.success) setAllTags(r.data);
-        });
+          if (r.success) setAllTags(r.data)
+        })
       }
-      return;
+      return
     }
-    quickAddKeyRef.current = '';
-    setQaGapFieldKeys(null);
-    reset(defaultValues(null));
-    setSelectedTagIds([]);
-    setAllergens([]);
-    setShowNewPoc(false);
-    setShowNewVt(false);
-    setNewPocName('');
-    setNewPocEmail('');
-    setNewPocPhone('');
-    setNewVtName('');
-    setNewVtCode('');
+    quickAddKeyRef.current = ''
+    setQaGapFieldKeys(null)
+    reset(defaultValues(null))
+    setSelectedTagIds([])
+    setAllergens([])
+    setShowNewPoc(false)
+    setShowNewVt(false)
+    setNewPocName('')
+    setNewPocEmail('')
+    setNewPocPhone('')
+    setNewVtName('')
+    setNewVtCode('')
     getAllActivityTags().then((r) => {
-      if (r.success) setAllTags(r.data);
-    });
-  }, [isOpen, editItem, quickAdd, reset]);
+      if (r.success) setAllTags(r.data)
+    })
+  }, [isOpen, editItem, quickAdd, reset])
 
-  const watchIsRecurring = watch('isRecurring');
-  const watchFrequency = watch('recurrenceFrequency');
+  const watchIsRecurring = watch('isRecurring')
+  const watchFrequency = watch('recurrenceFrequency')
 
   const qaRing = (field: QuickAddGapId) =>
-    qaGapFieldKeys?.has(field) ? 'rounded-md ring-2 ring-amber-500/40 p-0.5 -m-0.5' : '';
+    qaGapFieldKeys?.has(field) ? 'rounded-md ring-2 ring-amber-500/40 p-0.5 -m-0.5' : ''
 
   const occurrenceCount = useMemo(() => {
-    if (!watchIsRecurring || !watchFrequency) return 0;
-    return Math.min(52, 1 + generateRecurrenceDates(date, watchFrequency).length);
-  }, [date, watchIsRecurring, watchFrequency]);
+    if (!watchIsRecurring || !watchFrequency) return 0
+    return Math.min(52, 1 + generateRecurrenceDates(date, watchFrequency).length)
+  }, [date, watchIsRecurring, watchFrequency])
 
   function handleSavePoc() {
-    if (!newPocName.trim()) return;
+    if (!newPocName.trim()) return
     startPocTransition(async () => {
-      const result = await createPOC({ name: newPocName, email: newPocEmail, phone: newPocPhone });
-      if (!result.success) { toast.error(result.error); return; }
-      setPocs((prev) => [...prev, result.data]);
-      setValue('pocId', result.data.id);
-      setShowNewPoc(false);
-      setNewPocName(''); setNewPocEmail(''); setNewPocPhone('');
-      toast.success(t('pocAdded'));
-    });
+      const result = await createPOC({ name: newPocName, email: newPocEmail, phone: newPocPhone })
+      if (!result.success) {
+        toast.error(result.error)
+        return
+      }
+      setPocs((prev) => [...prev, result.data])
+      setValue('pocId', result.data.id)
+      setShowNewPoc(false)
+      setNewPocName('')
+      setNewPocEmail('')
+      setNewPocPhone('')
+      toast.success(t('pocAdded'))
+    })
   }
 
   function handleSaveVenueType() {
-    if (!newVtName.trim()) return;
+    if (!newVtName.trim()) return
     startVtTransition(async () => {
-      const result = await createVenueType({ name: newVtName, code: newVtCode });
-      if (!result.success) { toast.error(result.error); return; }
-      setVenueTypes((prev) => [...prev, result.data]);
-      setValue('venueTypeId', result.data.id);
-      setShowNewVt(false);
-      setNewVtName(''); setNewVtCode('');
-      toast.success(t('venueTypeAdded'));
-    });
+      const result = await createVenueType({ name: newVtName, code: newVtCode })
+      if (!result.success) {
+        toast.error(result.error)
+        return
+      }
+      setVenueTypes((prev) => [...prev, result.data])
+      setValue('venueTypeId', result.data.id)
+      setShowNewVt(false)
+      setNewVtName('')
+      setNewVtCode('')
+      toast.success(t('venueTypeAdded'))
+    })
   }
 
   function onSubmit(data: FormData) {
@@ -289,7 +305,7 @@ export function ActivityForm({
         allergens: allergens.length > 0 ? allergens : undefined,
         isRecurring: data.isRecurring ?? false,
         recurrenceFrequency: data.recurrenceFrequency ?? undefined,
-      };
+      }
 
       const result = await mutateWithOfflineQueue<Activity>({
         entity: 'activities',
@@ -297,9 +313,12 @@ export function ActivityForm({
         tenantSlug,
         dayId,
         payload: isEditing ? { ...payload, id: editItem!.id } : payload,
-      });
+      })
 
-      if (!result.success) { toast.error(result.error); return; }
+      if (!result.success) {
+        toast.error(result.error)
+        return
+      }
 
       if (result.pending && !isEditing) {
         onSuccess({
@@ -321,7 +340,7 @@ export function ActivityForm({
           deleted_at: null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        });
+        })
       } else if (result.pending && isEditing) {
         onSuccess({
           ...editItem!,
@@ -335,13 +354,13 @@ export function ActivityForm({
           notes: payload.notes ?? null,
           allergens: payload.allergens ?? [],
           updated_at: new Date().toISOString(),
-        });
+        })
       } else {
-        onSuccess(result.data);
+        onSuccess(result.data)
       }
-      toast.success(result.pending ? t('saved') : isEditing ? t('updated') : t('saved'));
-      onClose();
-    });
+      toast.success(result.pending ? t('saved') : isEditing ? t('updated') : t('saved'))
+      onClose()
+    })
   }
 
   const formBody = (
@@ -350,7 +369,7 @@ export function ActivityForm({
       <div className={cn('space-y-1', qaRing('title'))}>
         <Label htmlFor="af-title">{t('titleLabel')} *</Label>
         <Input id="af-title" {...register('title')} />
-        {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
+        {errors.title && <p className="text-destructive text-sm">{errors.title.message}</p>}
       </div>
 
       {/* Tags */}
@@ -361,8 +380,8 @@ export function ActivityForm({
           selectedIds={selectedTagIds}
           onChange={setSelectedTagIds}
           onTagCreated={(tag) => {
-            setAllTags((prev) => [...prev, tag].sort((a, b) => a.name.localeCompare(b.name)));
-            setSelectedTagIds((prev) => [...prev, tag.id]);
+            setAllTags((prev) => [...prev, tag].sort((a, b) => a.name.localeCompare(b.name)))
+            setSelectedTagIds((prev) => [...prev, tag.id])
           }}
           placeholder={t('tagsPlaceholder')}
           addNewTagLabel={t('addNewTag')}
@@ -397,26 +416,54 @@ export function ActivityForm({
         <Select
           value={watch('venueTypeId') ?? ''}
           onValueChange={(v) => {
-            if (v === NEW_VALUE) { setValue('venueTypeId', ''); setShowNewVt(true); }
-            else { setValue('venueTypeId', v); setShowNewVt(false); }
+            if (v === NEW_VALUE) {
+              setValue('venueTypeId', '')
+              setShowNewVt(true)
+            } else {
+              setValue('venueTypeId', v)
+              setShowNewVt(false)
+            }
           }}
         >
-          <SelectTrigger><SelectValue placeholder={t('selectVenueType')} /></SelectTrigger>
+          <SelectTrigger>
+            <SelectValue placeholder={t('selectVenueType')} />
+          </SelectTrigger>
           <SelectContent>
-            {venueTypes.map((vt) => <SelectItem key={vt.id} value={vt.id}>{vt.name}</SelectItem>)}
+            {venueTypes.map((vt) => (
+              <SelectItem key={vt.id} value={vt.id}>
+                {vt.name}
+              </SelectItem>
+            ))}
             <SelectItem value={NEW_VALUE}>
-              <span className="flex items-center gap-1 text-muted-foreground"><Plus className="w-3 h-3" /> {t('addNew')}</span>
+              <span className="text-muted-foreground flex items-center gap-1">
+                <Plus className="h-3 w-3" /> {t('addNew')}
+              </span>
             </SelectItem>
           </SelectContent>
         </Select>
         {showNewVt && (
-          <div className="mt-2 rounded-md border p-3 space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">{t('newVenueType')}</p>
-            <Input placeholder={t('namePlaceholder')} value={newVtName} onChange={(e) => setNewVtName(e.target.value)} />
-            <Input placeholder={t('codePlaceholder')} value={newVtCode} onChange={(e) => setNewVtCode(e.target.value)} />
-            <div className="flex gap-2 justify-end">
-              <Button type="button" size="sm" variant="outline" onClick={() => setShowNewVt(false)}>{t('cancel')}</Button>
-              <Button type="button" size="sm" onClick={handleSaveVenueType} disabled={isSavingVt || !newVtName.trim()}>
+          <div className="mt-2 space-y-2 rounded-md border p-3">
+            <p className="text-muted-foreground text-xs font-medium">{t('newVenueType')}</p>
+            <Input
+              placeholder={t('namePlaceholder')}
+              value={newVtName}
+              onChange={(e) => setNewVtName(e.target.value)}
+            />
+            <Input
+              placeholder={t('codePlaceholder')}
+              value={newVtCode}
+              onChange={(e) => setNewVtCode(e.target.value)}
+            />
+            <div className="flex justify-end gap-2">
+              <Button type="button" size="sm" variant="outline" onClick={() => setShowNewVt(false)}>
+                {t('cancel')}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleSaveVenueType}
+                disabled={isSavingVt || !newVtName.trim()}
+              >
                 {isSavingVt ? t('saving') : t('save')}
               </Button>
             </div>
@@ -430,27 +477,65 @@ export function ActivityForm({
         <Select
           value={watch('pocId') ?? ''}
           onValueChange={(v) => {
-            if (v === NEW_VALUE) { setValue('pocId', ''); setShowNewPoc(true); }
-            else { setValue('pocId', v); setShowNewPoc(false); }
+            if (v === NEW_VALUE) {
+              setValue('pocId', '')
+              setShowNewPoc(true)
+            } else {
+              setValue('pocId', v)
+              setShowNewPoc(false)
+            }
           }}
         >
-          <SelectTrigger><SelectValue placeholder={t('selectPoc')} /></SelectTrigger>
+          <SelectTrigger>
+            <SelectValue placeholder={t('selectPoc')} />
+          </SelectTrigger>
           <SelectContent>
-            {pocs.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+            {pocs.map((p) => (
+              <SelectItem key={p.id} value={p.id}>
+                {p.name}
+              </SelectItem>
+            ))}
             <SelectItem value={NEW_VALUE}>
-              <span className="flex items-center gap-1 text-muted-foreground"><Plus className="w-3 h-3" /> {t('addNew')}</span>
+              <span className="text-muted-foreground flex items-center gap-1">
+                <Plus className="h-3 w-3" /> {t('addNew')}
+              </span>
             </SelectItem>
           </SelectContent>
         </Select>
         {showNewPoc && (
-          <div className="mt-2 rounded-md border p-3 space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">{t('newPoc')}</p>
-            <Input placeholder={t('namePlaceholder')} value={newPocName} onChange={(e) => setNewPocName(e.target.value)} />
-            <Input placeholder={t('emailPlaceholder')} type="email" value={newPocEmail} onChange={(e) => setNewPocEmail(e.target.value)} />
-            <Input placeholder={t('phonePlaceholder')} value={newPocPhone} onChange={(e) => setNewPocPhone(e.target.value)} />
-            <div className="flex gap-2 justify-end">
-              <Button type="button" size="sm" variant="outline" onClick={() => setShowNewPoc(false)}>{t('cancel')}</Button>
-              <Button type="button" size="sm" onClick={handleSavePoc} disabled={isSavingPoc || !newPocName.trim()}>
+          <div className="mt-2 space-y-2 rounded-md border p-3">
+            <p className="text-muted-foreground text-xs font-medium">{t('newPoc')}</p>
+            <Input
+              placeholder={t('namePlaceholder')}
+              value={newPocName}
+              onChange={(e) => setNewPocName(e.target.value)}
+            />
+            <Input
+              placeholder={t('emailPlaceholder')}
+              type="email"
+              value={newPocEmail}
+              onChange={(e) => setNewPocEmail(e.target.value)}
+            />
+            <Input
+              placeholder={t('phonePlaceholder')}
+              value={newPocPhone}
+              onChange={(e) => setNewPocPhone(e.target.value)}
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setShowNewPoc(false)}
+              >
+                {t('cancel')}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleSavePoc}
+                disabled={isSavingPoc || !newPocName.trim()}
+              >
                 {isSavingPoc ? t('saving') : t('save')}
               </Button>
             </div>
@@ -487,9 +572,13 @@ export function ActivityForm({
             <div className="space-y-2">
               <Select
                 value={watchFrequency ?? ''}
-                onValueChange={(v) => setValue('recurrenceFrequency', v as FormData['recurrenceFrequency'])}
+                onValueChange={(v) =>
+                  setValue('recurrenceFrequency', v as FormData['recurrenceFrequency'])
+                }
               >
-                <SelectTrigger><SelectValue placeholder={t('selectFrequency')} /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder={t('selectFrequency')} />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="weekly">{t('weekly')}</SelectItem>
                   <SelectItem value="biweekly">{t('biweekly')}</SelectItem>
@@ -499,7 +588,7 @@ export function ActivityForm({
               </Select>
               {occurrenceCount > 0 && (
                 <p
-                  className="text-sm text-muted-foreground"
+                  className="text-muted-foreground text-sm"
                   dangerouslySetInnerHTML={{
                     __html: t.rich('occurrences', {
                       count: occurrenceCount,
@@ -514,11 +603,15 @@ export function ActivityForm({
       )}
 
       <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onClose}>{t('cancel')}</Button>
-        <Button type="submit" disabled={isPending}>{isPending ? t('saving') : t('save')}</Button>
+        <Button type="button" variant="outline" onClick={onClose}>
+          {t('cancel')}
+        </Button>
+        <Button type="submit" disabled={isPending}>
+          {isPending ? t('saving') : t('save')}
+        </Button>
       </div>
     </form>
-  );
+  )
 
   if (isMobile) {
     return (
@@ -526,9 +619,9 @@ export function ActivityForm({
         open={isOpen}
         onOpenChange={(v) => {
           if (!v) {
-            onClose();
+            onClose()
             if (returnFocusRef?.current) {
-              queueMicrotask(() => returnFocusRef.current?.focus());
+              queueMicrotask(() => returnFocusRef.current?.focus())
             }
           }
         }}
@@ -537,20 +630,25 @@ export function ActivityForm({
           <DrawerHeader>
             <DrawerTitle>{modalTitle}</DrawerTitle>
           </DrawerHeader>
-          <div className="px-4 pb-6 overflow-y-auto max-h-[70vh]">{formBody}</div>
+          <div className="max-h-[70vh] overflow-y-auto px-4 pb-6">{formBody}</div>
         </DrawerContent>
       </Drawer>
-    );
+    )
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(v) => { if (!v) onClose(); }}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(v) => {
+        if (!v) onClose()
+      }}
+    >
       <DialogContent
-        className="sm:max-w-lg max-h-[90vh] overflow-y-auto"
+        className="max-h-[90vh] overflow-y-auto sm:max-w-lg"
         onCloseAutoFocus={(e) => {
           if (returnFocusRef?.current) {
-            e.preventDefault();
-            returnFocusRef.current.focus();
+            e.preventDefault()
+            returnFocusRef.current.focus()
           }
         }}
       >
@@ -560,7 +658,7 @@ export function ActivityForm({
         {formBody}
       </DialogContent>
     </Dialog>
-  );
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -579,49 +677,54 @@ function TagSelector({
   saveLabel,
   savingLabel,
 }: {
-  tags: ActivityTag[];
-  selectedIds: string[];
-  onChange: (ids: string[]) => void;
-  onTagCreated: (tag: ActivityTag) => void;
-  placeholder: string;
-  addNewTagLabel: string;
-  tagNamePlaceholder: string;
-  cancelLabel: string;
-  saveLabel: string;
-  savingLabel: string;
+  tags: ActivityTag[]
+  selectedIds: string[]
+  onChange: (ids: string[]) => void
+  onTagCreated: (tag: ActivityTag) => void
+  placeholder: string
+  addNewTagLabel: string
+  tagNamePlaceholder: string
+  cancelLabel: string
+  saveLabel: string
+  savingLabel: string
 }) {
-  const [open, setOpen] = useState(false);
-  const [showNew, setShowNew] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [isSaving, startTransition] = useTransition();
+  const [open, setOpen] = useState(false)
+  const [showNew, setShowNew] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [isSaving, startTransition] = useTransition()
 
-  const selectedTags = tags.filter((t) => selectedIds.includes(t.id));
+  const selectedTags = tags.filter((t) => selectedIds.includes(t.id))
 
   function toggle(id: string) {
-    onChange(selectedIds.includes(id) ? selectedIds.filter((s) => s !== id) : [...selectedIds, id]);
+    onChange(selectedIds.includes(id) ? selectedIds.filter((s) => s !== id) : [...selectedIds, id])
   }
 
   function handleSave() {
-    if (!newName.trim()) return;
+    if (!newName.trim()) return
     startTransition(async () => {
-      const result = await createActivityTag(newName.trim());
-      if (!result.success) { toast.error(result.error); return; }
-      onTagCreated(result.data);
-      setNewName('');
-      setShowNew(false);
-    });
+      const result = await createActivityTag(newName.trim())
+      if (!result.success) {
+        toast.error(result.error)
+        return
+      }
+      onTagCreated(result.data)
+      setNewName('')
+      setShowNew(false)
+    })
   }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button type="button" variant="outline" className="w-full justify-start min-h-9 h-auto">
+        <Button type="button" variant="outline" className="h-auto min-h-9 w-full justify-start">
           {selectedTags.length === 0 ? (
             <span className="text-muted-foreground text-sm">{placeholder}</span>
           ) : (
             <div className="flex flex-wrap gap-1">
               {selectedTags.map((t) => (
-                <span key={t.id} className="inline-block text-xs bg-muted px-1.5 py-0.5 rounded">{t.name}</span>
+                <span key={t.id} className="bg-muted inline-block rounded px-1.5 py-0.5 text-xs">
+                  {t.name}
+                </span>
               ))}
             </div>
           )}
@@ -629,19 +732,23 @@ function TagSelector({
       </PopoverTrigger>
       <PopoverContent className="w-56 p-2" align="start">
         {tags.length > 0 && (
-          <div className="max-h-40 overflow-y-auto space-y-0.5 mb-2">
+          <div className="mb-2 max-h-40 space-y-0.5 overflow-y-auto">
             {tags.map((tag) => (
               <button
                 key={tag.id}
                 type="button"
                 onClick={() => toggle(tag.id)}
-                className="flex items-center gap-2 w-full px-2 py-1.5 rounded-sm text-sm hover:bg-muted text-left"
+                className="hover:bg-muted flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm"
               >
-                <div className={cn(
-                  'h-4 w-4 rounded border flex items-center justify-center shrink-0',
-                  selectedIds.includes(tag.id) && 'bg-primary border-primary'
-                )}>
-                  {selectedIds.includes(tag.id) && <Check className="h-3 w-3 text-primary-foreground" />}
+                <div
+                  className={cn(
+                    'flex h-4 w-4 shrink-0 items-center justify-center rounded border',
+                    selectedIds.includes(tag.id) && 'bg-primary border-primary'
+                  )}
+                >
+                  {selectedIds.includes(tag.id) && (
+                    <Check className="text-primary-foreground h-3 w-3" />
+                  )}
                 </div>
                 {tag.name}
               </button>
@@ -649,17 +756,37 @@ function TagSelector({
           </div>
         )}
         {showNew ? (
-          <div className="space-y-2 pt-2 border-t">
+          <div className="space-y-2 border-t pt-2">
             <Input
               placeholder={tagNamePlaceholder}
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSave(); } }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  handleSave()
+                }
+              }}
               autoFocus
             />
-            <div className="flex gap-1 justify-end">
-              <Button type="button" size="sm" variant="outline" onClick={() => { setShowNew(false); setNewName(''); }}>{cancelLabel}</Button>
-              <Button type="button" size="sm" onClick={handleSave} disabled={isSaving || !newName.trim()}>
+            <div className="flex justify-end gap-1">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setShowNew(false)
+                  setNewName('')
+                }}
+              >
+                {cancelLabel}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleSave}
+                disabled={isSaving || !newName.trim()}
+              >
                 {isSaving ? savingLabel : saveLabel}
               </Button>
             </div>
@@ -669,8 +796,8 @@ function TagSelector({
             type="button"
             onClick={() => setShowNew(true)}
             className={cn(
-              'flex items-center gap-1 text-xs text-muted-foreground px-2 py-1.5 hover:bg-muted w-full rounded-sm',
-              tags.length > 0 && 'border-t pt-2 mt-0.5'
+              'text-muted-foreground hover:bg-muted flex w-full items-center gap-1 rounded-sm px-2 py-1.5 text-xs',
+              tags.length > 0 && 'mt-0.5 border-t pt-2'
             )}
           >
             <Plus className="h-3 w-3" /> {addNewTagLabel}
@@ -678,7 +805,7 @@ function TagSelector({
         )}
       </PopoverContent>
     </Popover>
-  );
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -687,7 +814,18 @@ function TagSelector({
 
 function defaultValues(editItem?: ActivityWithRelations | null): FormData {
   if (!editItem) {
-    return { title: '', description: '', startTime: '', endTime: '', expectedCovers: '', venueTypeId: '', pocId: '', notes: '', isRecurring: false, recurrenceFrequency: undefined };
+    return {
+      title: '',
+      description: '',
+      startTime: '',
+      endTime: '',
+      expectedCovers: '',
+      venueTypeId: '',
+      pocId: '',
+      notes: '',
+      isRecurring: false,
+      recurrenceFrequency: undefined,
+    }
   }
   return {
     title: editItem.title,
@@ -700,5 +838,5 @@ function defaultValues(editItem?: ActivityWithRelations | null): FormData {
     notes: editItem.notes ?? '',
     isRecurring: false,
     recurrenceFrequency: undefined,
-  };
+  }
 }

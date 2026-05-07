@@ -1,5 +1,5 @@
-import { SignInForm } from './sign-in-form';
+import { SignInForm } from './sign-in-form'
 
 export default function PlatformSignInPage() {
-  return <SignInForm />;
+  return <SignInForm />
 }

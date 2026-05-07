@@ -1,5 +1,5 @@
-import { DayPageSkeleton } from '@/components/day-page-skeleton';
+import { DayPageSkeleton } from '@/components/day-page-skeleton'
 
 export default function DayLoading() {
-  return <DayPageSkeleton />;
+  return <DayPageSkeleton />
 }

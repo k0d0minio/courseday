@@ -1,12 +1,12 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 /** Service-role client (tables may be ahead of generated Database types). */
-type ServiceClient = SupabaseClient;
+type ServiceClient = SupabaseClient
 
 /** Normalise auth / invite emails for storage and lookup (pending_invitations.email is lowercased on insert). */
 export function normaliseInviteEmail(email: string | null | undefined): string | null {
-  const e = email?.trim().toLowerCase();
-  return e && e.includes('@') ? e : null;
+  const e = email?.trim().toLowerCase()
+  return e && e.includes('@') ? e : null
 }
 
 /**
@@ -14,10 +14,10 @@ export function normaliseInviteEmail(email: string | null | undefined): string |
  * Returns tenant slug or null.
  */
 function slugFromPendingRow(row: unknown): string | null {
-  const r = row as { tenants: { slug: string } | { slug: string }[] | null } | null;
-  const t = r?.tenants;
-  if (!t) return null;
-  return (Array.isArray(t) ? t[0] : t)?.slug ?? null;
+  const r = row as { tenants: { slug: string } | { slug: string }[] | null } | null
+  const t = r?.tenants
+  if (!t) return null
+  return (Array.isArray(t) ? t[0] : t)?.slug ?? null
 }
 
 export async function getPendingInviteTenantSlug(
@@ -30,9 +30,9 @@ export async function getPendingInviteTenantSlug(
     .eq('email', emailNorm)
     .order('created_at', { ascending: false })
     .limit(1)
-    .maybeSingle();
+    .maybeSingle()
 
-  return slugFromPendingRow(data);
+  return slugFromPendingRow(data)
 }
 
 /**
@@ -44,23 +44,23 @@ export async function resolvePendingInviteSlugForUser(
   userId: string,
   slugHint: string | null
 ): Promise<string | null> {
-  const { data: authUser } = await service.auth.admin.getUserById(userId);
-  const emailNorm = normaliseInviteEmail(authUser.user?.email);
-  if (!emailNorm) return null;
+  const { data: authUser } = await service.auth.admin.getUserById(userId)
+  const emailNorm = normaliseInviteEmail(authUser.user?.email)
+  if (!emailNorm) return null
 
   const { data: rows } = await service
     .from('pending_invitations')
     .select('tenants(slug)')
     .eq('email', emailNorm)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
 
-  const list = rows ?? [];
-  const trimmed = slugHint?.trim();
+  const list = rows ?? []
+  const trimmed = slugHint?.trim()
   if (trimmed) {
     for (const row of list) {
-      const s = slugFromPendingRow(row);
-      if (s === trimmed) return s;
+      const s = slugFromPendingRow(row)
+      if (s === trimmed) return s
     }
   }
-  return list.length ? slugFromPendingRow(list[0]) : null;
+  return list.length ? slugFromPendingRow(list[0]) : null
 }

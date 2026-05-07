@@ -1,60 +1,57 @@
-'use server';
+'use server'
 
-import { redis } from '@/lib/redis';
-import {
-  createSupabaseServerClient,
-  createSupabaseServiceClient,
-} from '@/lib/supabase-server';
-import { isValidSlug } from '@/lib/tenant-validation';
-import { getUser } from '@/app/actions/auth';
-import { getUserRole } from '@/lib/membership';
-import type { ActionResponse } from '@/types/actions';
+import { redis } from '@/lib/redis'
+import { createSupabaseServerClient, createSupabaseServiceClient } from '@/lib/supabase-server'
+import { isValidSlug } from '@/lib/tenant-validation'
+import { getUser } from '@/app/actions/auth'
+import { getUserRole } from '@/lib/membership'
+import type { ActionResponse } from '@/types/actions'
 
-export type TenantStatus = 'active' | 'suspended' | 'archived';
+export type TenantStatus = 'active' | 'suspended' | 'archived'
 
 export type TenantRedisData = {
-  id: string;
-  name: string;
-  slug: string;
-  language: string;
-  status: TenantStatus;
-};
+  id: string
+  name: string
+  slug: string
+  language: string
+  status: TenantStatus
+}
 
 // ---------------------------------------------------------------------------
 // createTenant
 // ---------------------------------------------------------------------------
 export async function createTenant(data: {
-  name: string;
-  slug: string;
+  name: string
+  slug: string
 }): Promise<ActionResponse<TenantRedisData>> {
   if (!isValidSlug(data.slug)) {
     return {
       success: false,
       error:
         'Slug must be 3–63 characters, lowercase alphanumeric and hyphens only, and must not start or end with a hyphen.',
-    };
+    }
   }
 
   // Check Supabase first (source of truth)
-  const serviceClient = createSupabaseServiceClient();
+  const serviceClient = createSupabaseServiceClient()
   const { data: existing, error: existingError } = await serviceClient
     .from('tenants')
     .select('id')
     .eq('slug', data.slug)
-    .maybeSingle();
+    .maybeSingle()
 
   if (existingError) {
-    return { success: false, error: 'Failed to validate tenant slug.' };
+    return { success: false, error: 'Failed to validate tenant slug.' }
   }
 
   if (existing) {
-    return { success: false, error: 'This subdomain is already taken.' };
+    return { success: false, error: 'This subdomain is already taken.' }
   }
 
   // Redis is cache only. If key exists without DB row, clear stale key.
-  const existingInRedis = await redis.get(`subdomain:${data.slug}`);
+  const existingInRedis = await redis.get(`subdomain:${data.slug}`)
   if (existingInRedis) {
-    await redis.del(`subdomain:${data.slug}`);
+    await redis.del(`subdomain:${data.slug}`)
   }
 
   // Insert into Supabase
@@ -62,13 +59,13 @@ export async function createTenant(data: {
     .from('tenants')
     .insert({ name: data.name, slug: data.slug })
     .select('id, name, slug, language, status')
-    .single();
+    .single()
 
   if (error || !tenant) {
     if (error?.code === '23505') {
-      return { success: false, error: 'This subdomain is already taken.' };
+      return { success: false, error: 'This subdomain is already taken.' }
     }
-    return { success: false, error: 'Failed to create tenant.' };
+    return { success: false, error: 'Failed to create tenant.' }
   }
 
   // Store in Redis
@@ -78,50 +75,48 @@ export async function createTenant(data: {
     slug: tenant.slug,
     language: (tenant as { language?: string }).language ?? 'en',
     status: ((tenant as { status?: string }).status ?? 'active') as TenantStatus,
-  };
-  await redis.set(`subdomain:${tenant.slug}`, JSON.stringify(redisData));
+  }
+  await redis.set(`subdomain:${tenant.slug}`, JSON.stringify(redisData))
 
   // Create initial membership row for the creating user with role 'editor'.
   // Must use service client — user has no membership yet so RLS would block.
-  const { getUser } = await import('@/app/actions/auth');
-  const currentUser = await getUser();
+  const { getUser } = await import('@/app/actions/auth')
+  const currentUser = await getUser()
   if (!currentUser) {
-    await serviceClient.from('tenants').delete().eq('id', tenant.id);
-    await redis.del(`subdomain:${tenant.slug}`);
-    return { success: false, error: 'Not authenticated.' };
+    await serviceClient.from('tenants').delete().eq('id', tenant.id)
+    await redis.del(`subdomain:${tenant.slug}`)
+    return { success: false, error: 'Not authenticated.' }
   }
 
   await serviceClient.from('memberships').insert({
     user_id: currentUser.id,
     tenant_id: tenant.id,
     role: 'editor',
-  });
+  })
 
-  return { success: true, data: redisData };
+  return { success: true, data: redisData }
 }
 
 // ---------------------------------------------------------------------------
 // getTenantBySlug
 // ---------------------------------------------------------------------------
-export async function getTenantBySlug(
-  slug: string
-): Promise<ActionResponse<TenantRedisData>> {
+export async function getTenantBySlug(slug: string): Promise<ActionResponse<TenantRedisData>> {
   // Redis fast path
-  const cached = await redis.get(`subdomain:${slug}`);
+  const cached = await redis.get(`subdomain:${slug}`)
   if (cached) {
-    return { success: true, data: JSON.parse(cached) as TenantRedisData };
+    return { success: true, data: JSON.parse(cached) as TenantRedisData }
   }
 
   // Fallback to Supabase
-  const serviceClient = createSupabaseServiceClient();
+  const serviceClient = createSupabaseServiceClient()
   const { data: tenant } = await serviceClient
     .from('tenants')
     .select('id, name, slug, language, status')
     .eq('slug', slug)
-    .maybeSingle();
+    .maybeSingle()
 
   if (!tenant) {
-    return { success: false, error: 'Tenant not found.' };
+    return { success: false, error: 'Tenant not found.' }
   }
 
   // Backfill Redis
@@ -131,10 +126,10 @@ export async function getTenantBySlug(
     slug: tenant.slug,
     language: (tenant as { language?: string }).language ?? 'en',
     status: ((tenant as { status?: string }).status ?? 'active') as TenantStatus,
-  };
-  await redis.set(`subdomain:${tenant.slug}`, JSON.stringify(redisData));
+  }
+  await redis.set(`subdomain:${tenant.slug}`, JSON.stringify(redisData))
 
-  return { success: true, data: redisData };
+  return { success: true, data: redisData }
 }
 
 // ---------------------------------------------------------------------------
@@ -142,46 +137,57 @@ export async function getTenantBySlug(
 // ---------------------------------------------------------------------------
 export async function updateTenant(
   id: string,
-  data: { name?: string; slug?: string; logo_url?: string | null; accent_color?: string | null; theme_palette?: string; timezone?: string; language?: string; latitude?: number | null; longitude?: number | null; onboarding_completed?: boolean }
+  data: {
+    name?: string
+    slug?: string
+    logo_url?: string | null
+    accent_color?: string | null
+    theme_palette?: string
+    timezone?: string
+    language?: string
+    latitude?: number | null
+    longitude?: number | null
+    onboarding_completed?: boolean
+  }
 ): Promise<ActionResponse<TenantRedisData>> {
-  const user = await getUser();
+  const user = await getUser()
   if (!user) {
-    return { success: false, error: 'Not authenticated.' };
+    return { success: false, error: 'Not authenticated.' }
   }
 
-  const role = await getUserRole(id);
+  const role = await getUserRole(id)
   if (role !== 'editor') {
     return {
       success: false,
       error: 'Not authorized to update this tenant.',
-    };
+    }
   }
 
   if (data.slug !== undefined && !isValidSlug(data.slug)) {
     return {
       success: false,
       error: 'Invalid slug format.',
-    };
+    }
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient()
 
   // RLS: editors may read/update their tenant (see migration 00027_tenants_editor_update).
   const { data: current, error: fetchError } = await supabase
     .from('tenants')
     .select('id, name, slug, language, status')
     .eq('id', id)
-    .single();
+    .single()
 
   if (fetchError) {
     return {
       success: false,
       error: fetchError.message || 'Tenant not found.',
-    };
+    }
   }
 
   if (!current) {
-    return { success: false, error: 'Tenant not found.' };
+    return { success: false, error: 'Tenant not found.' }
   }
 
   const { data: updated, error: updateError } = await supabase
@@ -189,18 +195,18 @@ export async function updateTenant(
     .update({ ...data, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select('id, name, slug, language, status')
-    .single();
+    .single()
 
   if (updateError || !updated) {
     return {
       success: false,
       error: updateError?.message ?? 'Failed to update tenant.',
-    };
+    }
   }
 
   // If slug changed, remove old Redis key
   if (data.slug && data.slug !== current.slug) {
-    await redis.del(`subdomain:${current.slug}`);
+    await redis.del(`subdomain:${current.slug}`)
   }
 
   // Upsert Redis with latest data
@@ -210,71 +216,67 @@ export async function updateTenant(
     slug: updated.slug,
     language: (updated as { language?: string }).language ?? 'en',
     status: ((updated as { status?: string }).status ?? 'active') as TenantStatus,
-  };
-  await redis.set(`subdomain:${updated.slug}`, JSON.stringify(redisData));
+  }
+  await redis.set(`subdomain:${updated.slug}`, JSON.stringify(redisData))
 
-  return { success: true, data: redisData };
+  return { success: true, data: redisData }
 }
 
 // ---------------------------------------------------------------------------
 // completeOnboarding
 // ---------------------------------------------------------------------------
 export async function completeOnboarding(tenantId: string): Promise<ActionResponse> {
-  const serviceClient = createSupabaseServiceClient();
+  const serviceClient = createSupabaseServiceClient()
   const { error } = await serviceClient
     .from('tenants')
     .update({ onboarding_completed: true } as Record<string, unknown>)
-    .eq('id', tenantId);
+    .eq('id', tenantId)
 
   if (error) {
-    return { success: false, error: 'Failed to complete onboarding.' };
+    return { success: false, error: 'Failed to complete onboarding.' }
   }
-  return { success: true, data: undefined };
+  return { success: true, data: undefined }
 }
 
 // ---------------------------------------------------------------------------
 // deleteTenant
 // ---------------------------------------------------------------------------
 export async function deleteTenant(id: string): Promise<ActionResponse> {
-  const serviceClient = createSupabaseServiceClient();
+  const serviceClient = createSupabaseServiceClient()
 
   // Fetch slug before deleting so we can remove the Redis key
-  const { data: tenant } = await serviceClient
-    .from('tenants')
-    .select('slug')
-    .eq('id', id)
-    .single();
+  const { data: tenant } = await serviceClient.from('tenants').select('slug').eq('id', id).single()
 
   if (!tenant) {
-    return { success: false, error: 'Tenant not found.' };
+    return { success: false, error: 'Tenant not found.' }
   }
 
-  const { error } = await serviceClient.from('tenants').delete().eq('id', id);
+  const { error } = await serviceClient.from('tenants').delete().eq('id', id)
 
   if (error) {
-    return { success: false, error: 'Failed to delete tenant.' };
+    return { success: false, error: 'Failed to delete tenant.' }
   }
 
-  await redis.del(`subdomain:${tenant.slug}`);
+  await redis.del(`subdomain:${tenant.slug}`)
 
-  return { success: true, data: undefined };
+  return { success: true, data: undefined }
 }
 
 // ---------------------------------------------------------------------------
 // setTenantStatus — shared helper for suspend/reactivate/archive
 // ---------------------------------------------------------------------------
 async function setTenantStatus(id: string, status: TenantStatus): Promise<ActionResponse> {
-  const serviceClient = createSupabaseServiceClient();
+  const serviceClient = createSupabaseServiceClient()
 
   const { data: updated, error } = await serviceClient
     .from('tenants')
     .update({ status, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select('id, name, slug, language, status')
-    .single();
+    .single()
 
   if (error || !updated) {
-    return { success: false, error: `Failed to update tenant status.` };
+    return { success: false, error: `Failed to update tenant status.` }
   }
 
   // Refresh Redis so middleware picks up the new status immediately
@@ -284,20 +286,20 @@ async function setTenantStatus(id: string, status: TenantStatus): Promise<Action
     slug: updated.slug,
     language: (updated as { language?: string }).language ?? 'en',
     status: ((updated as { status?: string }).status ?? 'active') as TenantStatus,
-  };
-  await redis.set(`subdomain:${updated.slug}`, JSON.stringify(redisData));
+  }
+  await redis.set(`subdomain:${updated.slug}`, JSON.stringify(redisData))
 
-  return { success: true, data: undefined };
+  return { success: true, data: undefined }
 }
 
 export async function suspendTenant(id: string): Promise<ActionResponse> {
-  return setTenantStatus(id, 'suspended');
+  return setTenantStatus(id, 'suspended')
 }
 
 export async function reactivateTenant(id: string): Promise<ActionResponse> {
-  return setTenantStatus(id, 'active');
+  return setTenantStatus(id, 'active')
 }
 
 export async function archiveTenant(id: string): Promise<ActionResponse> {
-  return setTenantStatus(id, 'archived');
+  return setTenantStatus(id, 'archived')
 }

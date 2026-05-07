@@ -1,60 +1,60 @@
-'use client';
+'use client'
 
-import Link from 'next/link';
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import Link from 'next/link'
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 
 export interface DemoFormLabels {
-  name: string;
-  email: string;
-  club: string;
-  role: string;
-  rolePlaceholder: string;
-  notes: string;
-  submit: string;
-  submitting: string;
-  successTitle: string;
-  successBody: string;
-  backHome: string;
-  errorGeneric?: string;
+  name: string
+  email: string
+  club: string
+  role: string
+  rolePlaceholder: string
+  notes: string
+  submit: string
+  submitting: string
+  successTitle: string
+  successBody: string
+  backHome: string
+  errorGeneric?: string
 }
 
 export function DemoForm({ labels }: { labels: DemoFormLabels }) {
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-    setSubmitting(true);
+    event.preventDefault()
+    setError(null)
+    setSubmitting(true)
 
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(event.currentTarget)
     const payload = {
       name: String(formData.get('name') ?? '').trim(),
       email: String(formData.get('email') ?? '').trim(),
       club: String(formData.get('club') ?? '').trim(),
       role: String(formData.get('role') ?? '').trim(),
       notes: String(formData.get('notes') ?? '').trim(),
-    };
+    }
 
     try {
       const res = await fetch('/api/demo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
-      });
+      })
       if (!res.ok) {
-        throw new Error('Request failed');
+        throw new Error('Request failed')
       }
-      setSubmitted(true);
+      setSubmitted(true)
     } catch {
-      setError(labels.errorGeneric ?? 'Something went wrong. Please try again.');
+      setError(labels.errorGeneric ?? 'Something went wrong. Please try again.')
     } finally {
-      setSubmitting(false);
+      setSubmitting(false)
     }
   }
 
@@ -67,7 +67,7 @@ export function DemoForm({ labels }: { labels: DemoFormLabels }) {
           <Button variant="outline">{labels.backHome}</Button>
         </Link>
       </div>
-    );
+    )
   }
 
   return (
@@ -89,12 +89,7 @@ export function DemoForm({ labels }: { labels: DemoFormLabels }) {
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="demo-role">{labels.role}</Label>
-          <Input
-            id="demo-role"
-            name="role"
-            type="text"
-            placeholder={labels.rolePlaceholder}
-          />
+          <Input id="demo-role" name="role" type="text" placeholder={labels.rolePlaceholder} />
         </div>
       </div>
       <div className="flex flex-col gap-2">
@@ -102,7 +97,7 @@ export function DemoForm({ labels }: { labels: DemoFormLabels }) {
         <Textarea id="demo-notes" name="notes" rows={4} />
       </div>
       {error ? (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="text-destructive text-sm">
           {error}
         </p>
       ) : null}
@@ -110,5 +105,5 @@ export function DemoForm({ labels }: { labels: DemoFormLabels }) {
         {submitting ? labels.submitting : labels.submit}
       </Button>
     </form>
-  );
+  )
 }

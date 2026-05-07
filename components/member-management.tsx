@@ -1,9 +1,9 @@
-'use client';
+'use client'
 
-import { useEffect, useState, useTransition } from 'react';
-import { toast } from 'sonner';
-import { Trash2, UserPlus } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useEffect, useState, useTransition } from 'react'
+import { toast } from 'sonner'
+import { Trash2, UserPlus } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import {
   getMembers,
   getPendingInvitations,
@@ -11,24 +11,19 @@ import {
   updateMemberRole,
   removeMember,
   cancelInvitation,
-} from '@/app/actions/memberships';
-import type { Member, PendingInvitation, MemberRole } from '@/app/actions/memberships';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+} from '@/app/actions/memberships'
+import type { Member, PendingInvitation, MemberRole } from '@/app/actions/memberships'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui/select'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,7 +33,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from '@/components/ui/alert-dialog'
 import {
   Table,
   TableBody,
@@ -46,20 +41,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from '@/components/ui/table'
 
-function RoleBadge({
-  role,
-  label,
-}: {
-  role: MemberRole;
-  label: string;
-}) {
+function RoleBadge({ role, label }: { role: MemberRole; label: string }) {
   return (
     <Badge variant={role === 'editor' ? 'default' : 'secondary'} className="font-normal">
       {label}
     </Badge>
-  );
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -67,29 +56,29 @@ function RoleBadge({
 // ---------------------------------------------------------------------------
 
 function InviteForm({ onInvited }: { onInvited: () => void }) {
-  const t = useTranslations('Tenant.members');
-  const [email, setEmail] = useState('');
-  const [role, setRole] = useState<MemberRole>('viewer');
-  const [isPending, startTransition] = useTransition();
+  const t = useTranslations('Tenant.members')
+  const [email, setEmail] = useState('')
+  const [role, setRole] = useState<MemberRole>('viewer')
+  const [isPending, startTransition] = useTransition()
 
   function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+    e.preventDefault()
     startTransition(async () => {
-      const result = await inviteMember(email, role);
+      const result = await inviteMember(email, role)
       if (!result.success) {
-        toast.error(result.error);
-        return;
+        toast.error(result.error)
+        return
       }
-      toast.success(result.data.emailed ? t('invited') : t('invitedExisting'));
-      setEmail('');
-      setRole('viewer');
-      onInvited();
-    });
+      toast.success(result.data.emailed ? t('invited') : t('invitedExisting'))
+      setEmail('')
+      setRole('viewer')
+      onInvited()
+    })
   }
 
   return (
     <Card className="gap-0 overflow-hidden py-0 shadow-sm">
-      <CardHeader className="border-b bg-muted/40 px-5 py-4 sm:px-6">
+      <CardHeader className="bg-muted/40 border-b px-5 py-4 sm:px-6">
         <CardTitle className="text-base">{t('inviteTitle')}</CardTitle>
       </CardHeader>
       <CardContent className="px-5 py-5 sm:px-6">
@@ -136,7 +125,7 @@ function InviteForm({ onInvited }: { onInvited: () => void }) {
         </form>
       </CardContent>
     </Card>
-  );
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -144,84 +133,82 @@ function InviteForm({ onInvited }: { onInvited: () => void }) {
 // ---------------------------------------------------------------------------
 
 export function MemberManagement({ currentUserId }: { currentUserId: string }) {
-  const t = useTranslations('Tenant.members');
-  const [members, setMembers] = useState<Member[]>([]);
-  const [pending, setPending] = useState<PendingInvitation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [removeTarget, setRemoveTarget] = useState<Member | null>(null);
-  const [isRemoving, startRemoveTransition] = useTransition();
-  const [isCancelling, startCancelTransition] = useTransition();
+  const t = useTranslations('Tenant.members')
+  const [members, setMembers] = useState<Member[]>([])
+  const [pending, setPending] = useState<PendingInvitation[]>([])
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [removeTarget, setRemoveTarget] = useState<Member | null>(null)
+  const [isRemoving, startRemoveTransition] = useTransition()
+  const [isCancelling, startCancelTransition] = useTransition()
 
   async function refresh() {
     const [membersResult, pendingResult] = await Promise.all([
       getMembers(),
       getPendingInvitations(),
-    ]);
+    ])
     if (membersResult.success) {
-      setMembers(membersResult.data);
+      setMembers(membersResult.data)
     } else {
-      toast.error(membersResult.error);
-      setLoadError(membersResult.error);
+      toast.error(membersResult.error)
+      setLoadError(membersResult.error)
     }
     if (pendingResult.success) {
-      setPending(pendingResult.data);
+      setPending(pendingResult.data)
     } else {
-      toast.error(pendingResult.error);
+      toast.error(pendingResult.error)
     }
   }
 
   useEffect(() => {
-    refresh().finally(() => setLoading(false));
-  }, []);
+    refresh().finally(() => setLoading(false))
+  }, [])
 
   function handleRoleChange(member: Member, newRole: MemberRole) {
     startRemoveTransition(async () => {
-      const result = await updateMemberRole(member.id, newRole);
+      const result = await updateMemberRole(member.id, newRole)
       if (!result.success) {
-        toast.error(result.error);
-        return;
+        toast.error(result.error)
+        return
       }
-      toast.success(t('roleUpdated'));
-      setMembers((prev) =>
-        prev.map((m) => (m.id === member.id ? { ...m, role: newRole } : m))
-      );
-    });
+      toast.success(t('roleUpdated'))
+      setMembers((prev) => prev.map((m) => (m.id === member.id ? { ...m, role: newRole } : m)))
+    })
   }
 
   function confirmRemove() {
-    if (!removeTarget) return;
+    if (!removeTarget) return
     startRemoveTransition(async () => {
-      const result = await removeMember(removeTarget.id);
+      const result = await removeMember(removeTarget.id)
       if (!result.success) {
-        toast.error(result.error);
-        setRemoveTarget(null);
-        return;
+        toast.error(result.error)
+        setRemoveTarget(null)
+        return
       }
-      toast.success(t('removed'));
-      setMembers((prev) => prev.filter((m) => m.id !== removeTarget.id));
-      setRemoveTarget(null);
-    });
+      toast.success(t('removed'))
+      setMembers((prev) => prev.filter((m) => m.id !== removeTarget.id))
+      setRemoveTarget(null)
+    })
   }
 
   function handleCancelInvitation(invitation: PendingInvitation) {
     startCancelTransition(async () => {
-      const result = await cancelInvitation(invitation.id);
+      const result = await cancelInvitation(invitation.id)
       if (!result.success) {
-        toast.error(result.error);
-        return;
+        toast.error(result.error)
+        return
       }
-      toast.success(t('cancelledInvite'));
-      setPending((prev) => prev.filter((p) => p.id !== invitation.id));
-    });
+      toast.success(t('cancelledInvite'))
+      setPending((prev) => prev.filter((p) => p.id !== invitation.id))
+    })
   }
 
   if (loading) {
-    return <p className="text-sm text-muted-foreground">{t('loading')}</p>;
+    return <p className="text-muted-foreground text-sm">{t('loading')}</p>
   }
 
   if (loadError) {
-    return <p className="text-sm text-destructive">{loadError}</p>;
+    return <p className="text-destructive text-sm">{loadError}</p>
   }
 
   return (
@@ -230,9 +217,7 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
         <h2 className="sr-only">{t('title')}</h2>
         <CardContent className="p-0">
           {members.length === 0 ? (
-            <p className="px-6 py-10 text-center text-sm text-muted-foreground">
-              {t('noMembers')}
-            </p>
+            <p className="text-muted-foreground px-6 py-10 text-center text-sm">{t('noMembers')}</p>
           ) : (
             <div className="overflow-x-auto">
               <Table>
@@ -250,9 +235,8 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
                 </TableHeader>
                 <TableBody>
                   {members.map((member) => {
-                    const isSelf = member.user_id === currentUserId;
-                    const roleLabel =
-                      member.role === 'editor' ? t('roleEditor') : t('roleViewer');
+                    const isSelf = member.user_id === currentUserId
+                    const roleLabel = member.role === 'editor' ? t('roleEditor') : t('roleViewer')
                     return (
                       <TableRow key={member.id} className="hover:bg-muted/40">
                         <TableCell className="max-w-[18rem] truncate py-3 pl-6 font-medium">
@@ -267,7 +251,7 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
                               onValueChange={(v) => handleRoleChange(member, v as MemberRole)}
                             >
                               <SelectTrigger
-                                className="!h-10 min-h-10 w-full min-w-[9rem] max-w-[11rem]"
+                                className="!h-10 min-h-10 w-full max-w-[11rem] min-w-[9rem]"
                                 aria-label={t('roleLabel')}
                               >
                                 <SelectValue />
@@ -279,7 +263,7 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
                             </Select>
                           )}
                         </TableCell>
-                        <TableCell className="py-3 text-sm text-muted-foreground tabular-nums">
+                        <TableCell className="text-muted-foreground py-3 text-sm tabular-nums">
                           {new Date(member.created_at).toLocaleDateString()}
                         </TableCell>
                         <TableCell className="py-3 pr-6 text-right">
@@ -287,7 +271,7 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="size-9 text-muted-foreground hover:text-destructive"
+                              className="text-muted-foreground hover:text-destructive size-9"
                               onClick={() => setRemoveTarget(member)}
                               aria-label={t('removeTitle')}
                             >
@@ -296,7 +280,7 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
                           )}
                         </TableCell>
                       </TableRow>
-                    );
+                    )
                   })}
                 </TableBody>
               </Table>
@@ -309,7 +293,7 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
 
       {pending.length > 0 && (
         <Card className="gap-0 overflow-hidden py-0 shadow-sm">
-          <CardHeader className="border-b bg-muted/40 px-5 py-4 sm:px-6">
+          <CardHeader className="bg-muted/40 border-b px-5 py-4 sm:px-6">
             <CardTitle className="text-base">{t('pendingTitle')}</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -327,15 +311,13 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
                 <TableBody>
                   {pending.map((inv) => (
                     <TableRow key={inv.id} className="hover:bg-muted/40">
-                      <TableCell className="max-w-[18rem] truncate py-3 pl-6 text-muted-foreground">
+                      <TableCell className="text-muted-foreground max-w-[18rem] truncate py-3 pl-6">
                         {inv.email}
                       </TableCell>
                       <TableCell className="py-3">
                         <RoleBadge
                           role={inv.role}
-                          label={
-                            inv.role === 'editor' ? t('roleEditor') : t('roleViewer')
-                          }
+                          label={inv.role === 'editor' ? t('roleEditor') : t('roleViewer')}
                         />
                       </TableCell>
                       <TableCell className="py-3 pr-6 text-right">
@@ -361,7 +343,7 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
       <AlertDialog
         open={!!removeTarget}
         onOpenChange={(v) => {
-          if (!v) setRemoveTarget(null);
+          if (!v) setRemoveTarget(null)
         }}
       >
         <AlertDialogContent>
@@ -382,5 +364,5 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  );
+  )
 }

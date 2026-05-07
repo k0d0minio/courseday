@@ -1,32 +1,27 @@
-'use client';
+'use client'
 
-import { useEffect, useTransition } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { toast } from 'sonner';
-import { useTranslations } from 'next-intl';
-import { createShift, updateShift } from '@/app/actions/shifts';
-import { shiftSchema, type ShiftFormData } from '@/lib/shift-schema';
-import type { Shift, ShiftWithStaffMember, StaffMember } from '@/types/index';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { useEffect, useTransition } from 'react'
+import { useForm, Controller } from 'react-hook-form'
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
+import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
+import { createShift, updateShift } from '@/app/actions/shifts'
+import { shiftSchema, type ShiftFormData } from '@/lib/shift-schema'
+import type { Shift, ShiftWithStaffMember, StaffMember } from '@/types/index'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui/select'
 
-type RolePreset = { id: string; name: string };
+type RolePreset = { id: string; name: string }
 
 function attachStaffMember(shift: Shift, members: StaffMember[]): ShiftWithStaffMember {
   const staff_member =
@@ -38,20 +33,20 @@ function attachStaffMember(shift: Shift, members: StaffMember[]): ShiftWithStaff
       role: '',
       active: false,
       created_at: shift.created_at,
-    } satisfies StaffMember);
+    } satisfies StaffMember)
 
-  return { ...shift, staff_member };
+  return { ...shift, staff_member }
 }
 
 type Props = {
-  isOpen: boolean;
-  onClose: () => void;
-  dayId: string;
-  staffMembers: StaffMember[];
-  rolePresets: RolePreset[];
-  editItem: ShiftWithStaffMember | null;
-  onSuccess: (item: ShiftWithStaffMember) => void;
-};
+  isOpen: boolean
+  onClose: () => void
+  dayId: string
+  staffMembers: StaffMember[]
+  rolePresets: RolePreset[]
+  editItem: ShiftWithStaffMember | null
+  onSuccess: (item: ShiftWithStaffMember) => void
+}
 
 export function ShiftForm({
   isOpen,
@@ -62,39 +57,45 @@ export function ShiftForm({
   editItem,
   onSuccess,
 }: Props) {
-  const t = useTranslations('Tenant.staff.shiftForm');
-  const [isPending, startTransition] = useTransition();
-  const isEditing = !!editItem;
+  const t = useTranslations('Tenant.staff.shiftForm')
+  const [isPending, startTransition] = useTransition()
+  const isEditing = !!editItem
 
-  const selectableStaff = staffMembers.filter((m) => m.active || m.id === editItem?.staff_member_id);
+  const selectableStaff = staffMembers.filter((m) => m.active || m.id === editItem?.staff_member_id)
 
-  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<ShiftFormData>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    control,
+    formState: { errors },
+  } = useForm<ShiftFormData>({
     resolver: standardSchemaResolver(shiftSchema),
     defaultValues: defaultValues(editItem),
-  });
+  })
 
   useEffect(() => {
-    reset(defaultValues(editItem));
-  }, [editItem, isOpen, reset]);
+    reset(defaultValues(editItem))
+  }, [editItem, isOpen, reset])
 
   function onSubmit(data: ShiftFormData) {
     startTransition(async () => {
       const result = isEditing
         ? await updateShift(editItem!.id, dayId, data)
-        : await createShift(dayId, data);
+        : await createShift(dayId, data)
 
       if (!result.success) {
-        toast.error(result.error);
-        return;
+        toast.error(result.error)
+        return
       }
 
-      onSuccess(attachStaffMember(result.data, staffMembers));
-      toast.success(isEditing ? t('updated') : t('saved'));
-      onClose();
-    });
+      onSuccess(attachStaffMember(result.data, staffMembers))
+      toast.success(isEditing ? t('updated') : t('saved'))
+      onClose()
+    })
   }
 
-  const datalistId = 'staff-shift-role-presets';
+  const datalistId = 'staff-shift-role-presets'
 
   return (
     <Dialog open={isOpen} onOpenChange={(o) => !o && onClose()}>
@@ -110,10 +111,7 @@ export function ShiftForm({
               name="staff_member_id"
               control={control}
               render={({ field }) => (
-                <Select
-                  value={field.value || undefined}
-                  onValueChange={field.onChange}
-                >
+                <Select value={field.value || undefined} onValueChange={field.onChange}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder={t('staffPlaceholder')} />
                   </SelectTrigger>
@@ -129,7 +127,7 @@ export function ShiftForm({
               )}
             />
             {errors.staff_member_id && (
-              <p className="text-sm text-destructive">{errors.staff_member_id.message}</p>
+              <p className="text-destructive text-sm">{errors.staff_member_id.message}</p>
             )}
           </div>
 
@@ -175,7 +173,7 @@ export function ShiftForm({
         </form>
       </DialogContent>
     </Dialog>
-  );
+  )
 }
 
 function defaultValues(editItem: ShiftWithStaffMember | null): ShiftFormData {
@@ -186,7 +184,7 @@ function defaultValues(editItem: ShiftWithStaffMember | null): ShiftFormData {
       start_time: '',
       end_time: '',
       notes: '',
-    };
+    }
   }
   return {
     staff_member_id: editItem.staff_member_id,
@@ -194,5 +192,5 @@ function defaultValues(editItem: ShiftWithStaffMember | null): ShiftFormData {
     start_time: editItem.start_time ? editItem.start_time.slice(0, 5) : '',
     end_time: editItem.end_time ? editItem.end_time.slice(0, 5) : '',
     notes: editItem.notes ?? '',
-  };
+  }
 }

@@ -1,14 +1,14 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { useTranslations } from 'next-intl';
-import { ChevronDown, ChevronRight } from 'lucide-react';
-import { markDayCaughtUp } from '@/app/actions/day-view-receipts';
-import type { HandoverRemovedItem } from '@/app/actions/day-view-receipts';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { toast } from 'sonner';
+import { useState } from 'react'
+import { useTranslations } from 'next-intl'
+import { ChevronDown, ChevronRight } from 'lucide-react'
+import { markDayCaughtUp } from '@/app/actions/day-view-receipts'
+import type { HandoverRemovedItem } from '@/app/actions/day-view-receipts'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { toast } from 'sonner'
 
 function removedKindLabel(
   kind: HandoverRemovedItem['kind'],
@@ -16,30 +16,30 @@ function removedKindLabel(
 ) {
   switch (kind) {
     case 'activity':
-      return t('kindActivity');
+      return t('kindActivity')
     case 'reservation':
-      return t('kindReservation');
+      return t('kindReservation')
     case 'breakfast':
-      return t('kindBreakfast');
+      return t('kindBreakfast')
     case 'day_note':
-      return t('kindNote');
+      return t('kindNote')
   }
 }
 
 export type HandoverCounts = {
-  newCount: number;
-  editedCount: number;
-  removedCount: number;
-};
+  newCount: number
+  editedCount: number
+  removedCount: number
+}
 
 type Props = {
-  dayId: string;
-  removed: HandoverRemovedItem[];
-  handoverEnabled: boolean;
-  onHandoverEnabledChange: (enabled: boolean) => void;
-  counts: HandoverCounts;
-  onCaughtUp: (nextBaselineIso: string) => void;
-};
+  dayId: string
+  removed: HandoverRemovedItem[]
+  handoverEnabled: boolean
+  onHandoverEnabledChange: (enabled: boolean) => void
+  counts: HandoverCounts
+  onCaughtUp: (nextBaselineIso: string) => void
+}
 
 export function HandoverControls({
   dayId,
@@ -49,30 +49,29 @@ export function HandoverControls({
   counts,
   onCaughtUp,
 }: Props) {
-  const t = useTranslations('Tenant.handover');
-  const [busy, setBusy] = useState(false);
-  const [removedOpen, setRemovedOpen] = useState(false);
+  const t = useTranslations('Tenant.handover')
+  const [busy, setBusy] = useState(false)
+  const [removedOpen, setRemovedOpen] = useState(false)
 
-  const hasAnything =
-    counts.newCount > 0 || counts.editedCount > 0 || counts.removedCount > 0;
+  const hasAnything = counts.newCount > 0 || counts.editedCount > 0 || counts.removedCount > 0
 
   async function handleCaughtUp() {
-    setBusy(true);
+    setBusy(true)
     try {
-      const result = await markDayCaughtUp(dayId);
+      const result = await markDayCaughtUp(dayId)
       if (!result.success) {
-        toast.error(result.error);
-        return;
+        toast.error(result.error)
+        return
       }
-      onCaughtUp(result.data.last_viewed_at);
-      toast.success(t('caughtUpToast'));
+      onCaughtUp(result.data.last_viewed_at)
+      toast.success(t('caughtUpToast'))
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
   }
 
   return (
-    <div className="rounded-lg border bg-muted/40 px-3 py-3 space-y-3">
+    <div className="bg-muted/40 space-y-3 rounded-lg border px-3 py-3">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <div className="flex items-center gap-2">
           <Switch
@@ -81,7 +80,7 @@ export function HandoverControls({
             onCheckedChange={onHandoverEnabledChange}
             aria-label={t('toggleAria')}
           />
-          <Label htmlFor="handover-mode" className="text-sm font-medium cursor-pointer">
+          <Label htmlFor="handover-mode" className="cursor-pointer text-sm font-medium">
             {t('toggle')}
           </Label>
         </div>
@@ -100,7 +99,7 @@ export function HandoverControls({
 
       {handoverEnabled && (
         <>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             {hasAnything
               ? t('summary', {
                   new: counts.newCount,
@@ -110,11 +109,11 @@ export function HandoverControls({
               : t('summaryEmpty')}
           </p>
 
-          <div className="border-t border-border/60 pt-2">
+          <div className="border-border/60 border-t pt-2">
             <button
               type="button"
               onClick={() => setRemovedOpen((o) => !o)}
-              className="flex items-center gap-1.5 text-sm font-medium text-foreground hover:underline w-full text-left"
+              className="text-foreground flex w-full items-center gap-1.5 text-left text-sm font-medium hover:underline"
               aria-expanded={removedOpen}
             >
               {removedOpen ? (
@@ -125,9 +124,9 @@ export function HandoverControls({
               {t('removedHeading', { count: removed.length })}
             </button>
             {removedOpen && (
-              <ul className="mt-2 space-y-1.5 text-sm pl-5 list-disc text-muted-foreground">
+              <ul className="text-muted-foreground mt-2 list-disc space-y-1.5 pl-5 text-sm">
                 {removed.length === 0 ? (
-                  <li className="list-none pl-0 -ml-5">{t('removedEmpty')}</li>
+                  <li className="-ml-5 list-none pl-0">{t('removedEmpty')}</li>
                 ) : (
                   removed.map((item) => (
                     <li key={`${item.kind}-${item.id}`}>
@@ -144,5 +143,5 @@ export function HandoverControls({
         </>
       )}
     </div>
-  );
+  )
 }

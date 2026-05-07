@@ -1,4 +1,4 @@
-import { createTenantClient } from '@/lib/supabase-server';
+import { createTenantClient } from '@/lib/supabase-server'
 
 /**
  * Returns a Supabase query builder scoped to the current tenant.
@@ -10,8 +10,8 @@ import { createTenantClient } from '@/lib/supabase-server';
  *   const { data } = await q.eq('day_id', dayId).order('start_time');
  */
 export async function tenantQuery(table: string) {
-  const { supabase, tenantId } = await createTenantClient();
-  return supabase.from(table).select('*').eq('tenant_id', tenantId);
+  const { supabase, tenantId } = await createTenantClient()
+  return supabase.from(table).select('*').eq('tenant_id', tenantId)
 }
 
 /**
@@ -21,10 +21,7 @@ export async function tenantQuery(table: string) {
  * Usage:
  *   const { data, error } = await tenantInsert('program_items', { title: 'Welcome', ... });
  */
-export async function tenantInsert<T extends Record<string, unknown>>(
-  table: string,
-  data: T
-) {
-  const { supabase, tenantId } = await createTenantClient();
-  return supabase.from(table).insert({ ...data, tenant_id: tenantId });
+export async function tenantInsert<T extends Record<string, unknown>>(table: string, data: T) {
+  const { supabase, tenantId } = await createTenantClient()
+  return supabase.from(table).insert({ ...data, tenant_id: tenantId })
 }

@@ -1,24 +1,24 @@
-import { NextResponse } from 'next/server';
-import { getTenantFromHeaders } from '@/lib/tenant';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
-import { getTenantPalette } from '@/lib/theme/palettes';
+import { NextResponse } from 'next/server'
+import { getTenantFromHeaders } from '@/lib/tenant'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { getTenantPalette } from '@/lib/theme/palettes'
 
 export async function GET() {
   try {
-    const tenant = await getTenantFromHeaders();
-    const supabase = await createSupabaseServerClient();
+    const tenant = await getTenantFromHeaders()
+    const supabase = await createSupabaseServerClient()
 
     const { data } = await supabase
       .from('tenants')
       .select('name, theme_palette, accent_color, logo_url')
       .eq('id', tenant.id)
-      .single();
+      .single()
 
-    const name = (data?.name as string | null) ?? 'Courseday';
+    const name = (data?.name as string | null) ?? 'Courseday'
     const palette = getTenantPalette(
       (data?.theme_palette as string | null) ?? null,
       (data?.accent_color as string | null) ?? null
-    );
+    )
 
     const manifest = {
       name: `${name} · Courseday`,
@@ -43,7 +43,7 @@ export async function GET() {
           purpose: 'maskable',
         },
       ],
-    };
+    }
 
     return NextResponse.json(manifest, {
       headers: {
@@ -52,7 +52,7 @@ export async function GET() {
         // branding changes (name, theme_color) without delay.
         'Cache-Control': 'no-cache',
       },
-    });
+    })
   } catch {
     return NextResponse.json(
       {
@@ -65,6 +65,6 @@ export async function GET() {
         icons: [{ src: '/icon.svg', sizes: 'any', type: 'image/svg+xml' }],
       },
       { headers: { 'Content-Type': 'application/manifest+json' } }
-    );
+    )
   }
 }

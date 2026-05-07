@@ -1,26 +1,26 @@
-'use client';
+'use client'
 
-import Link from 'next/link';
-import { useActionState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
-import { sendPasswordResetEmail } from '@/app/actions/auth';
-import { Logo } from '@/components/logo';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import Link from 'next/link'
+import { useActionState } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import { sendPasswordResetEmail } from '@/app/actions/auth'
+import { Logo } from '@/components/logo'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 export default function ForgotPasswordPage() {
-  const [state, action, isPending] = useActionState(sendPasswordResetEmail, null);
-  const searchParams = useSearchParams();
-  const slug = searchParams.get('slug') ?? '';
-  const errorCode = searchParams.get('error');
-  const t = useTranslations('Platform.auth');
+  const [state, action, isPending] = useActionState(sendPasswordResetEmail, null)
+  const searchParams = useSearchParams()
+  const slug = searchParams.get('slug') ?? ''
+  const errorCode = searchParams.get('error')
+  const t = useTranslations('Platform.auth')
   const linkError =
     errorCode === 'otp_expired'
       ? 'Reset link expired or already used. Request a new reset email.'
-      : null;
+      : null
 
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center p-4">
@@ -33,7 +33,7 @@ export default function ForgotPasswordPage() {
 
         <Card>
           <CardHeader>
-            <h1 className="text-xl font-semibold tracking-tight text-center">
+            <h1 className="text-center text-xl font-semibold tracking-tight">
               {t('forgotPasswordTitle')}
             </h1>
           </CardHeader>
@@ -41,24 +41,12 @@ export default function ForgotPasswordPage() {
           <form action={action}>
             <input type="hidden" name="slug" value={slug} />
             <CardContent className="space-y-4">
-              {state?.error && (
-                <p className="text-sm text-destructive">{state.error}</p>
-              )}
-              {linkError && (
-                <p className="text-sm text-destructive">{linkError}</p>
-              )}
-              {state?.success && (
-                <p className="text-sm text-green-700">{state.success}</p>
-              )}
+              {state?.error && <p className="text-destructive text-sm">{state.error}</p>}
+              {linkError && <p className="text-destructive text-sm">{linkError}</p>}
+              {state?.success && <p className="text-sm text-green-700">{state.success}</p>}
               <div className="space-y-2">
                 <Label htmlFor="email">{t('emailLabel')}</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                />
+                <Input id="email" name="email" type="email" autoComplete="email" required />
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-3 pt-2">
@@ -73,5 +61,5 @@ export default function ForgotPasswordPage() {
         </Card>
       </div>
     </div>
-  );
+  )
 }

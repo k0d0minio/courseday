@@ -1,8 +1,8 @@
-import { ALLERGEN_CODES } from '@/lib/allergens';
+import { ALLERGEN_CODES } from '@/lib/allergens'
 
-export const PROMPT_VERSION = 'v1' as const;
+export const PROMPT_VERSION = 'v1' as const
 
-const CODES = ALLERGEN_CODES.join(', ');
+const CODES = ALLERGEN_CODES.join(', ')
 
 export const QUICK_ADD_SYSTEM = `You classify free-form text about venue operations and extract fields for the correct item type.
 Return JSON matching the required schema. Rules:
@@ -14,16 +14,12 @@ Return JSON matching the required schema. Rules:
 - For reservations: guestName is the party or contact name. guestCount = party size.
 - For breakfast: groupName = room block or group label (optional).
 - tableBreakdown: optional list of per-table or per-sub-party sizes (numbers) that sum to guest count if the user said e.g. "2 and 4".
-- notes: any other free text not already captured. Do not invent PII.`;
+- notes: any other free text not already captured. Do not invent PII.`
 
-export function buildUserPrompt(
-  userText: string,
-  _dayId: string,
-  contextDateYmd: string
-): string {
+export function buildUserPrompt(userText: string, _dayId: string, contextDateYmd: string): string {
   return `Context day (Y-M-D) for this day view: ${contextDateYmd}
 User said:
 ${userText}
 
-Extract classification and fields. If nothing fits a type, still pick the best match and set dateAmbiguous if times are unsafe.`;
+Extract classification and fields. If nothing fits a type, still pick the best match and set dateAmbiguous if times are unsafe.`
 }

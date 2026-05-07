@@ -1,38 +1,38 @@
-'use server';
+'use server'
 
-import { createTenantClient } from '@/lib/supabase-server';
-import { getTenantId } from '@/lib/tenant';
-import { requireEditor, getUserRole } from '@/lib/membership';
-import { isFeatureEnabled } from '@/app/actions/feature-flags';
-import { createBreakfastSchema, updateBreakfastSchema } from '@/lib/breakfast-schema';
-import { notifyTenantMembers, getDayDate } from '@/lib/notifications';
-import type { CreateBreakfastFormData, UpdateBreakfastFormData } from '@/lib/breakfast-schema';
-import type { ActionResponse } from '@/types/actions';
-import type { BreakfastConfiguration } from '@/types/index';
+import { createTenantClient } from '@/lib/supabase-server'
+import { getTenantId } from '@/lib/tenant'
+import { requireEditor, getUserRole } from '@/lib/membership'
+import { isFeatureEnabled } from '@/app/actions/feature-flags'
+import { createBreakfastSchema, updateBreakfastSchema } from '@/lib/breakfast-schema'
+import { notifyTenantMembers, getDayDate } from '@/lib/notifications'
+import type { CreateBreakfastFormData, UpdateBreakfastFormData } from '@/lib/breakfast-schema'
+import type { ActionResponse } from '@/types/actions'
+import type { BreakfastConfiguration } from '@/types/index'
 
 function totalGuests(tableBreakdown?: number[] | null, guestCount?: number): number {
   if (tableBreakdown && tableBreakdown.length > 0) {
-    return tableBreakdown.reduce((s, n) => s + n, 0);
+    return tableBreakdown.reduce((s, n) => s + n, 0)
   }
-  return guestCount ?? 0;
+  return guestCount ?? 0
 }
 
 export async function createBreakfastConfiguration(
   raw: CreateBreakfastFormData
 ): Promise<ActionResponse<BreakfastConfiguration>> {
-  const parsed = createBreakfastSchema.safeParse(raw);
+  const parsed = createBreakfastSchema.safeParse(raw)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message };
+    return { success: false, error: parsed.error.issues[0].message }
   }
 
-  const tenantId = await getTenantId();
+  const tenantId = await getTenantId()
   if (!(await isFeatureEnabled(tenantId, 'breakfast_config'))) {
-    return { success: false, error: 'Breakfast config is disabled for this venue.' };
+    return { success: false, error: 'Breakfast config is disabled for this venue.' }
   }
-  const user = await requireEditor(tenantId);
+  const user = await requireEditor(tenantId)
 
-  const { supabase } = await createTenantClient();
-  const d = parsed.data;
+  const { supabase } = await createTenantClient()
+  const d = parsed.data
 
   // Resolve the day's date_iso (needed for the breakfast_date column)
   const { data: dayRow, error: dayErr } = await supabase
@@ -40,8 +40,8 @@ export async function createBreakfastConfiguration(
     .select('date_iso')
     .eq('id', d.dayId)
     .eq('tenant_id', tenantId)
-    .single();
-  if (dayErr || !dayRow) return { success: false, error: 'Day not found.' };
+    .single()
+  if (dayErr || !dayRow) return { success: false, error: 'Day not found.' }
 
   const { data, error } = await supabase
     .from('breakfast_configuration')
@@ -57,35 +57,41 @@ export async function createBreakfastConfiguration(
       allergens: d.allergens ?? [],
     })
     .select()
-    .single();
+    .single()
 
-  if (error) return { success: false, error: error.message };
+  if (error) return { success: false, error: error.message }
 
-  const label = d.groupName?.trim() || 'Unnamed group';
+  const label = d.groupName?.trim() || 'Unnamed group'
   Promise.allSettled([
-    notifyTenantMembers(tenantId, user.id, `Breakfast added: ${label}`, undefined, `/day/${(dayRow as { date_iso: string }).date_iso}`),
-  ]);
+    notifyTenantMembers(
+      tenantId,
+      user.id,
+      `Breakfast added: ${label}`,
+      undefined,
+      `/day/${(dayRow as { date_iso: string }).date_iso}`
+    ),
+  ])
 
-  return { success: true, data: data as BreakfastConfiguration };
+  return { success: true, data: data as BreakfastConfiguration }
 }
 
 export async function updateBreakfastConfiguration(
   id: string,
   raw: UpdateBreakfastFormData
 ): Promise<ActionResponse<BreakfastConfiguration>> {
-  const parsed = updateBreakfastSchema.safeParse(raw);
+  const parsed = updateBreakfastSchema.safeParse(raw)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message };
+    return { success: false, error: parsed.error.issues[0].message }
   }
 
-  const tenantId = await getTenantId();
+  const tenantId = await getTenantId()
   if (!(await isFeatureEnabled(tenantId, 'breakfast_config'))) {
-    return { success: false, error: 'Breakfast config is disabled for this venue.' };
+    return { success: false, error: 'Breakfast config is disabled for this venue.' }
   }
-  const user = await requireEditor(tenantId);
+  const user = await requireEditor(tenantId)
 
-  const { supabase } = await createTenantClient();
-  const d = parsed.data;
+  const { supabase } = await createTenantClient()
+  const d = parsed.data
 
   const { data, error } = await supabase
     .from('breakfast_configuration')
@@ -102,77 +108,89 @@ export async function updateBreakfastConfiguration(
     .eq('tenant_id', tenantId)
     .is('deleted_at', null)
     .select()
-    .single();
+    .single()
 
-  if (error) return { success: false, error: error.message };
+  if (error) return { success: false, error: error.message }
 
-  const row = data as BreakfastConfiguration;
-  const label = d.groupName?.trim() || 'Unnamed group';
+  const row = data as BreakfastConfiguration
+  const label = d.groupName?.trim() || 'Unnamed group'
   Promise.allSettled([
     getDayDate(row.day_id).then((date) =>
-      notifyTenantMembers(tenantId, user.id, `Breakfast updated: ${label}`, undefined, date ? `/day/${date}` : undefined)
+      notifyTenantMembers(
+        tenantId,
+        user.id,
+        `Breakfast updated: ${label}`,
+        undefined,
+        date ? `/day/${date}` : undefined
+      )
     ),
-  ]);
+  ])
 
-  return { success: true, data: row };
+  return { success: true, data: row }
 }
 
 export async function deleteBreakfastConfiguration(id: string): Promise<ActionResponse> {
-  const tenantId = await getTenantId();
+  const tenantId = await getTenantId()
   if (!(await isFeatureEnabled(tenantId, 'breakfast_config'))) {
-    return { success: false, error: 'Breakfast config is disabled for this venue.' };
+    return { success: false, error: 'Breakfast config is disabled for this venue.' }
   }
-  const user = await requireEditor(tenantId);
+  const user = await requireEditor(tenantId)
 
-  const { supabase } = await createTenantClient();
+  const { supabase } = await createTenantClient()
 
-  const now = new Date().toISOString();
+  const now = new Date().toISOString()
   const { data: existing } = await supabase
     .from('breakfast_configuration')
     .select('group_name, day_id')
     .eq('id', id)
     .eq('tenant_id', tenantId)
     .is('deleted_at', null)
-    .maybeSingle();
+    .maybeSingle()
 
   const { error } = await supabase
     .from('breakfast_configuration')
     .update({ deleted_at: now, updated_at: now })
     .eq('id', id)
     .eq('tenant_id', tenantId)
-    .is('deleted_at', null);
+    .is('deleted_at', null)
 
-  if (error) return { success: false, error: error.message };
+  if (error) return { success: false, error: error.message }
 
   if (existing) {
-    const { group_name, day_id } = existing as { group_name: string | null; day_id: string };
-    const label = group_name?.trim() || 'Unnamed group';
+    const { group_name, day_id } = existing as { group_name: string | null; day_id: string }
+    const label = group_name?.trim() || 'Unnamed group'
     Promise.allSettled([
       getDayDate(day_id).then((date) =>
-        notifyTenantMembers(tenantId, user.id, `Breakfast removed: ${label}`, undefined, date ? `/day/${date}` : undefined)
+        notifyTenantMembers(
+          tenantId,
+          user.id,
+          `Breakfast removed: ${label}`,
+          undefined,
+          date ? `/day/${date}` : undefined
+        )
       ),
-    ]);
+    ])
   }
 
-  return { success: true, data: undefined };
+  return { success: true, data: undefined }
 }
 
 export async function getBreakfastConfigurationsForDay(
   dayId: string
 ): Promise<ActionResponse<BreakfastConfiguration[]>> {
-  const tenantId = await getTenantId();
-  const role = await getUserRole(tenantId);
-  if (!role) return { success: false, error: 'Not authorized.' };
+  const tenantId = await getTenantId()
+  const role = await getUserRole(tenantId)
+  if (!role) return { success: false, error: 'Not authorized.' }
 
-  const { supabase } = await createTenantClient();
+  const { supabase } = await createTenantClient()
   const { data, error } = await supabase
     .from('breakfast_configuration')
     .select('*')
     .eq('tenant_id', tenantId)
     .eq('day_id', dayId)
     .is('deleted_at', null)
-    .order('start_time', { nullsFirst: true });
+    .order('start_time', { nullsFirst: true })
 
-  if (error) return { success: false, error: error.message };
-  return { success: true, data: data as BreakfastConfiguration[] };
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: data as BreakfastConfiguration[] }
 }

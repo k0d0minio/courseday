@@ -1,6 +1,6 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
-import type { Database } from '@/types/supabase';
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
+import type { Database } from '@/types/supabase'
 import type {
   Activity,
   Reservation,
@@ -8,12 +8,12 @@ import type {
   ShiftWithStaffMember,
   StaffMember,
   StaffRole,
-} from '@/types/index';
-import type { DayNote } from '@/app/actions/day-notes';
-import type { DailyBriefRecord } from '@/types/daily-brief';
-import { z } from 'zod';
+} from '@/types/index'
+import type { DayNote } from '@/app/actions/day-notes'
+import type { DailyBriefRecord } from '@/types/daily-brief'
+import { z } from 'zod'
 
-export type AppSupabaseClient = SupabaseClient<Database>;
+export type AppSupabaseClient = SupabaseClient<Database>
 
 export async function getProgramItemsForDayWithClient(
   supabase: AppSupabaseClient,
@@ -26,16 +26,13 @@ export async function getProgramItemsForDayWithClient(
     .eq('tenant_id', tenantId)
     .eq('day_id', dayId)
     .is('deleted_at', null)
-    .order('start_time', { nullsFirst: true });
-  return (data ?? []) as unknown as Activity[];
+    .order('start_time', { nullsFirst: true })
+  return (data ?? []) as unknown as Activity[]
 }
 
-export async function getProgramItemsForDay(
-  tenantId: string,
-  dayId: string
-): Promise<Activity[]> {
-  const supabase = await createSupabaseServerClient();
-  return getProgramItemsForDayWithClient(supabase, tenantId, dayId);
+export async function getProgramItemsForDay(tenantId: string, dayId: string): Promise<Activity[]> {
+  const supabase = await createSupabaseServerClient()
+  return getProgramItemsForDayWithClient(supabase, tenantId, dayId)
 }
 
 export async function getReservationsForDayWithClient(
@@ -49,16 +46,16 @@ export async function getReservationsForDayWithClient(
     .eq('tenant_id', tenantId)
     .eq('day_id', dayId)
     .is('deleted_at', null)
-    .order('start_time', { nullsFirst: true });
-  return (data ?? []) as unknown as Reservation[];
+    .order('start_time', { nullsFirst: true })
+  return (data ?? []) as unknown as Reservation[]
 }
 
 export async function getReservationsForDay(
   tenantId: string,
   dayId: string
 ): Promise<Reservation[]> {
-  const supabase = await createSupabaseServerClient();
-  return getReservationsForDayWithClient(supabase, tenantId, dayId);
+  const supabase = await createSupabaseServerClient()
+  return getReservationsForDayWithClient(supabase, tenantId, dayId)
 }
 
 export async function getBreakfastConfigsForDayWithClient(
@@ -72,16 +69,16 @@ export async function getBreakfastConfigsForDayWithClient(
     .eq('tenant_id', tenantId)
     .eq('day_id', dayId)
     .is('deleted_at', null)
-    .order('start_time', { nullsFirst: true });
-  return (data ?? []) as unknown as BreakfastConfiguration[];
+    .order('start_time', { nullsFirst: true })
+  return (data ?? []) as unknown as BreakfastConfiguration[]
 }
 
 export async function getBreakfastConfigsForDay(
   tenantId: string,
   dayId: string
 ): Promise<BreakfastConfiguration[]> {
-  const supabase = await createSupabaseServerClient();
-  return getBreakfastConfigsForDayWithClient(supabase, tenantId, dayId);
+  const supabase = await createSupabaseServerClient()
+  return getBreakfastConfigsForDayWithClient(supabase, tenantId, dayId)
 }
 
 export async function getDayNotesForDayWithClient(
@@ -95,16 +92,13 @@ export async function getDayNotesForDayWithClient(
     .eq('tenant_id', tenantId)
     .eq('day_id', dayId)
     .is('deleted_at', null)
-    .order('created_at', { ascending: true });
-  return (data ?? []) as unknown as DayNote[];
+    .order('created_at', { ascending: true })
+  return (data ?? []) as unknown as DayNote[]
 }
 
-export async function getDayNotesForDay(
-  tenantId: string,
-  dayId: string
-): Promise<DayNote[]> {
-  const supabase = await createSupabaseServerClient();
-  return getDayNotesForDayWithClient(supabase, tenantId, dayId);
+export async function getDayNotesForDay(tenantId: string, dayId: string): Promise<DayNote[]> {
+  const supabase = await createSupabaseServerClient()
+  return getDayNotesForDayWithClient(supabase, tenantId, dayId)
 }
 
 const dailyBriefContentSchema = z.object({
@@ -126,7 +120,7 @@ const dailyBriefContentSchema = z.object({
   ),
   risks: z.array(z.string()),
   suggestedActions: z.array(z.string()),
-});
+})
 
 export async function getDailyBriefForDayWithClient(
   supabase: AppSupabaseClient,
@@ -138,11 +132,11 @@ export async function getDailyBriefForDayWithClient(
     .select('id, content, generated_at, model, prompt_version')
     .eq('tenant_id', tenantId)
     .eq('day_id', dayId)
-    .maybeSingle();
+    .maybeSingle()
 
-  if (!data) return null;
-  const parsed = dailyBriefContentSchema.safeParse(data.content);
-  if (!parsed.success) return null;
+  if (!data) return null
+  const parsed = dailyBriefContentSchema.safeParse(data.content)
+  if (!parsed.success) return null
 
   return {
     id: data.id,
@@ -150,48 +144,48 @@ export async function getDailyBriefForDayWithClient(
     generated_at: data.generated_at,
     model: data.model,
     prompt_version: data.prompt_version,
-  };
+  }
 }
 
 export async function getDailyBriefForDay(
   tenantId: string,
   dayId: string
 ): Promise<DailyBriefRecord | null> {
-  const supabase = await createSupabaseServerClient();
-  return getDailyBriefForDayWithClient(supabase, tenantId, dayId);
+  const supabase = await createSupabaseServerClient()
+  return getDailyBriefForDayWithClient(supabase, tenantId, dayId)
 }
 
 export async function getShiftsForDay(
   tenantId: string,
   dayId: string
 ): Promise<ShiftWithStaffMember[]> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient()
   const { data } = await supabase
     .from('shift')
     .select('*, staff_member(*)')
     .eq('tenant_id', tenantId)
     .eq('day_id', dayId)
-    .order('start_time', { nullsFirst: true });
-  return (data ?? []) as unknown as ShiftWithStaffMember[];
+    .order('start_time', { nullsFirst: true })
+  return (data ?? []) as unknown as ShiftWithStaffMember[]
 }
 
 export async function getStaffMembersForTenant(tenantId: string): Promise<StaffMember[]> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient()
   const { data } = await supabase
     .from('staff_member')
     .select('*')
     .eq('tenant_id', tenantId)
     .order('active', { ascending: false })
-    .order('name');
-  return (data ?? []) as StaffMember[];
+    .order('name')
+  return (data ?? []) as StaffMember[]
 }
 
 export async function getStaffRolesForTenant(tenantId: string): Promise<StaffRole[]> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient()
   const { data } = await supabase
     .from('staff_role')
     .select('*')
     .eq('tenant_id', tenantId)
-    .order('name');
-  return (data ?? []) as StaffRole[];
+    .order('name')
+  return (data ?? []) as StaffRole[]
 }

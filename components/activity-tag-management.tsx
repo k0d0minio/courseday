@@ -1,27 +1,22 @@
-'use client';
+'use client'
 
-import { useEffect, useState, useTransition } from 'react';
-import { useForm } from 'react-hook-form';
-import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { toast } from 'sonner';
-import { Pencil, Trash2, Plus } from 'lucide-react';
+import { useEffect, useState, useTransition } from 'react'
+import { useForm } from 'react-hook-form'
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
+import { toast } from 'sonner'
+import { Pencil, Trash2, Plus } from 'lucide-react'
 import {
   getAllActivityTags,
   createActivityTag,
   updateActivityTag,
   deleteActivityTag,
-} from '@/app/actions/activity-tags';
-import { activityTagSchema, type ActivityTagFormData } from '@/lib/activity-tag-schema';
-import type { ActivityTag } from '@/types/index';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+} from '@/app/actions/activity-tags'
+import { activityTagSchema, type ActivityTagFormData } from '@/lib/activity-tag-schema'
+import type { ActivityTag } from '@/types/index'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,7 +26,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from '@/components/ui/alert-dialog'
 import {
   Table,
   TableBody,
@@ -39,7 +34,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from '@/components/ui/table'
 
 function ActivityTagDialog({
   open,
@@ -47,12 +42,12 @@ function ActivityTagDialog({
   initial,
   onSaved,
 }: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  initial: ActivityTag | null;
-  onSaved: (tag: ActivityTag) => void;
+  open: boolean
+  onOpenChange: (v: boolean) => void
+  initial: ActivityTag | null
+  onSaved: (tag: ActivityTag) => void
 }) {
-  const [isPending, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition()
   const {
     register,
     handleSubmit,
@@ -61,27 +56,27 @@ function ActivityTagDialog({
   } = useForm<ActivityTagFormData>({
     resolver: standardSchemaResolver(activityTagSchema),
     defaultValues: { name: '' },
-  });
+  })
 
   useEffect(() => {
-    reset({ name: initial?.name ?? '' });
-  }, [initial, open, reset]);
+    reset({ name: initial?.name ?? '' })
+  }, [initial, open, reset])
 
   function onSubmit(data: ActivityTagFormData) {
     startTransition(async () => {
       const result = initial
         ? await updateActivityTag(initial.id, data.name)
-        : await createActivityTag(data.name);
+        : await createActivityTag(data.name)
 
       if (!result.success) {
-        toast.error(result.error);
-        return;
+        toast.error(result.error)
+        return
       }
 
-      toast.success(initial ? 'Tag updated.' : 'Tag added.');
-      onSaved(result.data);
-      onOpenChange(false);
-    });
+      toast.success(initial ? 'Tag updated.' : 'Tag added.')
+      onSaved(result.data)
+      onOpenChange(false)
+    })
   }
 
   return (
@@ -95,9 +90,7 @@ function ActivityTagDialog({
           <div className="space-y-2">
             <Label htmlFor="tag-name">Name *</Label>
             <Input id="tag-name" {...register('name')} />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
+            {errors.name && <p className="text-destructive text-sm">{errors.name.message}</p>}
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
@@ -111,53 +104,53 @@ function ActivityTagDialog({
         </form>
       </DialogContent>
     </Dialog>
-  );
+  )
 }
 
 export function ActivityTagManagement() {
-  const [tags, setTags] = useState<ActivityTag[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<ActivityTag | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<ActivityTag | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [isDeleting, startDeleteTransition] = useTransition();
+  const [tags, setTags] = useState<ActivityTag[]>([])
+  const [loading, setLoading] = useState(true)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editing, setEditing] = useState<ActivityTag | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<ActivityTag | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [isDeleting, startDeleteTransition] = useTransition()
 
   useEffect(() => {
     getAllActivityTags().then((result) => {
       if (result.success) {
-        setTags(result.data);
+        setTags(result.data)
       } else {
-        toast.error(result.error);
+        toast.error(result.error)
       }
-      setLoading(false);
-    });
-  }, []);
+      setLoading(false)
+    })
+  }, [])
 
   function handleSaved(tag: ActivityTag) {
     setTags((prev) => {
-      const idx = prev.findIndex((t) => t.id === tag.id);
+      const idx = prev.findIndex((t) => t.id === tag.id)
       if (idx >= 0) {
-        const next = [...prev];
-        next[idx] = tag;
-        return next;
+        const next = [...prev]
+        next[idx] = tag
+        return next
       }
-      return [...prev, tag].sort((a, b) => a.name.localeCompare(b.name));
-    });
+      return [...prev, tag].sort((a, b) => a.name.localeCompare(b.name))
+    })
   }
 
   function confirmDelete() {
-    if (!deleteTarget) return;
+    if (!deleteTarget) return
     startDeleteTransition(async () => {
-      const result = await deleteActivityTag(deleteTarget.id);
+      const result = await deleteActivityTag(deleteTarget.id)
       if (!result.success) {
-        setDeleteError(result.error);
-        return;
+        setDeleteError(result.error)
+        return
       }
-      setTags((prev) => prev.filter((t) => t.id !== deleteTarget.id));
-      toast.success('Tag deleted.');
-      setDeleteTarget(null);
-    });
+      setTags((prev) => prev.filter((t) => t.id !== deleteTarget.id))
+      toast.success('Tag deleted.')
+      setDeleteTarget(null)
+    })
   }
 
   return (
@@ -166,16 +159,19 @@ export function ActivityTagManagement() {
         <h2 className="text-lg font-semibold">Activity Tags</h2>
         <Button
           size="sm"
-          onClick={() => { setEditing(null); setDialogOpen(true); }}
+          onClick={() => {
+            setEditing(null)
+            setDialogOpen(true)
+          }}
         >
-          <Plus className="w-4 h-4 mr-1" /> Add tag
+          <Plus className="mr-1 h-4 w-4" /> Add tag
         </Button>
       </div>
 
       {loading ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <p className="text-muted-foreground text-sm">Loading…</p>
       ) : tags.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No activity tags yet.</p>
+        <p className="text-muted-foreground text-sm">No activity tags yet.</p>
       ) : (
         <Table>
           <TableHeader>
@@ -189,20 +185,26 @@ export function ActivityTagManagement() {
               <TableRow key={tag.id}>
                 <TableCell className="font-medium">{tag.name}</TableCell>
                 <TableCell>
-                  <div className="flex gap-1 justify-end">
+                  <div className="flex justify-end gap-1">
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => { setEditing(tag); setDialogOpen(true); }}
+                      onClick={() => {
+                        setEditing(tag)
+                        setDialogOpen(true)
+                      }}
                     >
-                      <Pencil className="w-4 h-4" />
+                      <Pencil className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => { setDeleteTarget(tag); setDeleteError(null); }}
+                      onClick={() => {
+                        setDeleteTarget(tag)
+                        setDeleteError(null)
+                      }}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </TableCell>
@@ -221,7 +223,9 @@ export function ActivityTagManagement() {
 
       <AlertDialog
         open={!!deleteTarget}
-        onOpenChange={(v) => { if (!v) setDeleteTarget(null); }}
+        onOpenChange={(v) => {
+          if (!v) setDeleteTarget(null)
+        }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -230,7 +234,9 @@ export function ActivityTagManagement() {
               {deleteError ? (
                 <span className="text-destructive">{deleteError}</span>
               ) : (
-                <>This will permanently delete <strong>{deleteTarget?.name}</strong>.</>
+                <>
+                  This will permanently delete <strong>{deleteTarget?.name}</strong>.
+                </>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -249,5 +255,5 @@ export function ActivityTagManagement() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  );
+  )
 }

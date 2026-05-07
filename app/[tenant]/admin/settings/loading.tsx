@@ -1,8 +1,8 @@
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@/components/ui/skeleton'
 
 export default function SettingsLoading() {
   return (
-    <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6 px-6 py-8">
       <Skeleton className="h-7 w-40" />
       <div className="space-y-3">
         {Array.from({ length: 4 }).map((_, i) => (
@@ -10,5 +10,5 @@ export default function SettingsLoading() {
         ))}
       </div>
     </div>
-  );
+  )
 }

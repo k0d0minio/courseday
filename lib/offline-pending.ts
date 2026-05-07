@@ -1,4 +1,4 @@
 export type PendingEntityState = {
-  pending?: boolean;
-  pendingClientMutationId?: string;
-};
+  pending?: boolean
+  pendingClientMutationId?: string
+}

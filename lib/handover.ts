@@ -1,4 +1,4 @@
-export type HandoverRowStatus = 'new' | 'edited';
+export type HandoverRowStatus = 'new' | 'edited'
 
 /**
  * Baseline is the user's last_viewed_at on this day. Prefer "new" when both
@@ -9,7 +9,7 @@ export function handoverRowStatus(
   updatedAt: string,
   baselineIso: string
 ): HandoverRowStatus | null {
-  if (createdAt > baselineIso) return 'new';
-  if (updatedAt > baselineIso) return 'edited';
-  return null;
+  if (createdAt > baselineIso) return 'new'
+  if (updatedAt > baselineIso) return 'edited'
+  return null
 }
