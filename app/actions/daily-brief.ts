@@ -107,10 +107,6 @@ export async function ensureDailyBrief(args: {
     }
   }
 
-  if (!process.env.AI_GATEWAY_API_KEY && !process.env.VERCEL_OIDC_TOKEN) {
-    return { status: 'error', error: 'AI brief is not configured.' }
-  }
-
   const lockKey = `daily-brief:lock:${tenantId}:${dayId}`
   let acquired: string | null = null
   try {
