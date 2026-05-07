@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 import { useDayRealtime } from './useDayRealtime'
 import { useTranslations } from 'next-intl'
@@ -9,12 +10,19 @@ import { toast } from 'sonner'
 import { DayNav } from '@/components/day-nav'
 import { DaySummaryCard } from '@/components/day-summary-card'
 import { ViewerDayDashboard } from '@/components/viewer-day-dashboard'
-import { ActivityForm } from '@/components/activity-form'
 import { ActivityCard } from '@/components/activity-card'
-import { ReservationForm } from '@/components/reservation-form'
 import { ReservationCard } from '@/components/reservation-card'
-import { BreakfastForm } from '@/components/breakfast-form'
 import { BreakfastCard } from '@/components/breakfast-card'
+
+// Lazy-load heavy form modals — they only render when a user opens an edit/add
+// dialog, so keep them out of the initial day-view JS bundle.
+const ActivityForm = dynamic(() => import('@/components/activity-form').then((m) => m.ActivityForm))
+const ReservationForm = dynamic(() =>
+  import('@/components/reservation-form').then((m) => m.ReservationForm)
+)
+const BreakfastForm = dynamic(() =>
+  import('@/components/breakfast-form').then((m) => m.BreakfastForm)
+)
 import { DayNotes } from '@/components/day-notes'
 import { DayInfoBanner } from '@/components/day-info-banner'
 import { StaffScheduleSection } from '@/components/staff-schedule-section'

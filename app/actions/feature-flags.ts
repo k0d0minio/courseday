@@ -1,17 +1,13 @@
 'use server'
 
+import { cache } from 'react'
 import { createSupabaseServiceClient } from '@/lib/supabase-server'
 import { getSuperadminStatus } from '@/lib/superadmin'
 import { KNOWN_FLAGS } from '@/lib/feature-flags'
 import type { FlagKey, FlagMap } from '@/lib/feature-flags'
 import type { ActionResponse } from '@/types/actions'
 
-/**
- * Returns the feature flag map for a tenant.
- * Rows missing from the DB are defaulted to enabled=true.
- * Safe to call from server components — uses the service client.
- */
-export async function getFeatureFlags(tenantId: string): Promise<FlagMap> {
+const fetchFeatureFlags = cache(async (tenantId: string): Promise<FlagMap> => {
   const serviceClient = createSupabaseServiceClient()
   const { data } = await serviceClient
     .from('feature_flags')
@@ -24,6 +20,16 @@ export async function getFeatureFlags(tenantId: string): Promise<FlagMap> {
     map[key] = row ? row.enabled : true
   }
   return map
+})
+
+/**
+ * Returns the feature flag map for a tenant.
+ * Rows missing from the DB are defaulted to enabled=true.
+ * Safe to call from server components — uses the service client.
+ * Request-scoped via React cache() so multiple call sites dedup.
+ */
+export async function getFeatureFlags(tenantId: string): Promise<FlagMap> {
+  return fetchFeatureFlags(tenantId)
 }
 
 /**
