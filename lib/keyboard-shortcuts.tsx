@@ -30,6 +30,8 @@ type KeyboardShortcutsContextValue = {
   setCommandPaletteOpen: (open: boolean) => void
   shortcutsSheetOpen: boolean
   setShortcutsSheetOpen: (open: boolean) => void
+  quickAddOpen: boolean
+  setQuickAddOpen: (open: boolean) => void
   /** When true, day-level single-letter shortcuts should not run. */
   dayHotkeysSuspended: boolean
 }
@@ -47,8 +49,9 @@ export function useKeyboardShortcuts(): KeyboardShortcutsContextValue {
 export function KeyboardShortcutsProvider({ children }: { children: ReactNode }) {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
   const [shortcutsSheetOpen, setShortcutsSheetOpen] = useState(false)
+  const [quickAddOpen, setQuickAddOpen] = useState(false)
 
-  const dayHotkeysSuspended = commandPaletteOpen || shortcutsSheetOpen
+  const dayHotkeysSuspended = commandPaletteOpen || shortcutsSheetOpen || quickAddOpen
 
   const value = useMemo(
     () => ({
@@ -56,9 +59,11 @@ export function KeyboardShortcutsProvider({ children }: { children: ReactNode })
       setCommandPaletteOpen,
       shortcutsSheetOpen,
       setShortcutsSheetOpen,
+      quickAddOpen,
+      setQuickAddOpen,
       dayHotkeysSuspended,
     }),
-    [commandPaletteOpen, shortcutsSheetOpen, dayHotkeysSuspended]
+    [commandPaletteOpen, shortcutsSheetOpen, quickAddOpen, dayHotkeysSuspended]
   )
 
   useEffect(() => {
@@ -92,7 +97,7 @@ export type DayViewHotkeyHandlers = {
   onOpenActivity?: () => void
   onOpenReservation?: () => void
   onOpenBreakfast?: () => void
-  /** Superadmin impersonation only — toggles viewer/editor preview. */
+  /** Superadmin impersonation only — toggles staff/editor preview. */
   impersonationRole?: SuperadminRole | null
 }
 
@@ -134,7 +139,7 @@ export function useDayViewHotkeys({
       if (key === 'e' || key === 'E') {
         if (!impersonationRole) return
         e.preventDefault()
-        const next: SuperadminRole = impersonationRole === 'viewer' ? 'editor' : 'viewer'
+        const next: SuperadminRole = impersonationRole === 'staff' ? 'editor' : 'staff'
         const url = new URL(window.location.href)
         url.searchParams.set(SUPERADMIN_ROLE_QUERY_PARAM, next)
         window.location.assign(url.toString())

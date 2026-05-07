@@ -172,12 +172,24 @@ export async function runMorningBriefEmailCron(): Promise<MorningBriefCronResult
       continue
     }
 
-    const { data: members } = await supabase
-      .from('memberships')
-      .select('user_id')
-      .eq('tenant_id', tenant.id)
+    // Recipients = (all editors of the tenant) ∪ (all members rostered for dayId).
+    // Editors run the venue and need the daily plan regardless of being on
+    // shift; staff only get the brief on days they are scheduled to work.
+    const [{ data: editors }, { data: rostered }] = await Promise.all([
+      supabase
+        .from('memberships')
+        .select('user_id')
+        .eq('tenant_id', tenant.id)
+        .eq('role', 'editor'),
+      supabase.from('shift').select('user_id').eq('tenant_id', tenant.id).eq('day_id', dayId),
+    ])
 
-    if (!members?.length) continue
+    const recipientIds = new Set<string>([
+      ...(editors ?? []).map((m) => m.user_id),
+      ...(rostered ?? []).map((s) => s.user_id),
+    ])
+
+    if (recipientIds.size === 0) continue
 
     const { data: already } = await supabase
       .from('morning_brief_email_sent')
@@ -194,12 +206,12 @@ export async function runMorningBriefEmailCron(): Promise<MorningBriefCronResult
         errors.push('RESEND_API_KEY not set; no emails sent.')
       }
     } else {
-      for (const m of members) {
-        if (alreadySent.has(m.user_id)) continue
+      for (const userId of recipientIds) {
+        if (alreadySent.has(userId)) continue
 
-        const { data: u, error: userErr } = await supabase.auth.admin.getUserById(m.user_id)
+        const { data: u, error: userErr } = await supabase.auth.admin.getUserById(userId)
         if (userErr || !u.user?.email) {
-          if (userErr) errors.push(`user ${m.user_id}: ${userErr.message}`)
+          if (userErr) errors.push(`user ${userId}: ${userErr.message}`)
           continue
         }
         const to = u.user.email
@@ -222,10 +234,10 @@ export async function runMorningBriefEmailCron(): Promise<MorningBriefCronResult
         const { error: insErr } = await supabase.from('morning_brief_email_sent').insert({
           tenant_id: tenant.id,
           day_id: dayId,
-          user_id: m.user_id,
+          user_id: userId,
         })
         if (insErr) {
-          errors.push(`log ${m.user_id}: ${insErr.message}`)
+          errors.push(`log ${userId}: ${insErr.message}`)
           continue
         }
         emailsSent += 1

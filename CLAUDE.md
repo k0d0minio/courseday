@@ -51,13 +51,20 @@ Prettier config: `.prettierrc` — no semis, single quotes, 100-char width, Tail
 
 ## Database Migrations
 
-- Location: `supabase/migrations/` — 34 migrations, numbered `00001`–`00034`
+- Location: `supabase/migrations/`
 - Naming convention: `NNNNN_description_words.sql` (5 zero-padded digits, lowercase, underscores)
-- Create new: `supabase migration new description_words` (auto-generates correct filename)
+- **Always write migration files directly** — do NOT apply via Supabase MCP tools. CI deploys them automatically.
+- **Before creating a migration file, run `ls supabase/migrations/ | sort | tail -1` to get the current highest number**, then use the next one. Multiple agents may be running in parallel — never assume the number from your context is still current.
 - Apply locally: `supabase db reset` (replays all migrations + seed.sql)
 - Apply to production: automatically via CI on merge to `main` (see migration workflow)
 - After schema changes: run `pnpm db:types` to regenerate `types/supabase.ts`
 - CI validates naming + no duplicates on PRs; pushes to prod on merge to main
+
+## Agent Workflow Rules
+
+**DO NOT run lint, typecheck, or build before committing or pushing.** CI runs `tsc --noEmit`, `next lint`, `prettier --check`, and `next build` on every PR and push to main. The pre-commit hook (husky) already runs Prettier + ESLint on staged files at `git commit`. That is sufficient — no extra checks needed.
+
+**Never run** `pnpm lint`, `pnpm build`, `pnpm format:check`, or `tsc` as a pre-commit or pre-push step.
 
 ## CI/CD
 
@@ -154,12 +161,10 @@ All server actions live under `app/actions/`:
 - `agenda.ts` — `getDaySummaries` (aggregated counts for calendar/agenda views)
 - `days.ts` — day record management
 - `day-notes.ts` — day notes CRUD
-- `day-view-receipts.ts` — handover receipts + soft deletes
 - `checklists.ts` — checklist template CRUD with nested items
 - `shifts.ts` — staff shift CRUD
 - `staff.ts` — staff member CRUD
 - `staff-role.ts` — staff role CRUD
-- `schedule-templates.ts` — copy-day template management
 - `weather.ts` — weather data fetch
 - `daily-brief.ts` — LLM daily brief generation
 - `quick-add.ts` — AI text parsing for quick activity creation
@@ -171,7 +176,28 @@ All server actions live under `app/actions/`:
 
 ### UI Components
 
-`components/ui/` contains shadcn/ui primitives. Key application components:
+`components/ui/` contains shadcn/ui primitives.
+
+**Button conventions** — `components/ui/button.tsx` is the only button primitive in product UI. Raw `<button>` elements outside `components/ui/` are forbidden by ESLint (`no-restricted-syntax`); whitelist a bespoke surface via `// eslint-disable-next-line no-restricted-syntax` with a one-line reason. Never override `h-*`, `min-h-*`, `px-*`, `py-*`, `text-xs`, or `text-[…]` on `Button` via `className` — extend the variant config instead. Lint enforces this.
+
+| Surface                               | size                               | variant                      |
+| ------------------------------------- | ---------------------------------- | ---------------------------- |
+| Marketing landing CTA (root domain)   | `lg`                               | `default` / `outline`        |
+| CTA on brand-coloured background      | `lg`                               | `onBrand` / `onBrandOutline` |
+| App / auth / onboarding form submit   | `default` + `w-full`               | `default`                    |
+| Dialog/Drawer footer cancel           | `default`                          | `outline`                    |
+| Card "add" / row action               | `sm` or `xs`                       | `default` / `outline`        |
+| Toolbar / popover trigger             | `sm`                               | `outline` / `ghost`          |
+| Icon-only — large                     | `icon` (size-9)                    | `ghost` / `outline`          |
+| Icon-only — small                     | `iconSm` (size-8)                  | `ghost`                      |
+| Icon-only — extra small               | `iconXs` / `iconXxs` / `iconMicro` | `ghost`                      |
+| Icon-only — touch (mobile)            | `iconResponsive`                   | `ghost`                      |
+| Tag/multi-select trigger (multi-line) | `formField`                        | `outline`                    |
+| Inline disclosure / link              | `inline`                           | `ghost` / `link`             |
+
+`components/ui/menu-item.tsx` is the canonical primitive for popover/dropdown menu items. Use it (or `<MenuItem asChild><Link…/></MenuItem>`) instead of styling raw `<button>` or `<Link>` elements with menu-row classes.
+
+Key application components:
 
 - `HomeClient` — calendar + agenda view toggle with localStorage preference
 - `AgendaView` — scrollable upcoming-days list
@@ -196,7 +222,7 @@ Per-tenant feature toggles controlled by superadmin via `app/admin/dashboard.tsx
 | `breakfast_config`  | Breakfast Config  | Breakfast CRUD, breakfast counts/pips on calendar/agenda/sidebar, breakfast sections on day views, DaySummaryCard column. Server actions guarded.                        | true    |
 | `weather_reporting` | Weather Reporting | WeatherCard on day views, weather data fetch on day page.                                                                                                                | true    |
 | `checklists`        | Checklists        | Checklists settings page, settings dropdown/mobile-nav/command palette link.                                                                                             | true    |
-| `staff_schedule`    | Staff Schedule    | Staff schedule section on day views, staff settings page, shift data fetch, copy-day shift option.                                                                       | true    |
+| `staff_schedule`    | Staff Schedule    | Staff schedule section on day views, staff settings page, shift data fetch.                                                                                              | true    |
 | `daily_brief`       | Daily Brief       | DailyBriefCard on day views (editor + viewer), `generateDailyBrief` server action, morning brief cron email (skips tenant when off), daily brief data fetch on day page. | true    |
 
 **Always-on modules** (no flag, core functionality):

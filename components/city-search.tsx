@@ -3,7 +3,9 @@
 import { useState, useRef, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import { Search, X, MapPin } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { MenuItem } from '@/components/ui/menu-item'
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover'
 
 export interface GeoResult {
@@ -162,14 +164,16 @@ export function CitySearch({
             <MapPin className="text-muted-foreground h-4 w-4 shrink-0" />
             <span>{formatCity(selected)}</span>
           </div>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="iconSm"
             onClick={handleClear}
-            className="text-muted-foreground hover:text-foreground transition-colors"
+            className="text-muted-foreground hover:text-foreground"
             aria-label={t('clearLocationAria')}
           >
             <X className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
       ) : hasCoords && !query ? (
         <div className="space-y-2">
@@ -180,14 +184,16 @@ export function CitySearch({
                 {initialLatitude?.toFixed(4)}, {initialLongitude?.toFixed(4)}
               </span>
             </div>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="iconSm"
               onClick={handleClear}
-              className="text-muted-foreground hover:text-foreground transition-colors"
+              className="text-muted-foreground hover:text-foreground"
               aria-label={t('clearLocationAria')}
             >
               <X className="h-4 w-4" />
-            </button>
+            </Button>
           </div>
           <p className="text-muted-foreground text-xs">{t('locationCoordsHint')}</p>
         </div>
@@ -228,14 +234,10 @@ export function CitySearch({
               <ul role="listbox" className="py-1">
                 {results.map((r, i) => (
                   <li key={`${r.name}-${r.lat}-${r.lon}-${i}`} role="option" aria-selected={false}>
-                    <button
-                      type="button"
-                      onClick={() => handleSelect(r)}
-                      className="hover:bg-accent flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm transition-colors"
-                    >
+                    <MenuItem type="button" onClick={() => handleSelect(r)}>
                       <MapPin className="text-muted-foreground h-4 w-4 shrink-0" />
                       {formatCity(r)}
-                    </button>
+                    </MenuItem>
                   </li>
                 ))}
               </ul>

@@ -1,5 +1,9 @@
 import { redirect } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 import { getTenantFromHeaders } from '@/lib/tenant'
 import { requireTenantMember } from '@/lib/guards'
 import { ensureDaysRange } from '@/app/actions/days'
@@ -41,12 +45,12 @@ export default async function TenantHomePage({
 
   const today = getTenantToday(timezone)
 
-  // Viewers: agenda-only home (no calendar). Editors: full calendar + agenda.
+  // Staff: agenda-only home (no calendar). Editors: full calendar + agenda.
   if (role !== 'editor') {
     return (
       <>
         {!onboardingCompleted && <OnboardingBanner />}
-        <HomeClient variant="viewer" month={today.slice(0, 7)} today={today} days={[]} />
+        <HomeClient variant="staff" month={today.slice(0, 7)} today={today} days={[]} />
       </>
     )
   }

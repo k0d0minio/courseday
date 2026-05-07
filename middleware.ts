@@ -91,8 +91,16 @@ export async function middleware(request: NextRequest) {
   // 3. Tenant resolution via Redis.
   // -------------------------------------------------------------------------
   const cacheKey = `subdomain:${subdomain}`
-  const cached = await redis.get(cacheKey)
-  let tenant: TenantRedisData | null = cached ? (JSON.parse(cached) as TenantRedisData) : null
+  let tenant: TenantRedisData | null = null
+  try {
+    const cached = await redis.get(cacheKey)
+    if (cached) {
+      tenant = JSON.parse(cached) as TenantRedisData
+    }
+  } catch (err) {
+    // Redis outage or corrupt cache value — fall through to Supabase.
+    console.error('[middleware] redis cache read failed', { subdomain, err })
+  }
 
   // Supabase is source of truth. Redis is routing cache only.
   if (!tenant) {
@@ -114,7 +122,12 @@ export async function middleware(request: NextRequest) {
       status: ((tenantFromDb as { status?: string }).status ??
         'active') as TenantRedisData['status'],
     }
-    await redis.set(cacheKey, JSON.stringify(tenant))
+    try {
+      await redis.set(cacheKey, JSON.stringify(tenant), 'EX', 86400)
+    } catch (err) {
+      // Cache write failure is non-fatal — DB lookup succeeded, request continues.
+      console.error('[middleware] redis cache write failed', { subdomain, err })
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -190,7 +203,7 @@ export async function middleware(request: NextRequest) {
 
   let superadminRoleCookieValue: string | null = null
   const requestedRole = request.nextUrl.searchParams.get(SUPERADMIN_ROLE_QUERY_PARAM)
-  if ((requestedRole === 'editor' || requestedRole === 'viewer') && user) {
+  if ((requestedRole === 'editor' || requestedRole === 'staff') && user) {
     const { data: superadminRow } = await serviceClient
       .from('superadmins')
       .select('id')

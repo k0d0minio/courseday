@@ -20,6 +20,8 @@ export function TenantPalettePicker({ value, onChange }: TenantPalettePickerProp
         const selected = palette.id === value
 
         return (
+          // Radio card — multi-line content, not a Button surface.
+          // eslint-disable-next-line no-restricted-syntax
           <button
             key={palette.id}
             type="button"

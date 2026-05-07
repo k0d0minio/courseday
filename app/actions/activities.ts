@@ -7,9 +7,10 @@ import { getUserRole, requireEditor } from '@/lib/membership'
 import { generateRecurrenceDates } from '@/lib/day-utils'
 import { activitySchema } from '@/lib/program-item-schema'
 import { ensureDayExists } from '@/app/actions/days'
-import { notifyTenantMembers, getDayDate } from '@/lib/notifications'
+import { notifyTenantMembers, getDayDate, awaitNotifications } from '@/lib/notifications'
 import { mutationRateLimit } from '@/lib/rate-limit'
 import { snapshotMatchingTemplatesForActivity } from '@/lib/checklist-snapshot'
+import { revalidateDay } from '@/lib/revalidate'
 import type { ActionResponse } from '@/types/actions'
 import type { Activity, ActivityWithRelations } from '@/types/index'
 import type { ActivityFormData } from '@/lib/program-item-schema'
@@ -108,18 +109,22 @@ export async function createActivity(raw: ActivityFormData): Promise<ActionRespo
       tagIds,
     })
 
-    Promise.allSettled([
-      getDayDate(data.dayId).then((date) =>
-        notifyTenantMembers(
-          tenantId,
-          user.id,
-          `Activity added: ${data.title}`,
-          undefined,
-          date ? `/day/${date}` : undefined
-        )
-      ),
-    ])
+    await awaitNotifications(
+      [
+        getDayDate(data.dayId).then((date) =>
+          notifyTenantMembers(
+            tenantId,
+            user.id,
+            `Activity added: ${data.title}`,
+            undefined,
+            date ? `/day/${date}` : undefined
+          )
+        ),
+      ],
+      'createActivity'
+    )
 
+    revalidateDay()
     return { success: true, data: activity }
   }
 
@@ -198,18 +203,22 @@ export async function createActivity(raw: ActivityFormData): Promise<ActionRespo
     )
   )
 
-  Promise.allSettled([
-    getDayDate(data.dayId).then((date) =>
-      notifyTenantMembers(
-        tenantId,
-        user.id,
-        `Activity added: ${data.title}`,
-        undefined,
-        date ? `/day/${date}` : undefined
-      )
-    ),
-  ])
+  await awaitNotifications(
+    [
+      getDayDate(data.dayId).then((date) =>
+        notifyTenantMembers(
+          tenantId,
+          user.id,
+          `Activity added: ${data.title}`,
+          undefined,
+          date ? `/day/${date}` : undefined
+        )
+      ),
+    ],
+    'createActivity (recurring)'
+  )
 
+  revalidateDay()
   return { success: true, data: primary }
 }
 
@@ -244,7 +253,6 @@ export async function updateActivity(
     })
     .eq('id', id)
     .eq('tenant_id', tenantId)
-    .is('deleted_at', null)
     .select()
     .single()
 
@@ -253,18 +261,22 @@ export async function updateActivity(
   const tagErr = await assignTags(supabase, id, data.tagIds ?? [])
   if (tagErr) return { success: false, error: tagErr }
 
-  Promise.allSettled([
-    getDayDate(data.dayId).then((date) =>
-      notifyTenantMembers(
-        tenantId,
-        user.id,
-        `Activity updated: ${data.title}`,
-        undefined,
-        date ? `/day/${date}` : undefined
-      )
-    ),
-  ])
+  await awaitNotifications(
+    [
+      getDayDate(data.dayId).then((date) =>
+        notifyTenantMembers(
+          tenantId,
+          user.id,
+          `Activity updated: ${data.title}`,
+          undefined,
+          date ? `/day/${date}` : undefined
+        )
+      ),
+    ],
+    'updateActivity'
+  )
 
+  revalidateDay()
   return { success: true, data: row as Activity }
 }
 
@@ -274,39 +286,36 @@ export async function deleteActivity(id: string): Promise<ActionResponse> {
 
   const { supabase } = await createTenantClient()
 
-  const now = new Date().toISOString()
   const { data: existing } = await supabase
     .from('activity')
     .select('title, day_id')
     .eq('id', id)
     .eq('tenant_id', tenantId)
-    .is('deleted_at', null)
     .maybeSingle()
 
-  const { error } = await supabase
-    .from('activity')
-    .update({ deleted_at: now, updated_at: now })
-    .eq('id', id)
-    .eq('tenant_id', tenantId)
-    .is('deleted_at', null)
+  const { error } = await supabase.from('activity').delete().eq('id', id).eq('tenant_id', tenantId)
 
   if (error) return { success: false, error: error.message }
 
   if (existing) {
     const { title, day_id } = existing as { title: string; day_id: string }
-    Promise.allSettled([
-      getDayDate(day_id).then((date) =>
-        notifyTenantMembers(
-          tenantId,
-          user.id,
-          `Activity removed: ${title}`,
-          undefined,
-          date ? `/day/${date}` : undefined
-        )
-      ),
-    ])
+    await awaitNotifications(
+      [
+        getDayDate(day_id).then((date) =>
+          notifyTenantMembers(
+            tenantId,
+            user.id,
+            `Activity removed: ${title}`,
+            undefined,
+            date ? `/day/${date}` : undefined
+          )
+        ),
+      ],
+      'deleteActivity'
+    )
   }
 
+  revalidateDay()
   return { success: true, data: undefined }
 }
 
@@ -314,16 +323,15 @@ export async function deleteActivityRecurrenceGroup(groupId: string): Promise<Ac
   const tenantId = await getTenantId()
   await requireEditor(tenantId)
 
-  const now = new Date().toISOString()
   const { supabase } = await createTenantClient()
   const { error } = await supabase
     .from('activity')
-    .update({ deleted_at: now, updated_at: now })
+    .delete()
     .eq('recurrence_group_id', groupId)
     .eq('tenant_id', tenantId)
-    .is('deleted_at', null)
 
   if (error) return { success: false, error: error.message }
+  revalidateDay()
   return { success: true, data: undefined }
 }
 
@@ -340,7 +348,6 @@ export async function deleteActivityFromHere(id: string, groupId: string): Promi
     .select('day_id, title')
     .eq('id', id)
     .eq('tenant_id', tenantId)
-    .is('deleted_at', null)
     .maybeSingle()
 
   if (!curr) return { success: false, error: 'Activity not found.' }
@@ -363,7 +370,6 @@ export async function deleteActivityFromHere(id: string, groupId: string): Promi
     .select('id, day_id')
     .eq('recurrence_group_id', groupId)
     .eq('tenant_id', tenantId)
-    .is('deleted_at', null)
 
   if (!groupActivities?.length) return { success: true, data: undefined }
 
@@ -383,26 +389,28 @@ export async function deleteActivityFromHere(id: string, groupId: string): Promi
 
   if (toDeleteIds.length === 0) return { success: true, data: undefined }
 
-  const tombstoneAt = new Date().toISOString()
   const { error } = await supabase
     .from('activity')
-    .update({ deleted_at: tombstoneAt, updated_at: tombstoneAt })
+    .delete()
     .in('id', toDeleteIds)
     .eq('tenant_id', tenantId)
-    .is('deleted_at', null)
 
   if (error) return { success: false, error: error.message }
 
-  Promise.allSettled([
-    notifyTenantMembers(
-      tenantId,
-      user.id,
-      `Recurring activity removed from ${currentDate}: ${title}`,
-      undefined,
-      `/day/${currentDate}`
-    ),
-  ])
+  await awaitNotifications(
+    [
+      notifyTenantMembers(
+        tenantId,
+        user.id,
+        `Recurring activity removed from ${currentDate}: ${title}`,
+        undefined,
+        `/day/${currentDate}`
+      ),
+    ],
+    'deleteActivityFromHere'
+  )
 
+  revalidateDay()
   return { success: true, data: undefined }
 }
 
@@ -421,7 +429,6 @@ export async function getActivitiesForDay(
     )
     .eq('tenant_id', tenantId)
     .eq('day_id', dayId)
-    .is('deleted_at', null)
     .order('start_time', { nullsFirst: true })
 
   if (error) return { success: false, error: error.message }

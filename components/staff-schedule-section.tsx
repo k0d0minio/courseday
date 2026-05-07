@@ -6,40 +6,38 @@ import { Plus } from 'lucide-react'
 import { ShiftCard } from '@/components/shift-card'
 import { ShiftForm } from '@/components/shift-form'
 import { Button } from '@/components/ui/button'
-import type { ShiftWithStaffMember, StaffMember, StaffRole } from '@/types/index'
+import type { ShiftAssignee, ShiftWithAssignee } from '@/types/index'
 
 type Props = {
   dayId: string
-  shifts: ShiftWithStaffMember[]
-  staffMembers: StaffMember[]
-  staffRoles: StaffRole[]
+  shifts: ShiftWithAssignee[]
+  assignees: ShiftAssignee[]
   isEditor: boolean
-  onShiftsChange: React.Dispatch<React.SetStateAction<ShiftWithStaffMember[]>>
+  onShiftsChange: React.Dispatch<React.SetStateAction<ShiftWithAssignee[]>>
 }
 
 export function StaffScheduleSection({
   dayId,
   shifts,
-  staffMembers,
-  staffRoles,
+  assignees,
   isEditor,
   onShiftsChange,
 }: Props) {
   const t = useTranslations('Tenant.staff.section')
   const [formOpen, setFormOpen] = useState(false)
-  const [editShift, setEditShift] = useState<ShiftWithStaffMember | null>(null)
+  const [editShift, setEditShift] = useState<ShiftWithAssignee | null>(null)
 
   function openAdd() {
     setEditShift(null)
     setFormOpen(true)
   }
 
-  function openEdit(item: ShiftWithStaffMember) {
+  function openEdit(item: ShiftWithAssignee) {
     setEditShift(item)
     setFormOpen(true)
   }
 
-  function handleSaved(item: ShiftWithStaffMember) {
+  function handleSaved(item: ShiftWithAssignee) {
     onShiftsChange((prev) => {
       const idx = prev.findIndex((s) => s.id === item.id)
       if (idx >= 0) {
@@ -61,16 +59,16 @@ export function StaffScheduleSection({
         <h2 className="font-semibold">{t('title')}</h2>
         {isEditor && (
           <Button
-            size="sm"
+            size="xs"
             onClick={openAdd}
-            disabled={staffMembers.filter((m) => m.active).length === 0}
-            className="h-7 shrink-0 gap-1 px-2.5 text-xs has-[>svg]:px-2"
+            disabled={assignees.length === 0}
+            className="shrink-0"
           >
             <Plus className="size-3.5" /> {t('addShift')}
           </Button>
         )}
       </div>
-      {staffMembers.filter((m) => m.active).length === 0 && isEditor && (
+      {assignees.length === 0 && isEditor && (
         <p className="text-muted-foreground text-sm">{t('noStaffHint')}</p>
       )}
       {shifts.length === 0 ? (
@@ -95,8 +93,7 @@ export function StaffScheduleSection({
           isOpen={formOpen}
           onClose={() => setFormOpen(false)}
           dayId={dayId}
-          staffMembers={staffMembers}
-          rolePresets={staffRoles}
+          assignees={assignees}
           editItem={editShift}
           onSuccess={handleSaved}
         />

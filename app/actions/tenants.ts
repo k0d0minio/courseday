@@ -5,6 +5,7 @@ import { createSupabaseServerClient, createSupabaseServiceClient } from '@/lib/s
 import { isValidSlug } from '@/lib/tenant-validation'
 import { getUser } from '@/app/actions/auth'
 import { getUserRole } from '@/lib/membership'
+import { isUserSuperadmin } from '@/lib/superadmin'
 import type { ActionResponse } from '@/types/actions'
 
 export type TenantStatus = 'active' | 'suspended' | 'archived'
@@ -76,7 +77,7 @@ export async function createTenant(data: {
     language: (tenant as { language?: string }).language ?? 'en',
     status: ((tenant as { status?: string }).status ?? 'active') as TenantStatus,
   }
-  await redis.set(`subdomain:${tenant.slug}`, JSON.stringify(redisData))
+  await redis.set(`subdomain:${tenant.slug}`, JSON.stringify(redisData), 'EX', 86400)
 
   // Create initial membership row for the creating user with role 'editor'.
   // Must use service client — user has no membership yet so RLS would block.
@@ -102,9 +103,14 @@ export async function createTenant(data: {
 // ---------------------------------------------------------------------------
 export async function getTenantBySlug(slug: string): Promise<ActionResponse<TenantRedisData>> {
   // Redis fast path
-  const cached = await redis.get(`subdomain:${slug}`)
-  if (cached) {
-    return { success: true, data: JSON.parse(cached) as TenantRedisData }
+  try {
+    const cached = await redis.get(`subdomain:${slug}`)
+    if (cached) {
+      return { success: true, data: JSON.parse(cached) as TenantRedisData }
+    }
+  } catch (err) {
+    // Redis outage or corrupt cache value — fall through to Supabase.
+    console.error('[getTenantBySlug] redis cache read failed', { slug, err })
   }
 
   // Fallback to Supabase
@@ -127,7 +133,7 @@ export async function getTenantBySlug(slug: string): Promise<ActionResponse<Tena
     language: (tenant as { language?: string }).language ?? 'en',
     status: ((tenant as { status?: string }).status ?? 'active') as TenantStatus,
   }
-  await redis.set(`subdomain:${tenant.slug}`, JSON.stringify(redisData))
+  await redis.set(`subdomain:${tenant.slug}`, JSON.stringify(redisData), 'EX', 86400)
 
   return { success: true, data: redisData }
 }
@@ -217,7 +223,7 @@ export async function updateTenant(
     language: (updated as { language?: string }).language ?? 'en',
     status: ((updated as { status?: string }).status ?? 'active') as TenantStatus,
   }
-  await redis.set(`subdomain:${updated.slug}`, JSON.stringify(redisData))
+  await redis.set(`subdomain:${updated.slug}`, JSON.stringify(redisData), 'EX', 86400)
 
   return { success: true, data: redisData }
 }
@@ -242,6 +248,16 @@ export async function completeOnboarding(tenantId: string): Promise<ActionRespon
 // deleteTenant
 // ---------------------------------------------------------------------------
 export async function deleteTenant(id: string): Promise<ActionResponse> {
+  const user = await getUser()
+  if (!user) {
+    return { success: false, error: 'Not authenticated.' }
+  }
+
+  const isSuperadmin = await isUserSuperadmin(user.id)
+  if (!isSuperadmin) {
+    return { success: false, error: 'Not authorized.' }
+  }
+
   const serviceClient = createSupabaseServiceClient()
 
   // Fetch slug before deleting so we can remove the Redis key
@@ -287,7 +303,7 @@ async function setTenantStatus(id: string, status: TenantStatus): Promise<Action
     language: (updated as { language?: string }).language ?? 'en',
     status: ((updated as { status?: string }).status ?? 'active') as TenantStatus,
   }
-  await redis.set(`subdomain:${updated.slug}`, JSON.stringify(redisData))
+  await redis.set(`subdomain:${updated.slug}`, JSON.stringify(redisData), 'EX', 86400)
 
   return { success: true, data: undefined }
 }

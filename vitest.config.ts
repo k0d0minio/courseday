@@ -10,6 +10,17 @@ export default defineConfig({
     setupFiles: ['./tests/setup.ts'],
     include: ['**/*.test.{ts,tsx}'],
     exclude: ['node_modules', '.next'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov', 'html', 'json-summary'],
+      thresholds: {
+        lines: 49,
+        functions: 50,
+        branches: 37,
+        statements: 45,
+      },
+      exclude: ['types/supabase.ts', 'tests/**', 'next.config.ts', '**/*.config.*'],
+    },
   },
   resolve: {
     alias: {

@@ -27,10 +27,9 @@ export function CommandPalette() {
   const { tenantTodayYmd, activeDayYmd } = useActiveDay()
   const { isEditor } = useAuth()
   const showChecklists = useFeatureFlag('checklists')
-  const showStaffSchedule = useFeatureFlag('staff_schedule')
   const showReservations = useFeatureFlag('reservations')
   const showBreakfast = useFeatureFlag('breakfast_config')
-  const { commandPaletteOpen, setCommandPaletteOpen } = useKeyboardShortcuts()
+  const { commandPaletteOpen, setCommandPaletteOpen, setQuickAddOpen } = useKeyboardShortcuts()
 
   const [datePickOpen, setDatePickOpen] = useState(false)
 
@@ -38,9 +37,8 @@ export function CommandPalette() {
     () =>
       getVisibleSettingsRoutes({
         checklists: showChecklists,
-        staffSchedule: showStaffSchedule,
       }),
-    [showChecklists, showStaffSchedule]
+    [showChecklists]
   )
 
   const close = useCallback(() => {
@@ -60,11 +58,9 @@ export function CommandPalette() {
     close()
   }
 
-  function openQuickAddOnDay() {
-    const q = new URLSearchParams()
-    q.set('openQuickAdd', '1')
-    router.push(`/day/${activeDayYmd}?${q.toString()}`)
+  function openQuickAdd() {
     close()
+    setQuickAddOpen(true)
   }
 
   function handleSignOut() {
@@ -168,7 +164,7 @@ export function CommandPalette() {
 
               {isEditor && (
                 <Command.Group heading={t('groupCreate')}>
-                  <Command.Item value="quick-add" onSelect={openQuickAddOnDay}>
+                  <Command.Item value="quick-add" onSelect={openQuickAdd}>
                     {t('cmdQuickAdd')}
                   </Command.Item>
                   <Command.Item value="new-activity" onSelect={() => openNewOnDay('activity')}>

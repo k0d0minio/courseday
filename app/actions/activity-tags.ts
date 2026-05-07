@@ -1,5 +1,6 @@
 'use server'
 
+import { cache } from 'react'
 import { createTenantClient } from '@/lib/supabase-server'
 import { getTenantId } from '@/lib/tenant'
 import { getUserRole, requireEditor } from '@/lib/membership'
@@ -7,7 +8,7 @@ import { activityTagSchema } from '@/lib/activity-tag-schema'
 import type { ActionResponse } from '@/types/actions'
 import type { ActivityTag } from '@/types/index'
 
-export async function getAllActivityTags(): Promise<ActionResponse<ActivityTag[]>> {
+const fetchAllActivityTags = cache(async (): Promise<ActionResponse<ActivityTag[]>> => {
   const tenantId = await getTenantId()
   const role = await getUserRole(tenantId)
   if (!role) return { success: false, error: 'Not authorized.' }
@@ -21,6 +22,10 @@ export async function getAllActivityTags(): Promise<ActionResponse<ActivityTag[]
 
   if (error) return { success: false, error: error.message }
   return { success: true, data: data as ActivityTag[] }
+})
+
+export async function getAllActivityTags(): Promise<ActionResponse<ActivityTag[]>> {
+  return fetchAllActivityTags()
 }
 
 export async function createActivityTag(name: string): Promise<ActionResponse<ActivityTag>> {

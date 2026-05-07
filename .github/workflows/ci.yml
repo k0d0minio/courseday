@@ -48,22 +48,18 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
           NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-anon-key
           NEXT_PUBLIC_ROOT_DOMAIN: localhost:3000
-
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: [typecheck, unit-tests]
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-      - uses: ./.github/actions/setup
-      - run: pnpm build
+      - run: pnpm test:coverage
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          NEXT_PUBLIC_ROOT_DOMAIN: courseday.app
-          SUPABASE_SERVICE_ROLE_KEY: dummy-service-key
-          KV_REST_API_URL: https://dummy.upstash.io
-          KV_REST_API_TOKEN: dummy-token
+          NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-anon-key
+          NEXT_PUBLIC_ROOT_DOMAIN: localhost:3000
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 30
+  # Build is intentionally not in CI: Vercel's Git integration auto-builds
+  # every PR with the real preview environment (correct REDIS_URL, etc.).
+  # A GH Actions build can only run with dummy env, which either lies (passes
+  # when prod would fail) or breaks on top-level env reads like lib/redis.ts.

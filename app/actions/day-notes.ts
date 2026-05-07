@@ -29,7 +29,6 @@ export async function getDayNotes(dayId: string): Promise<ActionResponse<DayNote
     .select('*')
     .eq('tenant_id', tenantId)
     .eq('day_id', dayId)
-    .is('deleted_at', null)
     .order('created_at', { ascending: true })
 
   if (error) return { success: false, error: error.message }
@@ -82,7 +81,6 @@ export async function updateDayNote(id: string, content: string): Promise<Action
     .eq('id', id)
     .eq('tenant_id', tenantId)
     .eq('user_id', user.id)
-    .is('deleted_at', null)
     .select()
     .single()
 
@@ -94,15 +92,13 @@ export async function deleteDayNote(id: string): Promise<ActionResponse> {
   const tenantId = await getTenantId()
   const user = await requireEditor(tenantId)
 
-  const now = new Date().toISOString()
   const { supabase } = await createTenantClient()
   const { error } = await supabase
     .from('day_notes')
-    .update({ deleted_at: now, updated_at: now })
+    .delete()
     .eq('id', id)
     .eq('tenant_id', tenantId)
     .eq('user_id', user.id)
-    .is('deleted_at', null)
 
   if (error) return { success: false, error: error.message }
   return { success: true, data: undefined }

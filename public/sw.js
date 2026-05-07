@@ -1,4 +1,4 @@
-const CACHE_NAME = 'courseday-v2';
+const CACHE_NAME = 'courseday-v3';
 
 // Never cache these paths
 const SKIP_PREFIXES = ['/auth/', '/api/'];
@@ -57,7 +57,22 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network-first for pages — fall back to cache when offline
+  // HTML page navigations: always go to network, never cache.
+  // Caching SSR pages causes stale data across devices because revalidation
+  // can't reach a service-worker cache.
+  const isPageNavigation =
+    event.request.mode === 'navigate' ||
+    (event.request.destination === 'document') ||
+    (event.request.headers.get('accept') || '').includes('text/html');
+
+  if (isPageNavigation) {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Network-first for everything else (e.g. images, fonts) — fall back to cache offline
   event.respondWith(
     fetch(event.request)
       .then((response) => {

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { cache } from 'react'
 import { NextIntlClientProvider } from 'next-intl'
 import { getLocale, getMessages, getTranslations } from 'next-intl/server'
 import Link from 'next/link'
@@ -26,16 +27,28 @@ import { getTenantToday } from '@/lib/day-utils'
 import { getSuperadminImpersonationRole } from '@/lib/superadmin'
 import { getTenantPalette, getTenantThemeCssVariables } from '@/lib/theme/palettes'
 import { TenantKeyboardShell } from '@/components/tenant-keyboard-shell'
+import { GlobalQuickAdd } from '@/components/global-quick-add'
+
+const getTenantRow = cache(async (tenantId: string) => {
+  const supabase = await createSupabaseServerClient()
+  const { data } = await supabase
+    .from('tenants')
+    .select('name, theme_palette, accent_color, logo_url, timezone')
+    .eq('id', tenantId)
+    .single()
+  return data as {
+    name?: string | null
+    theme_palette?: string | null
+    accent_color?: string | null
+    logo_url?: string | null
+    timezone?: string | null
+  } | null
+})
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
     const tenant = await getTenantFromHeaders()
-    const supabase = await createSupabaseServerClient()
-    const { data } = await supabase
-      .from('tenants')
-      .select('name, theme_palette, accent_color')
-      .eq('id', tenant.id)
-      .single()
+    const data = await getTenantRow(tenant.id)
     const name = data?.name as string | undefined
     const palette = getTenantPalette(
       (data?.theme_palette as string | null) ?? null,
@@ -80,20 +93,7 @@ export default async function TenantLayout({ children }: { children: React.React
 
   const featureFlags = await getFeatureFlags(tenant.id)
 
-  const supabase = await createSupabaseServerClient()
-  const { data: tenantRow } = await supabase
-    .from('tenants')
-    .select('theme_palette, accent_color, logo_url, name, timezone')
-    .eq('id', tenant.id)
-    .single()
-
-  const row = tenantRow as {
-    theme_palette?: string | null
-    accent_color?: string | null
-    logo_url?: string | null
-    name?: string | null
-    timezone?: string | null
-  } | null
+  const row = await getTenantRow(tenant.id)
   const today = getTenantToday(row?.timezone ?? 'UTC')
   const palette = getTenantPalette(row?.theme_palette ?? null, row?.accent_color ?? null)
   const accentStyle = getTenantThemeCssVariables(palette) as React.CSSProperties
@@ -138,6 +138,8 @@ export default async function TenantLayout({ children }: { children: React.React
                     <OfflineStatusPill />
                     {/* Theme toggle — visible to all signed-in users */}
                     {user && <ThemeToggle />}
+                    {/* AI quick-add — editors only */}
+                    {editor && <GlobalQuickAdd />}
                     {/* Settings dropdown — editors only, desktop */}
                     {editor && (
                       <span className="hidden sm:inline-flex">
@@ -145,7 +147,11 @@ export default async function TenantLayout({ children }: { children: React.React
                       </span>
                     )}
                     <NotificationBell initialCount={unreadCount} />
-                    {user && <UserMenu user={user} signOutLabel={t('signOut')} />}
+                    {user && (
+                      <span className={editor ? undefined : 'hidden sm:inline-flex'}>
+                        <UserMenu user={user} signOutLabel={t('signOut')} />
+                      </span>
+                    )}
                   </div>
                 </header>
                 <main id="main-content" className="flex-1 pb-16 sm:pb-0">

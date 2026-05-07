@@ -1,5 +1,6 @@
 'use server'
 
+import { cache } from 'react'
 import { createTenantClient } from '@/lib/supabase-server'
 import { getTenantId } from '@/lib/tenant'
 import { getUserRole, requireEditor } from '@/lib/membership'
@@ -8,11 +9,7 @@ import type { VenueTypeFormData } from '@/lib/venue-type-schema'
 import type { ActionResponse } from '@/types/actions'
 import type { VenueType } from '@/types/index'
 
-function normaliseEmpty(s: string | undefined | null): string | null {
-  return s && s.trim() !== '' ? s.trim() : null
-}
-
-export async function getAllVenueTypes(): Promise<ActionResponse<VenueType[]>> {
+const fetchAllVenueTypes = cache(async (): Promise<ActionResponse<VenueType[]>> => {
   const tenantId = await getTenantId()
   const role = await getUserRole(tenantId)
   if (!role) return { success: false, error: 'Not authorized.' }
@@ -26,6 +23,10 @@ export async function getAllVenueTypes(): Promise<ActionResponse<VenueType[]>> {
 
   if (error) return { success: false, error: error.message }
   return { success: true, data: data as VenueType[] }
+})
+
+export async function getAllVenueTypes(): Promise<ActionResponse<VenueType[]>> {
+  return fetchAllVenueTypes()
 }
 
 export async function createVenueType(raw: VenueTypeFormData): Promise<ActionResponse<VenueType>> {
@@ -43,7 +44,6 @@ export async function createVenueType(raw: VenueTypeFormData): Promise<ActionRes
     .insert({
       tenant_id: tenantId,
       name: parsed.data.name.trim(),
-      code: normaliseEmpty(parsed.data.code),
     })
     .select()
     .single()
@@ -52,7 +52,7 @@ export async function createVenueType(raw: VenueTypeFormData): Promise<ActionRes
     const isDupe = error.code === '23505'
     return {
       success: false,
-      error: isDupe ? 'A venue type with that name or code already exists.' : error.message,
+      error: isDupe ? 'A venue type with that name already exists.' : error.message,
     }
   }
 
@@ -76,7 +76,6 @@ export async function updateVenueType(
     .from('venue_type')
     .update({
       name: parsed.data.name.trim(),
-      code: normaliseEmpty(parsed.data.code),
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
@@ -88,7 +87,7 @@ export async function updateVenueType(
     const isDupe = error.code === '23505'
     return {
       success: false,
-      error: isDupe ? 'A venue type with that name or code already exists.' : error.message,
+      error: isDupe ? 'A venue type with that name already exists.' : error.message,
     }
   }
 

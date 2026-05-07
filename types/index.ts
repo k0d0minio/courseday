@@ -56,17 +56,16 @@ export type PointOfContactUpdate = TablesUpdate<'point_of_contact'>
 
 // ── Staff schedule ─────────────────────────────────────────────────────────────
 
-export type StaffMember = Tables<'staff_member'>
-export type StaffMemberInsert = TablesInsert<'staff_member'>
-export type StaffMemberUpdate = TablesUpdate<'staff_member'>
-
-export type StaffRole = Tables<'staff_role'>
-export type StaffRoleInsert = TablesInsert<'staff_role'>
-export type StaffRoleUpdate = TablesUpdate<'staff_role'>
-
 export type Shift = Tables<'shift'>
 export type ShiftInsert = TablesInsert<'shift'>
 export type ShiftUpdate = TablesUpdate<'shift'>
+
+/** A tenant member as displayed in shift pickers and shift cards. */
+export type ShiftAssignee = {
+  user_id: string
+  email: string
+  display_name: string
+}
 
 // ── Venue type ────────────────────────────────────────────────────────────────
 
@@ -101,6 +100,7 @@ export type ActivityWithRelations = Activity & {
   checklist_items?: ActivityChecklistItem[]
 }
 
-export type ShiftWithStaffMember = Shift & {
-  staff_member: StaffMember
+/** A shift joined with its assignee (tenant member). */
+export type ShiftWithAssignee = Shift & {
+  assignee: ShiftAssignee
 }

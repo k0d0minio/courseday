@@ -1,5 +1,9 @@
 import { redirect } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 import { getTenantFromHeaders } from '@/lib/tenant'
 import { requireTenantMember } from '@/lib/guards'
 import { getAuthState } from '@/app/actions/auth'
@@ -14,8 +18,7 @@ import {
   getDayNotesForDay,
   getDailyBriefForDay,
   getShiftsForDay,
-  getStaffMembersForTenant,
-  getStaffRolesForTenant,
+  getTenantAssigneesList,
 } from './queries'
 import { Suspense } from 'react'
 import { DayViewClient } from './DayViewClient'
@@ -25,21 +28,37 @@ import type {
   BreakfastConfiguration,
   PointOfContact,
   VenueType,
-  ShiftWithStaffMember,
-  StaffMember,
-  StaffRole,
+  ShiftAssignee,
+  ShiftWithAssignee,
 } from '@/types/index'
 import type { AuthState } from '@/types/actions'
 import type { DayNote } from '@/app/actions/day-notes'
+import type { DailyBriefRecord } from '@/types/daily-brief'
 import { getWeatherForDay } from '@/app/actions/weather'
 import type { WeatherData } from '@/app/actions/weather'
 import { getFeatureFlags } from '@/app/actions/feature-flags'
-import {
-  ensureDayViewReceipt,
-  getSoftDeletedSince,
-  type HandoverRemovedItem,
-} from '@/app/actions/day-view-receipts'
-import type { DailyBriefRecord } from '@/types/daily-brief'
+import { dayHasPlannedContent } from '@/lib/daily-brief-generate'
+
+// Inline stale check to avoid pulling the LLM-generation server action onto
+// the request critical path. Mirrors the helper in app/actions/daily-brief.ts.
+function isBriefStale(
+  brief: DailyBriefRecord,
+  activities: Activity[],
+  reservations: Reservation[],
+  breakfasts: BreakfastConfiguration[],
+  dayNotes: DayNote[]
+): boolean {
+  const briefTime = new Date(brief.generated_at).getTime()
+  const timestamps: string[] = [
+    ...activities.map((a) => a.updated_at),
+    ...reservations.map((r) => r.updated_at),
+    ...breakfasts.map((b) => b.updated_at),
+    ...dayNotes.map((n) => n.updated_at),
+  ]
+  if (timestamps.length === 0) return false
+  const maxUpdated = Math.max(...timestamps.map((t) => new Date(t).getTime()))
+  return maxUpdated > briefTime
+}
 
 export type DayViewProps = {
   date: string
@@ -51,14 +70,20 @@ export type DayViewProps = {
   dayNotes: DayNote[]
   weather: WeatherData | null
   dailyBrief: DailyBriefRecord | null
+  briefStale: boolean
+  briefIsEmpty: boolean
+  /**
+   * True when the day has at least one activity / reservation / breakfast.
+   * Lets the daily-brief banner trigger client-side generation when no brief
+   * exists yet, replacing the previous synchronous server-side `ensureDailyBrief`
+   * call that was blocking page render on the LLM round-trip.
+   */
+  dayHasContent: boolean
   pocs: PointOfContact[]
   venueTypes: VenueType[]
   authState: AuthState
-  shifts: ShiftWithStaffMember[]
-  staffMembers: StaffMember[]
-  staffRoles: StaffRole[]
-  handoverLastViewedAt: string | null
-  handoverRemoved: HandoverRemovedItem[]
+  shifts: ShiftWithAssignee[]
+  shiftAssignees: ShiftAssignee[]
 }
 
 const YMD_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -66,15 +91,18 @@ const YMD_REGEX = /^\d{4}-\d{2}-\d{2}$/
 export default async function DayPage({ params }: { params: Promise<{ date: string }> }) {
   const { date } = await params
 
-  // Get tenant from headers first (fast — headers only), then run auth check
-  // and tenant DB query in parallel since they are independent.
-  const tenant = await getTenantFromHeaders()
-  const supabase = await createSupabaseServerClient()
-
-  const [, tenantData] = await Promise.all([
+  // All three are independent — run in parallel to shorten critical-path latency.
+  const [tenant, supabase] = await Promise.all([
+    getTenantFromHeaders(),
+    createSupabaseServerClient(),
     requireTenantMember(),
-    supabase.from('tenants').select('timezone, latitude, longitude').eq('id', tenant.id).single(),
-  ])
+  ] as const)
+
+  const tenantData = await supabase
+    .from('tenants')
+    .select('timezone, latitude, longitude')
+    .eq('id', tenant.id)
+    .single()
 
   const tenantRow = tenantData.data as {
     timezone?: string | null
@@ -106,49 +134,54 @@ export default async function DayPage({ params }: { params: Promise<{ date: stri
         }
       : undefined
 
-  const flags = await getFeatureFlags(tenant.id)
+  const [flags, authState] = await Promise.all([getFeatureFlags(tenant.id), getAuthState()])
   const staffScheduleOn = flags.staff_schedule
   const dailyBriefOn = flags.daily_brief
-  const authState = await getAuthState()
 
-  // Load all day data in parallel — skip disabled features
+  // Load all day data in parallel — skip disabled features.
+  // Daily brief is now a fast read-only fetch (no LLM call on the critical path);
+  // generation is triggered client-side from the banner when missing.
   const [
     activities,
     reservations,
     breakfastConfigs,
     dayNotes,
     weather,
-    dailyBrief,
     pocsResult,
     venueTypesResult,
     shifts,
-    staffMembers,
-    staffRoles,
+    shiftAssignees,
+    existingBrief,
   ] = await Promise.all([
     getProgramItemsForDay(tenant.id, day.id),
     flags.reservations ? getReservationsForDay(tenant.id, day.id) : Promise.resolve([]),
     flags.breakfast_config ? getBreakfastConfigsForDay(tenant.id, day.id) : Promise.resolve([]),
     getDayNotesForDay(tenant.id, day.id),
     flags.weather_reporting ? getWeatherForDay(date, weatherCoords) : Promise.resolve(null),
-    dailyBriefOn ? getDailyBriefForDay(tenant.id, day.id) : Promise.resolve(null),
     getAllPOCs(),
     getAllVenueTypes(),
     staffScheduleOn ? getShiftsForDay(tenant.id, day.id) : Promise.resolve([]),
-    staffScheduleOn ? getStaffMembersForTenant(tenant.id) : Promise.resolve([]),
-    staffScheduleOn ? getStaffRolesForTenant(tenant.id) : Promise.resolve([]),
+    staffScheduleOn ? getTenantAssigneesList(tenant.id) : Promise.resolve([]),
+    dailyBriefOn ? getDailyBriefForDay(tenant.id, day.id) : Promise.resolve(null),
   ])
 
-  let handoverLastViewedAt: string | null = null
-  let handoverRemoved: HandoverRemovedItem[] = []
-  const uid = authState.user?.id
-  if (uid) {
-    const receipt = await ensureDayViewReceipt(tenant.id, day.id, uid)
-    if (receipt.success) {
-      handoverLastViewedAt = receipt.data.last_viewed_at
-      const removed = await getSoftDeletedSince(tenant.id, day.id, receipt.data.last_viewed_at)
-      if (removed.success) handoverRemoved = removed.data
-    }
-  }
+  const dayHasContent = dayHasPlannedContent(
+    activities,
+    flags.reservations ? reservations : [],
+    flags.breakfast_config ? breakfastConfigs : []
+  )
+  const dailyBrief = dailyBriefOn ? existingBrief : null
+  const briefStale =
+    dailyBriefOn && dailyBrief
+      ? isBriefStale(
+          dailyBrief,
+          activities,
+          flags.reservations ? reservations : [],
+          flags.breakfast_config ? breakfastConfigs : [],
+          dayNotes
+        )
+      : false
+  const briefIsEmpty = dailyBriefOn ? !dayHasContent : false
 
   return (
     <Suspense
@@ -164,14 +197,14 @@ export default async function DayPage({ params }: { params: Promise<{ date: stri
         dayNotes={dayNotes}
         weather={weather}
         dailyBrief={dailyBrief}
+        briefStale={briefStale}
+        briefIsEmpty={briefIsEmpty}
+        dayHasContent={dayHasContent}
         pocs={pocsResult.success ? pocsResult.data : []}
         venueTypes={venueTypesResult.success ? venueTypesResult.data : []}
         authState={authState}
         shifts={shifts}
-        staffMembers={staffMembers}
-        staffRoles={staffRoles}
-        handoverLastViewedAt={handoverLastViewedAt}
-        handoverRemoved={handoverRemoved}
+        shiftAssignees={shiftAssignees}
       />
     </Suspense>
   )

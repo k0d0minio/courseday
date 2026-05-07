@@ -103,7 +103,7 @@ export function TableBreakdownBuilder({
           variant="outline"
           onClick={addTable}
           disabled={disabled}
-          className="h-auto self-start"
+          className="self-start"
           aria-label={t('addTable')}
         >
           <Plus className="mr-1 h-3 w-3" /> {t('addTable')}
@@ -151,7 +151,8 @@ function TableBlock({
       onKeyDown={onKeyDown}
       className="bg-card focus-visible:ring-ring relative flex min-w-[64px] flex-col items-center gap-1 rounded-md border px-3 pt-5 pb-2 focus:outline-none focus-visible:ring-2"
     >
-      {/* Remove button */}
+      {/* Remove button — 16x16 absolute-positioned mini affordance, smaller than icon size. */}
+      {/* eslint-disable-next-line no-restricted-syntax */}
       <button
         type="button"
         onClick={onRemove}
@@ -166,9 +167,8 @@ function TableBlock({
       {/* Increase */}
       <Button
         type="button"
-        size="icon"
+        size="iconMicro"
         variant="ghost"
-        className="h-5 w-5"
         onClick={() => onAdjust(1)}
         disabled={disabled || seats >= 20}
         aria-label={`Add seat to table ${tableNumber}`}
@@ -183,9 +183,8 @@ function TableBlock({
       {/* Decrease */}
       <Button
         type="button"
-        size="icon"
+        size="iconMicro"
         variant="ghost"
-        className="h-5 w-5"
         onClick={() => onAdjust(-1)}
         disabled={disabled || seats <= 1}
         aria-label={`Remove seat from table ${tableNumber}`}

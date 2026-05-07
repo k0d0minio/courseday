@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Check, Globe } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
+import { MenuItem } from '@/components/ui/menu-item'
 import { cn } from '@/lib/utils'
 
 const LOCALES = [
@@ -39,7 +40,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
           variant="ghost"
           size="sm"
           aria-label={`Language: ${active.label}`}
-          className={cn('gap-1.5 px-2 sm:px-3', className)}
+          className={cn(className)}
         >
           <Globe className="size-4 opacity-80" aria-hidden="true" />
           <span className="text-xs font-semibold tracking-wide">{active.short}</span>
@@ -50,29 +51,20 @@ export function LanguageSwitcher({ className }: { className?: string }) {
           {LOCALES.map((l) => {
             const isActive = l.code === current
             return (
-              <button
+              <MenuItem
                 key={l.code}
                 type="button"
                 role="menuitemradio"
                 aria-checked={isActive}
                 onClick={() => change(l.code)}
                 disabled={isPending}
-                className={cn(
-                  'flex w-full items-center justify-between rounded-sm px-3 py-2.5 text-sm transition-colors outline-none',
-                  'hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground',
-                  'disabled:pointer-events-none disabled:opacity-60',
-                  isActive && 'font-medium'
-                )}
+                className={cn('justify-between', isActive && 'font-medium')}
               >
                 <span>{l.label}</span>
                 {isActive && (
-                  <Check
-                    className="size-4 text-[var(--brand)]"
-                    strokeWidth={2.5}
-                    aria-hidden="true"
-                  />
+                  <Check className="text-brand size-4" strokeWidth={2.5} aria-hidden="true" />
                 )}
-              </button>
+              </MenuItem>
             )
           })}
         </div>

@@ -1,5 +1,6 @@
 'use server'
 
+import { cache } from 'react'
 import { createTenantClient } from '@/lib/supabase-server'
 import { getTenantId } from '@/lib/tenant'
 import { getUserRole, requireEditor } from '@/lib/membership'
@@ -12,7 +13,7 @@ function normaliseEmpty(s: string | undefined | null): string | null {
   return s && s.trim() !== '' ? s.trim() : null
 }
 
-export async function getAllPOCs(): Promise<ActionResponse<PointOfContact[]>> {
+const fetchAllPOCs = cache(async (): Promise<ActionResponse<PointOfContact[]>> => {
   const tenantId = await getTenantId()
   const role = await getUserRole(tenantId)
   if (!role) return { success: false, error: 'Not authorized.' }
@@ -26,6 +27,10 @@ export async function getAllPOCs(): Promise<ActionResponse<PointOfContact[]>> {
 
   if (error) return { success: false, error: error.message }
   return { success: true, data: data as PointOfContact[] }
+})
+
+export async function getAllPOCs(): Promise<ActionResponse<PointOfContact[]>> {
+  return fetchAllPOCs()
 }
 
 export async function createPOC(raw: PocFormData): Promise<ActionResponse<PointOfContact>> {

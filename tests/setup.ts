@@ -10,3 +10,9 @@ vi.mock('@/lib/redis', () => ({
     expire: vi.fn(),
   })),
 }))
+
+vi.mock('next/cache', () => ({
+  revalidatePath: vi.fn(),
+  revalidateTag: vi.fn(),
+  unstable_cache: <T>(fn: T) => fn,
+}))

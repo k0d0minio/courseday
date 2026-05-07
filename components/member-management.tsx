@@ -58,7 +58,7 @@ function RoleBadge({ role, label }: { role: MemberRole; label: string }) {
 function InviteForm({ onInvited }: { onInvited: () => void }) {
   const t = useTranslations('Tenant.members')
   const [email, setEmail] = useState('')
-  const [role, setRole] = useState<MemberRole>('viewer')
+  const [role, setRole] = useState<MemberRole>('staff')
   const [isPending, startTransition] = useTransition()
 
   function handleSubmit(e: React.FormEvent) {
@@ -71,7 +71,7 @@ function InviteForm({ onInvited }: { onInvited: () => void }) {
       }
       toast.success(result.data.emailed ? t('invited') : t('invitedExisting'))
       setEmail('')
-      setRole('viewer')
+      setRole('staff')
       onInvited()
     })
   }
@@ -109,13 +109,14 @@ function InviteForm({ onInvited }: { onInvited: () => void }) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent align="start">
-                <SelectItem value="viewer">{t('roleViewer')}</SelectItem>
+                <SelectItem value="staff">{t('roleStaff')}</SelectItem>
                 <SelectItem value="editor">{t('roleEditor')}</SelectItem>
               </SelectContent>
             </Select>
             <Button
               type="submit"
-              className="h-10 min-h-10 w-full shrink-0 px-5 sm:w-auto"
+              size="lg"
+              className="w-full shrink-0 sm:w-auto"
               disabled={isPending}
             >
               <UserPlus className="size-4 shrink-0" aria-hidden />
@@ -236,7 +237,7 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
                 <TableBody>
                   {members.map((member) => {
                     const isSelf = member.user_id === currentUserId
-                    const roleLabel = member.role === 'editor' ? t('roleEditor') : t('roleViewer')
+                    const roleLabel = member.role === 'editor' ? t('roleEditor') : t('roleStaff')
                     return (
                       <TableRow key={member.id} className="hover:bg-muted/40">
                         <TableCell className="max-w-[18rem] truncate py-3 pl-6 font-medium">
@@ -257,7 +258,7 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent align="start">
-                                <SelectItem value="viewer">{t('roleViewer')}</SelectItem>
+                                <SelectItem value="staff">{t('roleStaff')}</SelectItem>
                                 <SelectItem value="editor">{t('roleEditor')}</SelectItem>
                               </SelectContent>
                             </Select>
@@ -317,14 +318,12 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
                       <TableCell className="py-3">
                         <RoleBadge
                           role={inv.role}
-                          label={inv.role === 'editor' ? t('roleEditor') : t('roleViewer')}
+                          label={inv.role === 'editor' ? t('roleEditor') : t('roleStaff')}
                         />
                       </TableCell>
                       <TableCell className="py-3 pr-6 text-right">
                         <Button
                           variant="outline"
-                          size="sm"
-                          className="h-9"
                           disabled={isCancelling}
                           onClick={() => handleCancelInvitation(inv)}
                         >

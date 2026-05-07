@@ -136,7 +136,7 @@ function TenantCard({
   const { label: statusLabel, variant: statusVariant } = STATUS_BADGE[tenant.status]
   const baseTenantUrl = `${protocol}://${tenant.slug}.${rootDomain}`
   const editorJumpUrl = `${baseTenantUrl}?${SUPERADMIN_ROLE_QUERY_PARAM}=editor`
-  const viewerJumpUrl = `${baseTenantUrl}?${SUPERADMIN_ROLE_QUERY_PARAM}=viewer`
+  const staffJumpUrl = `${baseTenantUrl}?${SUPERADMIN_ROLE_QUERY_PARAM}=staff`
 
   function handleFlagChange(key: (typeof KNOWN_FLAGS)[number], enabled: boolean) {
     setFlags((prev) => ({ ...prev, [key]: enabled }))
@@ -203,12 +203,12 @@ function TenantCard({
               View as editor
             </a>
             <a
-              href={viewerJumpUrl}
+              href={staffJumpUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary hover:underline"
             >
-              View as viewer
+              View as staff
             </a>
           </div>
 
@@ -260,14 +260,16 @@ function TenantCard({
 
           {/* Feature flags */}
           <div className="mt-4 border-t pt-3">
-            <button
+            <Button
               type="button"
-              className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-sm font-medium"
+              variant="ghost"
+              size="inline"
+              className="text-muted-foreground hover:text-foreground gap-1 text-sm font-medium hover:bg-transparent"
               onClick={() => setExpanded((v) => !v)}
             >
               Feature Flags
               {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </button>
+            </Button>
 
             {expanded && (
               <div className="mt-3 space-y-4">

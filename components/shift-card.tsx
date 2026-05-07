@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl'
 import { Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { deleteShift } from '@/app/actions/shifts'
-import type { ShiftWithStaffMember } from '@/types/index'
+import type { ShiftWithAssignee } from '@/types/index'
 import { Button } from '@/components/ui/button'
 import {
   AlertDialog,
@@ -20,15 +20,15 @@ import {
 
 type Props = {
   dayId: string
-  item: ShiftWithStaffMember
+  item: ShiftWithAssignee
   isEditor: boolean
-  onEdit?: (item: ShiftWithStaffMember) => void
+  onEdit?: (item: ShiftWithAssignee) => void
   onDeleted?: (id: string) => void
 }
 
 function formatShiftTimes(start: string | null, end: string | null): string {
   const fmt = (s: string) => s.slice(0, 5)
-  if (start && end) return `${fmt(start)} \u2013 ${fmt(end)}`
+  if (start && end) return `${fmt(start)} – ${fmt(end)}`
   if (start) return fmt(start)
   if (end) return fmt(end)
   return ''
@@ -40,7 +40,7 @@ export function ShiftCard({ dayId, item, isEditor, onEdit, onDeleted }: Props) {
   const [isPending, startTransition] = useTransition()
 
   const timeLabel = formatShiftTimes(item.start_time, item.end_time)
-  const roleLabel = item.role?.trim() || item.staff_member.role?.trim()
+  const roleLabel = item.role?.trim()
 
   function handleDelete() {
     startTransition(async () => {
@@ -60,7 +60,7 @@ export function ShiftCard({ dayId, item, isEditor, onEdit, onDeleted }: Props) {
       <div className="bg-card space-y-2 rounded-lg border p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 space-y-1">
-            <p className="font-semibold">{item.staff_member.name}</p>
+            <p className="font-semibold">{item.assignee.display_name}</p>
             {(roleLabel || timeLabel) && (
               <div className="text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5 text-sm">
                 {roleLabel && <span>{roleLabel}</span>}
@@ -73,8 +73,7 @@ export function ShiftCard({ dayId, item, isEditor, onEdit, onDeleted }: Props) {
               <Button
                 type="button"
                 variant="ghost"
-                size="icon"
-                className="h-8 w-8"
+                size="iconSm"
                 onClick={() => onEdit?.(item)}
                 aria-label={t('editAria')}
               >
@@ -83,8 +82,8 @@ export function ShiftCard({ dayId, item, isEditor, onEdit, onDeleted }: Props) {
               <Button
                 type="button"
                 variant="ghost"
-                size="icon"
-                className="text-destructive h-8 w-8"
+                size="iconSm"
+                className="text-destructive"
                 onClick={() => setConfirmOpen(true)}
                 aria-label={t('deleteAria')}
               >
