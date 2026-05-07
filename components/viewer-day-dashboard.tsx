@@ -36,6 +36,8 @@ type Props = {
   setDayNotes: Dispatch<SetStateAction<DayNote[]>>
   weather: WeatherData | null
   dailyBrief: DailyBriefRecord | null
+  briefStale?: boolean
+  briefIsEmpty?: boolean
   shifts: ShiftWithAssignee[]
 }
 
@@ -54,6 +56,8 @@ export function ViewerDayDashboard({
   setDayNotes,
   weather,
   dailyBrief,
+  briefStale,
+  briefIsEmpty,
   shifts,
 }: Props) {
   const { impersonationRole } = useAuth()
@@ -83,7 +87,14 @@ export function ViewerDayDashboard({
       <DayNav date={date} today={today} />
 
       {showDailyBrief && (
-        <DailyBriefCard dateIso={date} dayId={dayId} initialBrief={dailyBrief} isEditor={false} />
+        <DailyBriefCard
+          dateIso={date}
+          dayId={dayId}
+          initialBrief={dailyBrief}
+          isEditor={false}
+          briefStale={briefStale}
+          briefIsEmpty={briefIsEmpty}
+        />
       )}
 
       {showWeatherReporting && weather && <WeatherCard weather={weather} />}

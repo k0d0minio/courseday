@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useRef, useState } from 'react'
-import { ClipboardCopy, Loader2, Sparkles } from 'lucide-react'
+import { ClipboardCopy, Loader2, RefreshCw, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -19,6 +19,8 @@ type Props = {
   showWeather: boolean
   initialBrief: DailyBriefRecord | null
   showBrief: boolean
+  briefStale: boolean
+  briefIsEmpty: boolean
   dateIso: string
   dayId: string
   isEditor: boolean
@@ -68,12 +70,15 @@ export function DayInfoBanner({
   showWeather,
   initialBrief,
   showBrief,
+  briefStale,
+  briefIsEmpty,
   dateIso,
   isEditor,
 }: Props) {
   const t = useTranslations('Tenant.dailyBrief')
   const router = useRouter()
   const [brief, setBrief] = useState<DailyBriefRecord | null>(initialBrief)
+  const [stale, setStale] = useState(briefStale)
   const [loading, setLoading] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const lastGenerateAt = useRef(0)
@@ -81,7 +86,7 @@ export function DayInfoBanner({
   const hasWeather = showWeather && weather !== null
   const hasBrief = brief !== null
 
-  const runGenerate = useCallback(async () => {
+  const runRegenerate = useCallback(async () => {
     const now = Date.now()
     if (now - lastGenerateAt.current < REGENERATE_DEBOUNCE_MS) {
       toast.message(t('debounced'))
@@ -96,6 +101,7 @@ export function DayInfoBanner({
         return
       }
       setBrief(result.data)
+      setStale(false)
       toast.success(t('generated'))
       router.refresh()
     } finally {
@@ -135,15 +141,27 @@ export function DayInfoBanner({
         )}
 
         {showBrief && hasBrief && (
-          <div className={`min-w-0 flex-1 ${hasWeather ? 'border-l pl-3' : ''}`}>
+          <div
+            className={`min-w-0 flex-1 ${hasWeather ? 'border-l pl-3' : ''}`}
+            onClick={() => setDialogOpen(true)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === 'Enter' && setDialogOpen(true)}
+          >
             <p className="truncate text-sm font-medium">{brief.content.headline}</p>
             <p className="text-muted-foreground line-clamp-1 text-xs">{brief.content.summary}</p>
           </div>
         )}
 
-        {showBrief && !hasWeather && !hasBrief && <div className="flex-1" />}
+        {showBrief && !hasBrief && !briefIsEmpty && !hasWeather && <div className="flex-1" />}
 
-        {showBrief && isEditor && (
+        {showBrief && briefIsEmpty && (
+          <div className={`min-w-0 flex-1 ${hasWeather ? 'border-l pl-3' : ''}`}>
+            <p className="text-muted-foreground text-sm">{t('empty')}</p>
+          </div>
+        )}
+
+        {showBrief && hasBrief && (
           <Button
             type="button"
             variant="ghost"
@@ -153,6 +171,8 @@ export function DayInfoBanner({
           >
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
+            ) : stale ? (
+              <RefreshCw className="h-4 w-4 text-amber-500" />
             ) : (
               <Sparkles className="h-4 w-4" />
             )}
@@ -160,7 +180,7 @@ export function DayInfoBanner({
         )}
       </div>
 
-      {showBrief && isEditor && (
+      {showBrief && hasBrief && (
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="max-h-[80vh] max-w-lg overflow-y-auto">
             <DialogHeader>
@@ -171,41 +191,42 @@ export function DayInfoBanner({
             </DialogHeader>
 
             <div className="space-y-4">
-              <p className="rounded-md border border-amber-200/60 bg-amber-50 px-2.5 py-2 text-xs text-amber-800/90 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200/90">
-                {t('costWarning')}
-              </p>
+              {stale && (
+                <p className="rounded-md border border-amber-200/60 bg-amber-50 px-2.5 py-2 text-xs text-amber-800/90 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200/90">
+                  {t('stale')}
+                </p>
+              )}
 
               <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => void runGenerate()}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="mr-1 h-4 w-4" />
-                  )}
-                  {hasBrief ? t('regenerate') : t('generate')}
-                </Button>
                 {hasBrief && (
                   <Button type="button" variant="outline" size="sm" onClick={copyMarkdown}>
                     <ClipboardCopy className="mr-1 h-4 w-4" />
                     {t('copy')}
                   </Button>
                 )}
+                {isEditor && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => void runRegenerate()}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="mr-1 h-4 w-4" />
+                    )}
+                    {t('regenerate')}
+                  </Button>
+                )}
               </div>
 
-              {loading && !hasBrief && (
+              {loading && (
                 <p className="text-muted-foreground flex items-center gap-2 text-sm">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   {t('generating')}
                 </p>
-              )}
-
-              {!hasBrief && !loading && (
-                <p className="text-muted-foreground text-sm">{t('emptyEditor')}</p>
               )}
 
               {brief && (

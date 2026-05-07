@@ -12,7 +12,6 @@ import {
   getReservationsForDay,
   getBreakfastConfigsForDay,
   getDayNotesForDay,
-  getDailyBriefForDay,
   getShiftsForDay,
   getTenantAssigneesList,
 } from './queries'
@@ -32,7 +31,7 @@ import type { DayNote } from '@/app/actions/day-notes'
 import { getWeatherForDay } from '@/app/actions/weather'
 import type { WeatherData } from '@/app/actions/weather'
 import { getFeatureFlags } from '@/app/actions/feature-flags'
-import type { DailyBriefRecord } from '@/types/daily-brief'
+import { ensureDailyBrief } from '@/app/actions/daily-brief'
 
 export type DayViewProps = {
   date: string
@@ -43,7 +42,9 @@ export type DayViewProps = {
   breakfastConfigs: BreakfastConfiguration[]
   dayNotes: DayNote[]
   weather: WeatherData | null
-  dailyBrief: DailyBriefRecord | null
+  dailyBrief: import('@/types/daily-brief').DailyBriefRecord | null
+  briefStale: boolean
+  briefIsEmpty: boolean
   pocs: PointOfContact[]
   venueTypes: VenueType[]
   authState: AuthState
@@ -108,7 +109,6 @@ export default async function DayPage({ params }: { params: Promise<{ date: stri
     breakfastConfigs,
     dayNotes,
     weather,
-    dailyBrief,
     pocsResult,
     venueTypesResult,
     shifts,
@@ -119,12 +119,28 @@ export default async function DayPage({ params }: { params: Promise<{ date: stri
     flags.breakfast_config ? getBreakfastConfigsForDay(tenant.id, day.id) : Promise.resolve([]),
     getDayNotesForDay(tenant.id, day.id),
     flags.weather_reporting ? getWeatherForDay(date, weatherCoords) : Promise.resolve(null),
-    dailyBriefOn ? getDailyBriefForDay(tenant.id, day.id) : Promise.resolve(null),
     getAllPOCs(),
     getAllVenueTypes(),
     staffScheduleOn ? getShiftsForDay(tenant.id, day.id) : Promise.resolve([]),
     staffScheduleOn ? getTenantAssigneesList(tenant.id) : Promise.resolve([]),
   ])
+
+  // Auto-generate brief after data is loaded so we can pass it without duplicate fetches
+  const briefResult = dailyBriefOn
+    ? await ensureDailyBrief({
+        tenantId: tenant.id,
+        dayId: day.id,
+        dateIso: date,
+        activities,
+        reservations: flags.reservations ? reservations : [],
+        breakfasts: flags.breakfast_config ? breakfastConfigs : [],
+        dayNotes,
+        weather,
+      })
+    : null
+  const dailyBrief = briefResult?.status === 'ok' ? briefResult.brief : null
+  const briefStale = briefResult?.status === 'ok' ? briefResult.stale : false
+  const briefIsEmpty = briefResult?.status === 'empty'
 
   return (
     <Suspense
@@ -140,6 +156,8 @@ export default async function DayPage({ params }: { params: Promise<{ date: stri
         dayNotes={dayNotes}
         weather={weather}
         dailyBrief={dailyBrief}
+        briefStale={briefStale}
+        briefIsEmpty={briefIsEmpty}
         pocs={pocsResult.success ? pocsResult.data : []}
         venueTypes={venueTypesResult.success ? venueTypesResult.data : []}
         authState={authState}

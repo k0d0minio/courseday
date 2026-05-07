@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, CalendarDays, Settings } from 'lucide-react'
+import { Home, CalendarDays, Settings, Sparkles } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import {
@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/drawer'
 import { getVisibleSettingsRoutes } from '@/components/settings-dropdown'
 import { useFeatureFlag } from '@/lib/feature-flags-context'
+import { useKeyboardShortcuts } from '@/lib/keyboard-shortcuts'
 
 interface MobileNavProps {
   today: string
@@ -25,7 +26,9 @@ export function MobileNav({ today, isEditor }: MobileNavProps) {
   const pathname = usePathname()
   const navT = useTranslations('Tenant.nav')
   const settingsT = useTranslations('Tenant.settings')
+  const qaT = useTranslations('Tenant.quickAdd')
   const showChecklists = useFeatureFlag('checklists')
+  const { setQuickAddOpen } = useKeyboardShortcuts()
   const settingsRoutes = getVisibleSettingsRoutes({
     checklists: showChecklists,
   })
@@ -62,6 +65,19 @@ export function MobileNav({ today, isEditor }: MobileNavProps) {
             {label}
           </Link>
         ))}
+
+        {isEditor && (
+          /* Quick-add center slot — tab nav trigger, bespoke surface. */
+          /* eslint-disable-next-line no-restricted-syntax */
+          <button
+            aria-label={qaT('openButton')}
+            onClick={() => setQuickAddOpen(true)}
+            className="text-muted-foreground flex flex-1 flex-col items-center justify-center gap-1 text-xs font-medium transition-colors"
+          >
+            <Sparkles className="h-5 w-5" aria-hidden="true" />
+            {qaT('openButton')}
+          </button>
+        )}
 
         {isEditor && (
           <Drawer direction="bottom">

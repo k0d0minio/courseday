@@ -26,6 +26,7 @@ import { getTenantToday } from '@/lib/day-utils'
 import { getSuperadminImpersonationRole } from '@/lib/superadmin'
 import { getTenantPalette, getTenantThemeCssVariables } from '@/lib/theme/palettes'
 import { TenantKeyboardShell } from '@/components/tenant-keyboard-shell'
+import { GlobalQuickAdd } from '@/components/global-quick-add'
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -138,6 +139,8 @@ export default async function TenantLayout({ children }: { children: React.React
                     <OfflineStatusPill />
                     {/* Theme toggle — visible to all signed-in users */}
                     {user && <ThemeToggle />}
+                    {/* AI quick-add — editors only */}
+                    {editor && <GlobalQuickAdd />}
                     {/* Settings dropdown — editors only, desktop */}
                     {editor && (
                       <span className="hidden sm:inline-flex">
