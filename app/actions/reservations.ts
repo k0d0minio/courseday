@@ -5,7 +5,7 @@ import { getTenantId } from '@/lib/tenant'
 import { getUserRole, requireEditor } from '@/lib/membership'
 import { isFeatureEnabled } from '@/app/actions/feature-flags'
 import { reservationSchema } from '@/lib/reservation-schema'
-import { notifyTenantMembers, getDayDate } from '@/lib/notifications'
+import { notifyTenantMembers, getDayDate, awaitNotifications } from '@/lib/notifications'
 import type { ReservationFormData } from '@/lib/reservation-schema'
 import type { ActionResponse } from '@/types/actions'
 import type { Reservation } from '@/types/index'
@@ -46,17 +46,20 @@ export async function createReservation(
   if (error) return { success: false, error: error.message }
 
   const name = d.guestName?.trim() || 'Guest'
-  Promise.allSettled([
-    getDayDate(d.dayId).then((date) =>
-      notifyTenantMembers(
-        tenantId,
-        user.id,
-        `Reservation added: ${name}`,
-        undefined,
-        date ? `/day/${date}` : undefined
-      )
-    ),
-  ])
+  await awaitNotifications(
+    [
+      getDayDate(d.dayId).then((date) =>
+        notifyTenantMembers(
+          tenantId,
+          user.id,
+          `Reservation added: ${name}`,
+          undefined,
+          date ? `/day/${date}` : undefined
+        )
+      ),
+    ],
+    'createReservation'
+  )
 
   return { success: true, data: data as Reservation }
 }
@@ -100,17 +103,20 @@ export async function updateReservation(
   if (error) return { success: false, error: error.message }
 
   const name = d.guestName?.trim() || 'Guest'
-  Promise.allSettled([
-    getDayDate(d.dayId).then((date) =>
-      notifyTenantMembers(
-        tenantId,
-        user.id,
-        `Reservation updated: ${name}`,
-        undefined,
-        date ? `/day/${date}` : undefined
-      )
-    ),
-  ])
+  await awaitNotifications(
+    [
+      getDayDate(d.dayId).then((date) =>
+        notifyTenantMembers(
+          tenantId,
+          user.id,
+          `Reservation updated: ${name}`,
+          undefined,
+          date ? `/day/${date}` : undefined
+        )
+      ),
+    ],
+    'updateReservation'
+  )
 
   return { success: true, data: data as Reservation }
 }
@@ -145,17 +151,20 @@ export async function deleteReservation(id: string): Promise<ActionResponse> {
   if (existing) {
     const { guest_name, day_id } = existing as { guest_name: string | null; day_id: string }
     const name = guest_name?.trim() || 'Guest'
-    Promise.allSettled([
-      getDayDate(day_id).then((date) =>
-        notifyTenantMembers(
-          tenantId,
-          user.id,
-          `Reservation removed: ${name}`,
-          undefined,
-          date ? `/day/${date}` : undefined
-        )
-      ),
-    ])
+    await awaitNotifications(
+      [
+        getDayDate(day_id).then((date) =>
+          notifyTenantMembers(
+            tenantId,
+            user.id,
+            `Reservation removed: ${name}`,
+            undefined,
+            date ? `/day/${date}` : undefined
+          )
+        ),
+      ],
+      'deleteReservation'
+    )
   }
 
   return { success: true, data: undefined }

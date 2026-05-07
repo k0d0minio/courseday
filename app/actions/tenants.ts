@@ -5,6 +5,7 @@ import { createSupabaseServerClient, createSupabaseServiceClient } from '@/lib/s
 import { isValidSlug } from '@/lib/tenant-validation'
 import { getUser } from '@/app/actions/auth'
 import { getUserRole } from '@/lib/membership'
+import { isUserSuperadmin } from '@/lib/superadmin'
 import type { ActionResponse } from '@/types/actions'
 
 export type TenantStatus = 'active' | 'suspended' | 'archived'
@@ -102,9 +103,14 @@ export async function createTenant(data: {
 // ---------------------------------------------------------------------------
 export async function getTenantBySlug(slug: string): Promise<ActionResponse<TenantRedisData>> {
   // Redis fast path
-  const cached = await redis.get(`subdomain:${slug}`)
-  if (cached) {
-    return { success: true, data: JSON.parse(cached) as TenantRedisData }
+  try {
+    const cached = await redis.get(`subdomain:${slug}`)
+    if (cached) {
+      return { success: true, data: JSON.parse(cached) as TenantRedisData }
+    }
+  } catch (err) {
+    // Redis outage or corrupt cache value — fall through to Supabase.
+    console.error('[getTenantBySlug] redis cache read failed', { slug, err })
   }
 
   // Fallback to Supabase
@@ -242,6 +248,16 @@ export async function completeOnboarding(tenantId: string): Promise<ActionRespon
 // deleteTenant
 // ---------------------------------------------------------------------------
 export async function deleteTenant(id: string): Promise<ActionResponse> {
+  const user = await getUser()
+  if (!user) {
+    return { success: false, error: 'Not authenticated.' }
+  }
+
+  const isSuperadmin = await isUserSuperadmin(user.id)
+  if (!isSuperadmin) {
+    return { success: false, error: 'Not authorized.' }
+  }
+
   const serviceClient = createSupabaseServiceClient()
 
   // Fetch slug before deleting so we can remove the Redis key

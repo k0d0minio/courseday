@@ -7,7 +7,7 @@ import { getUserRole, requireEditor } from '@/lib/membership'
 import { generateRecurrenceDates } from '@/lib/day-utils'
 import { activitySchema } from '@/lib/program-item-schema'
 import { ensureDayExists } from '@/app/actions/days'
-import { notifyTenantMembers, getDayDate } from '@/lib/notifications'
+import { notifyTenantMembers, getDayDate, awaitNotifications } from '@/lib/notifications'
 import { mutationRateLimit } from '@/lib/rate-limit'
 import { snapshotMatchingTemplatesForActivity } from '@/lib/checklist-snapshot'
 import type { ActionResponse } from '@/types/actions'
@@ -108,17 +108,20 @@ export async function createActivity(raw: ActivityFormData): Promise<ActionRespo
       tagIds,
     })
 
-    Promise.allSettled([
-      getDayDate(data.dayId).then((date) =>
-        notifyTenantMembers(
-          tenantId,
-          user.id,
-          `Activity added: ${data.title}`,
-          undefined,
-          date ? `/day/${date}` : undefined
-        )
-      ),
-    ])
+    await awaitNotifications(
+      [
+        getDayDate(data.dayId).then((date) =>
+          notifyTenantMembers(
+            tenantId,
+            user.id,
+            `Activity added: ${data.title}`,
+            undefined,
+            date ? `/day/${date}` : undefined
+          )
+        ),
+      ],
+      'createActivity'
+    )
 
     return { success: true, data: activity }
   }
@@ -198,17 +201,20 @@ export async function createActivity(raw: ActivityFormData): Promise<ActionRespo
     )
   )
 
-  Promise.allSettled([
-    getDayDate(data.dayId).then((date) =>
-      notifyTenantMembers(
-        tenantId,
-        user.id,
-        `Activity added: ${data.title}`,
-        undefined,
-        date ? `/day/${date}` : undefined
-      )
-    ),
-  ])
+  await awaitNotifications(
+    [
+      getDayDate(data.dayId).then((date) =>
+        notifyTenantMembers(
+          tenantId,
+          user.id,
+          `Activity added: ${data.title}`,
+          undefined,
+          date ? `/day/${date}` : undefined
+        )
+      ),
+    ],
+    'createActivity (recurring)'
+  )
 
   return { success: true, data: primary }
 }
@@ -253,17 +259,20 @@ export async function updateActivity(
   const tagErr = await assignTags(supabase, id, data.tagIds ?? [])
   if (tagErr) return { success: false, error: tagErr }
 
-  Promise.allSettled([
-    getDayDate(data.dayId).then((date) =>
-      notifyTenantMembers(
-        tenantId,
-        user.id,
-        `Activity updated: ${data.title}`,
-        undefined,
-        date ? `/day/${date}` : undefined
-      )
-    ),
-  ])
+  await awaitNotifications(
+    [
+      getDayDate(data.dayId).then((date) =>
+        notifyTenantMembers(
+          tenantId,
+          user.id,
+          `Activity updated: ${data.title}`,
+          undefined,
+          date ? `/day/${date}` : undefined
+        )
+      ),
+    ],
+    'updateActivity'
+  )
 
   return { success: true, data: row as Activity }
 }
@@ -294,17 +303,20 @@ export async function deleteActivity(id: string): Promise<ActionResponse> {
 
   if (existing) {
     const { title, day_id } = existing as { title: string; day_id: string }
-    Promise.allSettled([
-      getDayDate(day_id).then((date) =>
-        notifyTenantMembers(
-          tenantId,
-          user.id,
-          `Activity removed: ${title}`,
-          undefined,
-          date ? `/day/${date}` : undefined
-        )
-      ),
-    ])
+    await awaitNotifications(
+      [
+        getDayDate(day_id).then((date) =>
+          notifyTenantMembers(
+            tenantId,
+            user.id,
+            `Activity removed: ${title}`,
+            undefined,
+            date ? `/day/${date}` : undefined
+          )
+        ),
+      ],
+      'deleteActivity'
+    )
   }
 
   return { success: true, data: undefined }
@@ -393,15 +405,18 @@ export async function deleteActivityFromHere(id: string, groupId: string): Promi
 
   if (error) return { success: false, error: error.message }
 
-  Promise.allSettled([
-    notifyTenantMembers(
-      tenantId,
-      user.id,
-      `Recurring activity removed from ${currentDate}: ${title}`,
-      undefined,
-      `/day/${currentDate}`
-    ),
-  ])
+  await awaitNotifications(
+    [
+      notifyTenantMembers(
+        tenantId,
+        user.id,
+        `Recurring activity removed from ${currentDate}: ${title}`,
+        undefined,
+        `/day/${currentDate}`
+      ),
+    ],
+    'deleteActivityFromHere'
+  )
 
   return { success: true, data: undefined }
 }

@@ -1,8 +1,27 @@
 import { createSupabaseServiceClient } from '@/lib/supabase-server'
 
 /**
+ * Awaits notification side-effects and logs any rejected promises.
+ *
+ * Server actions previously used unawaited `Promise.allSettled([...])`. On Vercel
+ * serverless, work after the response is returned can be cut off, dropping
+ * notifications silently. Awaiting + logging guarantees delivery (or visible
+ * failure) without bubbling errors back to the caller.
+ */
+export async function awaitNotifications(
+  tasks: ReadonlyArray<Promise<unknown>>,
+  context: string
+): Promise<void> {
+  const results = await Promise.allSettled(tasks)
+  for (const r of results) {
+    if (r.status === 'rejected') {
+      console.error(`[notifications] ${context} failed`, r.reason)
+    }
+  }
+}
+
+/**
  * Sends a notification to all members of a tenant except the actor.
- * Fire-and-forget: wrap with Promise.allSettled to avoid blocking mutations.
  *
  * @param tenantId   - Target tenant.
  * @param actorId    - The user who triggered the action (excluded from recipients).
