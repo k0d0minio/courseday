@@ -8,7 +8,6 @@ const itemInput = z.object({
 })
 
 export const checklistTemplateSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(200),
   scope: checklistScopeSchema,
   scopeId: z.string().uuid('Scope is required'),
   items: z.array(itemInput).max(100),
