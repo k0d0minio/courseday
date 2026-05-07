@@ -26,7 +26,6 @@ const BreakfastForm = dynamic(() =>
 import { DayNotes } from '@/components/day-notes'
 import { DayInfoBanner } from '@/components/day-info-banner'
 import { StaffScheduleSection } from '@/components/staff-schedule-section'
-import { QuickAddInput } from '@/components/quick-add-input'
 import type { ActivityQuickAddSeed } from '@/components/activity-form'
 import type { ReservationQuickAdd } from '@/components/reservation-form'
 import type { BreakfastQuickAdd } from '@/components/breakfast-form'
