@@ -253,7 +253,6 @@ export async function updateActivity(
     })
     .eq('id', id)
     .eq('tenant_id', tenantId)
-    .is('deleted_at', null)
     .select()
     .single()
 
@@ -287,21 +286,14 @@ export async function deleteActivity(id: string): Promise<ActionResponse> {
 
   const { supabase } = await createTenantClient()
 
-  const now = new Date().toISOString()
   const { data: existing } = await supabase
     .from('activity')
     .select('title, day_id')
     .eq('id', id)
     .eq('tenant_id', tenantId)
-    .is('deleted_at', null)
     .maybeSingle()
 
-  const { error } = await supabase
-    .from('activity')
-    .update({ deleted_at: now, updated_at: now })
-    .eq('id', id)
-    .eq('tenant_id', tenantId)
-    .is('deleted_at', null)
+  const { error } = await supabase.from('activity').delete().eq('id', id).eq('tenant_id', tenantId)
 
   if (error) return { success: false, error: error.message }
 
@@ -331,14 +323,12 @@ export async function deleteActivityRecurrenceGroup(groupId: string): Promise<Ac
   const tenantId = await getTenantId()
   await requireEditor(tenantId)
 
-  const now = new Date().toISOString()
   const { supabase } = await createTenantClient()
   const { error } = await supabase
     .from('activity')
-    .update({ deleted_at: now, updated_at: now })
+    .delete()
     .eq('recurrence_group_id', groupId)
     .eq('tenant_id', tenantId)
-    .is('deleted_at', null)
 
   if (error) return { success: false, error: error.message }
   revalidateDay()
@@ -358,7 +348,6 @@ export async function deleteActivityFromHere(id: string, groupId: string): Promi
     .select('day_id, title')
     .eq('id', id)
     .eq('tenant_id', tenantId)
-    .is('deleted_at', null)
     .maybeSingle()
 
   if (!curr) return { success: false, error: 'Activity not found.' }
@@ -381,7 +370,6 @@ export async function deleteActivityFromHere(id: string, groupId: string): Promi
     .select('id, day_id')
     .eq('recurrence_group_id', groupId)
     .eq('tenant_id', tenantId)
-    .is('deleted_at', null)
 
   if (!groupActivities?.length) return { success: true, data: undefined }
 
@@ -401,13 +389,11 @@ export async function deleteActivityFromHere(id: string, groupId: string): Promi
 
   if (toDeleteIds.length === 0) return { success: true, data: undefined }
 
-  const tombstoneAt = new Date().toISOString()
   const { error } = await supabase
     .from('activity')
-    .update({ deleted_at: tombstoneAt, updated_at: tombstoneAt })
+    .delete()
     .in('id', toDeleteIds)
     .eq('tenant_id', tenantId)
-    .is('deleted_at', null)
 
   if (error) return { success: false, error: error.message }
 
@@ -443,7 +429,6 @@ export async function getActivitiesForDay(
     )
     .eq('tenant_id', tenantId)
     .eq('day_id', dayId)
-    .is('deleted_at', null)
     .order('start_time', { nullsFirst: true })
 
   if (error) return { success: false, error: error.message }

@@ -12,7 +12,6 @@ export async function getProgramItemsForMonth(
     .select('*')
     .eq('tenant_id', tenantId)
     .in('day_id', dayIds)
-    .is('deleted_at', null)
   return (data ?? []) as Activity[]
 }
 
@@ -27,7 +26,6 @@ export async function getReservationsForMonth(
     .select('*')
     .eq('tenant_id', tenantId)
     .in('day_id', dayIds)
-    .is('deleted_at', null)
   return (data ?? []) as Reservation[]
 }
 
@@ -43,6 +41,5 @@ export async function getBreakfastConfigsForMonth(
     .eq('tenant_id', tenantId)
     .gte('breakfast_date', start)
     .lte('breakfast_date', end)
-    .is('deleted_at', null)
   return (data ?? []) as BreakfastConfiguration[]
 }
