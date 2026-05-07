@@ -233,22 +233,6 @@
       "addActivity": "Activity",
       "addReservation": "Add reservation"
     },
-    "handover": {
-      "toggle": "Hand-over",
-      "toggleAria": "Hand-over mode",
-      "caughtUp": "Mark as caught up",
-      "caughtUpToast": "You are up to date.",
-      "summary": "Since your last visit: {new} new, {edited} edited, {removed} removed",
-      "summaryEmpty": "Nothing new since your last visit.",
-      "removedHeading": "Removed ({count})",
-      "removedEmpty": "No items removed since your last visit.",
-      "badgeNew": "New",
-      "badgeEdited": "Edited",
-      "kindActivity": "Activity",
-      "kindReservation": "Reservation",
-      "kindBreakfast": "Breakfast",
-      "kindNote": "Note"
-    },
     "dailyBrief": {
       "title": "Daily brief",
       "subtitle": "AI summary for staff — covers, allergens, risks",

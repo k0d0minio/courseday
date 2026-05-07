@@ -3,14 +3,11 @@
 import { useEffect, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { Pencil, Trash2, Check, X } from 'lucide-react'
-import { useTranslations } from 'next-intl'
 import type { DayNote } from '@/app/actions/day-notes'
 import { mutateWithOfflineQueue } from '@/lib/day-mutation-client'
 import { useTenant } from '@/lib/tenant-context'
-import { handoverRowStatus } from '@/lib/handover'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
 
 const MAX_LEN = 2000
 
@@ -22,8 +19,6 @@ interface DayNotesProps {
   onNotesChange?: React.Dispatch<React.SetStateAction<DayNote[]>>
   isEditor: boolean
   currentUserId: string | undefined
-  handoverEnabled?: boolean
-  handoverBaselineIso?: string | null
 }
 
 export function DayNotes({
@@ -33,10 +28,7 @@ export function DayNotes({
   onNotesChange,
   isEditor,
   currentUserId,
-  handoverEnabled = false,
-  handoverBaselineIso = null,
 }: DayNotesProps) {
-  const th = useTranslations('Tenant.handover')
   const [internalNotes, setInternalNotes] = useState<DayNote[]>(initialNotes)
   const isControlled = controlledNotes != null && onNotesChange != null
   const notes = isControlled ? controlledNotes : internalNotes
@@ -152,10 +144,6 @@ export function DayNotes({
           {notes.map((note) => {
             const isOwn = note.user_id === currentUserId
             const isEditing = editingId === note.id
-            const ho =
-              handoverEnabled && handoverBaselineIso
-                ? handoverRowStatus(note.created_at, note.updated_at, handoverBaselineIso)
-                : null
 
             return (
               <div key={note.id} className="bg-muted/30 space-y-1.5 rounded-md border px-4 py-3">
@@ -191,16 +179,6 @@ export function DayNotes({
                   <>
                     <div className="flex flex-wrap items-start gap-2">
                       <p className="min-w-0 flex-1 text-sm whitespace-pre-wrap">{note.content}</p>
-                      {ho === 'new' && (
-                        <Badge variant="default" className="shrink-0 text-[10px] uppercase">
-                          {th('badgeNew')}
-                        </Badge>
-                      )}
-                      {ho === 'edited' && (
-                        <Badge variant="secondary" className="shrink-0 text-[10px] uppercase">
-                          {th('badgeEdited')}
-                        </Badge>
-                      )}
                     </div>
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-muted-foreground text-xs">

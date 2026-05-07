@@ -161,7 +161,6 @@ All server actions live under `app/actions/`:
 - `agenda.ts` — `getDaySummaries` (aggregated counts for calendar/agenda views)
 - `days.ts` — day record management
 - `day-notes.ts` — day notes CRUD
-- `day-view-receipts.ts` — handover receipts + soft deletes
 - `checklists.ts` — checklist template CRUD with nested items
 - `shifts.ts` — staff shift CRUD
 - `staff.ts` — staff member CRUD

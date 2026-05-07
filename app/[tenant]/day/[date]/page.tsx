@@ -31,11 +31,6 @@ import type { DayNote } from '@/app/actions/day-notes'
 import { getWeatherForDay } from '@/app/actions/weather'
 import type { WeatherData } from '@/app/actions/weather'
 import { getFeatureFlags } from '@/app/actions/feature-flags'
-import {
-  ensureDayViewReceipt,
-  getSoftDeletedSince,
-  type HandoverRemovedItem,
-} from '@/app/actions/day-view-receipts'
 import { ensureDailyBrief } from '@/app/actions/daily-brief'
 
 export type DayViewProps = {
@@ -55,8 +50,6 @@ export type DayViewProps = {
   authState: AuthState
   shifts: ShiftWithAssignee[]
   shiftAssignees: ShiftAssignee[]
-  handoverLastViewedAt: string | null
-  handoverRemoved: HandoverRemovedItem[]
 }
 
 const YMD_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -149,18 +142,6 @@ export default async function DayPage({ params }: { params: Promise<{ date: stri
   const briefStale = briefResult?.status === 'ok' ? briefResult.stale : false
   const briefIsEmpty = briefResult?.status === 'empty'
 
-  let handoverLastViewedAt: string | null = null
-  let handoverRemoved: HandoverRemovedItem[] = []
-  const uid = authState.user?.id
-  if (uid) {
-    const receipt = await ensureDayViewReceipt(tenant.id, day.id, uid)
-    if (receipt.success) {
-      handoverLastViewedAt = receipt.data.last_viewed_at
-      const removed = await getSoftDeletedSince(tenant.id, day.id, receipt.data.last_viewed_at)
-      if (removed.success) handoverRemoved = removed.data
-    }
-  }
-
   return (
     <Suspense
       fallback={<div className="text-muted-foreground mx-auto max-w-3xl px-3 py-8 text-sm" />}
@@ -182,8 +163,6 @@ export default async function DayPage({ params }: { params: Promise<{ date: stri
         authState={authState}
         shifts={shifts}
         shiftAssignees={shiftAssignees}
-        handoverLastViewedAt={handoverLastViewedAt}
-        handoverRemoved={handoverRemoved}
       />
     </Suspense>
   )

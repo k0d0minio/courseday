@@ -44,7 +44,6 @@ export type Database = {
           allergens: string[]
           created_at: string
           day_id: string
-          deleted_at: string | null
           description: string | null
           end_time: string | null
           expected_covers: number | null
@@ -64,7 +63,6 @@ export type Database = {
           allergens?: string[]
           created_at?: string
           day_id: string
-          deleted_at?: string | null
           description?: string | null
           end_time?: string | null
           expected_covers?: number | null
@@ -84,7 +82,6 @@ export type Database = {
           allergens?: string[]
           created_at?: string
           day_id?: string
-          deleted_at?: string | null
           description?: string | null
           end_time?: string | null
           expected_covers?: number | null
@@ -257,7 +254,6 @@ export type Database = {
           breakfast_date: string
           created_at: string
           day_id: string
-          deleted_at: string | null
           group_name: string | null
           id: string
           notes: string | null
@@ -272,7 +268,6 @@ export type Database = {
           breakfast_date: string
           created_at?: string
           day_id: string
-          deleted_at?: string | null
           group_name?: string | null
           id?: string
           notes?: string | null
@@ -287,7 +282,6 @@ export type Database = {
           breakfast_date?: string
           created_at?: string
           day_id?: string
-          deleted_at?: string | null
           group_name?: string | null
           id?: string
           notes?: string | null
@@ -520,7 +514,6 @@ export type Database = {
           content: string
           created_at: string
           day_id: string
-          deleted_at: string | null
           id: string
           tenant_id: string
           updated_at: string
@@ -531,7 +524,6 @@ export type Database = {
           content: string
           created_at?: string
           day_id: string
-          deleted_at?: string | null
           id?: string
           tenant_id: string
           updated_at?: string
@@ -542,7 +534,6 @@ export type Database = {
           content?: string
           created_at?: string
           day_id?: string
-          deleted_at?: string | null
           id?: string
           tenant_id?: string
           updated_at?: string
@@ -558,42 +549,6 @@ export type Database = {
           },
           {
             foreignKeyName: "day_notes_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      day_view_receipt: {
-        Row: {
-          day_id: string
-          last_viewed_at: string
-          tenant_id: string
-          user_id: string
-        }
-        Insert: {
-          day_id: string
-          last_viewed_at: string
-          tenant_id: string
-          user_id: string
-        }
-        Update: {
-          day_id?: string
-          last_viewed_at?: string
-          tenant_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "day_view_receipt_day_id_fkey"
-            columns: ["day_id"]
-            isOneToOne: false
-            referencedRelation: "day"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "day_view_receipt_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -825,7 +780,6 @@ export type Database = {
           allergens: string[]
           created_at: string
           day_id: string
-          deleted_at: string | null
           end_time: string | null
           guest_count: number | null
           guest_name: string | null
@@ -840,7 +794,6 @@ export type Database = {
           allergens?: string[]
           created_at?: string
           day_id: string
-          deleted_at?: string | null
           end_time?: string | null
           guest_count?: number | null
           guest_name?: string | null
@@ -855,7 +808,6 @@ export type Database = {
           allergens?: string[]
           created_at?: string
           day_id?: string
-          deleted_at?: string | null
           end_time?: string | null
           guest_count?: number | null
           guest_name?: string | null
