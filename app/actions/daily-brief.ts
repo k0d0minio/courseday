@@ -30,13 +30,128 @@ import {
   getReservationsForDay,
   getBreakfastConfigsForDay,
   getDayNotesForDay,
+  getDailyBriefForDayWithClient,
 } from '@/app/[tenant]/day/[date]/queries'
 import { getWeatherForDay } from '@/app/actions/weather'
-import { dailyBriefContentSchema, generateAndPersistDailyBrief } from '@/lib/daily-brief-generate'
+import {
+  dailyBriefContentSchema,
+  generateAndPersistDailyBrief,
+  dayHasPlannedContent,
+} from '@/lib/daily-brief-generate'
+import { redis } from '@/lib/redis'
 import type { ActionResponse } from '@/types/actions'
 import type { DailyBriefRecord } from '@/types/daily-brief'
+import type { Activity, Reservation, BreakfastConfiguration } from '@/types/index'
+import type { DayNote } from '@/app/actions/day-notes'
+import type { WeatherData } from '@/app/actions/weather'
 
 export type { DailyBriefContent, DailyBriefRecord } from '@/types/daily-brief'
+
+export type EnsureDailyBriefResult =
+  | { status: 'empty' }
+  | { status: 'ok'; brief: DailyBriefRecord; stale: boolean }
+  | { status: 'pending' }
+  | { status: 'error'; error: string }
+
+function computeIsStale(
+  brief: DailyBriefRecord,
+  activities: Activity[],
+  reservations: Reservation[],
+  breakfasts: BreakfastConfiguration[],
+  dayNotes: DayNote[]
+): boolean {
+  const briefTime = new Date(brief.generated_at).getTime()
+  const timestamps = [
+    ...activities.map((a) => a.updated_at),
+    ...reservations.map((r) => r.updated_at),
+    ...breakfasts.map((b) => b.updated_at),
+    ...dayNotes.map((n) => n.updated_at),
+  ]
+  if (timestamps.length === 0) return false
+  const maxUpdated = Math.max(...timestamps.map((t) => new Date(t).getTime()))
+  return maxUpdated > briefTime
+}
+
+/**
+ * Auto-generate a daily brief on day-view load.
+ * - Any tenant member may trigger this (not editor-only).
+ * - Does NOT count against the manual regenerate rate limit.
+ * - If day has no planned content, returns { status: 'empty' } — no LLM call, no DB write.
+ * - If brief already exists, returns it immediately (idempotent).
+ * - If no brief exists, generates one using a Redis lock to prevent duplicate LLM calls.
+ */
+export async function ensureDailyBrief(args: {
+  tenantId: string
+  dayId: string
+  dateIso: string
+  activities: Activity[]
+  reservations: Reservation[]
+  breakfasts: BreakfastConfiguration[]
+  dayNotes: DayNote[]
+  weather: WeatherData | null
+}): Promise<EnsureDailyBriefResult> {
+  const { tenantId, dayId, dateIso, activities, reservations, breakfasts, dayNotes, weather } = args
+
+  if (!(await isFeatureEnabled(tenantId, 'daily_brief'))) return { status: 'empty' }
+
+  if (!dayHasPlannedContent(activities, reservations, breakfasts)) return { status: 'empty' }
+
+  const { supabase } = await createTenantClient()
+
+  const existing = await getDailyBriefForDayWithClient(supabase, tenantId, dayId)
+  if (existing) {
+    return {
+      status: 'ok',
+      brief: existing,
+      stale: computeIsStale(existing, activities, reservations, breakfasts, dayNotes),
+    }
+  }
+
+  const lockKey = `daily-brief:lock:${tenantId}:${dayId}`
+  let acquired: string | null = null
+  try {
+    acquired = await redis.set(lockKey, '1', 'EX', 30, 'NX')
+  } catch {
+    // Redis unavailable — proceed without lock (fail-open)
+    acquired = 'OK'
+  }
+
+  if (!acquired) {
+    // Another process is generating — wait briefly then read
+    await new Promise((r) => setTimeout(r, 800))
+    const retry = await getDailyBriefForDayWithClient(supabase, tenantId, dayId)
+    if (retry) {
+      return {
+        status: 'ok',
+        brief: retry,
+        stale: computeIsStale(retry, activities, reservations, breakfasts, dayNotes),
+      }
+    }
+    return { status: 'pending' }
+  }
+
+  try {
+    const result = await generateAndPersistDailyBrief(supabase, {
+      tenantId,
+      dayId,
+      dateIso,
+      generatedBy: null,
+      activities,
+      reservations,
+      breakfasts,
+      dayNotes,
+      weather,
+    })
+    if (!result.success) return { status: 'error', error: result.error }
+    return { status: 'ok', brief: result.data, stale: false }
+  } finally {
+    try {
+      await redis.del(lockKey)
+    } catch {
+      // best-effort cleanup
+    }
+  }
+}
 
 export async function getDailyBrief(
   dayId: string
