@@ -111,7 +111,6 @@ export async function updateBreakfastConfiguration(
     })
     .eq('id', id)
     .eq('tenant_id', tenantId)
-    .is('deleted_at', null)
     .select()
     .single()
 
@@ -147,21 +146,18 @@ export async function deleteBreakfastConfiguration(id: string): Promise<ActionRe
 
   const { supabase } = await createTenantClient()
 
-  const now = new Date().toISOString()
   const { data: existing } = await supabase
     .from('breakfast_configuration')
     .select('group_name, day_id')
     .eq('id', id)
     .eq('tenant_id', tenantId)
-    .is('deleted_at', null)
     .maybeSingle()
 
   const { error } = await supabase
     .from('breakfast_configuration')
-    .update({ deleted_at: now, updated_at: now })
+    .delete()
     .eq('id', id)
     .eq('tenant_id', tenantId)
-    .is('deleted_at', null)
 
   if (error) return { success: false, error: error.message }
 
@@ -201,7 +197,6 @@ export async function getBreakfastConfigurationsForDay(
     .select('*')
     .eq('tenant_id', tenantId)
     .eq('day_id', dayId)
-    .is('deleted_at', null)
     .order('start_time', { nullsFirst: true })
 
   if (error) return { success: false, error: error.message }

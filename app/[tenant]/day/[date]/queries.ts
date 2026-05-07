@@ -24,7 +24,6 @@ export async function getProgramItemsForDayWithClient(
     .select('*, point_of_contact(*), venue_type(*)')
     .eq('tenant_id', tenantId)
     .eq('day_id', dayId)
-    .is('deleted_at', null)
     .order('start_time', { nullsFirst: true })
   return (data ?? []) as unknown as Activity[]
 }
@@ -44,7 +43,6 @@ export async function getReservationsForDayWithClient(
     .select('*')
     .eq('tenant_id', tenantId)
     .eq('day_id', dayId)
-    .is('deleted_at', null)
     .order('start_time', { nullsFirst: true })
   return (data ?? []) as unknown as Reservation[]
 }
@@ -67,7 +65,6 @@ export async function getBreakfastConfigsForDayWithClient(
     .select('*')
     .eq('tenant_id', tenantId)
     .eq('day_id', dayId)
-    .is('deleted_at', null)
     .order('start_time', { nullsFirst: true })
   return (data ?? []) as unknown as BreakfastConfiguration[]
 }
@@ -90,7 +87,6 @@ export async function getDayNotesForDayWithClient(
     .select('*')
     .eq('tenant_id', tenantId)
     .eq('day_id', dayId)
-    .is('deleted_at', null)
     .order('created_at', { ascending: true })
   return (data ?? []) as unknown as DayNote[]
 }

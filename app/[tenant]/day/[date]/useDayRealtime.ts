@@ -67,8 +67,7 @@ export function useDayRealtime(
         },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            const row = payload.new as ActivityWithRelations & { deleted_at?: string | null }
-            if (row.deleted_at) return
+            const row = payload.new as ActivityWithRelations
             setActivities((prev) => {
               if (prev.some((a) => a.id === row.id)) return prev
               const withoutPendingDuplicate = prev.filter((item) => {
@@ -84,11 +83,7 @@ export function useDayRealtime(
               )
             })
           } else if (payload.eventType === 'UPDATE') {
-            const row = payload.new as ActivityWithRelations & { deleted_at?: string | null }
-            if (row.deleted_at) {
-              setActivities((prev) => prev.filter((a) => a.id !== row.id))
-              return
-            }
+            const row = payload.new as ActivityWithRelations
             setActivities((prev) => prev.map((a) => (a.id === row.id ? { ...a, ...row } : a)))
           } else if (payload.eventType === 'DELETE') {
             const id = (payload.old as { id: string }).id
@@ -107,8 +102,7 @@ export function useDayRealtime(
         },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            const row = payload.new as Reservation & { deleted_at?: string | null }
-            if (row.deleted_at) return
+            const row = payload.new as Reservation
             setReservations((prev) => {
               if (prev.some((r) => r.id === row.id)) return prev
               const withoutPendingDuplicate = prev.filter((item) => {
@@ -124,11 +118,7 @@ export function useDayRealtime(
               )
             })
           } else if (payload.eventType === 'UPDATE') {
-            const row = payload.new as Reservation & { deleted_at?: string | null }
-            if (row.deleted_at) {
-              setReservations((prev) => prev.filter((r) => r.id !== row.id))
-              return
-            }
+            const row = payload.new as Reservation
             setReservations((prev) => prev.map((r) => (r.id === row.id ? row : r)))
           } else if (payload.eventType === 'DELETE') {
             const id = (payload.old as { id: string }).id
@@ -147,8 +137,7 @@ export function useDayRealtime(
         },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            const row = payload.new as BreakfastConfiguration & { deleted_at?: string | null }
-            if (row.deleted_at) return
+            const row = payload.new as BreakfastConfiguration
             setBreakfastConfigs((prev) => {
               if (prev.some((c) => c.id === row.id)) return prev
               const withoutPendingDuplicate = prev.filter((item) => {
@@ -162,11 +151,7 @@ export function useDayRealtime(
               return [...withoutPendingDuplicate, row]
             })
           } else if (payload.eventType === 'UPDATE') {
-            const row = payload.new as BreakfastConfiguration & { deleted_at?: string | null }
-            if (row.deleted_at) {
-              setBreakfastConfigs((prev) => prev.filter((c) => c.id !== row.id))
-              return
-            }
+            const row = payload.new as BreakfastConfiguration
             setBreakfastConfigs((prev) => prev.map((c) => (c.id === row.id ? row : c)))
           } else if (payload.eventType === 'DELETE') {
             const id = (payload.old as { id: string }).id
@@ -185,21 +170,14 @@ export function useDayRealtime(
         },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            const row = payload.new as DayNote & { deleted_at?: string | null }
-            if (row.deleted_at) return
+            const row = payload.new as DayNote
             setDayNotes((prev) => {
               if (prev.some((n) => n.id === row.id)) return prev
-              return [...prev, row as DayNote].sort((a, b) =>
-                a.created_at.localeCompare(b.created_at)
-              )
+              return [...prev, row].sort((a, b) => a.created_at.localeCompare(b.created_at))
             })
           } else if (payload.eventType === 'UPDATE') {
-            const row = payload.new as DayNote & { deleted_at?: string | null }
-            if (row.deleted_at) {
-              setDayNotes((prev) => prev.filter((n) => n.id !== row.id))
-              return
-            }
-            setDayNotes((prev) => prev.map((n) => (n.id === row.id ? (row as DayNote) : n)))
+            const row = payload.new as DayNote
+            setDayNotes((prev) => prev.map((n) => (n.id === row.id ? row : n)))
           } else if (payload.eventType === 'DELETE') {
             const id = (payload.old as { id: string }).id
             setDayNotes((prev) => prev.filter((n) => n.id !== id))

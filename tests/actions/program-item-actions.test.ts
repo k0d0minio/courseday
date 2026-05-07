@@ -183,13 +183,13 @@ describe('updateActivity', () => {
 describe('deleteActivity', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('soft-deletes by id and tenant and returns success', async () => {
+  it('hard-deletes by id and tenant and returns success', async () => {
     const selectChain = makeChain({
       data: { title: 'T', day_id: 'day-1' },
       error: null,
     })
-    const updateChain = makeChain({ data: null, error: null })
-    const from = vi.fn().mockReturnValueOnce(selectChain).mockReturnValueOnce(updateChain)
+    const deleteChain = makeChain({ data: null, error: null })
+    const from = vi.fn().mockReturnValueOnce(selectChain).mockReturnValueOnce(deleteChain)
     vi.mocked(createTenantClient).mockResolvedValue({
       supabase: { from } as never,
       tenantId: 'tenant-1',
@@ -198,18 +198,16 @@ describe('deleteActivity', () => {
     const result = await deleteActivity('item-1')
     expect(result.success).toBe(true)
     expect(from).toHaveBeenCalledWith('activity')
-    expect(updateChain.update as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(
-      expect.objectContaining({ deleted_at: expect.any(String), updated_at: expect.any(String) })
-    )
+    expect(deleteChain.delete as ReturnType<typeof vi.fn>).toHaveBeenCalled()
   })
 
-  it('returns error when Supabase update fails', async () => {
+  it('returns error when Supabase delete fails', async () => {
     const selectChain = makeChain({
       data: { title: 'T', day_id: 'day-1' },
       error: null,
     })
-    const updateChain = makeChain({ data: null, error: { message: 'update error' } })
-    const from = vi.fn().mockReturnValueOnce(selectChain).mockReturnValueOnce(updateChain)
+    const deleteChain = makeChain({ data: null, error: { message: 'delete error' } })
+    const from = vi.fn().mockReturnValueOnce(selectChain).mockReturnValueOnce(deleteChain)
     vi.mocked(createTenantClient).mockResolvedValue({
       supabase: { from } as never,
       tenantId: 'tenant-1',
@@ -217,7 +215,7 @@ describe('deleteActivity', () => {
 
     const result = await deleteActivity('item-1')
     assertFailure(result)
-    expect(result.error).toBe('update error')
+    expect(result.error).toBe('delete error')
   })
 })
 
@@ -226,7 +224,7 @@ describe('deleteActivity', () => {
 describe('deleteActivityRecurrenceGroup', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('soft-deletes all items in the recurrence group', async () => {
+  it('hard-deletes all items in the recurrence group', async () => {
     const chain = makeChain({ data: null, error: null })
     const from = vi.fn().mockReturnValue(chain)
     vi.mocked(createTenantClient).mockResolvedValue({
@@ -239,9 +237,7 @@ describe('deleteActivityRecurrenceGroup', () => {
 
     const eqCalls = (chain.eq as ReturnType<typeof vi.fn>).mock.calls
     expect(eqCalls).toContainEqual(['recurrence_group_id', 'group-abc'])
-    expect(chain.update as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(
-      expect.objectContaining({ deleted_at: expect.any(String) })
-    )
+    expect(chain.delete as ReturnType<typeof vi.fn>).toHaveBeenCalled()
   })
 })
 
