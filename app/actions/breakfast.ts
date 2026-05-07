@@ -5,7 +5,7 @@ import { getTenantId } from '@/lib/tenant'
 import { requireEditor, getUserRole } from '@/lib/membership'
 import { isFeatureEnabled } from '@/app/actions/feature-flags'
 import { createBreakfastSchema, updateBreakfastSchema } from '@/lib/breakfast-schema'
-import { notifyTenantMembers, getDayDate } from '@/lib/notifications'
+import { notifyTenantMembers, getDayDate, awaitNotifications } from '@/lib/notifications'
 import type { CreateBreakfastFormData, UpdateBreakfastFormData } from '@/lib/breakfast-schema'
 import type { ActionResponse } from '@/types/actions'
 import type { BreakfastConfiguration } from '@/types/index'
@@ -62,15 +62,18 @@ export async function createBreakfastConfiguration(
   if (error) return { success: false, error: error.message }
 
   const label = d.groupName?.trim() || 'Unnamed group'
-  Promise.allSettled([
-    notifyTenantMembers(
-      tenantId,
-      user.id,
-      `Breakfast added: ${label}`,
-      undefined,
-      `/day/${(dayRow as { date_iso: string }).date_iso}`
-    ),
-  ])
+  await awaitNotifications(
+    [
+      notifyTenantMembers(
+        tenantId,
+        user.id,
+        `Breakfast added: ${label}`,
+        undefined,
+        `/day/${(dayRow as { date_iso: string }).date_iso}`
+      ),
+    ],
+    'createBreakfastConfiguration'
+  )
 
   return { success: true, data: data as BreakfastConfiguration }
 }
@@ -114,17 +117,20 @@ export async function updateBreakfastConfiguration(
 
   const row = data as BreakfastConfiguration
   const label = d.groupName?.trim() || 'Unnamed group'
-  Promise.allSettled([
-    getDayDate(row.day_id).then((date) =>
-      notifyTenantMembers(
-        tenantId,
-        user.id,
-        `Breakfast updated: ${label}`,
-        undefined,
-        date ? `/day/${date}` : undefined
-      )
-    ),
-  ])
+  await awaitNotifications(
+    [
+      getDayDate(row.day_id).then((date) =>
+        notifyTenantMembers(
+          tenantId,
+          user.id,
+          `Breakfast updated: ${label}`,
+          undefined,
+          date ? `/day/${date}` : undefined
+        )
+      ),
+    ],
+    'updateBreakfastConfiguration'
+  )
 
   return { success: true, data: row }
 }
@@ -159,17 +165,20 @@ export async function deleteBreakfastConfiguration(id: string): Promise<ActionRe
   if (existing) {
     const { group_name, day_id } = existing as { group_name: string | null; day_id: string }
     const label = group_name?.trim() || 'Unnamed group'
-    Promise.allSettled([
-      getDayDate(day_id).then((date) =>
-        notifyTenantMembers(
-          tenantId,
-          user.id,
-          `Breakfast removed: ${label}`,
-          undefined,
-          date ? `/day/${date}` : undefined
-        )
-      ),
-    ])
+    await awaitNotifications(
+      [
+        getDayDate(day_id).then((date) =>
+          notifyTenantMembers(
+            tenantId,
+            user.id,
+            `Breakfast removed: ${label}`,
+            undefined,
+            date ? `/day/${date}` : undefined
+          )
+        ),
+      ],
+      'deleteBreakfastConfiguration'
+    )
   }
 
   return { success: true, data: undefined }

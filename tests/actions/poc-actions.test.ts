@@ -13,6 +13,7 @@ vi.mock('@/lib/supabase-server', () => ({ createTenantClient: vi.fn() }))
 
 import { createTenantClient } from '@/lib/supabase-server'
 import { createPOC, deletePOC, getAllPOCs } from '@/app/actions/poc'
+import { assertSuccess, assertFailure } from '@/tests/helpers/action-response'
 
 type QueryResult = { data: unknown; error: { message: string; code?: string } | null }
 
@@ -51,13 +52,13 @@ describe('createPOC', () => {
     })
 
     const result = await createPOC(VALID_POC)
-    expect(result.success).toBe(true)
+    assertSuccess(result)
     expect(result.data).toMatchObject({ name: 'Alice Dupont' })
   })
 
   it('returns validation error for empty name', async () => {
     const result = await createPOC({ name: '', email: '', phone: '' })
-    expect(result.success).toBe(false)
+    assertFailure(result)
     expect(result.error).toBe('Name is required')
   })
 
@@ -73,7 +74,7 @@ describe('createPOC', () => {
     })
 
     const result = await createPOC(VALID_POC)
-    expect(result.success).toBe(false)
+    assertFailure(result)
     expect(result.error).toBe('A contact with that name, email, or phone already exists.')
   })
 })
@@ -113,7 +114,7 @@ describe('deletePOC', () => {
     })
 
     const result = await deletePOC('poc-1')
-    expect(result.success).toBe(false)
+    assertFailure(result)
     // Error message is surfaced as-is from Supabase
     expect(result.error).toContain('foreign key')
   })
@@ -133,7 +134,7 @@ describe('getAllPOCs', () => {
     })
 
     const result = await getAllPOCs()
-    expect(result.success).toBe(true)
+    assertSuccess(result)
     expect(result.data).toHaveLength(2)
   })
 
@@ -142,7 +143,7 @@ describe('getAllPOCs', () => {
     vi.mocked(getUserRole).mockResolvedValueOnce(null)
 
     const result = await getAllPOCs()
-    expect(result.success).toBe(false)
+    assertFailure(result)
     expect(result.error).toBe('Not authorized.')
   })
 })

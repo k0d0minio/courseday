@@ -30,6 +30,7 @@ import {
   deleteActivityRecurrenceGroup,
   getActivitiesForDay,
 } from '@/app/actions/activities'
+import { assertSuccess, assertFailure } from '@/tests/helpers/action-response'
 
 type QueryResult = { data: unknown; error: { message: string } | null }
 
@@ -81,7 +82,7 @@ describe('createActivity (non-recurring)', () => {
 
   it('returns error on schema validation failure', async () => {
     const result = await createActivity({ ...VALID_ITEM, title: '' })
-    expect(result.success).toBe(false)
+    assertFailure(result)
     expect(result.error).toBe('Title is required')
   })
 
@@ -95,7 +96,7 @@ describe('createActivity (non-recurring)', () => {
 
     const result = await createActivity(VALID_ITEM)
 
-    expect(result.success).toBe(true)
+    assertSuccess(result)
     expect(result.data).toMatchObject({ title: 'Morning Round' })
     expect(from).toHaveBeenCalledWith('activity')
   })
@@ -108,7 +109,7 @@ describe('createActivity (non-recurring)', () => {
     })
 
     const result = await createActivity(VALID_ITEM)
-    expect(result.success).toBe(false)
+    assertFailure(result)
     expect(result.error).toBe('db error')
   })
 })
@@ -167,7 +168,7 @@ describe('updateActivity', () => {
 
     const result = await updateActivity('item-1', { ...VALID_ITEM, title: 'Afternoon Round' })
 
-    expect(result.success).toBe(true)
+    assertSuccess(result)
     expect(result.data).toMatchObject({ title: 'Afternoon Round' })
   })
 
@@ -215,7 +216,7 @@ describe('deleteActivity', () => {
     })
 
     const result = await deleteActivity('item-1')
-    expect(result.success).toBe(false)
+    assertFailure(result)
     expect(result.error).toBe('update error')
   })
 })
@@ -258,7 +259,7 @@ describe('getActivitiesForDay', () => {
     })
 
     const result = await getActivitiesForDay('day-1')
-    expect(result.success).toBe(true)
+    assertSuccess(result)
     expect(result.data).toHaveLength(2)
   })
 
@@ -267,7 +268,7 @@ describe('getActivitiesForDay', () => {
     vi.mocked(getUserRole).mockResolvedValue(null)
 
     const result = await getActivitiesForDay('day-1')
-    expect(result.success).toBe(false)
+    assertFailure(result)
     expect(result.error).toBe('Not authorized.')
   })
 })
