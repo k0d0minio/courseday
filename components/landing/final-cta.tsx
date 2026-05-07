@@ -18,19 +18,12 @@ export async function FinalCta() {
         <p className="max-w-xl text-base opacity-80 sm:text-lg">{t('body')}</p>
         <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
           <Link href="/book-a-demo">
-            <Button
-              size="lg"
-              className="bg-[var(--brand-foreground)] text-[var(--brand)] hover:bg-[var(--brand-foreground)]/90"
-            >
+            <Button size="lg" variant="onBrand">
               {t('ctaDemo')}
             </Button>
           </Link>
           <Link href="/new">
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-[var(--brand-foreground)]/40 bg-transparent text-[var(--brand-foreground)] hover:bg-[var(--brand-foreground)]/10 hover:text-[var(--brand-foreground)]"
-            >
+            <Button size="lg" variant="onBrandOutline">
               {t('ctaTrial')}
             </Button>
           </Link>

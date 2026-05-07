@@ -47,7 +47,7 @@ export function DayNav({ date, today }: Props) {
         <PopoverTrigger asChild>
           <Button
             variant="outline"
-            className="h-9 flex-1 justify-start gap-2 font-normal sm:min-w-44 sm:flex-none"
+            className="flex-1 justify-start gap-2 font-normal sm:min-w-44 sm:flex-none"
           >
             <CalendarIcon className="text-muted-foreground h-4 w-4" />
             {format(currentDate, 'EEE, d MMM yyyy')}

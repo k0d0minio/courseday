@@ -142,8 +142,8 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
           </div>
           <Button
             variant="ghost"
-            size="icon"
-            className="-mt-1 -mr-1 h-7 w-7"
+            size="iconXs"
+            className="-mt-1 -mr-1"
             onClick={onClose}
             aria-label={t('close')}
           >
@@ -157,31 +157,16 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
           <>
             {/* Quick actions */}
             <div className="flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-7 text-xs"
-                onClick={() => setActivityModalOpen(true)}
-              >
+              <Button size="xs" variant="outline" onClick={() => setActivityModalOpen(true)}>
                 <Plus className="mr-1 h-3 w-3" /> {t('activity')}
               </Button>
               {showReservations && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs"
-                  onClick={() => setReservationModalOpen(true)}
-                >
+                <Button size="xs" variant="outline" onClick={() => setReservationModalOpen(true)}>
                   <Plus className="mr-1 h-3 w-3" /> {t('reservation')}
                 </Button>
               )}
               {showBreakfast && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs"
-                  onClick={() => setBreakfastModalOpen(true)}
-                >
+                <Button size="xs" variant="outline" onClick={() => setBreakfastModalOpen(true)}>
                   <Plus className="mr-1 h-3 w-3" /> {t('breakfast')}
                 </Button>
               )}

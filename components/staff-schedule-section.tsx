@@ -59,10 +59,10 @@ export function StaffScheduleSection({
         <h2 className="font-semibold">{t('title')}</h2>
         {isEditor && (
           <Button
-            size="sm"
+            size="xs"
             onClick={openAdd}
             disabled={assignees.length === 0}
-            className="h-7 shrink-0 gap-1 px-2.5 text-xs has-[>svg]:px-2"
+            className="shrink-0"
           >
             <Plus className="size-3.5" /> {t('addShift')}
           </Button>

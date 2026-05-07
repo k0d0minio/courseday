@@ -211,8 +211,7 @@ export function DayNotes({
                         <div className="flex gap-1">
                           <Button
                             variant="ghost"
-                            size="icon"
-                            className="h-6 w-6"
+                            size="iconXxs"
                             onClick={() => startEdit(note)}
                             disabled={isDeleting}
                           >
@@ -220,8 +219,8 @@ export function DayNotes({
                           </Button>
                           <Button
                             variant="ghost"
-                            size="icon"
-                            className="text-destructive hover:text-destructive h-6 w-6"
+                            size="iconXxs"
+                            className="text-destructive hover:text-destructive"
                             onClick={() => handleDelete(note.id)}
                             disabled={isDeleting}
                           >

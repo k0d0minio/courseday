@@ -3,6 +3,8 @@
 import { Sun, Moon, Monitor } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useTranslations } from 'next-intl'
+import { Button } from '@/components/ui/button'
+import { MenuItem } from '@/components/ui/menu-item'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 
 const THEMES = ['system', 'light', 'dark'] as const
@@ -28,24 +30,26 @@ export function ThemeToggle() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button
-          className="text-muted-foreground hover:text-foreground hover:bg-accent flex h-8 w-8 items-center justify-center rounded-md transition-colors"
+        <Button
+          variant="ghost"
+          size="iconSm"
+          className="text-muted-foreground hover:text-foreground"
           aria-label={label[current]}
           title={label[current]}
         >
           {THEME_ICON[current]}
-        </button>
+        </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-36 p-1">
         {THEMES.map((value) => (
-          <button
+          <MenuItem
             key={value}
             onClick={() => setTheme(value)}
-            className={`hover:bg-accent flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm transition-colors ${current === value ? 'font-medium' : ''}`}
+            className={current === value ? 'font-medium' : undefined}
           >
             {THEME_ICON[value]}
             {label[value]}
-          </button>
+          </MenuItem>
         ))}
       </PopoverContent>
     </Popover>

@@ -142,7 +142,7 @@ export function HomeClient({ month, today, days: initialDays, variant = 'editor'
               <Button
                 variant={viewMode === 'calendar' ? 'secondary' : 'ghost'}
                 size="sm"
-                className="h-8 rounded-none border-0 px-3"
+                className="rounded-none border-0"
                 onClick={() => changeViewMode('calendar')}
                 aria-pressed={viewMode === 'calendar'}
               >
@@ -151,7 +151,7 @@ export function HomeClient({ month, today, days: initialDays, variant = 'editor'
               <Button
                 variant={viewMode === 'agenda' ? 'secondary' : 'ghost'}
                 size="sm"
-                className="h-8 rounded-none border-0 border-l px-3"
+                className="rounded-none border-0 border-l"
                 onClick={() => changeViewMode('agenda')}
                 aria-pressed={viewMode === 'agenda'}
               >
@@ -169,21 +169,19 @@ export function HomeClient({ month, today, days: initialDays, variant = 'editor'
                 )}
                 <Button
                   variant="ghost"
-                  size="icon"
+                  size="iconResponsive"
                   disabled={isPrevDisabled}
                   onClick={() => navigate(prevMonthStr)}
                   aria-label={t('previousMonth')}
-                  className="h-11 w-11 sm:h-9 sm:w-9"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"
-                  size="icon"
+                  size="iconResponsive"
                   disabled={isNextDisabled}
                   onClick={() => navigate(nextMonthStr)}
                   aria-label={t('nextMonth')}
-                  className="h-11 w-11 sm:h-9 sm:w-9"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -251,6 +249,8 @@ export function HomeClient({ month, today, days: initialDays, variant = 'editor'
                 ].join(', ')
 
                 return (
+                  // Calendar day cell — bespoke grid cell, not a Button surface.
+                  // eslint-disable-next-line no-restricted-syntax
                   <button
                     key={dateStr}
                     onClick={() => handleDayCellClick(dateStr, isSelected)}

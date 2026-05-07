@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Download, Share, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>
@@ -14,10 +15,8 @@ export function PwaInstallPrompt() {
   const [dismissed, setDismissed] = useState(false)
 
   useEffect(() => {
-    // Already installed as standalone — don't show
     if (window.matchMedia('(display-mode: standalone)').matches) return
 
-    // Dismissed this session
     if (sessionStorage.getItem('pwa-prompt-dismissed')) return
 
     const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent) && !('MSStream' in window)
@@ -59,19 +58,12 @@ export function PwaInstallPrompt() {
           <p className="text-muted-foreground text-xs">Install for quick offline access</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <button
-            onClick={handleInstall}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-3 py-1.5 text-xs font-medium transition-colors"
-          >
+          <Button size="sm" onClick={handleInstall}>
             Install
-          </button>
-          <button
-            onClick={dismiss}
-            className="text-muted-foreground hover:text-foreground rounded-md p-1 transition-colors"
-            aria-label="Dismiss"
-          >
+          </Button>
+          <Button variant="ghost" size="iconSm" onClick={dismiss} aria-label="Dismiss">
             <X className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
       </div>
     )
@@ -87,13 +79,15 @@ export function PwaInstallPrompt() {
             Tap <Share className="mx-0.5 inline h-3 w-3" /> then &ldquo;Add to Home Screen&rdquo;
           </p>
         </div>
-        <button
+        <Button
+          variant="ghost"
+          size="iconSm"
           onClick={dismiss}
-          className="text-muted-foreground hover:text-foreground shrink-0 rounded-md p-1 transition-colors"
           aria-label="Dismiss"
+          className="shrink-0"
         >
           <X className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
     )
   }

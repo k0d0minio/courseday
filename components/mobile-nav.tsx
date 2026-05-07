@@ -54,7 +54,7 @@ export function MobileNav({ today, isEditor }: MobileNavProps) {
             href={href}
             aria-current={active ? 'page' : undefined}
             className={cn(
-              'flex flex-1 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors',
+              'flex flex-1 flex-col items-center justify-center gap-1 text-xs font-medium transition-colors',
               active ? 'text-foreground' : 'text-muted-foreground'
             )}
           >
@@ -66,11 +66,13 @@ export function MobileNav({ today, isEditor }: MobileNavProps) {
         {isEditor && (
           <Drawer direction="bottom">
             <DrawerTrigger asChild>
+              {/* Tab nav drawer trigger — matches sibling Link layout, bespoke surface. */}
+              {/* eslint-disable-next-line no-restricted-syntax */}
               <button
                 aria-label={navT('settings')}
                 aria-current={settingsActive ? 'page' : undefined}
                 className={cn(
-                  'flex flex-1 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors',
+                  'flex flex-1 flex-col items-center justify-center gap-1 text-xs font-medium transition-colors',
                   settingsActive ? 'text-foreground' : 'text-muted-foreground'
                 )}
               >

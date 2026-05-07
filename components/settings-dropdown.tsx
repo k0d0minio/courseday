@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { Settings } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { Button } from '@/components/ui/button'
+import { MenuItem } from '@/components/ui/menu-item'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { useFeatureFlag } from '@/lib/feature-flags-context'
 
@@ -40,23 +42,21 @@ export function SettingsDropdown() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button
-          className="text-muted-foreground hover:text-foreground hover:bg-accent flex h-8 w-8 items-center justify-center rounded-md transition-colors"
+        <Button
+          variant="ghost"
+          size="iconSm"
+          className="text-muted-foreground hover:text-foreground"
           aria-label={navT('settings')}
           title={navT('settings')}
         >
           <Settings className="h-4 w-4" />
-        </button>
+        </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-52 p-1">
         {routes.map(({ href, labelKey }) => (
-          <Link
-            key={href}
-            href={href}
-            className="hover:bg-accent flex items-center rounded px-3 py-2 text-sm transition-colors"
-          >
-            {t(labelKey as LabelKey)}
-          </Link>
+          <MenuItem key={href} asChild>
+            <Link href={href}>{t(labelKey as LabelKey)}</Link>
+          </MenuItem>
         ))}
       </PopoverContent>
     </Popover>

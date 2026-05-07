@@ -3,9 +3,9 @@
 import type { User } from '@supabase/supabase-js'
 import { LogOut } from 'lucide-react'
 import { signOut } from '@/app/actions/auth'
+import { Button } from '@/components/ui/button'
 
 interface UserMenuProps {
-  // user kept for potential future avatar/tooltip use
   user: User
   signOutLabel?: string
 }
@@ -13,14 +13,16 @@ interface UserMenuProps {
 export function UserMenu({ user: _user, signOutLabel = 'Sign out' }: UserMenuProps) {
   return (
     <form action={signOut}>
-      <button
+      <Button
         type="submit"
-        className="text-muted-foreground hover:text-foreground hover:bg-accent flex h-8 w-8 items-center justify-center rounded-md transition-colors"
+        variant="ghost"
+        size="iconSm"
+        className="text-muted-foreground hover:text-foreground"
         aria-label={signOutLabel}
         title={signOutLabel}
       >
         <LogOut className="h-4 w-4" />
-      </button>
+      </Button>
     </form>
   )
 }

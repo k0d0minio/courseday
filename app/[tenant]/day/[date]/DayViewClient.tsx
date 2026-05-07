@@ -24,6 +24,7 @@ import type { ActivityQuickAddSeed } from '@/components/activity-form'
 import type { ReservationQuickAdd } from '@/components/reservation-form'
 import type { BreakfastQuickAdd } from '@/components/breakfast-form'
 import { Button } from '@/components/ui/button'
+import { MenuItem } from '@/components/ui/menu-item'
 import { KbdHint } from '@/components/kbd-hint'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useFeatureFlag } from '@/lib/feature-flags-context'
@@ -516,9 +517,8 @@ function DayViewEditor({
             </Button>
           </PopoverTrigger>
           <PopoverContent align="end" className="w-44 p-1">
-            <button
+            <MenuItem
               type="button"
-              className="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm"
               onClick={() => {
                 returnFocusRef.current = null
                 setQuickAddOpen(true)
@@ -526,7 +526,7 @@ function DayViewEditor({
             >
               <Sparkles className="h-4 w-4 shrink-0" />
               {tQa('openButton')}
-            </button>
+            </MenuItem>
           </PopoverContent>
         </Popover>
       </div>
@@ -625,12 +625,12 @@ function DayViewEditor({
           <h2 className="min-w-0 font-semibold">{t('activities')}</h2>
           <Button
             ref={activityAddRef}
-            size="sm"
+            size="xs"
             onClick={() => {
               returnFocusRef.current = activityAddRef.current
               openAddActivity()
             }}
-            className="h-7 shrink-0 gap-1 px-2.5 text-xs has-[>svg]:px-2"
+            className="shrink-0"
           >
             <Plus className="size-3.5" /> {t('addActivity')}
             <KbdHint className="ml-0.5">A</KbdHint>

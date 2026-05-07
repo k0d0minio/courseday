@@ -73,8 +73,7 @@ export function ShiftCard({ dayId, item, isEditor, onEdit, onDeleted }: Props) {
               <Button
                 type="button"
                 variant="ghost"
-                size="icon"
-                className="h-8 w-8"
+                size="iconSm"
                 onClick={() => onEdit?.(item)}
                 aria-label={t('editAria')}
               >
@@ -83,8 +82,8 @@ export function ShiftCard({ dayId, item, isEditor, onEdit, onDeleted }: Props) {
               <Button
                 type="button"
                 variant="ghost"
-                size="icon"
-                className="text-destructive h-8 w-8"
+                size="iconSm"
+                className="text-destructive"
                 onClick={() => setConfirmOpen(true)}
                 aria-label={t('deleteAria')}
               >

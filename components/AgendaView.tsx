@@ -218,7 +218,8 @@ function AgendaDayRow({
   return (
     <>
       <div className={cn('bg-card rounded-lg border', isToday && 'border-primary/60')}>
-        {/* Row header — always visible */}
+        {/* Row header — always visible. Custom full-bleed disclosure surface. */}
+        {/* eslint-disable-next-line no-restricted-syntax */}
         <button
           className="hover:bg-accent/50 flex w-full items-center justify-between rounded-lg px-4 py-3 text-left transition-colors"
           onClick={onToggle}
@@ -257,31 +258,16 @@ function AgendaDayRow({
               <>
                 {isEditor && (
                   <div className="flex flex-wrap gap-2 pt-3">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs"
-                      onClick={() => setActivityOpen(true)}
-                    >
+                    <Button size="xs" variant="outline" onClick={() => setActivityOpen(true)}>
                       <Plus className="mr-1 h-3 w-3" /> {ts('activity')}
                     </Button>
                     {showReservations && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 text-xs"
-                        onClick={() => setReservationOpen(true)}
-                      >
+                      <Button size="xs" variant="outline" onClick={() => setReservationOpen(true)}>
                         <Plus className="mr-1 h-3 w-3" /> {ts('reservation')}
                       </Button>
                     )}
                     {showBreakfast && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 text-xs"
-                        onClick={() => setBreakfastOpen(true)}
-                      >
+                      <Button size="xs" variant="outline" onClick={() => setBreakfastOpen(true)}>
                         <Plus className="mr-1 h-3 w-3" /> {ts('breakfast')}
                       </Button>
                     )}

@@ -28,6 +28,7 @@ import type {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { MenuItem } from '@/components/ui/menu-item'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
@@ -707,7 +708,7 @@ function TagSelector({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button type="button" variant="outline" className="h-auto min-h-9 w-full justify-start">
+        <Button type="button" variant="outline" size="formField" className="w-full justify-start">
           {selectedTags.length === 0 ? (
             <span className="text-muted-foreground text-sm">{placeholder}</span>
           ) : (
@@ -725,12 +726,7 @@ function TagSelector({
         {tags.length > 0 && (
           <div className="mb-2 max-h-40 space-y-0.5 overflow-y-auto">
             {tags.map((tag) => (
-              <button
-                key={tag.id}
-                type="button"
-                onClick={() => toggle(tag.id)}
-                className="hover:bg-muted flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm"
-              >
+              <MenuItem key={tag.id} type="button" variant="muted" onClick={() => toggle(tag.id)}>
                 <div
                   className={cn(
                     'flex h-4 w-4 shrink-0 items-center justify-center rounded border',
@@ -742,7 +738,7 @@ function TagSelector({
                   )}
                 </div>
                 {tag.name}
-              </button>
+              </MenuItem>
             ))}
           </div>
         )}
@@ -783,16 +779,14 @@ function TagSelector({
             </div>
           </div>
         ) : (
-          <button
+          <MenuItem
             type="button"
+            variant="muted"
             onClick={() => setShowNew(true)}
-            className={cn(
-              'text-muted-foreground hover:bg-muted flex w-full items-center gap-1 rounded-sm px-2 py-1.5 text-xs',
-              tags.length > 0 && 'mt-0.5 border-t pt-2'
-            )}
+            className={cn(tags.length > 0 && 'mt-0.5 border-t pt-2')}
           >
             <Plus className="h-3 w-3" /> {addNewTagLabel}
-          </button>
+          </MenuItem>
         )}
       </PopoverContent>
     </Popover>
