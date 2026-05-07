@@ -886,41 +886,6 @@ export type Database = {
           },
         ]
       }
-      schedule_templates: {
-        Row: {
-          created_at: string
-          id: string
-          items: Json
-          name: string
-          tenant_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          items?: Json
-          name: string
-          tenant_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          items?: Json
-          name?: string
-          tenant_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "schedule_templates_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       shift: {
         Row: {
           created_at: string

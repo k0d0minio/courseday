@@ -101,7 +101,6 @@ test.describe('Settings', () => {
       'branding',
       'language',
       'members',
-      'templates',
       'feedback',
     ]
 
