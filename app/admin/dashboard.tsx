@@ -136,7 +136,7 @@ function TenantCard({
   const { label: statusLabel, variant: statusVariant } = STATUS_BADGE[tenant.status]
   const baseTenantUrl = `${protocol}://${tenant.slug}.${rootDomain}`
   const editorJumpUrl = `${baseTenantUrl}?${SUPERADMIN_ROLE_QUERY_PARAM}=editor`
-  const viewerJumpUrl = `${baseTenantUrl}?${SUPERADMIN_ROLE_QUERY_PARAM}=viewer`
+  const staffJumpUrl = `${baseTenantUrl}?${SUPERADMIN_ROLE_QUERY_PARAM}=staff`
 
   function handleFlagChange(key: (typeof KNOWN_FLAGS)[number], enabled: boolean) {
     setFlags((prev) => ({ ...prev, [key]: enabled }))
@@ -203,12 +203,12 @@ function TenantCard({
               View as editor
             </a>
             <a
-              href={viewerJumpUrl}
+              href={staffJumpUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary hover:underline"
             >
-              View as viewer
+              View as staff
             </a>
           </div>
 

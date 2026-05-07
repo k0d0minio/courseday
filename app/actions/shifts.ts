@@ -18,11 +18,11 @@ function normaliseNotes(s: string | undefined | null): string | null {
   return t === '' ? null : t
 }
 
-async function assertDayAndStaffBelongToTenant(
+async function assertDayAndMemberBelongToTenant(
   supabase: Awaited<ReturnType<typeof createTenantClient>>['supabase'],
   tenantId: string,
   dayId: string,
-  staffMemberId: string
+  userId: string
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const { data: dayRow, error: dayErr } = await supabase
     .from('day')
@@ -34,15 +34,15 @@ async function assertDayAndStaffBelongToTenant(
   if (dayErr) return { ok: false, error: dayErr.message }
   if (!dayRow) return { ok: false, error: 'Day not found.' }
 
-  const { data: staffRow, error: staffErr } = await supabase
-    .from('staff_member')
+  const { data: memberRow, error: memberErr } = await supabase
+    .from('memberships')
     .select('id')
-    .eq('id', staffMemberId)
+    .eq('user_id', userId)
     .eq('tenant_id', tenantId)
     .maybeSingle()
 
-  if (staffErr) return { ok: false, error: staffErr.message }
-  if (!staffRow) return { ok: false, error: 'Staff member not found.' }
+  if (memberErr) return { ok: false, error: memberErr.message }
+  if (!memberRow) return { ok: false, error: 'Team member not found.' }
 
   return { ok: true }
 }
@@ -60,11 +60,11 @@ export async function createShift(
   await requireEditor(tenantId)
 
   const { supabase } = await createTenantClient()
-  const check = await assertDayAndStaffBelongToTenant(
+  const check = await assertDayAndMemberBelongToTenant(
     supabase,
     tenantId,
     dayId,
-    parsed.data.staff_member_id
+    parsed.data.user_id
   )
   if (!check.ok) return { success: false, error: check.error }
 
@@ -73,7 +73,7 @@ export async function createShift(
     .insert({
       tenant_id: tenantId,
       day_id: dayId,
-      staff_member_id: parsed.data.staff_member_id,
+      user_id: parsed.data.user_id,
       role: (parsed.data.role ?? '').trim(),
       start_time: normaliseTime(parsed.data.start_time),
       end_time: normaliseTime(parsed.data.end_time),
@@ -100,18 +100,18 @@ export async function updateShift(
   await requireEditor(tenantId)
 
   const { supabase } = await createTenantClient()
-  const check = await assertDayAndStaffBelongToTenant(
+  const check = await assertDayAndMemberBelongToTenant(
     supabase,
     tenantId,
     dayId,
-    parsed.data.staff_member_id
+    parsed.data.user_id
   )
   if (!check.ok) return { success: false, error: check.error }
 
   const { data, error } = await supabase
     .from('shift')
     .update({
-      staff_member_id: parsed.data.staff_member_id,
+      user_id: parsed.data.user_id,
       role: (parsed.data.role ?? '').trim(),
       start_time: normaliseTime(parsed.data.start_time),
       end_time: normaliseTime(parsed.data.end_time),

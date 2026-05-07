@@ -92,7 +92,7 @@ export type DayViewHotkeyHandlers = {
   onOpenActivity?: () => void
   onOpenReservation?: () => void
   onOpenBreakfast?: () => void
-  /** Superadmin impersonation only — toggles viewer/editor preview. */
+  /** Superadmin impersonation only — toggles staff/editor preview. */
   impersonationRole?: SuperadminRole | null
 }
 
@@ -134,7 +134,7 @@ export function useDayViewHotkeys({
       if (key === 'e' || key === 'E') {
         if (!impersonationRole) return
         e.preventDefault()
-        const next: SuperadminRole = impersonationRole === 'viewer' ? 'editor' : 'viewer'
+        const next: SuperadminRole = impersonationRole === 'staff' ? 'editor' : 'staff'
         const url = new URL(window.location.href)
         url.searchParams.set(SUPERADMIN_ROLE_QUERY_PARAM, next)
         window.location.assign(url.toString())

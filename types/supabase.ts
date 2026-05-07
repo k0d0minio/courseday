@@ -891,10 +891,10 @@ export type Database = {
           id: string
           notes: string | null
           role: string
-          staff_member_id: string
           start_time: string | null
           tenant_id: string
           updated_at: string
+          user_id: string
         }
         Insert: {
           created_at?: string
@@ -903,10 +903,10 @@ export type Database = {
           id?: string
           notes?: string | null
           role?: string
-          staff_member_id: string
           start_time?: string | null
           tenant_id: string
           updated_at?: string
+          user_id: string
         }
         Update: {
           created_at?: string
@@ -915,10 +915,10 @@ export type Database = {
           id?: string
           notes?: string | null
           role?: string
-          staff_member_id?: string
           start_time?: string | null
           tenant_id?: string
           updated_at?: string
+          user_id?: string
         }
         Relationships: [
           {
@@ -929,78 +929,7 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "shift_staff_member_id_fkey"
-            columns: ["staff_member_id"]
-            isOneToOne: false
-            referencedRelation: "staff_member"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "shift_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      staff_member: {
-        Row: {
-          active: boolean
-          created_at: string
-          id: string
-          name: string
-          role: string
-          tenant_id: string
-        }
-        Insert: {
-          active?: boolean
-          created_at?: string
-          id?: string
-          name: string
-          role?: string
-          tenant_id: string
-        }
-        Update: {
-          active?: boolean
-          created_at?: string
-          id?: string
-          name?: string
-          role?: string
-          tenant_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "staff_member_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      staff_role: {
-        Row: {
-          created_at: string
-          id: string
-          name: string
-          tenant_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          name: string
-          tenant_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          name?: string
-          tenant_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "staff_role_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"

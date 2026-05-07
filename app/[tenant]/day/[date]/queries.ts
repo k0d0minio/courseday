@@ -1,13 +1,12 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { createSupabaseServerClient, createSupabaseServiceClient } from '@/lib/supabase-server'
 import type { Database } from '@/types/supabase'
 import type {
   Activity,
   Reservation,
   BreakfastConfiguration,
-  ShiftWithStaffMember,
-  StaffMember,
-  StaffRole,
+  ShiftAssignee,
+  ShiftWithAssignee,
 } from '@/types/index'
 import type { DayNote } from '@/app/actions/day-notes'
 import type { DailyBriefRecord } from '@/types/daily-brief'
@@ -155,37 +154,66 @@ export async function getDailyBriefForDay(
   return getDailyBriefForDayWithClient(supabase, tenantId, dayId)
 }
 
+/**
+ * Returns all tenant members (assignees) keyed by user_id, with email and a
+ * display name derived from the email local-part. Service-role lookup is
+ * required because auth.users is not in the public schema.
+ */
+export async function getTenantAssignees(tenantId: string): Promise<Map<string, ShiftAssignee>> {
+  const supabase = await createSupabaseServerClient()
+  const { data: memberships } = await supabase
+    .from('memberships')
+    .select('user_id')
+    .eq('tenant_id', tenantId)
+
+  const userIds = (memberships ?? []).map((m) => m.user_id)
+  if (userIds.length === 0) return new Map()
+
+  const serviceClient = createSupabaseServiceClient()
+  const lookups = await Promise.allSettled(
+    userIds.map((uid) => serviceClient.auth.admin.getUserById(uid))
+  )
+
+  const map = new Map<string, ShiftAssignee>()
+  userIds.forEach((uid, i) => {
+    const settled = lookups[i]
+    const email = settled.status === 'fulfilled' ? (settled.value.data.user?.email ?? '') : ''
+    map.set(uid, {
+      user_id: uid,
+      email,
+      display_name: email ? email.split('@')[0] : uid.slice(0, 8),
+    })
+  })
+  return map
+}
+
 export async function getShiftsForDay(
   tenantId: string,
   dayId: string
-): Promise<ShiftWithStaffMember[]> {
+): Promise<ShiftWithAssignee[]> {
   const supabase = await createSupabaseServerClient()
   const { data } = await supabase
     .from('shift')
-    .select('*, staff_member(*)')
+    .select('*')
     .eq('tenant_id', tenantId)
     .eq('day_id', dayId)
     .order('start_time', { nullsFirst: true })
-  return (data ?? []) as unknown as ShiftWithStaffMember[]
+
+  const rows = (data ?? []) as unknown as Array<Omit<ShiftWithAssignee, 'assignee'>>
+  if (rows.length === 0) return []
+
+  const assignees = await getTenantAssignees(tenantId)
+  return rows.map((s) => ({
+    ...s,
+    assignee: assignees.get(s.user_id) ?? {
+      user_id: s.user_id,
+      email: '',
+      display_name: '—',
+    },
+  }))
 }
 
-export async function getStaffMembersForTenant(tenantId: string): Promise<StaffMember[]> {
-  const supabase = await createSupabaseServerClient()
-  const { data } = await supabase
-    .from('staff_member')
-    .select('*')
-    .eq('tenant_id', tenantId)
-    .order('active', { ascending: false })
-    .order('name')
-  return (data ?? []) as StaffMember[]
-}
-
-export async function getStaffRolesForTenant(tenantId: string): Promise<StaffRole[]> {
-  const supabase = await createSupabaseServerClient()
-  const { data } = await supabase
-    .from('staff_role')
-    .select('*')
-    .eq('tenant_id', tenantId)
-    .order('name')
-  return (data ?? []) as StaffRole[]
+export async function getTenantAssigneesList(tenantId: string): Promise<ShiftAssignee[]> {
+  const map = await getTenantAssignees(tenantId)
+  return [...map.values()].sort((a, b) => a.display_name.localeCompare(b.display_name))
 }

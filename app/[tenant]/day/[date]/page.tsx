@@ -14,8 +14,7 @@ import {
   getDayNotesForDay,
   getDailyBriefForDay,
   getShiftsForDay,
-  getStaffMembersForTenant,
-  getStaffRolesForTenant,
+  getTenantAssigneesList,
 } from './queries'
 import { Suspense } from 'react'
 import { DayViewClient } from './DayViewClient'
@@ -25,9 +24,8 @@ import type {
   BreakfastConfiguration,
   PointOfContact,
   VenueType,
-  ShiftWithStaffMember,
-  StaffMember,
-  StaffRole,
+  ShiftAssignee,
+  ShiftWithAssignee,
 } from '@/types/index'
 import type { AuthState } from '@/types/actions'
 import type { DayNote } from '@/app/actions/day-notes'
@@ -54,9 +52,8 @@ export type DayViewProps = {
   pocs: PointOfContact[]
   venueTypes: VenueType[]
   authState: AuthState
-  shifts: ShiftWithStaffMember[]
-  staffMembers: StaffMember[]
-  staffRoles: StaffRole[]
+  shifts: ShiftWithAssignee[]
+  shiftAssignees: ShiftAssignee[]
   handoverLastViewedAt: string | null
   handoverRemoved: HandoverRemovedItem[]
 }
@@ -122,8 +119,7 @@ export default async function DayPage({ params }: { params: Promise<{ date: stri
     pocsResult,
     venueTypesResult,
     shifts,
-    staffMembers,
-    staffRoles,
+    shiftAssignees,
   ] = await Promise.all([
     getProgramItemsForDay(tenant.id, day.id),
     flags.reservations ? getReservationsForDay(tenant.id, day.id) : Promise.resolve([]),
@@ -134,8 +130,7 @@ export default async function DayPage({ params }: { params: Promise<{ date: stri
     getAllPOCs(),
     getAllVenueTypes(),
     staffScheduleOn ? getShiftsForDay(tenant.id, day.id) : Promise.resolve([]),
-    staffScheduleOn ? getStaffMembersForTenant(tenant.id) : Promise.resolve([]),
-    staffScheduleOn ? getStaffRolesForTenant(tenant.id) : Promise.resolve([]),
+    staffScheduleOn ? getTenantAssigneesList(tenant.id) : Promise.resolve([]),
   ])
 
   let handoverLastViewedAt: string | null = null
@@ -168,8 +163,7 @@ export default async function DayPage({ params }: { params: Promise<{ date: stri
         venueTypes={venueTypesResult.success ? venueTypesResult.data : []}
         authState={authState}
         shifts={shifts}
-        staffMembers={staffMembers}
-        staffRoles={staffRoles}
+        shiftAssignees={shiftAssignees}
         handoverLastViewedAt={handoverLastViewedAt}
         handoverRemoved={handoverRemoved}
       />

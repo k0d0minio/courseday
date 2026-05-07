@@ -31,8 +31,8 @@ type Props = {
   month: string // YYYY-MM
   today: string // YYYY-MM-DD
   days: DaySummary[]
-  /** Viewers only see agenda; editors get calendar + agenda toggle. */
-  variant?: 'editor' | 'viewer'
+  /** Staff only see agenda; editors get calendar + agenda toggle. */
+  variant?: 'editor' | 'staff'
 }
 
 // Day-of-week header label keys — Monday first (resolved via translations)
@@ -52,7 +52,7 @@ export function HomeClient({ month, today, days: initialDays, variant = 'editor'
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [days, setDays] = useState<DaySummary[]>(initialDays)
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
-    if (variant === 'viewer') return 'agenda'
+    if (variant === 'staff') return 'agenda'
     if (typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches) {
       return 'agenda'
     }

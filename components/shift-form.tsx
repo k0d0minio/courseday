@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
 import { createShift, updateShift } from '@/app/actions/shifts'
 import { shiftSchema, type ShiftFormData } from '@/lib/shift-schema'
-import type { Shift, ShiftWithStaffMember, StaffMember } from '@/types/index'
+import type { Shift, ShiftAssignee, ShiftWithAssignee } from '@/types/index'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -21,47 +21,31 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-type RolePreset = { id: string; name: string }
-
-function attachStaffMember(shift: Shift, members: StaffMember[]): ShiftWithStaffMember {
-  const staff_member =
-    members.find((m) => m.id === shift.staff_member_id) ??
+function attachAssignee(shift: Shift, assignees: ShiftAssignee[]): ShiftWithAssignee {
+  const assignee =
+    assignees.find((a) => a.user_id === shift.user_id) ??
     ({
-      id: shift.staff_member_id,
-      tenant_id: shift.tenant_id,
-      name: '—',
-      role: '',
-      active: false,
-      created_at: shift.created_at,
-    } satisfies StaffMember)
+      user_id: shift.user_id,
+      email: '',
+      display_name: '—',
+    } satisfies ShiftAssignee)
 
-  return { ...shift, staff_member }
+  return { ...shift, assignee }
 }
 
 type Props = {
   isOpen: boolean
   onClose: () => void
   dayId: string
-  staffMembers: StaffMember[]
-  rolePresets: RolePreset[]
-  editItem: ShiftWithStaffMember | null
-  onSuccess: (item: ShiftWithStaffMember) => void
+  assignees: ShiftAssignee[]
+  editItem: ShiftWithAssignee | null
+  onSuccess: (item: ShiftWithAssignee) => void
 }
 
-export function ShiftForm({
-  isOpen,
-  onClose,
-  dayId,
-  staffMembers,
-  rolePresets,
-  editItem,
-  onSuccess,
-}: Props) {
+export function ShiftForm({ isOpen, onClose, dayId, assignees, editItem, onSuccess }: Props) {
   const t = useTranslations('Tenant.staff.shiftForm')
   const [isPending, startTransition] = useTransition()
   const isEditing = !!editItem
-
-  const selectableStaff = staffMembers.filter((m) => m.active || m.id === editItem?.staff_member_id)
 
   const {
     register,
@@ -89,13 +73,11 @@ export function ShiftForm({
         return
       }
 
-      onSuccess(attachStaffMember(result.data, staffMembers))
+      onSuccess(attachAssignee(result.data, assignees))
       toast.success(isEditing ? t('updated') : t('saved'))
       onClose()
     })
   }
-
-  const datalistId = 'staff-shift-role-presets'
 
   return (
     <Dialog open={isOpen} onOpenChange={(o) => !o && onClose()}>
@@ -108,7 +90,7 @@ export function ShiftForm({
           <div className="space-y-2">
             <Label>{t('staffMemberLabel')}</Label>
             <Controller
-              name="staff_member_id"
+              name="user_id"
               control={control}
               render={({ field }) => (
                 <Select value={field.value || undefined} onValueChange={field.onChange}>
@@ -116,34 +98,24 @@ export function ShiftForm({
                     <SelectValue placeholder={t('staffPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {selectableStaff.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        {m.name}
-                        {!m.active ? ` (${t('inactive')})` : ''}
+                    {assignees.map((a) => (
+                      <SelectItem key={a.user_id} value={a.user_id}>
+                        {a.display_name}
+                        {a.email && a.email !== a.display_name ? (
+                          <span className="text-muted-foreground ml-1 text-xs">{a.email}</span>
+                        ) : null}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               )}
             />
-            {errors.staff_member_id && (
-              <p className="text-destructive text-sm">{errors.staff_member_id.message}</p>
-            )}
+            {errors.user_id && <p className="text-destructive text-sm">{errors.user_id.message}</p>}
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="shift-role">{t('roleLabel')}</Label>
-            <Input
-              id="shift-role"
-              list={datalistId}
-              {...register('role')}
-              placeholder={t('rolePlaceholder')}
-            />
-            <datalist id={datalistId}>
-              {rolePresets.map((r) => (
-                <option key={r.id} value={r.name} />
-              ))}
-            </datalist>
+            <Input id="shift-role" {...register('role')} placeholder={t('rolePlaceholder')} />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -166,7 +138,7 @@ export function ShiftForm({
             <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
               {t('cancel')}
             </Button>
-            <Button type="submit" disabled={isPending || selectableStaff.length === 0}>
+            <Button type="submit" disabled={isPending || assignees.length === 0}>
               {isPending ? t('saving') : t('save')}
             </Button>
           </div>
@@ -176,10 +148,10 @@ export function ShiftForm({
   )
 }
 
-function defaultValues(editItem: ShiftWithStaffMember | null): ShiftFormData {
+function defaultValues(editItem: ShiftWithAssignee | null): ShiftFormData {
   if (!editItem) {
     return {
-      staff_member_id: '',
+      user_id: '',
       role: '',
       start_time: '',
       end_time: '',
@@ -187,7 +159,7 @@ function defaultValues(editItem: ShiftWithStaffMember | null): ShiftFormData {
     }
   }
   return {
-    staff_member_id: editItem.staff_member_id,
+    user_id: editItem.user_id,
     role: editItem.role ?? '',
     start_time: editItem.start_time ? editItem.start_time.slice(0, 5) : '',
     end_time: editItem.end_time ? editItem.end_time.slice(0, 5) : '',

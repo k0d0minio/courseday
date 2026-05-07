@@ -16,7 +16,7 @@ import type {
   ActivityWithRelations,
   Reservation,
   BreakfastConfiguration,
-  ShiftWithStaffMember,
+  ShiftWithAssignee,
 } from '@/types/index'
 import type { DayNote } from '@/app/actions/day-notes'
 import type { WeatherData } from '@/app/actions/weather'
@@ -40,7 +40,7 @@ type Props = {
   setDayNotes: Dispatch<SetStateAction<DayNote[]>>
   weather: WeatherData | null
   dailyBrief: DailyBriefRecord | null
-  shifts: ShiftWithStaffMember[]
+  shifts: ShiftWithAssignee[]
   handoverEnabled: boolean
   onHandoverEnabledChange: (enabled: boolean) => void
   handoverBaselineIso: string | null

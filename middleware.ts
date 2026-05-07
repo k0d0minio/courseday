@@ -203,7 +203,7 @@ export async function middleware(request: NextRequest) {
 
   let superadminRoleCookieValue: string | null = null
   const requestedRole = request.nextUrl.searchParams.get(SUPERADMIN_ROLE_QUERY_PARAM)
-  if ((requestedRole === 'editor' || requestedRole === 'viewer') && user) {
+  if ((requestedRole === 'editor' || requestedRole === 'staff') && user) {
     const { data: superadminRow } = await serviceClient
       .from('superadmins')
       .select('id')
