@@ -179,7 +179,8 @@ export const getTenantAssignees = cache(
     const map = new Map<string, ShiftAssignee>()
     userIds.forEach((uid, i) => {
       const settled = lookups[i]
-      const email = settled.status === 'fulfilled' ? (settled.value.data.user?.email ?? '') : ''
+      const email =
+        settled && settled.status === 'fulfilled' ? (settled.value.data.user?.email ?? '') : ''
       map.set(uid, {
         user_id: uid,
         email,

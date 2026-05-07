@@ -8,7 +8,7 @@ function getInitials(name: string): string {
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
-    .map((w) => w[0].toUpperCase())
+    .map((w) => w[0]!.toUpperCase())
     .join('')
 }
 
@@ -53,7 +53,7 @@ export async function GET() {
     )
     const bg = palette.legacyAccentHex
     const fg = isLightHex(bg) ? '#1a1a1a' : '#ffffff'
-    const initials = getInitials(name) || name[0].toUpperCase()
+    const initials = getInitials(name) || name[0]!.toUpperCase()
 
     return new NextResponse(buildSvg(initials, bg, fg), {
       headers: {

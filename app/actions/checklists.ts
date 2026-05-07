@@ -90,7 +90,7 @@ export async function createChecklistTemplate(
 ): Promise<ActionResponse<ChecklistTemplateWithItems>> {
   const parsed = checklistTemplateSchema.safeParse(raw)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message }
+    return { success: false, error: parsed.error.issues[0]!.message }
   }
 
   const tenantId = await getTenantId()
@@ -140,7 +140,7 @@ export async function updateChecklistTemplate(
 ): Promise<ActionResponse<ChecklistTemplateWithItems>> {
   const parsed = checklistTemplateSchema.safeParse(raw)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message }
+    return { success: false, error: parsed.error.issues[0]!.message }
   }
 
   const tenantId = await getTenantId()

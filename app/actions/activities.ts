@@ -45,7 +45,7 @@ function toRow(
 }
 
 async function assignTags(
-  supabase: any,
+  supabase: Awaited<ReturnType<typeof createTenantClient>>['supabase'],
   activityId: string,
   tagIds: string[]
 ): Promise<string | null> {
@@ -72,7 +72,7 @@ async function assignTags(
 export async function createActivity(raw: ActivityFormData): Promise<ActionResponse<Activity>> {
   const parsed = activitySchema.safeParse(raw)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message }
+    return { success: false, error: parsed.error.issues[0]!.message }
   }
 
   const tenantId = await getTenantId()
@@ -228,7 +228,7 @@ export async function updateActivity(
 ): Promise<ActionResponse<Activity>> {
   const parsed = activitySchema.safeParse(raw)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message }
+    return { success: false, error: parsed.error.issues[0]!.message }
   }
 
   const tenantId = await getTenantId()

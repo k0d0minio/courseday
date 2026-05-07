@@ -25,7 +25,7 @@ export async function createFeatureRequest(
 ): Promise<ActionResponse<FeatureRequest>> {
   const parsed = featureRequestSchema.safeParse(raw)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message }
+    return { success: false, error: parsed.error.issues[0]!.message }
   }
 
   const tenantId = await getTenantId()

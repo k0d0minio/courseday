@@ -1,3 +1,5 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/types/supabase'
 import type { ActionResponse } from '@/types/actions'
 import type { ActivityChecklistItem } from '@/types/index'
 
@@ -6,8 +8,7 @@ import type { ActivityChecklistItem } from '@/types/index'
 // the caller has already created (tenant or service). All writes rely on the
 // caller having verified editor permission.
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SupabaseLike = any
+type SupabaseLike = SupabaseClient<Database>
 
 type SnapshotByIdsParams = {
   tenantId: string

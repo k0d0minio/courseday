@@ -92,8 +92,8 @@ export function ViewerDayDashboard({
           dayId={dayId}
           initialBrief={dailyBrief}
           isEditor={false}
-          briefStale={briefStale}
-          briefIsEmpty={briefIsEmpty}
+          briefStale={briefStale ?? false}
+          briefIsEmpty={briefIsEmpty ?? false}
         />
       )}
 

@@ -60,7 +60,8 @@ export async function getTenantMemberAssignees(): Promise<ActionResponse<TenantM
     success: true,
     data: memberships.map((m, i) => {
       const settled = emailResults[i]
-      const email = settled.status === 'fulfilled' ? (settled.value.data.user?.email ?? '') : ''
+      const email =
+        settled && settled.status === 'fulfilled' ? (settled.value.data.user?.email ?? '') : ''
       return {
         user_id: m.user_id,
         email,
@@ -96,7 +97,8 @@ export async function getMembers(): Promise<ActionResponse<Member[]>> {
     success: true,
     data: memberships.map((m, i) => {
       const settled = emailResults[i]
-      const email = settled.status === 'fulfilled' ? (settled.value.data.user?.email ?? '') : ''
+      const email =
+        settled && settled.status === 'fulfilled' ? (settled.value.data.user?.email ?? '') : ''
       return {
         id: m.id,
         user_id: m.user_id,

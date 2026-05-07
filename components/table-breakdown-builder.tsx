@@ -38,7 +38,7 @@ export function TableBreakdownBuilder({
   }
 
   function adjustSeats(index: number, delta: number) {
-    const next = value[index] + delta
+    const next = value[index]! + delta
     if (next < 1 || next > 20) return
     const updated = [...value]
     updated[index] = next

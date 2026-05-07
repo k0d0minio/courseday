@@ -12,8 +12,8 @@ export function createSupabaseBrowserClient(options?: BrowserClientOptions) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       isSingleton: options?.isSingleton ?? true,
-      cookieOptions: { domain: sharedCookieDomain, path: '/' },
-      auth: options?.flowType ? { flowType: options.flowType } : undefined,
+      cookieOptions: { ...(sharedCookieDomain ? { domain: sharedCookieDomain } : {}), path: '/' },
+      ...(options?.flowType ? { auth: { flowType: options.flowType } } : {}),
     }
   )
 }

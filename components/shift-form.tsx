@@ -93,7 +93,7 @@ export function ShiftForm({ isOpen, onClose, dayId, assignees, editItem, onSucce
               name="user_id"
               control={control}
               render={({ field }) => (
-                <Select value={field.value || undefined} onValueChange={field.onChange}>
+                <Select value={field.value || ''} onValueChange={field.onChange}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder={t('staffPlaceholder')} />
                   </SelectTrigger>

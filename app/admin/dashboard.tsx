@@ -503,7 +503,7 @@ export function AdminDashboard({
             <TenantCard
               key={tenant.id}
               tenant={tenant}
-              initialFlags={flagsByTenant[tenant.id]}
+              initialFlags={flagsByTenant[tenant.id]!}
               onDelete={handleDelete}
               isDeleting={deletingId === tenant.id && isPending}
             />

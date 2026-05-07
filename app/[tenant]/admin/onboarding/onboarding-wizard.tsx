@@ -116,7 +116,7 @@ export function OnboardingWizard({
       <p className="text-sm font-medium sm:hidden">
         {t('stepOf', { current: currentStep + 1, total: totalSteps })}
         {' · '}
-        {stepLabels[STEPS[currentStep]]}
+        {stepLabels[STEPS[currentStep]!]}
       </p>
 
       {/* Step content */}
