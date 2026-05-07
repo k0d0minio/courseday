@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 import { useDayRealtime } from './useDayRealtime'
 import { useTranslations } from 'next-intl'
-import { Plus, Sparkles, SlidersHorizontal } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { DayNav } from '@/components/day-nav'
 import { DaySummaryCard } from '@/components/day-summary-card'
@@ -19,14 +19,11 @@ import { DayNotes } from '@/components/day-notes'
 import { DayInfoBanner } from '@/components/day-info-banner'
 import { StaffScheduleSection } from '@/components/staff-schedule-section'
 import { HandoverControls } from '@/components/handover-controls'
-import { QuickAddInput } from '@/components/quick-add-input'
 import type { ActivityQuickAddSeed } from '@/components/activity-form'
 import type { ReservationQuickAdd } from '@/components/reservation-form'
 import type { BreakfastQuickAdd } from '@/components/breakfast-form'
 import { Button } from '@/components/ui/button'
-import { MenuItem } from '@/components/ui/menu-item'
 import { KbdHint } from '@/components/kbd-hint'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useFeatureFlag } from '@/lib/feature-flags-context'
 import { useActiveDay } from '@/lib/active-day-context'
 import { useDayViewHotkeys } from '@/lib/keyboard-shortcuts'
@@ -238,6 +235,7 @@ function DayViewEditor({
   const showBreakfast = useFeatureFlag('breakfast_config')
   const showWeatherReporting = useFeatureFlag('weather_reporting')
   const showDailyBrief = useFeatureFlag('daily_brief')
+  const { pendingQuickAddResult, setPendingQuickAddResult } = useActiveDay()
 
   const {
     activities,
@@ -260,7 +258,6 @@ function DayViewEditor({
 
   const [breakfastModalOpen, setBreakfastModalOpen] = useState(false)
   const [editBreakfast, setEditBreakfast] = useState<BreakfastConfiguration | null>(null)
-  const [quickAddOpen, setQuickAddOpen] = useState(false)
   const [activityQuickAdd, setActivityQuickAdd] = useState<ActivityQuickAddSeed | null>(null)
   const [reservationQuickAdd, setReservationQuickAdd] = useState<ReservationQuickAdd | null>(null)
   const [breakfastQuickAdd, setBreakfastQuickAdd] = useState<BreakfastQuickAdd | null>(null)
@@ -473,14 +470,19 @@ function DayViewEditor({
   })
 
   useEffect(() => {
-    if (searchParams.get('openQuickAdd') === '1') {
-      setQuickAddOpen(true)
-      const params = new URLSearchParams(searchParams.toString())
-      params.delete('openQuickAdd')
-      const q = params.toString()
-      router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false })
+    if (!pendingQuickAddResult) return
+    setPendingQuickAddResult(null)
+    if (pendingQuickAddResult.type === 'success') {
+      handleQuickAddSuccess(pendingQuickAddResult.data, pendingQuickAddResult.raw)
+    } else {
+      handleQuickAddParseFailed(pendingQuickAddResult.raw, pendingQuickAddResult.error)
     }
-  }, [searchParams, router, pathname])
+  }, [
+    pendingQuickAddResult,
+    setPendingQuickAddResult,
+    handleQuickAddSuccess,
+    handleQuickAddParseFailed,
+  ])
 
   useEffect(() => {
     const create = searchParams.get('create')
@@ -508,36 +510,7 @@ function DayViewEditor({
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-3 py-4 sm:px-6 sm:py-8">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <DayNav date={date} today={today} />
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="shrink-0">
-              <SlidersHorizontal className="h-4 w-4" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="end" className="w-44 p-1">
-            <MenuItem
-              type="button"
-              onClick={() => {
-                returnFocusRef.current = null
-                setQuickAddOpen(true)
-              }}
-            >
-              <Sparkles className="h-4 w-4 shrink-0" />
-              {tQa('openButton')}
-            </MenuItem>
-          </PopoverContent>
-        </Popover>
-      </div>
-
-      <QuickAddInput
-        open={quickAddOpen}
-        onOpenChange={setQuickAddOpen}
-        contextDate={date}
-        onSuccess={handleQuickAddSuccess}
-        onParseFailed={handleQuickAddParseFailed}
-      />
+      <DayNav date={date} today={today} />
 
       {showHandover && (
         <HandoverControls

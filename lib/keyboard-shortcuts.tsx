@@ -30,6 +30,8 @@ type KeyboardShortcutsContextValue = {
   setCommandPaletteOpen: (open: boolean) => void
   shortcutsSheetOpen: boolean
   setShortcutsSheetOpen: (open: boolean) => void
+  quickAddOpen: boolean
+  setQuickAddOpen: (open: boolean) => void
   /** When true, day-level single-letter shortcuts should not run. */
   dayHotkeysSuspended: boolean
 }
@@ -47,8 +49,9 @@ export function useKeyboardShortcuts(): KeyboardShortcutsContextValue {
 export function KeyboardShortcutsProvider({ children }: { children: ReactNode }) {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
   const [shortcutsSheetOpen, setShortcutsSheetOpen] = useState(false)
+  const [quickAddOpen, setQuickAddOpen] = useState(false)
 
-  const dayHotkeysSuspended = commandPaletteOpen || shortcutsSheetOpen
+  const dayHotkeysSuspended = commandPaletteOpen || shortcutsSheetOpen || quickAddOpen
 
   const value = useMemo(
     () => ({
@@ -56,9 +59,11 @@ export function KeyboardShortcutsProvider({ children }: { children: ReactNode })
       setCommandPaletteOpen,
       shortcutsSheetOpen,
       setShortcutsSheetOpen,
+      quickAddOpen,
+      setQuickAddOpen,
       dayHotkeysSuspended,
     }),
-    [commandPaletteOpen, shortcutsSheetOpen, dayHotkeysSuspended]
+    [commandPaletteOpen, shortcutsSheetOpen, quickAddOpen, dayHotkeysSuspended]
   )
 
   useEffect(() => {
