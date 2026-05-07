@@ -1,16 +1,20 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { memo, useCallback, useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import { format, getDay, addMonths, subMonths, parseISO } from 'date-fns'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { CalendarDaySidebar } from '@/components/CalendarDaySidebar'
-import { AgendaView } from '@/components/AgendaView'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useActiveDay } from '@/lib/active-day-context'
 import { useFeatureFlag } from '@/lib/feature-flags-context'
+
+const CalendarDaySidebar = dynamic(() =>
+  import('@/components/CalendarDaySidebar').then((m) => m.CalendarDaySidebar)
+)
+const AgendaView = dynamic(() => import('@/components/AgendaView').then((m) => m.AgendaView))
 
 const VIEW_PREF_KEY = 'editor-home-view-preference'
 type ViewMode = 'calendar' | 'agenda'
@@ -86,13 +90,16 @@ export function HomeClient({ month, today, days: initialDays, variant = 'editor'
     localStorage.setItem(VIEW_PREF_KEY, mode)
   }
 
-  function handleDayCellClick(dateStr: string, isSelected: boolean) {
-    if (isEditor && viewMode === 'calendar' && isNarrowScreen) {
-      router.push(`/day/${dateStr}`)
-      return
-    }
-    setSelectedDate(isSelected ? null : dateStr)
-  }
+  const handleDayCellClick = useCallback(
+    (dateStr: string, isSelected: boolean) => {
+      if (isEditor && viewMode === 'calendar' && isNarrowScreen) {
+        router.push(`/day/${dateStr}`)
+        return
+      }
+      setSelectedDate(isSelected ? null : dateStr)
+    },
+    [isEditor, viewMode, isNarrowScreen, router]
+  )
 
   const dayMap = new Map(days.map((d) => [d.date, d]))
 
@@ -229,67 +236,18 @@ export function HomeClient({ month, today, days: initialDays, variant = 'editor'
               {Array.from({ length: daysInMonth }).map((_, i) => {
                 const dayNum = i + 1
                 const dateStr = `${month}-${String(dayNum).padStart(2, '0')}`
-                const summary = dayMap.get(dateStr)
-                const isToday = dateStr === today
-                const isSelected = dateStr === selectedDate
-
-                const cellLabel = [
-                  format(parseISO(dateStr), 'EEEE, MMMM d'),
-                  ...(summary
-                    ? [
-                        summary.golfCount > 0 ? `${summary.golfCount} activities` : '',
-                        showReservations && summary.reservationCount > 0
-                          ? `${summary.reservationCount} reservations`
-                          : '',
-                        showBreakfast && summary.breakfastCount > 0
-                          ? `${summary.breakfastCount} breakfast covers`
-                          : '',
-                      ].filter(Boolean)
-                    : []),
-                ].join(', ')
-
                 return (
-                  // Calendar day cell — bespoke grid cell, not a Button surface.
-                  // eslint-disable-next-line no-restricted-syntax
-                  <button
+                  <CalendarDayCell
                     key={dateStr}
-                    onClick={() => handleDayCellClick(dateStr, isSelected)}
-                    aria-pressed={isSelected}
-                    aria-current={isToday ? 'date' : undefined}
-                    aria-label={cellLabel}
-                    className={cn(
-                      'min-h-[60px] border-r border-b p-1 text-left transition-colors sm:min-h-[80px] sm:p-1.5',
-                      'hover:bg-accent/50 focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset',
-                      isSelected && 'bg-accent',
-                      !isSelected && 'bg-background'
-                    )}
-                  >
-                    {/* Date number */}
-                    <span
-                      className={cn(
-                        'mb-1 flex h-6 w-6 items-center justify-center rounded-full text-sm font-medium',
-                        isToday && 'bg-primary text-primary-foreground',
-                        !isToday && 'text-foreground'
-                      )}
-                    >
-                      {dayNum}
-                    </span>
-
-                    {/* Summary badges */}
-                    {summary && (
-                      <div className="flex flex-col gap-0.5">
-                        {summary.golfCount > 0 && (
-                          <SummaryPip label={`${summary.golfCount}A`} color="emerald" />
-                        )}
-                        {showReservations && summary.reservationCount > 0 && (
-                          <SummaryPip label={`${summary.reservationCount}R`} color="amber" />
-                        )}
-                        {showBreakfast && summary.breakfastCount > 0 && (
-                          <SummaryPip label={`${summary.breakfastCount}B`} color="blue" />
-                        )}
-                      </div>
-                    )}
-                  </button>
+                    dateStr={dateStr}
+                    dayNum={dayNum}
+                    isToday={dateStr === today}
+                    isSelected={dateStr === selectedDate}
+                    summary={dayMap.get(dateStr)}
+                    showReservations={showReservations}
+                    showBreakfast={showBreakfast}
+                    onClick={handleDayCellClick}
+                  />
                 )
               })}
             </div>
@@ -321,6 +279,82 @@ export function HomeClient({ month, today, days: initialDays, variant = 'editor'
 // ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
+
+type DayCellProps = {
+  dateStr: string
+  dayNum: number
+  isToday: boolean
+  isSelected: boolean
+  summary: DaySummary | undefined
+  showReservations: boolean
+  showBreakfast: boolean
+  onClick: (dateStr: string, isSelected: boolean) => void
+}
+
+const CalendarDayCell = memo(function CalendarDayCell({
+  dateStr,
+  dayNum,
+  isToday,
+  isSelected,
+  summary,
+  showReservations,
+  showBreakfast,
+  onClick,
+}: DayCellProps) {
+  const cellLabel = [
+    format(parseISO(dateStr), 'EEEE, MMMM d'),
+    ...(summary
+      ? [
+          summary.golfCount > 0 ? `${summary.golfCount} activities` : '',
+          showReservations && summary.reservationCount > 0
+            ? `${summary.reservationCount} reservations`
+            : '',
+          showBreakfast && summary.breakfastCount > 0
+            ? `${summary.breakfastCount} breakfast covers`
+            : '',
+        ].filter(Boolean)
+      : []),
+  ].join(', ')
+
+  return (
+    // Calendar day cell — bespoke grid cell, not a Button surface.
+    // eslint-disable-next-line no-restricted-syntax
+    <button
+      onClick={() => onClick(dateStr, isSelected)}
+      aria-pressed={isSelected}
+      aria-current={isToday ? 'date' : undefined}
+      aria-label={cellLabel}
+      className={cn(
+        'min-h-[60px] border-r border-b p-1 text-left transition-colors sm:min-h-[80px] sm:p-1.5',
+        'hover:bg-accent/50 focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset',
+        isSelected && 'bg-accent',
+        !isSelected && 'bg-background'
+      )}
+    >
+      <span
+        className={cn(
+          'mb-1 flex h-6 w-6 items-center justify-center rounded-full text-sm font-medium',
+          isToday && 'bg-primary text-primary-foreground',
+          !isToday && 'text-foreground'
+        )}
+      >
+        {dayNum}
+      </span>
+
+      {summary && (
+        <div className="flex flex-col gap-0.5">
+          {summary.golfCount > 0 && <SummaryPip label={`${summary.golfCount}A`} color="emerald" />}
+          {showReservations && summary.reservationCount > 0 && (
+            <SummaryPip label={`${summary.reservationCount}R`} color="amber" />
+          )}
+          {showBreakfast && summary.breakfastCount > 0 && (
+            <SummaryPip label={`${summary.breakfastCount}B`} color="blue" />
+          )}
+        </div>
+      )}
+    </button>
+  )
+})
 
 type PipColor = 'emerald' | 'blue' | 'amber'
 
