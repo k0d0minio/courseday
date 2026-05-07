@@ -202,6 +202,8 @@ function DayViewEditor({
   dayNotes,
   weather,
   dailyBrief,
+  briefStale,
+  briefIsEmpty,
   pocs,
   venueTypes,
   authState,
@@ -529,6 +531,8 @@ function DayViewEditor({
           showWeather={showWeatherReporting}
           initialBrief={showDailyBrief ? dailyBrief : null}
           showBrief={showDailyBrief}
+          briefStale={showDailyBrief ? briefStale : false}
+          briefIsEmpty={showDailyBrief ? briefIsEmpty : false}
           dateIso={date}
           dayId={dayId}
           isEditor

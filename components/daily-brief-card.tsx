@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
-import { ClipboardCopy, Loader2, Sparkles } from 'lucide-react'
+import { ClipboardCopy, Loader2, RefreshCw, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { generateDailyBrief } from '@/app/actions/daily-brief'
@@ -17,20 +17,31 @@ type Props = {
   dayId: string
   initialBrief: DailyBriefRecord | null
   isEditor: boolean
+  briefStale?: boolean
+  briefIsEmpty?: boolean
 }
 
-export function DailyBriefCard({ dateIso, dayId, initialBrief, isEditor }: Props) {
+export function DailyBriefCard({
+  dateIso,
+  dayId,
+  initialBrief,
+  isEditor,
+  briefStale: initialBriefStale = false,
+  briefIsEmpty = false,
+}: Props) {
   const t = useTranslations('Tenant.dailyBrief')
   const router = useRouter()
   const [brief, setBrief] = useState<DailyBriefRecord | null>(initialBrief)
+  const [stale, setStale] = useState(initialBriefStale)
   const [loading, setLoading] = useState(false)
   const lastRegenerateAt = useRef(0)
 
   useEffect(() => {
     setBrief(initialBrief)
-  }, [initialBrief, dayId])
+    setStale(initialBriefStale)
+  }, [initialBrief, initialBriefStale, dayId])
 
-  const runGenerate = useCallback(async () => {
+  const runRegenerate = useCallback(async () => {
     const now = Date.now()
     if (now - lastRegenerateAt.current < REGENERATE_DEBOUNCE_MS) {
       toast.message(t('debounced'))
@@ -46,6 +57,7 @@ export function DailyBriefCard({ dateIso, dayId, initialBrief, isEditor }: Props
         return
       }
       setBrief(result.data)
+      setStale(false)
       toast.success(t('generated'))
       router.refresh()
     } finally {
@@ -81,30 +93,47 @@ export function DailyBriefCard({ dateIso, dayId, initialBrief, isEditor }: Props
               {t('copy')}
             </Button>
           )}
-          {isEditor && (
-            <Button type="button" size="sm" onClick={() => void runGenerate()} disabled={loading}>
+          {isEditor && hasBrief && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void runRegenerate()}
+              disabled={loading}
+            >
               {loading ? (
                 <Loader2 className="mr-1 h-4 w-4 animate-spin" />
               ) : (
-                <Sparkles className="mr-1 h-4 w-4" />
+                <RefreshCw className="mr-1 h-4 w-4" />
               )}
-              {hasBrief ? t('regenerate') : t('generate')}
+              {t('regenerate')}
             </Button>
           )}
         </div>
       </div>
 
       <div className="space-y-3 p-4">
-        {isEditor && (
-          <p className="rounded-md border border-amber-200/60 bg-amber-50 px-2.5 py-2 text-xs text-amber-800/90 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200/90">
-            {t('costWarning')}
-          </p>
+        {stale && isEditor && (
+          <div className="flex items-center justify-between gap-2 rounded-md border border-amber-200/60 bg-amber-50 px-2.5 py-2 dark:border-amber-900/50 dark:bg-amber-950/40">
+            <p className="text-xs text-amber-800/90 dark:text-amber-200/90">{t('stale')}</p>
+            <Button
+              type="button"
+              size="xs"
+              variant="outline"
+              onClick={() => void runRegenerate()}
+              disabled={loading}
+              className="shrink-0"
+            >
+              <RefreshCw className="mr-1 h-3 w-3" />
+              {t('regenerate')}
+            </Button>
+          </div>
         )}
 
-        {!hasBrief && !loading && (
-          <p className="text-muted-foreground text-sm">
-            {isEditor ? t('emptyEditor') : t('emptyViewer')}
-          </p>
+        {briefIsEmpty && <p className="text-muted-foreground text-sm">{t('empty')}</p>}
+
+        {!hasBrief && !briefIsEmpty && !loading && (
+          <p className="text-muted-foreground text-sm">{t('emptyViewer')}</p>
         )}
 
         {loading && !hasBrief && (
