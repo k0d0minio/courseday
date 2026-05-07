@@ -6,12 +6,8 @@ import { DayNav } from '@/components/day-nav'
 import { DayNotes } from '@/components/day-notes'
 import { WeatherCard } from '@/components/weather-card'
 import { TableBreakdownDisplay } from '@/components/table-breakdown-display'
-import { HandoverControls, type HandoverCounts } from '@/components/handover-controls'
-import { Badge } from '@/components/ui/badge'
 import { useFeatureFlag } from '@/lib/feature-flags-context'
 import { ShiftCard } from '@/components/shift-card'
-import { handoverRowStatus } from '@/lib/handover'
-import type { HandoverRemovedItem } from '@/app/actions/day-view-receipts'
 import type {
   ActivityWithRelations,
   Reservation,
@@ -41,13 +37,6 @@ type Props = {
   weather: WeatherData | null
   dailyBrief: DailyBriefRecord | null
   shifts: ShiftWithAssignee[]
-  handoverEnabled: boolean
-  onHandoverEnabledChange: (enabled: boolean) => void
-  handoverBaselineIso: string | null
-  handoverRemoved: HandoverRemovedItem[]
-  handoverCounts: HandoverCounts
-  onHandoverCaughtUp: (nextBaselineIso: string) => void
-  showHandover: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -66,13 +55,6 @@ export function ViewerDayDashboard({
   weather,
   dailyBrief,
   shifts,
-  handoverEnabled,
-  onHandoverEnabledChange,
-  handoverBaselineIso,
-  handoverRemoved,
-  handoverCounts,
-  onHandoverCaughtUp,
-  showHandover,
 }: Props) {
   const { impersonationRole } = useAuth()
 
@@ -100,17 +82,6 @@ export function ViewerDayDashboard({
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-6 sm:px-6">
       <DayNav date={date} today={today} />
 
-      {showHandover && (
-        <HandoverControls
-          dayId={dayId}
-          removed={handoverRemoved}
-          handoverEnabled={handoverEnabled}
-          onHandoverEnabledChange={onHandoverEnabledChange}
-          counts={handoverCounts}
-          onCaughtUp={onHandoverCaughtUp}
-        />
-      )}
-
       {showDailyBrief && (
         <DailyBriefCard dateIso={date} dayId={dayId} initialBrief={dailyBrief} isEditor={false} />
       )}
@@ -124,8 +95,6 @@ export function ViewerDayDashboard({
         onNotesChange={setDayNotes}
         isEditor={false}
         currentUserId={undefined}
-        handoverEnabled={handoverEnabled}
-        handoverBaselineIso={handoverBaselineIso}
       />
 
       {/* Summary — large numbers for at-a-glance reading */}
@@ -154,16 +123,7 @@ export function ViewerDayDashboard({
         emptyLabel={td('noBreakfasts')}
       >
         {visibleBreakfastConfigs.map((item) => (
-          <BreakfastRow
-            key={item.id}
-            item={item}
-            t={tb}
-            handoverStatus={
-              handoverEnabled && handoverBaselineIso
-                ? handoverRowStatus(item.created_at, item.updated_at, handoverBaselineIso)
-                : null
-            }
-          />
+          <BreakfastRow key={item.id} item={item} t={tb} />
         ))}
       </ViewerSection>
 
@@ -174,16 +134,7 @@ export function ViewerDayDashboard({
         emptyLabel={td('noEntries')}
       >
         {activities.map((item) => (
-          <ActivityRow
-            key={item.id}
-            item={item}
-            t={te}
-            handoverStatus={
-              handoverEnabled && handoverBaselineIso
-                ? handoverRowStatus(item.created_at, item.updated_at, handoverBaselineIso)
-                : null
-            }
-          />
+          <ActivityRow key={item.id} item={item} t={te} />
         ))}
       </ViewerSection>
 
@@ -194,15 +145,7 @@ export function ViewerDayDashboard({
         emptyLabel={td('noReservations')}
       >
         {visibleReservations.map((item) => (
-          <ReservationRow
-            key={item.id}
-            item={item}
-            handoverStatus={
-              handoverEnabled && handoverBaselineIso
-                ? handoverRowStatus(item.created_at, item.updated_at, handoverBaselineIso)
-                : null
-            }
-          />
+          <ReservationRow key={item.id} item={item} />
         ))}
       </ViewerSection>
     </div>
@@ -250,13 +193,10 @@ function ViewerSection({
 function BreakfastRow({
   item,
   t,
-  handoverStatus,
 }: {
   item: BreakfastConfiguration
   t: ReturnType<typeof useTranslations<'Tenant.breakfastCard'>>
-  handoverStatus: ReturnType<typeof handoverRowStatus>
 }) {
-  const th = useTranslations('Tenant.handover')
   const breakdown = Array.isArray(item.table_breakdown) ? (item.table_breakdown as number[]) : []
 
   return (
@@ -264,16 +204,6 @@ function BreakfastRow({
       <div className="flex items-start justify-between gap-3">
         <p className="flex flex-wrap items-center gap-2 font-semibold">
           {item.group_name ?? t('unnamedGroup')}
-          {handoverStatus === 'new' && (
-            <Badge variant="default" className="shrink-0 text-[10px] uppercase">
-              {th('badgeNew')}
-            </Badge>
-          )}
-          {handoverStatus === 'edited' && (
-            <Badge variant="secondary" className="shrink-0 text-[10px] uppercase">
-              {th('badgeEdited')}
-            </Badge>
-          )}
         </p>
         <div className="flex shrink-0 items-center gap-3 text-sm">
           {item.start_time && (
@@ -293,13 +223,10 @@ function BreakfastRow({
 function ActivityRow({
   item,
   t,
-  handoverStatus,
 }: {
   item: ActivityWithRelations
   t: ReturnType<typeof useTranslations<'Tenant.entry'>>
-  handoverStatus: ReturnType<typeof handoverRowStatus>
 }) {
-  const th = useTranslations('Tenant.handover')
   return (
     <div className="bg-card space-y-1.5 rounded-lg border p-4">
       {item.tags && item.tags.length > 0 && (
@@ -311,19 +238,7 @@ function ActivityRow({
           ))}
         </div>
       )}
-      <p className="flex flex-wrap items-center gap-2 font-semibold">
-        {item.title}
-        {handoverStatus === 'new' && (
-          <Badge variant="default" className="shrink-0 text-[10px] uppercase">
-            {th('badgeNew')}
-          </Badge>
-        )}
-        {handoverStatus === 'edited' && (
-          <Badge variant="secondary" className="shrink-0 text-[10px] uppercase">
-            {th('badgeEdited')}
-          </Badge>
-        )}
-      </p>
+      <p className="flex flex-wrap items-center gap-2 font-semibold">{item.title}</p>
       <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-0.5 text-sm">
         {(item.start_time || item.end_time) && (
           <span>{formatTimeRange(item.start_time, item.end_time, t)}</span>
@@ -339,15 +254,8 @@ function ActivityRow({
   )
 }
 
-function ReservationRow({
-  item,
-  handoverStatus,
-}: {
-  item: Reservation
-  handoverStatus: ReturnType<typeof handoverRowStatus>
-}) {
+function ReservationRow({ item }: { item: Reservation }) {
   const tr = useTranslations('Tenant.reservation')
-  const th = useTranslations('Tenant.handover')
   const breakdown = Array.isArray(item.table_breakdown) ? (item.table_breakdown as number[]) : []
 
   return (
@@ -355,16 +263,6 @@ function ReservationRow({
       <div className="flex items-start justify-between gap-3">
         <p className="flex flex-wrap items-center gap-2 font-semibold">
           {item.guest_name ?? tr('fallbackName')}
-          {handoverStatus === 'new' && (
-            <Badge variant="default" className="shrink-0 text-[10px] uppercase">
-              {th('badgeNew')}
-            </Badge>
-          )}
-          {handoverStatus === 'edited' && (
-            <Badge variant="secondary" className="shrink-0 text-[10px] uppercase">
-              {th('badgeEdited')}
-            </Badge>
-          )}
         </p>
         <div className="flex shrink-0 items-center gap-3 text-sm">
           {(item.start_time || item.end_time) && (

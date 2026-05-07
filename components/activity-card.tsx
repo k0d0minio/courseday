@@ -11,7 +11,6 @@ import { mutateWithOfflineQueue } from '@/lib/day-mutation-client'
 import { useTenant } from '@/lib/tenant-context'
 import type { ActivityWithRelations } from '@/types/index'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   AlertDialog,
@@ -31,19 +30,10 @@ type Props = {
   onDeleted: (id: string, mode: 'single' | 'all' | 'from-here') => void
   /** Called with the edit control element before opening the editor (focus return). */
   onBeforeEdit?: (trigger: HTMLElement) => void
-  handoverStatus?: 'new' | 'edited' | null
 }
 
-export function ActivityCard({
-  item,
-  isEditor,
-  onEdit,
-  onDeleted,
-  onBeforeEdit,
-  handoverStatus,
-}: Props) {
+export function ActivityCard({ item, isEditor, onEdit, onDeleted, onBeforeEdit }: Props) {
   const t = useTranslations('Tenant.entry')
-  const th = useTranslations('Tenant.handover')
   const tChecklist = useTranslations('Tenant.checklists')
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [checklistOpen, setChecklistOpen] = useState(false)
@@ -130,16 +120,6 @@ export function ActivityCard({
               {/* Title */}
               <p className="flex flex-wrap items-center gap-2 truncate leading-snug font-medium">
                 {item.title}
-                {handoverStatus === 'new' && (
-                  <Badge variant="default" className="shrink-0 text-[10px] uppercase">
-                    {th('badgeNew')}
-                  </Badge>
-                )}
-                {handoverStatus === 'edited' && (
-                  <Badge variant="secondary" className="shrink-0 text-[10px] uppercase">
-                    {th('badgeEdited')}
-                  </Badge>
-                )}
                 {isPending && (
                   <Loader2 className="text-muted-foreground h-3.5 w-3.5 animate-spin" />
                 )}

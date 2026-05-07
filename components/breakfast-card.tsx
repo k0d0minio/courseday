@@ -11,7 +11,6 @@ import { mutateWithOfflineQueue } from '@/lib/day-mutation-client'
 import { useTenant } from '@/lib/tenant-context'
 import type { BreakfastConfiguration } from '@/types/index'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   AlertDialog,
@@ -30,19 +29,10 @@ type Props = {
   onEdit: (item: BreakfastConfiguration) => void
   onDeleted: (id: string) => void
   onBeforeEdit?: (trigger: HTMLElement) => void
-  handoverStatus?: 'new' | 'edited' | null
 }
 
-export function BreakfastCard({
-  item,
-  isEditor,
-  onEdit,
-  onDeleted,
-  onBeforeEdit,
-  handoverStatus,
-}: Props) {
+export function BreakfastCard({ item, isEditor, onEdit, onDeleted, onBeforeEdit }: Props) {
   const t = useTranslations('Tenant.breakfastCard')
-  const th = useTranslations('Tenant.handover')
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [isDeleting, startDeleteTransition] = useTransition()
   const { tenantSlug } = useTenant()
@@ -80,16 +70,6 @@ export function BreakfastCard({
               <div className="flex items-baseline gap-2">
                 <p className="flex flex-wrap items-center gap-2 font-medium">
                   {item.group_name ?? t('unnamedGroup')}
-                  {handoverStatus === 'new' && (
-                    <Badge variant="default" className="shrink-0 text-[10px] uppercase">
-                      {th('badgeNew')}
-                    </Badge>
-                  )}
-                  {handoverStatus === 'edited' && (
-                    <Badge variant="secondary" className="shrink-0 text-[10px] uppercase">
-                      {th('badgeEdited')}
-                    </Badge>
-                  )}
                   {isPending && (
                     <Loader2 className="text-muted-foreground h-3.5 w-3.5 animate-spin" />
                   )}

@@ -233,22 +233,6 @@
       "addActivity": "Activité",
       "addReservation": "Ajouter une réservation"
     },
-    "handover": {
-      "toggle": "Passation",
-      "toggleAria": "Mode passation",
-      "caughtUp": "Marquer comme à jour",
-      "caughtUpToast": "Vous êtes à jour.",
-      "summary": "Depuis votre dernière visite : {new} nouveau(x), {edited} modifié(s), {removed} supprimé(s)",
-      "summaryEmpty": "Rien de nouveau depuis votre dernière visite.",
-      "removedHeading": "Supprimé(s) ({count})",
-      "removedEmpty": "Aucun élément supprimé depuis votre dernière visite.",
-      "badgeNew": "Nouveau",
-      "badgeEdited": "Modifié",
-      "kindActivity": "Activité",
-      "kindReservation": "Réservation",
-      "kindBreakfast": "Petit-déjeuner",
-      "kindNote": "Note"
-    },
     "dailyBrief": {
       "title": "Briefing du jour",
       "subtitle": "Résumé IA pour l'équipe — couverts, allergènes, risques",
