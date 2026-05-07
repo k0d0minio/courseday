@@ -21,8 +21,14 @@ import { redis } from '@/lib/redis'
 import { getUser } from '@/app/actions/auth'
 import { isUserSuperadmin } from '@/lib/superadmin'
 import { createSupabaseServiceClient } from '@/lib/supabase-server'
-import { deleteTenant } from '@/app/actions/tenants'
-import { assertFailure } from '@/tests/helpers/action-response'
+import {
+  deleteTenant,
+  getTenantBySlug,
+  suspendTenant,
+  reactivateTenant,
+  archiveTenant,
+} from '@/app/actions/tenants'
+import { assertFailure, assertSuccess } from '@/tests/helpers/action-response'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -308,5 +314,147 @@ describe('deleteTenant', () => {
     const res = await deleteTenant(TENANT_ID)
     assertFailure(res)
     expect(res.error).toMatch(/failed to delete tenant/i)
+  })
+})
+
+// ── getTenantBySlug ───────────────────────────────────────────────────────────
+
+describe('getTenantBySlug', () => {
+  const REDIS_DATA = JSON.stringify({
+    id: TENANT_ID,
+    slug: TENANT_SLUG,
+    name: 'My Club',
+    language: 'en',
+    status: 'active',
+  })
+
+  beforeEach(() => vi.clearAllMocks())
+
+  it('returns cached data from Redis when key exists', async () => {
+    vi.mocked(redis.get).mockResolvedValue(REDIS_DATA)
+    const res = await getTenantBySlug(TENANT_SLUG)
+    assertSuccess(res)
+    expect(res.data.slug).toBe(TENANT_SLUG)
+    expect(createSupabaseServiceClient).not.toHaveBeenCalled()
+  })
+
+  it('falls back to Supabase when Redis miss and backfills cache', async () => {
+    vi.mocked(redis.get).mockResolvedValue(null)
+    const tenantRow = {
+      id: TENANT_ID,
+      name: 'My Club',
+      slug: TENANT_SLUG,
+      language: 'en',
+      status: 'active',
+    }
+    vi.mocked(createSupabaseServiceClient).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: tenantRow, error: null }),
+      }),
+    } as never)
+
+    const res = await getTenantBySlug(TENANT_SLUG)
+    assertSuccess(res)
+    expect(res.data.id).toBe(TENANT_ID)
+    expect(vi.mocked(redis.set)).toHaveBeenCalled()
+  })
+
+  it('returns error when tenant not found in Supabase', async () => {
+    vi.mocked(redis.get).mockResolvedValue(null)
+    vi.mocked(createSupabaseServiceClient).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+      }),
+    } as never)
+
+    const res = await getTenantBySlug(TENANT_SLUG)
+    assertFailure(res)
+    expect(res.error).toMatch(/not found/i)
+  })
+
+  it('falls back to Supabase when Redis throws', async () => {
+    vi.mocked(redis.get).mockRejectedValue(new Error('redis down'))
+    const tenantRow = {
+      id: TENANT_ID,
+      name: 'My Club',
+      slug: TENANT_SLUG,
+      language: 'fr',
+      status: 'active',
+    }
+    vi.mocked(createSupabaseServiceClient).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: tenantRow, error: null }),
+      }),
+    } as never)
+
+    const res = await getTenantBySlug(TENANT_SLUG)
+    assertSuccess(res)
+    expect(res.data.language).toBe('fr')
+  })
+})
+
+// ── suspendTenant / reactivateTenant / archiveTenant ─────────────────────────
+
+describe('setTenantStatus helpers', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  function makeStatusClient(
+    updated: Record<string, unknown> | null,
+    error: { message: string } | null = null
+  ) {
+    return {
+      from: vi.fn().mockReturnValue({
+        update: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: updated, error }),
+      }),
+    }
+  }
+
+  const UPDATED = {
+    id: TENANT_ID,
+    name: 'My Club',
+    slug: TENANT_SLUG,
+    language: 'en',
+    status: 'suspended',
+  }
+
+  it('suspendTenant succeeds and refreshes Redis', async () => {
+    vi.mocked(createSupabaseServiceClient).mockReturnValue(makeStatusClient(UPDATED) as never)
+    const res = await suspendTenant(TENANT_ID)
+    expect(res.success).toBe(true)
+    expect(vi.mocked(redis.set)).toHaveBeenCalled()
+  })
+
+  it('reactivateTenant succeeds', async () => {
+    vi.mocked(createSupabaseServiceClient).mockReturnValue(
+      makeStatusClient({ ...UPDATED, status: 'active' }) as never
+    )
+    const res = await reactivateTenant(TENANT_ID)
+    expect(res.success).toBe(true)
+  })
+
+  it('archiveTenant succeeds', async () => {
+    vi.mocked(createSupabaseServiceClient).mockReturnValue(
+      makeStatusClient({ ...UPDATED, status: 'archived' }) as never
+    )
+    const res = await archiveTenant(TENANT_ID)
+    expect(res.success).toBe(true)
+  })
+
+  it('returns error when DB update fails', async () => {
+    vi.mocked(createSupabaseServiceClient).mockReturnValue(
+      makeStatusClient(null, { message: 'db error' }) as never
+    )
+    const res = await suspendTenant(TENANT_ID)
+    assertFailure(res)
+    expect(res.error).toMatch(/failed to update/i)
   })
 })
