@@ -15,7 +15,6 @@ export const SETTINGS_ROUTES = [
   { href: '/admin/settings/branding', labelKey: 'tabBranding' },
   { href: '/admin/settings/language', labelKey: 'tabLanguage' },
   { href: '/admin/settings/members', labelKey: 'tabMembers' },
-  { href: '/admin/settings/templates', labelKey: 'tabTemplates' },
   { href: '/admin/settings/feedback', labelKey: 'tabFeedback' },
 ] as const
 
