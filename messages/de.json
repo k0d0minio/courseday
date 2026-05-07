@@ -69,6 +69,7 @@
       "checkEmailDomain": "Dann melden Sie sich an bei {domain}",
       "checkEmailBodyPrefix": "Wir haben einen Bestätigungslink gesendet an",
       "checkEmailBodySuffix": "Klicken Sie darauf, um Ihr Konto zu aktivieren.",
+      "checkEmailSpamHint": "Falls Sie sie nicht finden, prüfen Sie bitte Ihren Spam- oder Junk-Ordner.",
       "checkEmailDomainPrefix": "Dann melden Sie sich an bei"
     }
   },

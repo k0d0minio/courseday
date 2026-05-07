@@ -168,6 +168,7 @@
       "checkEmailDomain": "Connectez-vous ensuite sur {domain}",
       "checkEmailBodyPrefix": "Nous avons envoyé un lien de confirmation à",
       "checkEmailBodySuffix": "Cliquez dessus pour activer votre compte.",
+      "checkEmailSpamHint": "Si vous ne le voyez pas, vérifiez votre dossier spam ou courrier indésirable.",
       "checkEmailDomainPrefix": "Connectez-vous ensuite sur"
     }
   },

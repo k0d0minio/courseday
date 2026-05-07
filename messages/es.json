@@ -69,6 +69,7 @@
       "checkEmailDomain": "Luego inicia sesión en {domain}",
       "checkEmailBodyPrefix": "Hemos enviado un enlace de confirmación a",
       "checkEmailBodySuffix": "Haz clic en él para activar tu cuenta.",
+      "checkEmailSpamHint": "Si no lo ves, revisa tu carpeta de spam o correo no deseado.",
       "checkEmailDomainPrefix": "Luego inicia sesión en"
     }
   },

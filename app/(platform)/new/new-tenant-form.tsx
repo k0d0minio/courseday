@@ -73,6 +73,9 @@ export function NewTenantForm() {
                 {t('checkEmailBodyPrefix')} <strong>{email}</strong>. {t('checkEmailBodySuffix')}
               </p>
               <p className="text-sm text-muted-foreground">
+                {t('checkEmailSpamHint')}
+              </p>
+              <p className="text-sm text-muted-foreground">
                 {t('checkEmailDomainPrefix')}{' '}
                 <strong>{createdSlug}.{rootDomain}</strong>
               </p>
