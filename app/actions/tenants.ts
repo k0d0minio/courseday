@@ -260,17 +260,50 @@ export async function deleteTenant(id: string): Promise<ActionResponse> {
 
   const serviceClient = createSupabaseServiceClient()
 
-  // Fetch slug before deleting so we can remove the Redis key
-  const { data: tenant } = await serviceClient.from('tenants').select('slug').eq('id', id).single()
+  const { data: tenant } = await serviceClient
+    .from('tenants')
+    .select('id, slug')
+    .eq('id', id)
+    .single()
 
   if (!tenant) {
     return { success: false, error: 'Tenant not found.' }
   }
 
+  // Collect member user_ids before cascade removes memberships
+  const { data: memberships } = await serviceClient
+    .from('memberships')
+    .select('user_id')
+    .eq('tenant_id', id)
+
+  const memberUserIds = (memberships ?? []).map((m: { user_id: string }) => m.user_id)
+
+  // Remove all storage objects under {tenant_id}/ in tenant-logos
+  const { data: storageObjects } = await serviceClient.storage.from('tenant-logos').list(id)
+
+  if (storageObjects && storageObjects.length > 0) {
+    const paths = storageObjects.map((obj: { name: string }) => `${id}/${obj.name}`)
+    await serviceClient.storage.from('tenant-logos').remove(paths)
+  }
+
+  // Delete tenant row — cascades all child tables (activities, shifts, etc.)
   const { error } = await serviceClient.from('tenants').delete().eq('id', id)
 
   if (error) {
     return { success: false, error: 'Failed to delete tenant.' }
+  }
+
+  // Delete auth users whose only membership was this tenant
+  for (const userId of memberUserIds) {
+    const { data: remaining } = await serviceClient
+      .from('memberships')
+      .select('tenant_id')
+      .eq('user_id', userId)
+      .limit(1)
+
+    if (!remaining || remaining.length === 0) {
+      await serviceClient.auth.admin.deleteUser(userId)
+    }
   }
 
   await redis.del(`subdomain:${tenant.slug}`)
