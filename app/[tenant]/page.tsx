@@ -41,12 +41,12 @@ export default async function TenantHomePage({
 
   const today = getTenantToday(timezone)
 
-  // Viewers: agenda-only home (no calendar). Editors: full calendar + agenda.
+  // Staff: agenda-only home (no calendar). Editors: full calendar + agenda.
   if (role !== 'editor') {
     return (
       <>
         {!onboardingCompleted && <OnboardingBanner />}
-        <HomeClient variant="viewer" month={today.slice(0, 7)} today={today} days={[]} />
+        <HomeClient variant="staff" month={today.slice(0, 7)} today={today} days={[]} />
       </>
     )
   }

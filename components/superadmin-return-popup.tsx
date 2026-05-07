@@ -2,7 +2,7 @@ import { ArrowLeftRight } from 'lucide-react'
 import { protocol, rootDomain } from '@/lib/utils'
 
 type SuperadminReturnPopupProps = {
-  role: 'editor' | 'viewer'
+  role: 'editor' | 'staff'
 }
 
 export function SuperadminReturnPopup({ role }: SuperadminReturnPopupProps) {

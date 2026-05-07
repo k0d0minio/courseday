@@ -27,13 +27,13 @@ export async function getSuperadminStatus(): Promise<boolean> {
 }
 
 /**
- * Returns impersonated role when a superadmin is viewing a tenant as editor/viewer.
+ * Returns impersonated role when a superadmin is viewing a tenant as editor/staff.
  * Returns null when no valid impersonation context exists.
  */
 export async function getSuperadminImpersonationRole(
   tenantId: string,
   userId: string
-): Promise<'editor' | 'viewer' | null> {
+): Promise<'editor' | 'staff' | null> {
   const cookieStore = await cookies()
   const parsed = parseSuperadminRoleCookie(cookieStore.get(SUPERADMIN_ROLE_COOKIE)?.value)
   if (!parsed) return null

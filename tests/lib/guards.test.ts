@@ -119,12 +119,12 @@ describe('requireTenantMember', () => {
     expect(notFound).toHaveBeenCalled()
   })
 
-  it('returns { user, role } for a viewer member', async () => {
+  it('returns { user, role } for a staff member', async () => {
     vi.mocked(getUser).mockResolvedValue(MOCK_USER as never)
-    vi.mocked(getUserRole).mockResolvedValue('viewer')
+    vi.mocked(getUserRole).mockResolvedValue('staff')
     const result = await requireTenantMember()
     expect(result.user).toBe(MOCK_USER)
-    expect(result.role).toBe('viewer')
+    expect(result.role).toBe('staff')
     expect(redirect).not.toHaveBeenCalled()
     expect(notFound).not.toHaveBeenCalled()
   })
@@ -147,9 +147,9 @@ describe('requireTenantEditor', () => {
     })
   })
 
-  it('calls redirect to / when user is a viewer', async () => {
+  it('calls redirect to / when user is a staff member', async () => {
     vi.mocked(getUser).mockResolvedValue(MOCK_USER as never)
-    vi.mocked(getUserRole).mockResolvedValue('viewer')
+    vi.mocked(getUserRole).mockResolvedValue('staff')
     await expect(requireTenantEditor()).rejects.toThrow('NEXT_REDIRECT')
     expect(redirect).toHaveBeenCalledWith('/')
   })

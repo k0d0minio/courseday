@@ -9,43 +9,32 @@ import type {
   Reservation,
   BreakfastConfiguration,
   Shift,
-  ShiftWithStaffMember,
-  StaffMember,
+  ShiftAssignee,
+  ShiftWithAssignee,
 } from '@/types/index'
 
 type SetActivities = React.Dispatch<React.SetStateAction<ActivityWithRelations[]>>
 type SetReservations = React.Dispatch<React.SetStateAction<Reservation[]>>
 type SetBreakfastConfigs = React.Dispatch<React.SetStateAction<BreakfastConfiguration[]>>
-type SetShifts = React.Dispatch<React.SetStateAction<ShiftWithStaffMember[]>>
+type SetShifts = React.Dispatch<React.SetStateAction<ShiftWithAssignee[]>>
 type SetDayNotes = React.Dispatch<React.SetStateAction<DayNote[]>>
 
 /**
- * Subscribes to Postgres changes for the three day-view tables scoped to the
- * given `dayId`. State setters are patched on each event:
- *
- * - INSERT: append (skip if already present, e.g. optimistic update from this session)
- * - UPDATE: replace by id (preserves existing joined fields like poc/venue_type
- *   that realtime rows don't carry)
- * - DELETE: remove by id
- *
- * The channel is removed on component unmount or when `dayId` changes (navigation).
+ * Subscribes to Postgres changes for the day-view tables scoped to the given
+ * `dayId`. State setters are patched on each event.
  *
  * Limitation: calendar aggregate counts are not updated in real-time.
- * Realtime only applies to the day view.
  */
-function shiftWithMemberFromRow(row: Shift, members: StaffMember[]): ShiftWithStaffMember {
-  const staff_member =
-    members.find((m) => m.id === row.staff_member_id) ??
+function shiftWithAssigneeFromRow(row: Shift, assignees: ShiftAssignee[]): ShiftWithAssignee {
+  const assignee =
+    assignees.find((a) => a.user_id === row.user_id) ??
     ({
-      id: row.staff_member_id,
-      tenant_id: row.tenant_id,
-      name: '—',
-      role: '',
-      active: false,
-      created_at: row.created_at,
-    } satisfies StaffMember)
+      user_id: row.user_id,
+      email: '',
+      display_name: '—',
+    } satisfies ShiftAssignee)
 
-  return { ...row, staff_member }
+  return { ...row, assignee }
 }
 
 export function useDayRealtime(
@@ -54,13 +43,13 @@ export function useDayRealtime(
   setReservations: SetReservations,
   setBreakfastConfigs: SetBreakfastConfigs,
   setShifts: SetShifts,
-  staffMembers: StaffMember[],
+  assignees: ShiftAssignee[],
   subscribeShifts: boolean,
   setDayNotes: SetDayNotes
 ) {
-  const staffRef = useRef(staffMembers)
+  const assigneesRef = useRef(assignees)
   // eslint-disable-next-line react-hooks/refs
-  staffRef.current = staffMembers
+  assigneesRef.current = assignees
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient()
@@ -100,8 +89,6 @@ export function useDayRealtime(
               setActivities((prev) => prev.filter((a) => a.id !== row.id))
               return
             }
-            // Merge to preserve joined fields (venue_type, poc, tags) that
-            // the realtime payload doesn't include.
             setActivities((prev) => prev.map((a) => (a.id === row.id ? { ...a, ...row } : a)))
           } else if (payload.eventType === 'DELETE') {
             const id = (payload.old as { id: string }).id
@@ -288,8 +275,8 @@ export function useDayRealtime(
             const row = payload.new as Shift
             setShifts((prev) => {
               if (prev.some((s) => s.id === row.id)) return prev
-              const withMember = shiftWithMemberFromRow(row, staffRef.current)
-              return [...prev, withMember].sort((a, b) =>
+              const withAssignee = shiftWithAssigneeFromRow(row, assigneesRef.current)
+              return [...prev, withAssignee].sort((a, b) =>
                 (a.start_time ?? '').localeCompare(b.start_time ?? '')
               )
             })
@@ -301,9 +288,8 @@ export function useDayRealtime(
                   ? {
                       ...s,
                       ...row,
-                      staff_member:
-                        staffRef.current.find((m) => m.id === row.staff_member_id) ??
-                        s.staff_member,
+                      assignee:
+                        assigneesRef.current.find((a) => a.user_id === row.user_id) ?? s.assignee,
                     }
                   : s
               )

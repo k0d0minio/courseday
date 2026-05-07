@@ -35,7 +35,7 @@ import type {
   ActivityWithRelations,
   Reservation,
   BreakfastConfiguration,
-  ShiftWithStaffMember,
+  ShiftWithAssignee,
 } from '@/types/index'
 import type { DayViewProps } from './page'
 import type { QuickAddParseData } from '@/lib/quick-add-types'
@@ -49,7 +49,7 @@ function useDayViewLiveState(p: DayViewProps, staffScheduleEnabled: boolean) {
   const [breakfastConfigs, setBreakfastConfigs] = useState<BreakfastConfiguration[]>(
     p.breakfastConfigs
   )
-  const [shifts, setShifts] = useState<ShiftWithStaffMember[]>(p.shifts)
+  const [shifts, setShifts] = useState<ShiftWithAssignee[]>(p.shifts)
   const [dayNotes, setDayNotes] = useState<DayNote[]>(p.dayNotes)
 
   useDayRealtime(
@@ -58,7 +58,7 @@ function useDayViewLiveState(p: DayViewProps, staffScheduleEnabled: boolean) {
     setReservations,
     setBreakfastConfigs,
     setShifts,
-    p.staffMembers,
+    p.shiftAssignees,
     staffScheduleEnabled,
     setDayNotes
   )
@@ -207,8 +207,7 @@ function DayViewEditor({
   pocs,
   venueTypes,
   authState,
-  staffMembers,
-  staffRoles,
+  shiftAssignees,
   live,
   showStaffSchedule,
   handoverEnabled,
@@ -573,8 +572,7 @@ function DayViewEditor({
         <StaffScheduleSection
           dayId={dayId}
           shifts={shifts}
-          staffMembers={staffMembers}
-          staffRoles={staffRoles}
+          assignees={shiftAssignees}
           isEditor={authState.isEditor}
           onShiftsChange={setShifts}
         />
