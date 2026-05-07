@@ -10,6 +10,7 @@ import { ensureDayExists } from '@/app/actions/days'
 import { notifyTenantMembers, getDayDate, awaitNotifications } from '@/lib/notifications'
 import { mutationRateLimit } from '@/lib/rate-limit'
 import { snapshotMatchingTemplatesForActivity } from '@/lib/checklist-snapshot'
+import { revalidateDay } from '@/lib/revalidate'
 import type { ActionResponse } from '@/types/actions'
 import type { Activity, ActivityWithRelations } from '@/types/index'
 import type { ActivityFormData } from '@/lib/program-item-schema'
@@ -123,6 +124,7 @@ export async function createActivity(raw: ActivityFormData): Promise<ActionRespo
       'createActivity'
     )
 
+    revalidateDay()
     return { success: true, data: activity }
   }
 
@@ -216,6 +218,7 @@ export async function createActivity(raw: ActivityFormData): Promise<ActionRespo
     'createActivity (recurring)'
   )
 
+  revalidateDay()
   return { success: true, data: primary }
 }
 
@@ -274,6 +277,7 @@ export async function updateActivity(
     'updateActivity'
   )
 
+  revalidateDay()
   return { success: true, data: row as Activity }
 }
 
@@ -319,6 +323,7 @@ export async function deleteActivity(id: string): Promise<ActionResponse> {
     )
   }
 
+  revalidateDay()
   return { success: true, data: undefined }
 }
 
@@ -336,6 +341,7 @@ export async function deleteActivityRecurrenceGroup(groupId: string): Promise<Ac
     .is('deleted_at', null)
 
   if (error) return { success: false, error: error.message }
+  revalidateDay()
   return { success: true, data: undefined }
 }
 
@@ -418,6 +424,7 @@ export async function deleteActivityFromHere(id: string, groupId: string): Promi
     'deleteActivityFromHere'
   )
 
+  revalidateDay()
   return { success: true, data: undefined }
 }
 

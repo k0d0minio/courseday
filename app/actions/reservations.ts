@@ -6,6 +6,7 @@ import { getUserRole, requireEditor } from '@/lib/membership'
 import { isFeatureEnabled } from '@/app/actions/feature-flags'
 import { reservationSchema } from '@/lib/reservation-schema'
 import { notifyTenantMembers, getDayDate, awaitNotifications } from '@/lib/notifications'
+import { revalidateDay } from '@/lib/revalidate'
 import type { ReservationFormData } from '@/lib/reservation-schema'
 import type { ActionResponse } from '@/types/actions'
 import type { Reservation } from '@/types/index'
@@ -61,6 +62,7 @@ export async function createReservation(
     'createReservation'
   )
 
+  revalidateDay()
   return { success: true, data: data as Reservation }
 }
 
@@ -118,6 +120,7 @@ export async function updateReservation(
     'updateReservation'
   )
 
+  revalidateDay()
   return { success: true, data: data as Reservation }
 }
 
@@ -167,6 +170,7 @@ export async function deleteReservation(id: string): Promise<ActionResponse> {
     )
   }
 
+  revalidateDay()
   return { success: true, data: undefined }
 }
 

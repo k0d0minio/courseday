@@ -1,5 +1,9 @@
 import { redirect } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 import { getTenantFromHeaders } from '@/lib/tenant'
 import { requireTenantMember } from '@/lib/guards'
 import { ensureDaysRange } from '@/app/actions/days'
