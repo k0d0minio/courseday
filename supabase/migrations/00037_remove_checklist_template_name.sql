@@ -1,5 +1,5 @@
 -- =============================================================================
--- Migration 00036: Drop redundant name column from checklist_template
+-- Migration 00037: Drop redundant name column from checklist_template
 -- =============================================================================
 --
 -- Templates are uniquely identified by their scope (venue_type_id or
