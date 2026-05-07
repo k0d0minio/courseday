@@ -144,9 +144,12 @@ function TableBlock({
   const tableNumber = index + 1
 
   return (
+    // Keyboard-navigable table-block widget: role="group" wraps inner controls and accepts arrow-key reorder events.
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
     <div
       role="group"
       aria-label={`Table ${tableNumber}, ${seats} seats`}
+      // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
       tabIndex={0}
       onKeyDown={onKeyDown}
       className="bg-card focus-visible:ring-ring relative flex min-w-[64px] flex-col items-center gap-1 rounded-md border px-3 pt-5 pb-2 focus:outline-none focus-visible:ring-2"
