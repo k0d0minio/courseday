@@ -51,13 +51,20 @@ Prettier config: `.prettierrc` — no semis, single quotes, 100-char width, Tail
 
 ## Database Migrations
 
-- Location: `supabase/migrations/` — 34 migrations, numbered `00001`–`00034`
+- Location: `supabase/migrations/`
 - Naming convention: `NNNNN_description_words.sql` (5 zero-padded digits, lowercase, underscores)
-- Create new: `supabase migration new description_words` (auto-generates correct filename)
+- **Always write migration files directly** — do NOT apply via Supabase MCP tools. CI deploys them automatically.
+- **Before creating a migration file, run `ls supabase/migrations/ | sort | tail -1` to get the current highest number**, then use the next one. Multiple agents may be running in parallel — never assume the number from your context is still current.
 - Apply locally: `supabase db reset` (replays all migrations + seed.sql)
 - Apply to production: automatically via CI on merge to `main` (see migration workflow)
 - After schema changes: run `pnpm db:types` to regenerate `types/supabase.ts`
 - CI validates naming + no duplicates on PRs; pushes to prod on merge to main
+
+## Agent Workflow Rules
+
+**DO NOT run lint, typecheck, or build before committing or pushing.** CI runs `tsc --noEmit`, `next lint`, `prettier --check`, and `next build` on every PR and push to main. The pre-commit hook (husky) already runs Prettier + ESLint on staged files at `git commit`. That is sufficient — no extra checks needed.
+
+**Never run** `pnpm lint`, `pnpm build`, `pnpm format:check`, or `tsc` as a pre-commit or pre-push step.
 
 ## CI/CD
 
