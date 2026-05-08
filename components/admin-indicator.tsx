@@ -35,7 +35,7 @@ export function AdminIndicator() {
   const currentTheme = (theme as ThemeValue | undefined) ?? 'system'
   function cycleTheme() {
     const idx = THEMES.indexOf(currentTheme)
-    setTheme(THEMES[(idx + 1) % THEMES.length])
+    setTheme(THEMES[(idx + 1) % THEMES.length]!)
   }
 
   useEffect(() => {

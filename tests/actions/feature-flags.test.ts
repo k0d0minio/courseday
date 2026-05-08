@@ -125,10 +125,10 @@ describe('getFeatureFlagsByTenants', () => {
 
     const result = await getFeatureFlagsByTenants(['tenant-1', 'tenant-2'])
 
-    expect(result['tenant-1'].reservations).toBe(false)
-    expect(result['tenant-1'].daily_brief).toBe(true)
-    expect(result['tenant-2'].daily_brief).toBe(false)
-    expect(result['tenant-2'].reservations).toBe(true)
+    expect(result['tenant-1']!.reservations).toBe(false)
+    expect(result['tenant-1']!.daily_brief).toBe(true)
+    expect(result['tenant-2']!.daily_brief).toBe(false)
+    expect(result['tenant-2']!.reservations).toBe(true)
   })
 
   it('defaults all flags to true when DB has no rows', async () => {
@@ -137,7 +137,7 @@ describe('getFeatureFlagsByTenants', () => {
     const result = await getFeatureFlagsByTenants(['tenant-1'])
 
     for (const key of KNOWN_FLAGS) {
-      expect(result['tenant-1'][key]).toBe(true)
+      expect(result['tenant-1']![key]).toBe(true)
     }
   })
 })

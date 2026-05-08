@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 
 export const dynamic = 'force-dynamic'
@@ -59,7 +58,7 @@ export default async function TenantHomePage({
   const { month: rawMonth } = await searchParams
   const month = rawMonth && MONTH_REGEX.test(rawMonth) ? rawMonth : today.slice(0, 7)
 
-  const [year, monthNum] = month.split('-').map(Number)
+  const [year, monthNum] = month.split('-').map(Number) as [number, number]
   const { start, end } = getMonthDateRange(year, monthNum)
 
   // Ensure all Day rows for the month exist (idempotent batch upsert)

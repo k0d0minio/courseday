@@ -69,8 +69,8 @@ export function normalizeToTimeInput(raw: string | null | undefined): string {
   if (!t) return ''
   const m = t.match(/^(\d{1,2}):(\d{2})(?::\d{2})?/)
   if (!m) return ''
-  const h = Math.min(23, Math.max(0, parseInt(m[1], 10)))
-  const min = Math.min(59, Math.max(0, parseInt(m[2], 10)))
+  const h = Math.min(23, Math.max(0, parseInt(m[1]!, 10)))
+  const min = Math.min(59, Math.max(0, parseInt(m[2]!, 10)))
   return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`
 }
 
@@ -232,13 +232,13 @@ function modelKeysFromLlmFields(fields: Record<string, unknown>): string[] {
 
 function clampWithActivitySchema(data: {
   dayId: string
-  title?: string
-  description?: string
-  startTime?: string
-  endTime?: string
-  expectedCovers?: number
-  notes?: string
-  allergens?: AllergenCode[]
+  title?: string | undefined
+  description?: string | undefined
+  startTime?: string | undefined
+  endTime?: string | undefined
+  expectedCovers?: number | undefined
+  notes?: string | undefined
+  allergens?: AllergenCode[] | undefined
 }): {
   title: string
   description: string

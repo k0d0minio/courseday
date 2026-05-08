@@ -144,9 +144,9 @@ describe('createActivity (recurring)', () => {
     })
 
     expect(result.success).toBe(true)
-    const insertFn = (from.mock.results[2].value as ReturnType<typeof makeChain>)
+    const insertFn = (from.mock.results[2]!.value as ReturnType<typeof makeChain>)
       .insert as ReturnType<typeof vi.fn>
-    const insertedRows = insertFn.mock.calls[0][0] as unknown[]
+    const insertedRows = insertFn.mock.calls[0]![0] as unknown[]
     expect(Array.isArray(insertedRows)).toBe(true)
     expect(insertedRows.length).toBeGreaterThan(1)
   })

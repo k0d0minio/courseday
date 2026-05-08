@@ -335,12 +335,12 @@ const PALETTES: readonly TenantPalette[] = [
 ] as const
 
 const PALETTE_BY_ID: Record<TenantPaletteId, TenantPalette> = {
-  evergreen: PALETTES[0],
-  ocean: PALETTES[1],
-  sunset: PALETTES[2],
-  violet: PALETTES[3],
-  charcoal: PALETTES[4],
-  terracotta: PALETTES[5],
+  evergreen: PALETTES[0]!,
+  ocean: PALETTES[1]!,
+  sunset: PALETTES[2]!,
+  violet: PALETTES[3]!,
+  charcoal: PALETTES[4]!,
+  terracotta: PALETTES[5]!,
 }
 
 const LEGACY_ACCENT_TO_ID: Record<string, TenantPaletteId> = Object.values(PALETTE_BY_ID).reduce<
@@ -365,7 +365,7 @@ export function resolveTenantPaletteId(
 
   const normalizedAccent = legacyAccentColor?.trim().toLowerCase()
   if (normalizedAccent && normalizedAccent in LEGACY_ACCENT_TO_ID) {
-    return LEGACY_ACCENT_TO_ID[normalizedAccent]
+    return LEGACY_ACCENT_TO_ID[normalizedAccent]!
   }
 
   return DEFAULT_TENANT_PALETTE_ID

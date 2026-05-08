@@ -53,7 +53,7 @@ export async function createShift(
 ): Promise<ActionResponse<Shift>> {
   const parsed = shiftSchema.safeParse(raw)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message }
+    return { success: false, error: parsed.error.issues[0]!.message }
   }
 
   const tenantId = await getTenantId()
@@ -93,7 +93,7 @@ export async function updateShift(
 ): Promise<ActionResponse<Shift>> {
   const parsed = shiftSchema.safeParse(raw)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message }
+    return { success: false, error: parsed.error.issues[0]!.message }
   }
 
   const tenantId = await getTenantId()

@@ -103,7 +103,9 @@ export function CitySearch({
             lat: Number(item.lat),
             lon: Number(item.lon),
             country: String(item.country ?? ''),
-            state: item.state != null && String(item.state) !== '' ? String(item.state) : undefined,
+            ...(item.state != null && String(item.state) !== ''
+              ? { state: String(item.state) }
+              : {}),
           }))
           .filter((r) => r.name.length > 0 && Number.isFinite(r.lat) && Number.isFinite(r.lon))
 

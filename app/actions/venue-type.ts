@@ -32,7 +32,7 @@ export async function getAllVenueTypes(): Promise<ActionResponse<VenueType[]>> {
 export async function createVenueType(raw: VenueTypeFormData): Promise<ActionResponse<VenueType>> {
   const parsed = venueTypeSchema.safeParse(raw)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message }
+    return { success: false, error: parsed.error.issues[0]!.message }
   }
 
   const tenantId = await getTenantId()
@@ -65,7 +65,7 @@ export async function updateVenueType(
 ): Promise<ActionResponse<VenueType>> {
   const parsed = venueTypeSchema.safeParse(raw)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message }
+    return { success: false, error: parsed.error.issues[0]!.message }
   }
 
   const tenantId = await getTenantId()

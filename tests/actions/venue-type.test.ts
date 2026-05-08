@@ -15,7 +15,7 @@ describe('venueTypeSchema', () => {
   it('rejects empty name', () => {
     const result = venueTypeSchema.safeParse({ name: '' })
     expect(result.success).toBe(false)
-    expect(result.error?.issues[0].message).toBe('Name is required')
+    expect(result.error?.issues[0]!.message).toBe('Name is required')
   })
 
   it('rejects missing name', () => {

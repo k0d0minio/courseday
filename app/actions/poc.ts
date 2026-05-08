@@ -36,7 +36,7 @@ export async function getAllPOCs(): Promise<ActionResponse<PointOfContact[]>> {
 export async function createPOC(raw: PocFormData): Promise<ActionResponse<PointOfContact>> {
   const parsed = pocSchema.safeParse(raw)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message }
+    return { success: false, error: parsed.error.issues[0]!.message }
   }
 
   const tenantId = await getTenantId()
@@ -71,7 +71,7 @@ export async function updatePOC(
 ): Promise<ActionResponse<PointOfContact>> {
   const parsed = pocSchema.safeParse(raw)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message }
+    return { success: false, error: parsed.error.issues[0]!.message }
   }
 
   const tenantId = await getTenantId()

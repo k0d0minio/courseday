@@ -81,7 +81,7 @@ export function AgendaView({ today, isEditor = true }: Props) {
 
   function loadMore() {
     if (summaries.length === 0) return
-    const lastDate = summaries[summaries.length - 1].date
+    const lastDate = summaries[summaries.length - 1]!.date
     const nextStart = format(addDays(parseISO(lastDate), 1), 'yyyy-MM-dd')
     const nextEnd = format(addDays(parseISO(lastDate), PAGE_SIZE), 'yyyy-MM-dd')
     startLoadMore(async () => {

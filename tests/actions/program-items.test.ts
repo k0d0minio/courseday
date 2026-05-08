@@ -56,7 +56,7 @@ describe('activitySchema', () => {
   it('rejects empty title', () => {
     const result = activitySchema.safeParse({ ...validActivity, title: '' })
     expect(result.success).toBe(false)
-    expect(result.error?.issues[0].message).toBe('Title is required')
+    expect(result.error?.issues[0]!.message).toBe('Title is required')
   })
 
   it('rejects missing title', () => {

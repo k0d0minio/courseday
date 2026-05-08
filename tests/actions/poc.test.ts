@@ -29,7 +29,7 @@ describe('pocSchema', () => {
   it('rejects empty name', () => {
     const result = pocSchema.safeParse({ name: '' })
     expect(result.success).toBe(false)
-    expect(result.error?.issues[0].message).toBe('Name is required')
+    expect(result.error?.issues[0]!.message).toBe('Name is required')
   })
 
   it('rejects missing name', () => {
@@ -40,7 +40,7 @@ describe('pocSchema', () => {
   it('rejects invalid email format', () => {
     const result = pocSchema.safeParse({ name: 'Bob', email: 'not-an-email' })
     expect(result.success).toBe(false)
-    expect(result.error?.issues[0].message).toBe('Invalid email address')
+    expect(result.error?.issues[0]!.message).toBe('Invalid email address')
   })
 
   it('rejects email with missing TLD', () => {

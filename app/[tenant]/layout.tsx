@@ -132,7 +132,7 @@ export default async function TenantLayout({ children }: { children: React.React
                     className="inline-flex items-center"
                     aria-label={row?.name ?? 'Home'}
                   >
-                    <Logo logoUrl={row?.logo_url} tenantName={row?.name} />
+                    <Logo logoUrl={row?.logo_url ?? null} tenantName={row?.name ?? null} />
                   </Link>
                   <div className="flex items-center gap-1">
                     <OfflineStatusPill />

@@ -66,10 +66,15 @@ function useDayViewLiveState(p: DayViewProps, staffScheduleEnabled: boolean) {
   )
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setActivities(p.activities as ActivityWithRelations[])
+
     setReservations(p.reservations)
+
     setBreakfastConfigs(p.breakfastConfigs)
+
     setShifts(staffScheduleEnabled ? p.shifts : [])
+
     setDayNotes(p.dayNotes)
   }, [
     p.dayId,
@@ -162,8 +167,6 @@ function DayViewEditor({
     setBreakfastConfigs,
     shifts,
     setShifts,
-    dayNotes: liveDayNotes,
-    setDayNotes,
   } = live
 
   const [activityModalOpen, setActivityModalOpen] = useState(false)
@@ -276,8 +279,11 @@ function DayViewEditor({
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setActivityQuickAdd(null)
+
     setReservationQuickAdd(null)
+
     setBreakfastQuickAdd(null)
   }, [date, dayId])
 
@@ -371,22 +377,27 @@ function DayViewEditor({
       returnFocusRef.current = activityAddRef.current
       openAddActivity()
     },
-    onOpenReservation: showReservations
-      ? () => {
-          returnFocusRef.current = reservationAddRef.current
-          openAddReservation()
+    ...(showReservations
+      ? {
+          onOpenReservation: () => {
+            returnFocusRef.current = reservationAddRef.current
+            openAddReservation()
+          },
         }
-      : undefined,
-    onOpenBreakfast: showBreakfast
-      ? () => {
-          returnFocusRef.current = breakfastAddRef.current
-          openAddBreakfast()
+      : {}),
+    ...(showBreakfast
+      ? {
+          onOpenBreakfast: () => {
+            returnFocusRef.current = breakfastAddRef.current
+            openAddBreakfast()
+          },
         }
-      : undefined,
+      : {}),
   })
 
   useEffect(() => {
     if (!pendingQuickAddResult) return
+
     setPendingQuickAddResult(null)
     if (pendingQuickAddResult.type === 'success') {
       handleQuickAddSuccess(pendingQuickAddResult.data, pendingQuickAddResult.raw)
@@ -406,15 +417,21 @@ function DayViewEditor({
 
     if (create === 'activity') {
       returnFocusRef.current = activityAddRef.current
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEditActivity(null)
+
       setActivityModalOpen(true)
     } else if (create === 'reservation' && showReservations) {
       returnFocusRef.current = reservationAddRef.current
+
       setEditReservation(null)
+
       setReservationModalOpen(true)
     } else if (create === 'breakfast' && showBreakfast) {
       returnFocusRef.current = breakfastAddRef.current
+
       setEditBreakfast(null)
+
       setBreakfastModalOpen(true)
     }
 

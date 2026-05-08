@@ -81,6 +81,7 @@ export function HomeClient({ month, today, days: initialDays, variant = 'editor'
   useEffect(() => {
     if (!isEditor) return
     const saved = localStorage.getItem(VIEW_PREF_KEY)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (saved === 'agenda' || saved === 'calendar') setViewMode(saved)
   }, [isEditor])
 
@@ -108,7 +109,7 @@ export function HomeClient({ month, today, days: initialDays, variant = 'editor'
   }
 
   // Compute grid layout
-  const [year, monthNum] = month.split('-').map(Number)
+  const [year, monthNum] = month.split('-').map(Number) as [number, number]
   const firstOfMonth = new Date(year, monthNum - 1, 1)
   const daysInMonth = new Date(year, monthNum, 0).getDate()
 

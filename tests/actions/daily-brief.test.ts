@@ -157,7 +157,7 @@ describe('ensureDailyBrief', () => {
     }
     expect(generateAndPersistDailyBrief).toHaveBeenCalledOnce()
     // generatedBy should be null for auto-generated briefs
-    expect(vi.mocked(generateAndPersistDailyBrief).mock.calls[0][1]).toMatchObject({
+    expect(vi.mocked(generateAndPersistDailyBrief).mock.calls[0]![1]).toMatchObject({
       generatedBy: null,
     })
   })

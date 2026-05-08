@@ -16,7 +16,7 @@ export async function createReservation(
 ): Promise<ActionResponse<Reservation>> {
   const parsed = reservationSchema.safeParse(raw)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message }
+    return { success: false, error: parsed.error.issues[0]!.message }
   }
 
   const tenantId = await getTenantId()
@@ -72,7 +72,7 @@ export async function updateReservation(
 ): Promise<ActionResponse<Reservation>> {
   const parsed = reservationSchema.safeParse(raw)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message }
+    return { success: false, error: parsed.error.issues[0]!.message }
   }
 
   const tenantId = await getTenantId()

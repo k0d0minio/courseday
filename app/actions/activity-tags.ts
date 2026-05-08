@@ -31,7 +31,7 @@ export async function getAllActivityTags(): Promise<ActionResponse<ActivityTag[]
 export async function createActivityTag(name: string): Promise<ActionResponse<ActivityTag>> {
   const parsed = activityTagSchema.safeParse({ name })
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message }
+    return { success: false, error: parsed.error.issues[0]!.message }
   }
 
   const tenantId = await getTenantId()
@@ -61,7 +61,7 @@ export async function updateActivityTag(
 ): Promise<ActionResponse<ActivityTag>> {
   const parsed = activityTagSchema.safeParse({ name })
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message }
+    return { success: false, error: parsed.error.issues[0]!.message }
   }
 
   const tenantId = await getTenantId()

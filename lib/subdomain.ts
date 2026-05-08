@@ -8,8 +8,8 @@
  */
 export function extractSubdomain(hostname: string, rootDomain: string): string | null {
   // Strip port if present
-  const host = hostname.split(':')[0]
-  const root = rootDomain.split(':')[0]
+  const host = hostname.split(':')[0]!
+  const root = rootDomain.split(':')[0]!
   const normalizedRoot = root.replace(/^www\./, '')
 
   // Local dev: [subdomain].localhost
@@ -20,7 +20,7 @@ export function extractSubdomain(hostname: string, rootDomain: string): string |
 
   // Vercel preview: [subdomain]---branch-name.vercel.app
   if (host.includes('---') && host.endsWith('.vercel.app')) {
-    const sub = host.split('---')[0]
+    const sub = host.split('---')[0]!
     return sub || null
   }
 

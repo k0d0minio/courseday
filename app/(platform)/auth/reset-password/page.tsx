@@ -36,7 +36,7 @@ function createRecoveryBrowserClient() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       isSingleton: false,
-      cookieOptions: { domain: sharedCookieDomain, path: '/' },
+      cookieOptions: { ...(sharedCookieDomain ? { domain: sharedCookieDomain } : {}), path: '/' },
       auth: {
         detectSessionInUrl: false,
         flowType: 'pkce',
