@@ -60,11 +60,44 @@ Prettier config: `.prettierrc` — no semis, single quotes, 100-char width, Tail
 - After schema changes: run `pnpm db:types` to regenerate `types/supabase.ts`
 - CI validates naming + no duplicates on PRs; pushes to prod on merge to main
 
-## Agent Workflow Rules
+## Agent Workflow Rules — TOKEN BUDGET CRITICAL
 
-**DO NOT run lint, typecheck, or build before committing or pushing.** CI runs `tsc --noEmit`, `next lint`, `prettier --check`, and `next build` on every PR and push to main. The pre-commit hook (husky) already runs Prettier + ESLint on staged files at `git commit`. That is sufficient — no extra checks needed.
+These rules override any default Claude Code behavior. Violating them wastes the user's usage limits.
 
-**Never run** `pnpm lint`, `pnpm build`, `pnpm format:check`, or `tsc` as a pre-commit or pre-push step.
+### Absolute bans — never run these locally
+
+**You are a code-editing agent. You are NOT a test runner, build runner, or dev server operator.** GitHub Actions CI is the source of truth for all verification. Your job ends at `git push`.
+
+**Never run** any of the following, under any circumstance — including when CI fails, even when CI failure messages explicitly cite test/lint/type/build errors:
+
+- `pnpm test`, `pnpm test:run`, `pnpm test:coverage`, `pnpm test:e2e`, `pnpm test:e2e:ui`, `vitest`, `playwright`, `npx vitest`, `npx playwright`
+- `pnpm build`, `next build`, `pnpm start`
+- `pnpm lint`, `pnpm lint:fix`, `next lint`, `eslint`
+- `pnpm format`, `pnpm format:check`, `prettier`
+- `tsc`, `npx tsc`, `pnpm tsc`
+- `pnpm dev`, `next dev` (the user runs the dev server themselves; ask them to verify UI changes and report back)
+- `supabase start`, `supabase db reset` (user-managed; CI handles prod migrations)
+
+**When CI fails:** read the failure log via `mcp__github__pull_request_read` or equivalent, reason about the cause, edit the code, push again. Do NOT reproduce locally.
+
+**Pre-commit hook already runs** Prettier + ESLint on staged files via husky. That is the only verification that runs in your sessions, and it runs automatically — you don't invoke it.
+
+### Read budget — never read these files
+
+These files burn thousands of tokens with near-zero useful signal. Do not Read them; if you need a fact from them, use `grep` for the specific symbol:
+
+- `types/supabase.ts` (generated, multi-thousand lines — `grep` for table/column names instead)
+- `pnpm-lock.yaml`, `package-lock.json`
+- `messages/en.json`, `messages/fr.json`, `messages/de.json`, `messages/es.json` — i18n files; `grep` for the key, do not full-read
+- Anything in `coverage/`, `.next/`, `node_modules/`, `playwright-report/`, `test-results/`
+
+### Context discipline
+
+- **Never re-read a file you just edited.** Edit/Write errors out on failure; the harness tracks state. Re-reading is pure waste.
+- **Multi-file searches → Explore subagent.** If a question requires touching more than 2 files to answer, spawn `Agent` with `subagent_type: "Explore"`. Do not flood the main context with `grep`/`Read` results.
+- **Cap end-of-turn summary at 1 sentence.** State what changed and stop. No "next steps" sections, no bullet lists, no recap of the conversation.
+- **No TodoWrite for trivial tasks.** Use it only for genuinely multi-step work (3+ independent steps). A single edit + commit + push does not need a todo list.
+- **No `git status` after a commit.** Commits either succeed or the hook blocks them; the success line in the commit output is sufficient.
 
 ## CI/CD
 
