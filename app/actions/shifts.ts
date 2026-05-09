@@ -11,6 +11,13 @@ import type { Shift, ShiftWithAssignee } from '@/types/index'
 import { getTenantAssignees } from '@/app/[tenant]/day/[date]/queries'
 import { isFeatureEnabled } from '@/app/actions/feature-flags'
 import { addDays, format, parseISO } from 'date-fns'
+import { awaitNotifications } from '@/lib/notifications'
+import {
+  notifyShiftAssigned,
+  notifyShiftUpdatedSameUser,
+  notifyShiftReassigned,
+  notifyShiftCancelled,
+} from '@/lib/shift-notifications'
 
 export type MyShiftWithDate = ShiftWithAssignee & { date_iso: string }
 
@@ -89,6 +96,25 @@ export async function createShift(
     .single()
 
   if (error) return { success: false, error: error.message }
+
+  if (await isFeatureEnabled(tenantId, 'staff_schedule')) {
+    const actor = await getUser()
+    const actorId = actor?.id ?? ''
+    await awaitNotifications(
+      [
+        notifyShiftAssigned({
+          tenantId,
+          actorId,
+          assigneeId: parsed.data.user_id,
+          dayId,
+          startTime: normaliseTime(parsed.data.start_time),
+          endTime: normaliseTime(parsed.data.end_time),
+        }),
+      ],
+      'shift:create'
+    )
+  }
+
   return { success: true, data: data as Shift }
 }
 
@@ -114,6 +140,14 @@ export async function updateShift(
   )
   if (!check.ok) return { success: false, error: check.error }
 
+  const { data: oldShift } = await supabase
+    .from('shift')
+    .select('user_id')
+    .eq('id', id)
+    .eq('tenant_id', tenantId)
+    .maybeSingle()
+  const oldUserId: string | null = (oldShift as { user_id: string } | null)?.user_id ?? null
+
   const { data, error } = await supabase
     .from('shift')
     .update({
@@ -131,6 +165,41 @@ export async function updateShift(
     .single()
 
   if (error) return { success: false, error: error.message }
+
+  if (await isFeatureEnabled(tenantId, 'staff_schedule')) {
+    const actor = await getUser()
+    const actorId = actor?.id ?? ''
+    const newUserId = parsed.data.user_id
+    const notifTasks: Promise<void>[] = []
+
+    if (oldUserId && oldUserId !== newUserId) {
+      notifTasks.push(
+        notifyShiftReassigned({
+          tenantId,
+          actorId,
+          newAssigneeId: newUserId,
+          oldAssigneeId: oldUserId,
+          dayId,
+          startTime: normaliseTime(parsed.data.start_time),
+          endTime: normaliseTime(parsed.data.end_time),
+        })
+      )
+    } else {
+      notifTasks.push(
+        notifyShiftUpdatedSameUser({
+          tenantId,
+          actorId,
+          assigneeId: newUserId,
+          dayId,
+          startTime: normaliseTime(parsed.data.start_time),
+          endTime: normaliseTime(parsed.data.end_time),
+        })
+      )
+    }
+
+    await awaitNotifications(notifTasks, 'shift:update')
+  }
+
   return { success: true, data: data as Shift }
 }
 
@@ -139,6 +208,15 @@ export async function deleteShift(id: string, dayId: string): Promise<ActionResp
   await requireEditor(tenantId)
 
   const { supabase } = await createTenantClient()
+
+  const { data: existing } = await supabase
+    .from('shift')
+    .select('user_id')
+    .eq('id', id)
+    .eq('tenant_id', tenantId)
+    .maybeSingle()
+  const assigneeId: string | null = (existing as { user_id: string } | null)?.user_id ?? null
+
   const { error } = await supabase
     .from('shift')
     .delete()
@@ -147,6 +225,16 @@ export async function deleteShift(id: string, dayId: string): Promise<ActionResp
     .eq('day_id', dayId)
 
   if (error) return { success: false, error: error.message }
+
+  if (assigneeId && (await isFeatureEnabled(tenantId, 'staff_schedule'))) {
+    const actor = await getUser()
+    const actorId = actor?.id ?? ''
+    await awaitNotifications(
+      [notifyShiftCancelled({ tenantId, actorId, assigneeId, dayId })],
+      'shift:cancel'
+    )
+  }
+
   return { success: true, data: undefined }
 }
 
