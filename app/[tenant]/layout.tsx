@@ -63,9 +63,6 @@ export async function generateMetadata(): Promise<Metadata> {
         statusBarStyle: 'default',
         title: name,
       },
-      icons: {
-        apple: '/pwa/icon',
-      },
     }
   } catch {
     return {
@@ -73,9 +70,6 @@ export async function generateMetadata(): Promise<Metadata> {
       appleWebApp: {
         capable: true,
         statusBarStyle: 'default',
-      },
-      icons: {
-        apple: '/pwa/icon',
       },
     }
   }
