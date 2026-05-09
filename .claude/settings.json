@@ -53,7 +53,6 @@
       "Read(./pnpm-lock.yaml)",
       "Read(./package-lock.json)",
       "Read(./yarn.lock)",
-      "Read(./messages/en.json)",
       "Read(./messages/fr.json)",
       "Read(./messages/de.json)",
       "Read(./messages/es.json)",
@@ -63,8 +62,8 @@
       "Read(./playwright-report/**)",
       "Read(./test-results/**)",
       "Bash(cat ./types/supabase.ts*)",
-      "Bash(cat ./pnpm-lock.yaml*)",
-      "Bash(cat ./messages/*.json*)"
-    ]
+      "Bash(cat ./pnpm-lock.yaml*)"
+    ],
+    "allow": ["Bash(find *)", "Bash(grep *)", "Read(./messages/*)"]
   }
 }
