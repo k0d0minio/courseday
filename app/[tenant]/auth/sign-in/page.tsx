@@ -1,18 +1,25 @@
-import { redirect } from 'next/navigation'
-import { protocol, rootDomain } from '@/lib/utils'
+import { SignInForm } from '@/components/auth/sign-in-form'
+import { createSupabaseServiceClient } from '@/lib/supabase-server'
 
 type Props = {
   params: Promise<{ tenant: string }>
-  searchParams: Promise<{ redirectTo?: string }>
 }
 
-export default async function TenantSignInPage({ params, searchParams }: Props) {
+export default async function TenantSignInPage({ params }: Props) {
   const { tenant } = await params
-  const { redirectTo } = await searchParams
-  const url = new URL(`${protocol}://${rootDomain}/auth/sign-in`)
-  url.searchParams.set('slug', tenant)
-  if (redirectTo) {
-    url.searchParams.set('redirectTo', redirectTo)
-  }
-  redirect(url.toString())
+
+  const supabase = createSupabaseServiceClient()
+  const { data } = await supabase
+    .from('tenants')
+    .select('name, logo_url')
+    .eq('slug', tenant)
+    .maybeSingle()
+
+  return (
+    <SignInForm
+      defaultSlug={tenant}
+      tenantName={data?.name ?? null}
+      logoUrl={data?.logo_url ?? null}
+    />
+  )
 }
