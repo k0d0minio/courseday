@@ -3,12 +3,15 @@
 import { createTenantClient, createSupabaseServerClient } from '@/lib/supabase-server'
 import { getTenantId } from '@/lib/tenant'
 import { requireEditor } from '@/lib/membership'
+import { getUser } from '@/app/actions/auth'
 import { shiftSchema } from '@/lib/shift-schema'
 import type { ShiftFormData } from '@/lib/shift-schema'
 import type { ActionResponse } from '@/types/actions'
 import type { Shift, ShiftWithAssignee } from '@/types/index'
 import { getTenantAssignees } from '@/app/[tenant]/day/[date]/queries'
 import { addDays, format, parseISO } from 'date-fns'
+
+export type MyShiftWithDate = ShiftWithAssignee & { date_iso: string }
 
 function normaliseTime(s: string | undefined | null): string | null {
   const t = (s ?? '').trim()
@@ -144,6 +147,55 @@ export async function deleteShift(id: string, dayId: string): Promise<ActionResp
 
   if (error) return { success: false, error: error.message }
   return { success: true, data: undefined }
+}
+
+export async function getMyShifts({
+  from,
+  to,
+}: {
+  from: string
+  to: string
+}): Promise<MyShiftWithDate[]> {
+  const tenantId = await getTenantId()
+  const user = await getUser()
+  if (!user) return []
+
+  const supabase = await createSupabaseServerClient()
+
+  const { data: days } = await supabase
+    .from('day')
+    .select('id, date_iso')
+    .eq('tenant_id', tenantId)
+    .gte('date_iso', from)
+    .lte('date_iso', to)
+
+  const dayRows = days ?? []
+  if (dayRows.length === 0) return []
+
+  const dayMap = new Map<string, string>(dayRows.map((d) => [d.id, d.date_iso as string]))
+  const dayIds = dayRows.map((d) => d.id)
+
+  const { data } = await supabase
+    .from('shift')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .eq('user_id', user.id)
+    .in('day_id', dayIds)
+    .order('start_time', { nullsFirst: true })
+
+  const rows = (data ?? []) as unknown as Array<Omit<ShiftWithAssignee, 'assignee'>>
+  if (rows.length === 0) return []
+
+  const assignees = await getTenantAssignees(tenantId)
+  return rows.map((s) => ({
+    ...s,
+    date_iso: dayMap.get(s.day_id) ?? '',
+    assignee: assignees.get(s.user_id) ?? {
+      user_id: s.user_id,
+      email: '',
+      display_name: '—',
+    },
+  }))
 }
 
 export async function getWeekShifts(weekStart: string): Promise<ShiftWithAssignee[]> {

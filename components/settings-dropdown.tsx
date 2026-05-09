@@ -9,6 +9,7 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { useFeatureFlag } from '@/lib/feature-flags-context'
 
 export const SETTINGS_ROUTES = [
+  { href: '/my-schedule', labelKey: 'tabMySchedule' },
   { href: '/schedule', labelKey: 'tabStaffRoster' },
   { href: '/admin/settings/poc', labelKey: 'tabPoc' },
   { href: '/admin/settings/venue-types', labelKey: 'tabVenueTypes' },
@@ -29,7 +30,7 @@ export function getVisibleSettingsRoutes(visibility: {
 }): SettingsRoute[] {
   let routes = [...SETTINGS_ROUTES]
   if (!visibility.staffSchedule) {
-    routes = routes.filter((route) => route.href !== '/schedule')
+    routes = routes.filter((route) => route.href !== '/schedule' && route.href !== '/my-schedule')
   }
   if (!visibility.checklists) {
     routes = routes.filter((route) => route.href !== '/admin/settings/checklists')

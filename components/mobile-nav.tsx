@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, CalendarDays, Settings, Sparkles } from 'lucide-react'
+import { Home, CalendarDays, Settings, Sparkles, CalendarCheck } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import {
@@ -43,6 +43,16 @@ export function MobileNav({ today, isEditor }: MobileNavProps) {
       icon: CalendarDays,
       active: pathname.startsWith('/day/'),
     },
+    ...(showStaffSchedule && !isEditor
+      ? [
+          {
+            href: '/my-schedule',
+            label: navT('mySchedule'),
+            icon: CalendarCheck,
+            active: pathname.startsWith('/my-schedule'),
+          },
+        ]
+      : []),
   ]
 
   const settingsActive = pathname.startsWith('/admin/')

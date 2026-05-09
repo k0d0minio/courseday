@@ -181,7 +181,8 @@
       "settings": "Settings",
       "themeSystem": "System",
       "themeLight": "Light",
-      "themeDark": "Dark"
+      "themeDark": "Dark",
+      "mySchedule": "My schedule"
     },
     "join": {
       "homeAria": "Home",
@@ -503,7 +504,8 @@
       "clearLocationAria": "Clear location",
       "locationCoordsHint": "Clear the coordinates above to search for a city by name.",
       "staffScheduleDisabled": "Staff scheduling is disabled for this venue by a platform admin.",
-      "tabStaffRoster": "Staff Roster"
+      "tabStaffRoster": "Staff Roster",
+      "tabMySchedule": "My schedule"
     },
     "checklists": {
       "title": "Checklists",
@@ -663,6 +665,14 @@
         "staffColumn": "Team member",
         "noStaff": "No team members yet.",
         "addShiftAria": "Add shift for {name} on {date}"
+      },
+      "mySchedule": {
+        "title": "My schedule",
+        "empty": "No upcoming shifts.",
+        "emptyPast": "No past shifts.",
+        "showPast": "Show past shifts",
+        "hidePast": "Hide past shifts",
+        "loadingPast": "Loading…"
       }
     },
     "venueType": {
