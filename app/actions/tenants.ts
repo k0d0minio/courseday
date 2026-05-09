@@ -154,6 +154,8 @@ export async function updateTenant(
     latitude?: number | null
     longitude?: number | null
     onboarding_completed?: boolean
+    email_from_name?: string | null
+    email_reply_to?: string | null
   }
 ): Promise<ActionResponse<TenantRedisData>> {
   const user = await getUser()

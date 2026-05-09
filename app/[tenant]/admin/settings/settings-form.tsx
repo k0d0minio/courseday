@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { updateTenant } from '@/app/actions/tenants'
 import { createSupabaseBrowserClient } from '@/lib/supabase-client'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { CitySearch } from '@/components/city-search'
@@ -19,20 +20,26 @@ import {
 
 interface SettingsFormProps {
   tenantId: string
+  tenantName: string
   initialPaletteId: string | null
   initialAccentColor: string | null
   initialLogoUrl: string | null
   initialLatitude: number | null
   initialLongitude: number | null
+  initialEmailFromName: string | null
+  initialEmailReplyTo: string | null
 }
 
 export function SettingsForm({
   tenantId,
+  tenantName,
   initialPaletteId,
   initialAccentColor,
   initialLogoUrl,
   initialLatitude,
   initialLongitude,
+  initialEmailFromName,
+  initialEmailReplyTo,
 }: SettingsFormProps) {
   const [paletteId, setPaletteId] = useState<TenantPaletteId>(
     resolveTenantPaletteId(initialPaletteId, initialAccentColor)
@@ -42,6 +49,8 @@ export function SettingsForm({
   const [longitude, setLongitude] = useState(
     initialLongitude != null ? String(initialLongitude) : ''
   )
+  const [emailFromName, setEmailFromName] = useState(initialEmailFromName ?? '')
+  const [emailReplyTo, setEmailReplyTo] = useState(initialEmailReplyTo ?? '')
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -97,6 +106,12 @@ export function SettingsForm({
   }
 
   async function handleSave() {
+    const replyTo = emailReplyTo.trim()
+    if (replyTo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(replyTo)) {
+      toast.error('Reply-to email is not valid')
+      return
+    }
+
     setSaving(true)
     try {
       const lat = latitude.trim() ? parseFloat(latitude) : null
@@ -109,6 +124,8 @@ export function SettingsForm({
         logo_url: logoUrl || null,
         latitude: lat != null && !isNaN(lat) ? lat : null,
         longitude: lon != null && !isNaN(lon) ? lon : null,
+        email_from_name: emailFromName.trim() || null,
+        email_reply_to: replyTo || null,
       })
 
       if (!result.success) {
@@ -200,6 +217,38 @@ export function SettingsForm({
               setLongitude('')
             }}
           />
+        </CardContent>
+      </Card>
+
+      {/* Email branding */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Email sender</CardTitle>
+          <CardDescription>
+            Customise how morning brief emails appear in recipients&apos; inboxes.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email-from-name">Sender name</Label>
+            <Input
+              id="email-from-name"
+              type="text"
+              value={emailFromName}
+              onChange={(e) => setEmailFromName(e.target.value)}
+              placeholder={tenantName}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="email-reply-to">Reply-to email</Label>
+            <Input
+              id="email-reply-to"
+              type="email"
+              value={emailReplyTo}
+              onChange={(e) => setEmailReplyTo(e.target.value)}
+              placeholder="ops@yourvenue.com"
+            />
+          </div>
         </CardContent>
       </Card>
 
