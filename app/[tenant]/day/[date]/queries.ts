@@ -164,10 +164,10 @@ export const getTenantAssignees = cache(
   async (tenantId: string): Promise<Map<string, ShiftAssignee>> => {
     const supabase = await createSupabaseServerClient()
 
-    const { data: memberships } = await (supabase
-      .from('memberships')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: memberships } = await (supabase.from('memberships') as any)
       .select('user_id, first_name, last_name, job_title')
-      .eq('tenant_id', tenantId) as any)
+      .eq('tenant_id', tenantId)
 
     const rows = (memberships ?? []) as Array<{
       user_id: string

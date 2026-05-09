@@ -39,11 +39,11 @@ export async function getTenantMemberAssignees(): Promise<ActionResponse<TenantM
 
   const { supabase } = await createTenantClient()
 
-  const { data: memberships, error } = await (supabase
-    .from('memberships')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: memberships, error } = await (supabase.from('memberships') as any)
     .select('user_id, role, first_name, last_name, job_title')
     .eq('tenant_id', tenantId)
-    .order('created_at') as any)
+    .order('created_at')
 
   if (error) return { success: false, error: error.message }
   if (!memberships?.length) return { success: true, data: [] }
@@ -359,12 +359,12 @@ export async function getMemberProfile(): Promise<
 
   const { supabase } = await createTenantClient()
 
-  const { data, error } = await (supabase
-    .from('memberships')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.from('memberships') as any)
     .select('first_name, last_name, job_title')
     .eq('tenant_id', tenantId)
     .eq('user_id', user.id)
-    .single() as any)
+    .single()
 
   if (error) return { success: false, error: error.message }
   const row = data as {
@@ -395,14 +395,12 @@ export async function updateMemberProfile(data: {
 
   const { supabase } = await createTenantClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const updatePayload: any = {
-    first_name: data.first_name.trim() || null,
-    last_name: data.last_name.trim() || null,
-    job_title: data.job_title.trim() || null,
-  }
-  const { error } = await supabase
-    .from('memberships')
-    .update(updatePayload)
+  const { error } = await (supabase.from('memberships') as any)
+    .update({
+      first_name: data.first_name.trim() || null,
+      last_name: data.last_name.trim() || null,
+      job_title: data.job_title.trim() || null,
+    })
     .eq('tenant_id', tenantId)
     .eq('user_id', user.id)
 
