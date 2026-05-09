@@ -16,6 +16,31 @@ type Props = {
   onShiftsChange: React.Dispatch<React.SetStateAction<ShiftWithAssignee[]>>
 }
 
+function parseMinutes(time: string): number {
+  const [h, m] = time.split(':').map(Number)
+  return (h ?? 0) * 60 + (m ?? 0)
+}
+
+function shiftScheduledMinutes(s: ShiftWithAssignee): number {
+  if (!s.start_time || !s.end_time) return 0
+  return Math.max(0, parseMinutes(s.end_time) - parseMinutes(s.start_time))
+}
+
+function shiftActualMinutes(s: ShiftWithAssignee): number {
+  if (!s.actual_start || !s.actual_end) return 0
+  return Math.max(
+    0,
+    Math.round((new Date(s.actual_end).getTime() - new Date(s.actual_start).getTime()) / 60000)
+  )
+}
+
+function fmtHours(mins: number): string {
+  const h = Math.floor(mins / 60)
+  const m = mins % 60
+  if (m === 0) return `${h}h`
+  return `${h}h${m}m`
+}
+
 export function StaffScheduleSection({
   dayId,
   shifts,
@@ -26,6 +51,10 @@ export function StaffScheduleSection({
   const t = useTranslations('Tenant.staff.section')
   const [formOpen, setFormOpen] = useState(false)
   const [editShift, setEditShift] = useState<ShiftWithAssignee | null>(null)
+
+  const totalScheduled = shifts.reduce((sum, s) => sum + shiftScheduledMinutes(s), 0)
+  const totalActual = shifts.reduce((sum, s) => sum + shiftActualMinutes(s), 0)
+  const hasActuals = shifts.some((s) => s.actual_start)
 
   function openAdd() {
     setEditShift(null)
@@ -53,10 +82,22 @@ export function StaffScheduleSection({
     onShiftsChange((prev) => prev.filter((s) => s.id !== id))
   }
 
+  function handleUpdated(item: ShiftWithAssignee) {
+    onShiftsChange((prev) => prev.map((s) => (s.id === item.id ? item : s)))
+  }
+
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="font-semibold">{t('title')}</h2>
+        <div className="min-w-0 space-y-0.5">
+          <h2 className="font-semibold">{t('title')}</h2>
+          {shifts.length > 0 && (
+            <p className="text-muted-foreground text-xs">
+              {t('scheduledSummary', { hours: fmtHours(totalScheduled) })}
+              {hasActuals && ` · ${t('actualSummary', { hours: fmtHours(totalActual) })}`}
+            </p>
+          )}
+        </div>
         {isEditor && (
           <Button
             size="xs"
@@ -83,6 +124,7 @@ export function StaffScheduleSection({
               isEditor={isEditor}
               onEdit={openEdit}
               onDeleted={handleDeleted}
+              onUpdated={handleUpdated}
             />
           ))}
         </div>

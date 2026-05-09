@@ -56,7 +56,10 @@ export type PointOfContactUpdate = TablesUpdate<'point_of_contact'>
 
 // ── Staff schedule ─────────────────────────────────────────────────────────────
 
-export type Shift = Tables<'shift'>
+export type Shift = Tables<'shift'> & {
+  actual_start?: string | null
+  actual_end?: string | null
+}
 export type ShiftInsert = TablesInsert<'shift'>
 export type ShiftUpdate = TablesUpdate<'shift'>
 

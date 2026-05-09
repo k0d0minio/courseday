@@ -629,7 +629,9 @@
         "title": "Staff schedule",
         "addShift": "Add shift",
         "empty": "No shifts scheduled.",
-        "noStaffHint": "Invite team members under Settings → Team before scheduling shifts."
+        "noStaffHint": "Invite team members under Settings → Team before scheduling shifts.",
+        "scheduledSummary": "Scheduled {hours}",
+        "actualSummary": "Actual {hours}"
       },
       "shiftForm": {
         "addTitle": "Add shift",
@@ -656,6 +658,22 @@
         "delete": "Delete",
         "deleting": "Deleting…",
         "deleted": "Shift removed."
+      },
+      "actuals": {
+        "clockIn": "Clock in",
+        "clockOut": "Clock out",
+        "clockedIn": "Clocked in.",
+        "clockedOut": "Clocked out.",
+        "scheduled": "Scheduled",
+        "actual": "Actual",
+        "editActualsAria": "Edit actual times",
+        "title": "Edit actual times",
+        "actualStart": "Actual start",
+        "actualEnd": "Actual end",
+        "cancel": "Cancel",
+        "save": "Save",
+        "saving": "Saving…",
+        "saved": "Actuals updated."
       },
       "roster": {
         "title": "Staff Roster",
