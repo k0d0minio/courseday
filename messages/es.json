@@ -159,7 +159,9 @@
       "srcBreakfast": "{n} desayuno(s)",
       "risks": "Riesgos",
       "actions": "Acciones sugeridas",
-      "meta": "Generado {time} · {model}"
+      "meta": "Generado {time} · {model}",
+      "sectionRegenerated": "Sección actualizada",
+      "sectionRegenFailed": "Error al regenerar la sección. Inténtelo de nuevo."
     },
     "quickAdd": {
       "openButton": "Añadir rápido",

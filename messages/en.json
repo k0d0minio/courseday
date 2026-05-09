@@ -263,7 +263,9 @@
       "srcBreakfast": "{n} breakfast(s)",
       "risks": "Risks",
       "actions": "Suggested actions",
-      "meta": "Generated {time} · {model}"
+      "meta": "Generated {time} · {model}",
+      "sectionRegenerated": "Section updated",
+      "sectionRegenFailed": "Section regeneration failed. Try again."
     },
     "quickAdd": {
       "openButton": "Quick add",

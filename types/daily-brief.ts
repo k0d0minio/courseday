@@ -11,6 +11,8 @@ export type DailyBriefAllergenRollupEntry = {
   inBreakfast: number
 }
 
+export type BriefSection = 'vipNotes' | 'risks' | 'suggestedActions'
+
 export type DailyBriefContent = {
   headline: string
   summary: string
@@ -19,6 +21,11 @@ export type DailyBriefContent = {
   allergenRollup: DailyBriefAllergenRollupEntry[]
   risks: string[]
   suggestedActions: string[]
+  sectionTimestamps?: {
+    vipNotes?: string
+    risks?: string
+    suggestedActions?: string
+  }
 }
 
 export type DailyBriefRecord = {

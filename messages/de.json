@@ -159,7 +159,9 @@
       "srcBreakfast": "{n} Frühstück(e)",
       "risks": "Risiken",
       "actions": "Vorgeschlagene Maßnahmen",
-      "meta": "Erzeugt {time} · {model}"
+      "meta": "Erzeugt {time} · {model}",
+      "sectionRegenerated": "Abschnitt aktualisiert",
+      "sectionRegenFailed": "Abschnittsregenerierung fehlgeschlagen. Erneut versuchen."
     },
     "quickAdd": {
       "openButton": "Schnell hinzufügen",

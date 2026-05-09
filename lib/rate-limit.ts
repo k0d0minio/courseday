@@ -64,6 +64,22 @@ export async function dailyBriefRateLimit(
   return checkLimit(`daily-brief:${tenantId}:${dateIso}`, DAILY_BRIEF_LIMIT, DAILY_BRIEF_WINDOW_SEC)
 }
 
+/** Per-section brief regeneration: 5 per calendar day per tenant per section. */
+const BRIEF_SECTION_LIMIT = 5
+const BRIEF_SECTION_WINDOW_SEC = 86400
+
+export async function briefSectionRateLimit(
+  tenantId: string,
+  dateIso: string,
+  section: string
+): Promise<{ success: boolean }> {
+  return checkLimit(
+    `daily-brief-section:${tenantId}:${dateIso}:${section}`,
+    BRIEF_SECTION_LIMIT,
+    BRIEF_SECTION_WINDOW_SEC
+  )
+}
+
 /** LLM quick-add parse: 30 per minute per user (separate from mutation cap). */
 const QUICK_ADD_LIMIT = 30
 const QUICK_ADD_WINDOW_SEC = 60

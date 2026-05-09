@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation'
 import { ClipboardCopy, Loader2, RefreshCw, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { generateDailyBrief } from '@/app/actions/daily-brief'
-import type { DailyBriefRecord } from '@/types/daily-brief'
+import { generateDailyBrief, regenerateBriefSection } from '@/app/actions/daily-brief'
+import type { BriefSection, DailyBriefRecord } from '@/types/daily-brief'
 import { formatDailyBriefMarkdown } from '@/lib/daily-brief-format'
 
 const REGENERATE_DEBOUNCE_MS = 2000
@@ -19,6 +19,21 @@ type Props = {
   isEditor: boolean
   briefStale?: boolean
   briefIsEmpty?: boolean
+}
+
+type SectionState = {
+  loading: boolean
+  error: string | null
+}
+
+const REGEN_SECTIONS: BriefSection[] = ['vipNotes', 'risks', 'suggestedActions']
+
+function initialSectionState(): Record<BriefSection, SectionState> {
+  return {
+    vipNotes: { loading: false, error: null },
+    risks: { loading: false, error: null },
+    suggestedActions: { loading: false, error: null },
+  }
 }
 
 export function DailyBriefCard({
@@ -34,11 +49,13 @@ export function DailyBriefCard({
   const [brief, setBrief] = useState<DailyBriefRecord | null>(initialBrief)
   const [stale, setStale] = useState(initialBriefStale)
   const [loading, setLoading] = useState(false)
+  const [sections, setSections] = useState<Record<BriefSection, SectionState>>(initialSectionState)
   const lastRegenerateAt = useRef(0)
 
   useEffect(() => {
     setBrief(initialBrief)
     setStale(initialBriefStale)
+    setSections(initialSectionState())
   }, [initialBrief, initialBriefStale, dayId])
 
   const runRegenerate = useCallback(async () => {
@@ -58,12 +75,44 @@ export function DailyBriefCard({
       }
       setBrief(result.data)
       setStale(false)
+      setSections(initialSectionState())
       toast.success(t('generated'))
       router.refresh()
     } finally {
       setLoading(false)
     }
   }, [dateIso, router, t])
+
+  const runRegenerateSection = useCallback(
+    async (section: BriefSection) => {
+      setSections((prev) => ({
+        ...prev,
+        [section]: { loading: true, error: null },
+      }))
+      try {
+        const result = await regenerateBriefSection(dateIso, section)
+        if (!result.success) {
+          setSections((prev) => ({
+            ...prev,
+            [section]: { loading: false, error: result.error },
+          }))
+          return
+        }
+        setBrief(result.data)
+        setSections((prev) => ({
+          ...prev,
+          [section]: { loading: false, error: null },
+        }))
+        toast.success(t('sectionRegenerated'))
+      } catch {
+        setSections((prev) => ({
+          ...prev,
+          [section]: { loading: false, error: t('sectionRegenFailed') },
+        }))
+      }
+    },
+    [dateIso, t]
+  )
 
   const copyMarkdown = useCallback(() => {
     if (!brief) return
@@ -75,6 +124,7 @@ export function DailyBriefCard({
   }, [brief, t])
 
   const hasBrief = brief !== null
+  const anySectionLoading = REGEN_SECTIONS.some((s) => sections[s].loading)
 
   return (
     <section className="bg-card text-card-foreground overflow-hidden rounded-xl border shadow-sm">
@@ -99,7 +149,7 @@ export function DailyBriefCard({
               variant="outline"
               size="sm"
               onClick={() => void runRegenerate()}
-              disabled={loading}
+              disabled={loading || anySectionLoading}
             >
               {loading ? (
                 <Loader2 className="mr-1 h-4 w-4 animate-spin" />
@@ -175,10 +225,27 @@ export function DailyBriefCard({
                 <span className="hidden group-open:inline">{t('less')}</span>
               </summary>
               <div className="space-y-3 pt-2">
-                <ListBlock title={t('vip')} items={brief.content.vipNotes} />
+                <ListBlock
+                  title={t('vip')}
+                  items={brief.content.vipNotes}
+                  sectionState={sections.vipNotes}
+                  onRegenerate={isEditor ? () => void runRegenerateSection('vipNotes') : undefined}
+                />
                 <AllergenBlock rollup={brief.content.allergenRollup} t={t} />
-                <ListBlock title={t('risks')} items={brief.content.risks} />
-                <ListBlock title={t('actions')} items={brief.content.suggestedActions} />
+                <ListBlock
+                  title={t('risks')}
+                  items={brief.content.risks}
+                  sectionState={sections.risks}
+                  onRegenerate={isEditor ? () => void runRegenerateSection('risks') : undefined}
+                />
+                <ListBlock
+                  title={t('actions')}
+                  items={brief.content.suggestedActions}
+                  sectionState={sections.suggestedActions}
+                  onRegenerate={
+                    isEditor ? () => void runRegenerateSection('suggestedActions') : undefined
+                  }
+                />
                 <p className="text-muted-foreground pt-1 text-xs">
                   {t('meta', {
                     time: new Date(brief.generated_at).toLocaleString(),
@@ -194,16 +261,49 @@ export function DailyBriefCard({
   )
 }
 
-function ListBlock({ title, items }: { title: string; items: string[] }) {
-  if (items.length === 0) return null
+function ListBlock({
+  title,
+  items,
+  sectionState,
+  onRegenerate,
+}: {
+  title: string
+  items: string[]
+  sectionState?: SectionState
+  onRegenerate?: () => void
+}) {
+  const isLoading = sectionState?.loading ?? false
+  const error = sectionState?.error ?? null
+
+  if (items.length === 0 && !onRegenerate) return null
   return (
-    <div>
-      <div className="text-foreground mb-1 font-medium">{title}</div>
-      <ul className="text-muted-foreground list-disc space-y-0.5 pl-5">
-        {items.map((x, i) => (
-          <li key={i}>{x}</li>
-        ))}
-      </ul>
+    <div className={isLoading ? 'opacity-60' : ''}>
+      <div className="text-foreground mb-1 flex items-center justify-between gap-2 font-medium">
+        <span>{title}</span>
+        {onRegenerate && (
+          <Button
+            type="button"
+            size="iconMicro"
+            variant="ghost"
+            onClick={onRegenerate}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <RefreshCw className="h-3 w-3" />
+            )}
+          </Button>
+        )}
+      </div>
+      {error && <p className="text-destructive mb-1 text-xs">{error}</p>}
+      {items.length > 0 && (
+        <ul className="text-muted-foreground list-disc space-y-0.5 pl-5">
+          {items.map((x, i) => (
+            <li key={i}>{x}</li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }

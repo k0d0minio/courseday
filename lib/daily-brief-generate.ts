@@ -9,6 +9,7 @@ import type {
   DailyBriefRecord,
   DailyBriefAllergenRollupEntry,
   DailyBriefCovers,
+  BriefSection,
 } from '@/types/daily-brief'
 import type { Activity, Reservation, BreakfastConfiguration } from '@/types/index'
 import type { DayNote } from '@/app/actions/day-notes'
@@ -48,7 +49,20 @@ export const dailyBriefContentSchema = z.object({
   ),
   risks: z.array(z.string()),
   suggestedActions: z.array(z.string()),
+  sectionTimestamps: z
+    .object({
+      vipNotes: z.string().optional(),
+      risks: z.string().optional(),
+      suggestedActions: z.string().optional(),
+    })
+    .optional(),
 })
+
+const sectionSchemas = {
+  vipNotes: z.object({ vipNotes: z.array(z.string()) }),
+  risks: z.object({ risks: z.array(z.string()) }),
+  suggestedActions: z.object({ suggestedActions: z.array(z.string()) }),
+} as const
 
 function truncateNote(text: string | null | undefined): string | undefined {
   if (!text?.trim()) return undefined
@@ -251,6 +265,115 @@ export async function generateAndPersistDailyBrief(
   const { data, error } = await supabase
     .from('daily_brief')
     .upsert(row as never, { onConflict: 'tenant_id,day_id' })
+    .select('id, content, generated_at, model, prompt_version')
+    .single()
+
+  if (error) return { success: false, error: error.message }
+
+  const parsed = dailyBriefContentSchema.safeParse(data.content)
+  if (!parsed.success) return { success: false, error: 'Could not validate saved brief.' }
+
+  return {
+    success: true,
+    data: {
+      id: data.id,
+      content: parsed.data,
+      generated_at: data.generated_at,
+      model: data.model,
+      prompt_version: data.prompt_version,
+    },
+  }
+}
+
+/** Merge a single regenerated section into existing brief content. */
+export function mergeBriefSection(
+  existing: DailyBriefContent,
+  section: BriefSection,
+  value: string[]
+): DailyBriefContent {
+  return {
+    ...existing,
+    [section]: value,
+    sectionTimestamps: {
+      ...existing.sectionTimestamps,
+      [section]: new Date().toISOString(),
+    },
+  }
+}
+
+/** Run model for one section + persist. Caller supplies loaded rows and weather. */
+export async function generateAndPersistBriefSection(
+  supabase: AppSupabaseClient,
+  args: {
+    tenantId: string
+    dayId: string
+    dateIso: string
+    section: BriefSection
+    existingContent: DailyBriefContent
+    activities: Activity[]
+    reservations: Reservation[]
+    breakfasts: BreakfastConfiguration[]
+    dayNotes: DayNote[]
+    weather: WeatherData | null
+    generatedBy: string | null
+  }
+): Promise<ActionResponse<DailyBriefRecord>> {
+  if (!hasGatewayAuth()) {
+    return {
+      success: false,
+      error: 'AI brief is not configured (set AI_GATEWAY_API_KEY or run `vercel env pull`).',
+    }
+  }
+
+  const covers = buildCovers(args.activities, args.reservations, args.breakfasts)
+  const allergenRollup = buildAllergenRollup(args.activities, args.reservations, args.breakfasts)
+  const payload = llmPayload({
+    dateIso: args.dateIso,
+    weather: args.weather,
+    activities: args.activities,
+    reservations: args.reservations,
+    breakfasts: args.breakfasts,
+    dayNotes: args.dayNotes,
+    covers,
+    allergenRollup,
+  })
+
+  const schema = sectionSchemas[args.section]
+  let sectionValue: string[]
+  try {
+    const result = await generateObject({
+      model: gateway(DAILY_BRIEF_MODEL_ID),
+      schema,
+      system: BRIEF_SYSTEM,
+      prompt: `Produce only the "${args.section}" field for a daily briefing from this JSON:\n${JSON.stringify(payload)}`,
+      maxOutputTokens: 512,
+    })
+    sectionValue = (result.object as Record<string, string[]>)[args.section]
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Generation failed.'
+    return {
+      success: false,
+      error:
+        msg.length > 200
+          ? 'Section generation failed. Check AI Gateway configuration and try again.'
+          : msg,
+    }
+  }
+
+  const merged = mergeBriefSection(args.existingContent, args.section, sectionValue)
+  const now = new Date().toISOString()
+
+  const updateRow: Record<string, unknown> = {
+    content: merged,
+    generated_at: now,
+  }
+  if (args.generatedBy) updateRow.generated_by = args.generatedBy
+
+  const { data, error } = await supabase
+    .from('daily_brief')
+    .update(updateRow as never)
+    .eq('tenant_id', args.tenantId)
+    .eq('day_id', args.dayId)
     .select('id, content, generated_at, model, prompt_version')
     .single()
 

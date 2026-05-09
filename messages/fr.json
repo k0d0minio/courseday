@@ -263,7 +263,9 @@
       "srcBreakfast": "{n} petit(s)-déjeuner",
       "risks": "Risques",
       "actions": "Actions suggérées",
-      "meta": "Généré {time} · {model}"
+      "meta": "Généré {time} · {model}",
+      "sectionRegenerated": "Section mise à jour",
+      "sectionRegenFailed": "Échec de la régénération de la section. Réessayez."
     },
     "quickAdd": {
       "openButton": "Ajout rapide",

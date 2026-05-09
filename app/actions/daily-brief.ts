@@ -23,7 +23,7 @@ import { createTenantClient } from '@/lib/supabase-server'
 import { getTenantId } from '@/lib/tenant'
 import { getUserRole, requireEditor } from '@/lib/membership'
 import { isFeatureEnabled } from '@/app/actions/feature-flags'
-import { dailyBriefRateLimit } from '@/lib/rate-limit'
+import { dailyBriefRateLimit, briefSectionRateLimit } from '@/lib/rate-limit'
 import { ensureDayExists } from '@/app/actions/days'
 import {
   getProgramItemsForDay,
@@ -36,16 +36,17 @@ import { getWeatherForDay } from '@/app/actions/weather'
 import {
   dailyBriefContentSchema,
   generateAndPersistDailyBrief,
+  generateAndPersistBriefSection,
   dayHasPlannedContent,
 } from '@/lib/daily-brief-generate'
 import { redis } from '@/lib/redis'
 import type { ActionResponse } from '@/types/actions'
-import type { DailyBriefRecord } from '@/types/daily-brief'
+import type { DailyBriefRecord, BriefSection } from '@/types/daily-brief'
 import type { Activity, Reservation, BreakfastConfiguration } from '@/types/index'
 import type { DayNote } from '@/app/actions/day-notes'
 import type { WeatherData } from '@/app/actions/weather'
 
-export type { DailyBriefContent, DailyBriefRecord } from '@/types/daily-brief'
+export type { DailyBriefContent, DailyBriefRecord, BriefSection } from '@/types/daily-brief'
 
 export type EnsureDailyBriefResult =
   | { status: 'empty' }
@@ -233,5 +234,69 @@ export async function generateDailyBrief(
     breakfasts,
     dayNotes,
     weather,
+  })
+}
+
+const ALLOWED_SECTIONS = new Set(['vipNotes', 'risks', 'suggestedActions'])
+
+export async function regenerateBriefSection(
+  dateIso: string,
+  section: string
+): Promise<ActionResponse<DailyBriefRecord>> {
+  if (!ALLOWED_SECTIONS.has(section)) {
+    return { success: false, error: 'Invalid section.' }
+  }
+
+  const tenantId = await getTenantId()
+  if (!(await isFeatureEnabled(tenantId, 'daily_brief'))) {
+    return { success: false, error: 'Daily brief is disabled for this venue.' }
+  }
+  const user = await requireEditor(tenantId)
+
+  if (!process.env.AI_GATEWAY_API_KEY) {
+    return {
+      success: false,
+      error: 'AI brief is not configured (missing AI_GATEWAY_API_KEY).',
+    }
+  }
+
+  const rl = await briefSectionRateLimit(tenantId, dateIso, section)
+  if (!rl.success) {
+    return {
+      success: false,
+      error: `Section regeneration limit reached for today. Try again tomorrow.`,
+    }
+  }
+
+  const dayResult = await ensureDayExists(dateIso)
+  if (!dayResult.success) return { success: false, error: dayResult.error }
+  const dayId = dayResult.data.id
+
+  const { supabase } = await createTenantClient()
+  const existing = await getDailyBriefForDayWithClient(supabase, tenantId, dayId)
+  if (!existing) {
+    return { success: false, error: 'No brief exists for this day. Generate a full brief first.' }
+  }
+
+  const [activities, reservations, breakfasts, dayNotes, weather] = await Promise.all([
+    getProgramItemsForDay(tenantId, dayId),
+    getReservationsForDay(tenantId, dayId),
+    getBreakfastConfigsForDay(tenantId, dayId),
+    getDayNotesForDay(tenantId, dayId),
+    getWeatherForDay(dateIso),
+  ])
+
+  return generateAndPersistBriefSection(supabase, {
+    tenantId,
+    dayId,
+    dateIso,
+    section: section as BriefSection,
+    existingContent: existing.content,
+    activities,
+    reservations,
+    breakfasts,
+    dayNotes,
+    weather,
+    generatedBy: user.id,
   })
 }
