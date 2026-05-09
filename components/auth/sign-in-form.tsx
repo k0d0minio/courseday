@@ -90,7 +90,7 @@ export function SignInForm({ defaultSlug, tenantName, logoUrl }: SignInFormProps
     <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="flex justify-center">
-          <Logo logoUrl={logoUrl} tenantName={tenantName} className="text-2xl" />
+          <Logo logoUrl={logoUrl ?? null} tenantName={tenantName ?? null} className="text-2xl" />
         </div>
 
         <Card>
