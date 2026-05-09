@@ -673,6 +673,23 @@
         "showPast": "Show past shifts",
         "hidePast": "Hide past shifts",
         "loadingPast": "Loading…"
+      },
+      "icalFeed": {
+        "title": "Calendar feed",
+        "description": "Subscribe to your shifts in Google Calendar, Apple Calendar, or any iCal client.",
+        "urlLabel": "Feed URL",
+        "copy": "Copy",
+        "copied": "Copied!",
+        "rotate": "Rotate URL",
+        "rotateConfirmTitle": "Rotate calendar URL?",
+        "rotateConfirmDescription": "This invalidates the current URL. You will need to re-subscribe in your calendar app.",
+        "rotateConfirmCancel": "Cancel",
+        "rotateConfirmAction": "Rotate",
+        "rotating": "Rotating…",
+        "generate": "Get feed URL",
+        "generating": "Generating…",
+        "errorGenerate": "Could not generate feed URL.",
+        "errorRotate": "Could not rotate feed URL."
       }
     },
     "venueType": {
