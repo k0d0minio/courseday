@@ -4,8 +4,8 @@ import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { getTenantPalette } from '@/lib/theme/palettes'
 
 export async function GET() {
+  const tenant = await getTenantFromHeaders()
   try {
-    const tenant = await getTenantFromHeaders()
     const supabase = await createSupabaseServerClient()
 
     const { data } = await supabase
@@ -14,14 +14,14 @@ export async function GET() {
       .eq('id', tenant.id)
       .single()
 
-    const name = (data?.name as string | null) ?? 'Courseday'
+    const name = (data?.name as string | null) ?? tenant.slug
     const palette = getTenantPalette(
       (data?.theme_palette as string | null) ?? null,
       (data?.accent_color as string | null) ?? null
     )
 
     const manifest = {
-      name: `${name} · Courseday`,
+      name,
       short_name: name,
       description: 'Daily operations and team communication for golf venues.',
       start_url: '/',
@@ -56,8 +56,8 @@ export async function GET() {
   } catch {
     return NextResponse.json(
       {
-        name: 'Courseday',
-        short_name: 'Courseday',
+        name: tenant.slug,
+        short_name: tenant.slug,
         start_url: '/',
         display: 'standalone',
         background_color: '#ffffff',

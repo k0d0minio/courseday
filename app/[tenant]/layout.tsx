@@ -49,19 +49,19 @@ export async function generateMetadata(): Promise<Metadata> {
   try {
     const tenant = await getTenantFromHeaders()
     const data = await getTenantRow(tenant.id)
-    const name = data?.name as string | undefined
+    const name = (data?.name ?? tenant.slug) as string
     const palette = getTenantPalette(
       (data?.theme_palette as string | null) ?? null,
       (data?.accent_color as string | null) ?? null
     )
     return {
-      title: name ? `${name} · Courseday` : 'Courseday',
+      title: name,
       manifest: '/pwa/manifest',
       themeColor: palette.legacyAccentHex,
       appleWebApp: {
         capable: true,
         statusBarStyle: 'default',
-        title: name ?? 'Courseday',
+        title: name,
       },
       icons: {
         apple: '/pwa/icon',
@@ -69,12 +69,10 @@ export async function generateMetadata(): Promise<Metadata> {
     }
   } catch {
     return {
-      title: 'Courseday',
       manifest: '/pwa/manifest',
       appleWebApp: {
         capable: true,
         statusBarStyle: 'default',
-        title: 'Courseday',
       },
       icons: {
         apple: '/pwa/icon',
