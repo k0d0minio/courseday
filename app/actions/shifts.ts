@@ -9,6 +9,7 @@ import type { ShiftFormData } from '@/lib/shift-schema'
 import type { ActionResponse } from '@/types/actions'
 import type { Shift, ShiftWithAssignee } from '@/types/index'
 import { getTenantAssignees } from '@/app/[tenant]/day/[date]/queries'
+import { isFeatureEnabled } from '@/app/actions/feature-flags'
 import { addDays, format, parseISO } from 'date-fns'
 
 export type MyShiftWithDate = ShiftWithAssignee & { date_iso: string }
@@ -196,6 +197,103 @@ export async function getMyShifts({
       display_name: '—',
     },
   }))
+}
+
+export async function clockInShift(shiftId: string): Promise<ActionResponse<Shift>> {
+  const tenantId = await getTenantId()
+  await requireEditor(tenantId)
+  if (!(await isFeatureEnabled(tenantId, 'staff_schedule'))) {
+    return { success: false, error: 'Staff schedule feature is disabled.' }
+  }
+
+  const { supabase } = await createTenantClient()
+
+  const { data: existing, error: fetchErr } = await supabase
+    .from('shift')
+    .select('actual_start')
+    .eq('id', shiftId)
+    .eq('tenant_id', tenantId)
+    .maybeSingle()
+
+  if (fetchErr) return { success: false, error: fetchErr.message }
+  if (!existing) return { success: false, error: 'Shift not found.' }
+  if (existing.actual_start) return { success: false, error: 'Already clocked in.' }
+
+  const { data, error } = await supabase
+    .from('shift')
+    .update({ actual_start: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .eq('id', shiftId)
+    .eq('tenant_id', tenantId)
+    .select()
+    .single()
+
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: data as Shift }
+}
+
+export async function clockOutShift(shiftId: string): Promise<ActionResponse<Shift>> {
+  const tenantId = await getTenantId()
+  await requireEditor(tenantId)
+  if (!(await isFeatureEnabled(tenantId, 'staff_schedule'))) {
+    return { success: false, error: 'Staff schedule feature is disabled.' }
+  }
+
+  const { supabase } = await createTenantClient()
+
+  const { data: existing, error: fetchErr } = await supabase
+    .from('shift')
+    .select('actual_start, actual_end')
+    .eq('id', shiftId)
+    .eq('tenant_id', tenantId)
+    .maybeSingle()
+
+  if (fetchErr) return { success: false, error: fetchErr.message }
+  if (!existing) return { success: false, error: 'Shift not found.' }
+  if (!existing.actual_start) return { success: false, error: 'Not clocked in yet.' }
+
+  const { data, error } = await supabase
+    .from('shift')
+    .update({ actual_end: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .eq('id', shiftId)
+    .eq('tenant_id', tenantId)
+    .select()
+    .single()
+
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: data as Shift }
+}
+
+export async function setShiftActuals(
+  shiftId: string,
+  actuals: { actual_start: string | null; actual_end: string | null }
+): Promise<ActionResponse<Shift>> {
+  const tenantId = await getTenantId()
+  await requireEditor(tenantId)
+  if (!(await isFeatureEnabled(tenantId, 'staff_schedule'))) {
+    return { success: false, error: 'Staff schedule feature is disabled.' }
+  }
+
+  if (actuals.actual_start && actuals.actual_end) {
+    if (new Date(actuals.actual_end) < new Date(actuals.actual_start)) {
+      return { success: false, error: 'End time must be after start time.' }
+    }
+  }
+
+  const { supabase } = await createTenantClient()
+  const { data, error } = await supabase
+    .from('shift')
+    .update({
+      actual_start: actuals.actual_start || null,
+      actual_end: actuals.actual_end || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', shiftId)
+    .eq('tenant_id', tenantId)
+    .select()
+    .single()
+
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: data as Shift }
 }
 
 export async function getWeekShifts(weekStart: string): Promise<ShiftWithAssignee[]> {
