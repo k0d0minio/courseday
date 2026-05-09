@@ -16,6 +16,15 @@ vi.mock('@/app/actions/feature-flags', () => ({
 
 vi.mock('@/lib/supabase-server', () => ({
   createTenantClient: vi.fn(),
+  createSupabaseServerClient: vi.fn(),
+}))
+
+vi.mock('@/app/actions/auth', () => ({
+  getUser: vi.fn().mockResolvedValue(null),
+}))
+
+vi.mock('@/app/[tenant]/day/[date]/queries', () => ({
+  getTenantAssignees: vi.fn().mockResolvedValue(new Map()),
 }))
 
 // ── Imports ───────────────────────────────────────────────────────────────────
