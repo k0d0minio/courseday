@@ -71,7 +71,7 @@ export async function getTenantMemberAssignees(): Promise<ActionResponse<TenantM
       return {
         user_id: m.user_id,
         email,
-        display_name: fullName || (email ? email.split('@')[0] : m.user_id.slice(0, 8)),
+        display_name: fullName || (email ? (email.split('@')[0] ?? email) : m.user_id.slice(0, 8)),
         role: m.role as MemberRole,
         job_title: m.job_title ?? null,
       }

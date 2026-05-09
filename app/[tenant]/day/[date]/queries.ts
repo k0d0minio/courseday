@@ -192,7 +192,7 @@ export const getTenantAssignees = cache(
       map.set(m.user_id, {
         user_id: m.user_id,
         email,
-        display_name: fullName || (email ? email.split('@')[0] : m.user_id.slice(0, 8)),
+        display_name: fullName || (email ? (email.split('@')[0] ?? email) : m.user_id.slice(0, 8)),
         job_title: m.job_title ?? null,
       })
     })
