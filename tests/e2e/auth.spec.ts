@@ -8,16 +8,19 @@ test.afterAll(async () => {
 })
 
 test.describe('Authentication', () => {
-  test('sign-in page renders', async ({ page, tenantUrl }) => {
+  test('sign-in page renders on tenant subdomain', async ({ page, tenantUrl }) => {
     await page.goto(`${tenantUrl}/auth/sign-in`)
+    // Form renders directly on tenant subdomain — no redirect to root domain
+    await expect(page).toHaveURL(`${tenantUrl}/auth/sign-in`)
     await expect(page.getByRole('heading', { name: /sign in/i })).toBeVisible()
     await expect(page.getByLabel(/email/i)).toBeVisible()
-    await expect(page.getByLabel(/password/i)).toBeVisible()
   })
 
   test('invalid credentials show error', async ({ page, tenantUrl }) => {
     await page.goto(`${tenantUrl}/auth/sign-in`)
     await page.getByLabel(/email/i).fill('wrong@example.com')
+    // Reveal password field before filling it
+    await page.getByRole('button', { name: /use password/i }).click()
     await page.getByLabel(/password/i).fill('wrongpassword')
     await page.getByRole('button', { name: /sign in/i }).click()
     // Should stay on sign-in (not redirect away)
@@ -32,6 +35,8 @@ test.describe('Authentication', () => {
   }) => {
     await page.goto(`${tenantUrl}/auth/sign-in`)
     await page.getByLabel(/email/i).fill(testEmail)
+    // Reveal password field before filling it
+    await page.getByRole('button', { name: /use password/i }).click()
     await page.getByLabel(/password/i).fill(testPassword)
     await page.getByRole('button', { name: /sign in/i }).click()
     await page.waitForURL(`${tenantUrl}/`)
