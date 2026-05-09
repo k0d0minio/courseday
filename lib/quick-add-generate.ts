@@ -9,7 +9,7 @@ import { type AllergenCode, filterAllergenCodes, isAllergenCode } from '@/lib/al
 import { PROMPT_VERSION, QUICK_ADD_SYSTEM, buildUserPrompt } from './quick-add-prompt'
 import type { QuickAddParseData, QuickAddGapId } from '@/lib/quick-add-types'
 
-export const QUICK_ADD_MODEL_ID = 'openai/gpt-5.4' as const
+export const QUICK_ADD_MODEL_ID = 'anthropic/claude-haiku-4-5' as const
 
 function hasGatewayAuth(): boolean {
   return Boolean(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN)
