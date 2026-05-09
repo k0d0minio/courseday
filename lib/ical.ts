@@ -21,7 +21,7 @@ function foldLine(line: string): string {
     first = false
     // Back up until we're on a valid UTF-8 boundary
     let end = Math.min(offset + limit, bytes.length)
-    while (end > offset && (bytes[end] & 0xc0) === 0x80) end--
+    while (end > offset && end < bytes.length && (bytes[end]! & 0xc0) === 0x80) end--
     parts.push((parts.length > 0 ? ' ' : '') + bytes.slice(offset, end).toString('utf8') + '\r\n')
     offset = end
   }
@@ -33,10 +33,7 @@ function prop(name: string, value: string): string {
 }
 
 // Format Date to iCal DATE-TIME in UTC: 20230101T120000Z
-function toIcalDate(dateStr: string, timeStr: string, timezone: string): string {
-  // dateStr: "2024-01-15", timeStr: "09:00"
-  // We store times as plain HH:MM strings; treat as tenant-local but emit as-is
-  // For simplicity, emit as floating local time (no Z) since we don't have tz conversion here
+function toIcalDate(dateStr: string, timeStr: string): string {
   const [h, m] = timeStr.split(':')
   const d = dateStr.replace(/-/g, '')
   const hh = (h ?? '00').padStart(2, '0')
@@ -70,8 +67,8 @@ export function buildIcal(shifts: IcalShift[], prodId: string): string {
   for (const shift of shifts) {
     if (!shift.start_time || !shift.end_time) continue
 
-    const dtstart = toIcalDate(shift.date_iso, shift.start_time, 'UTC')
-    const dtend = toIcalDate(shift.date_iso, shift.end_time, 'UTC')
+    const dtstart = toIcalDate(shift.date_iso, shift.start_time)
+    const dtend = toIcalDate(shift.date_iso, shift.end_time)
     const summary = escapeIcal(shift.role_label ?? 'Shift')
     const uid = `${shift.id}@courseday`
 
