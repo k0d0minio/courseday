@@ -77,7 +77,9 @@
     "nav": {
       "signOut": "Cerrar sesión",
       "skipToContent": "Saltar al contenido principal",
-      "today": "Hoy"
+      "today": "Hoy",
+      "mySchedule": "Mi horario",
+      "profile": "Mi perfil"
     },
     "join": {
       "homeAria": "Inicio",
@@ -374,7 +376,9 @@
       "cityUnexpectedResponse": "Respuesta inesperada del servicio de geocodificación.",
       "clearLocationAria": "Borrar ubicación",
       "locationCoordsHint": "Borra las coordenadas de arriba para buscar una ciudad por nombre.",
-      "staffScheduleDisabled": "La planificación de personal está desactivada para este establecimiento por un administrador de la plataforma."
+      "staffScheduleDisabled": "La planificación de personal está desactivada para este establecimiento por un administrador de la plataforma.",
+      "tabStaffRoster": "Cuadrante",
+      "tabMySchedule": "Mi horario"
     },
     "checklists": {
       "title": "Listas de verificación",
@@ -525,6 +529,56 @@
         "delete": "Eliminar",
         "deleting": "Eliminando…",
         "deleted": "Turno eliminado."
+      },
+      "actuals": {
+        "clockIn": "Fichar entrada",
+        "clockOut": "Fichar salida",
+        "clockedIn": "Entrada fichada.",
+        "clockedOut": "Salida fichada.",
+        "scheduled": "Previsto",
+        "actual": "Real",
+        "editActualsAria": "Editar horas reales",
+        "title": "Editar horas reales",
+        "actualStart": "Inicio real",
+        "actualEnd": "Fin real",
+        "cancel": "Cancelar",
+        "save": "Guardar",
+        "saving": "Guardando…",
+        "saved": "Horas actualizadas."
+      },
+      "roster": {
+        "title": "Cuadrante",
+        "prevWeek": "Semana anterior",
+        "nextWeek": "Semana siguiente",
+        "today": "Hoy",
+        "staffColumn": "Miembro del equipo",
+        "noStaff": "Aún no hay miembros.",
+        "addShiftAria": "Añadir turno para {name} el {date}"
+      },
+      "mySchedule": {
+        "title": "Mi horario",
+        "empty": "No hay turnos próximos.",
+        "emptyPast": "No hay turnos pasados.",
+        "showPast": "Mostrar turnos pasados",
+        "hidePast": "Ocultar turnos pasados",
+        "loadingPast": "Cargando…"
+      },
+      "icalFeed": {
+        "title": "Feed de calendario",
+        "description": "Suscríbase a sus turnos en Google Calendar, Apple Calendar o cualquier cliente iCal.",
+        "urlLabel": "URL del feed",
+        "copy": "Copiar",
+        "copied": "¡Copiado!",
+        "rotate": "Renovar URL",
+        "rotateConfirmTitle": "¿Renovar URL del calendario?",
+        "rotateConfirmDescription": "Esto invalida la URL actual. Tendrá que volver a suscribirse en su aplicación de calendario.",
+        "rotateConfirmCancel": "Cancelar",
+        "rotateConfirmAction": "Renovar",
+        "rotating": "Renovando…",
+        "generate": "Obtener URL del feed",
+        "generating": "Generando…",
+        "errorGenerate": "No se pudo generar la URL del feed.",
+        "errorRotate": "No se pudo renovar la URL."
       }
     },
     "venueType": {
@@ -542,6 +596,16 @@
       "delete": "Eliminar",
       "deleted": "Tipo de espacio eliminado.",
       "saved": "Tipo de espacio guardado."
+    },
+    "profile": {
+      "title": "Mi perfil",
+      "firstNameLabel": "Nombre",
+      "lastNameLabel": "Apellido",
+      "jobTitleLabel": "Cargo",
+      "jobTitlePlaceholder": "p.ej. Jefe de cocina, Camarero, Gerente",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "saved": "Perfil actualizado."
     }
   }
 }

@@ -182,7 +182,8 @@
       "themeSystem": "System",
       "themeLight": "Light",
       "themeDark": "Dark",
-      "mySchedule": "My schedule"
+      "mySchedule": "My schedule",
+      "profile": "My Profile"
     },
     "join": {
       "homeAria": "Home",
@@ -709,6 +710,16 @@
         "errorGenerate": "Could not generate feed URL.",
         "errorRotate": "Could not rotate feed URL."
       }
+    },
+    "profile": {
+      "title": "My Profile",
+      "firstNameLabel": "First name",
+      "lastNameLabel": "Last name",
+      "jobTitleLabel": "Job title",
+      "jobTitlePlaceholder": "e.g. Head chef, Barman, Manager",
+      "save": "Save",
+      "saving": "Saving…",
+      "saved": "Profile updated."
     },
     "venueType": {
       "title": "Venue Types",

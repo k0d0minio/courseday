@@ -68,6 +68,7 @@ export type ShiftAssignee = {
   user_id: string
   email: string
   display_name: string
+  job_title?: string | null
 }
 
 // ── Venue type ────────────────────────────────────────────────────────────────

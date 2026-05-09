@@ -63,6 +63,9 @@ export function SettingsDropdown() {
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-52 p-1">
+        <MenuItem asChild>
+          <Link href="/profile">{navT('profile')}</Link>
+        </MenuItem>
         {routes.map(({ href, labelKey }) => (
           <MenuItem key={href} asChild>
             <Link href={href}>{t(labelKey as LabelKey)}</Link>

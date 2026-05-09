@@ -181,7 +181,9 @@
       "settings": "Paramètres",
       "themeSystem": "Système",
       "themeLight": "Clair",
-      "themeDark": "Sombre"
+      "themeDark": "Sombre",
+      "mySchedule": "Mon planning",
+      "profile": "Mon profil"
     },
     "join": {
       "homeAria": "Accueil",
@@ -502,7 +504,9 @@
       "cityUnexpectedResponse": "Réponse inattendue du service de géocodage.",
       "clearLocationAria": "Effacer le lieu",
       "locationCoordsHint": "Effacez les coordonnées ci-dessus pour rechercher une ville par son nom.",
-      "staffScheduleDisabled": "La planification du personnel est désactivée pour cet établissement par un administrateur."
+      "staffScheduleDisabled": "La planification du personnel est désactivée pour cet établissement par un administrateur.",
+      "tabStaffRoster": "Tableau de service",
+      "tabMySchedule": "Mon planning"
     },
     "checklists": {
       "title": "Checklists",
@@ -653,6 +657,56 @@
         "delete": "Supprimer",
         "deleting": "Suppression…",
         "deleted": "Shift supprimé."
+      },
+      "actuals": {
+        "clockIn": "Pointer à l'arrivée",
+        "clockOut": "Pointer au départ",
+        "clockedIn": "Arrivée pointée.",
+        "clockedOut": "Départ pointé.",
+        "scheduled": "Prévu",
+        "actual": "Réel",
+        "editActualsAria": "Modifier les heures réelles",
+        "title": "Modifier les heures réelles",
+        "actualStart": "Début réel",
+        "actualEnd": "Fin réelle",
+        "cancel": "Annuler",
+        "save": "Enregistrer",
+        "saving": "Enregistrement…",
+        "saved": "Heures mises à jour."
+      },
+      "roster": {
+        "title": "Tableau de service",
+        "prevWeek": "Semaine précédente",
+        "nextWeek": "Semaine suivante",
+        "today": "Aujourd'hui",
+        "staffColumn": "Membre d'équipe",
+        "noStaff": "Aucun membre pour l'instant.",
+        "addShiftAria": "Ajouter un quart pour {name} le {date}"
+      },
+      "mySchedule": {
+        "title": "Mon planning",
+        "empty": "Aucun quart à venir.",
+        "emptyPast": "Aucun quart passé.",
+        "showPast": "Afficher les quarts passés",
+        "hidePast": "Masquer les quarts passés",
+        "loadingPast": "Chargement…"
+      },
+      "icalFeed": {
+        "title": "Calendrier",
+        "description": "Abonnez-vous à vos quarts dans Google Agenda, Apple Calendrier ou tout client iCal.",
+        "urlLabel": "URL du flux",
+        "copy": "Copier",
+        "copied": "Copié !",
+        "rotate": "Renouveler l'URL",
+        "rotateConfirmTitle": "Renouveler l'URL du calendrier ?",
+        "rotateConfirmDescription": "Cela invalide l'URL actuelle. Vous devrez vous réabonner dans votre application de calendrier.",
+        "rotateConfirmCancel": "Annuler",
+        "rotateConfirmAction": "Renouveler",
+        "rotating": "Renouvellement…",
+        "generate": "Obtenir l'URL du flux",
+        "generating": "Génération…",
+        "errorGenerate": "Impossible de générer l'URL du flux.",
+        "errorRotate": "Impossible de renouveler l'URL."
       }
     },
     "venueType": {
@@ -670,6 +724,16 @@
       "delete": "Supprimer",
       "deleted": "Type de lieu supprimé.",
       "saved": "Type de lieu enregistré."
+    },
+    "profile": {
+      "title": "Mon profil",
+      "firstNameLabel": "Prénom",
+      "lastNameLabel": "Nom",
+      "jobTitleLabel": "Intitulé de poste",
+      "jobTitlePlaceholder": "ex. Chef de rang, Barman, Directeur",
+      "save": "Enregistrer",
+      "saving": "Enregistrement…",
+      "saved": "Profil mis à jour."
     }
   }
 }
