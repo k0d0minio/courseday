@@ -163,12 +163,19 @@ export async function getDailyBriefForDay(
 export const getTenantAssignees = cache(
   async (tenantId: string): Promise<Map<string, ShiftAssignee>> => {
     const supabase = await createSupabaseServerClient()
-    const { data: memberships } = await supabase
-      .from('memberships')
-      .select('user_id')
-      .eq('tenant_id', tenantId)
 
-    const userIds = (memberships ?? []).map((m) => m.user_id)
+    const { data: memberships } = await (supabase
+      .from('memberships')
+      .select('user_id, first_name, last_name, job_title')
+      .eq('tenant_id', tenantId) as any)
+
+    const rows = (memberships ?? []) as Array<{
+      user_id: string
+      first_name: string | null
+      last_name: string | null
+      job_title: string | null
+    }>
+    const userIds = rows.map((m) => m.user_id)
     if (userIds.length === 0) return new Map()
 
     const serviceClient = createSupabaseServiceClient()
@@ -177,14 +184,16 @@ export const getTenantAssignees = cache(
     )
 
     const map = new Map<string, ShiftAssignee>()
-    userIds.forEach((uid, i) => {
+    rows.forEach((m, i) => {
       const settled = lookups[i]
       const email =
         settled && settled.status === 'fulfilled' ? (settled.value.data.user?.email ?? '') : ''
-      map.set(uid, {
-        user_id: uid,
+      const fullName = [m.first_name, m.last_name].filter(Boolean).join(' ')
+      map.set(m.user_id, {
+        user_id: m.user_id,
         email,
-        display_name: email ? email.split('@')[0] : uid.slice(0, 8),
+        display_name: fullName || (email ? email.split('@')[0] : m.user_id.slice(0, 8)),
+        job_title: m.job_title ?? null,
       })
     })
     return map

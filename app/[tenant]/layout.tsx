@@ -149,6 +149,17 @@ export default async function TenantLayout({ children }: { children: React.React
                         </Link>
                       </span>
                     )}
+                    {/* Profile link — all signed-in members, desktop */}
+                    {user && (
+                      <span className="hidden sm:inline-flex">
+                        <Link
+                          href="/profile"
+                          className="text-muted-foreground hover:text-foreground px-2 text-sm font-medium transition-colors"
+                        >
+                          {t('profile')}
+                        </Link>
+                      </span>
+                    )}
                     <NotificationBell initialCount={unreadCount} />
                     {user && (
                       <span className={editor ? undefined : 'hidden sm:inline-flex'}>

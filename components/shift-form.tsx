@@ -62,6 +62,8 @@ export function ShiftForm({
     handleSubmit,
     reset,
     control,
+    setValue,
+    getValues,
     formState: { errors },
   } = useForm<ShiftFormData>({
     resolver: standardSchemaResolver(shiftSchema),
@@ -103,7 +105,16 @@ export function ShiftForm({
               name="user_id"
               control={control}
               render={({ field }) => (
-                <Select value={field.value || ''} onValueChange={field.onChange}>
+                <Select
+                  value={field.value || ''}
+                  onValueChange={(uid) => {
+                    field.onChange(uid)
+                    const assignee = assignees.find((a) => a.user_id === uid)
+                    if (assignee?.job_title && !getValues('role')) {
+                      setValue('role', assignee.job_title)
+                    }
+                  }}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder={t('staffPlaceholder')} />
                   </SelectTrigger>
@@ -111,7 +122,9 @@ export function ShiftForm({
                     {assignees.map((a) => (
                       <SelectItem key={a.user_id} value={a.user_id}>
                         {a.display_name}
-                        {a.email && a.email !== a.display_name ? (
+                        {a.job_title ? (
+                          <span className="text-muted-foreground ml-1 text-xs">{a.job_title}</span>
+                        ) : a.email && a.email !== a.display_name ? (
                           <span className="text-muted-foreground ml-1 text-xs">{a.email}</span>
                         ) : null}
                       </SelectItem>

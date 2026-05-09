@@ -29,44 +29,51 @@ export interface TenantMemberAssignee {
   email: string
   display_name: string
   role: MemberRole
+  job_title?: string | null
 }
 
-/**
- * Returns all tenant members (editors + staff) for use in shift assignee
- * pickers and shift card display. Available to any tenant member, not just
- * editors. Names default to the email local-part until full names are added.
- */
 export async function getTenantMemberAssignees(): Promise<ActionResponse<TenantMemberAssignee[]>> {
   const tenantId = await getTenantId()
   const role = await getUserRole(tenantId)
   if (!role) return { success: false, error: 'Not authorized.' }
 
   const { supabase } = await createTenantClient()
-  const { data: memberships, error } = await supabase
+
+  const { data: memberships, error } = await (supabase
     .from('memberships')
-    .select('user_id, role')
+    .select('user_id, role, first_name, last_name, job_title')
     .eq('tenant_id', tenantId)
-    .order('created_at')
+    .order('created_at') as any)
 
   if (error) return { success: false, error: error.message }
   if (!memberships?.length) return { success: true, data: [] }
 
+  const rows = memberships as Array<{
+    user_id: string
+    role: string
+    first_name: string | null
+    last_name: string | null
+    job_title: string | null
+  }>
+
   const serviceClient = createSupabaseServiceClient()
   const emailResults = await Promise.allSettled(
-    memberships.map((m) => serviceClient.auth.admin.getUserById(m.user_id))
+    rows.map((m) => serviceClient.auth.admin.getUserById(m.user_id))
   )
 
   return {
     success: true,
-    data: memberships.map((m, i) => {
+    data: rows.map((m, i) => {
       const settled = emailResults[i]
       const email =
         settled && settled.status === 'fulfilled' ? (settled.value.data.user?.email ?? '') : ''
+      const fullName = [m.first_name, m.last_name].filter(Boolean).join(' ')
       return {
         user_id: m.user_id,
         email,
-        display_name: email ? email.split('@')[0] : m.user_id.slice(0, 8),
+        display_name: fullName || (email ? email.split('@')[0] : m.user_id.slice(0, 8)),
         role: m.role as MemberRole,
+        job_title: m.job_title ?? null,
       }
     }),
   }
@@ -336,6 +343,68 @@ export async function removeMember(membershipId: string): Promise<ActionResponse
     .delete()
     .eq('id', membershipId)
     .eq('tenant_id', tenantId)
+
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: undefined }
+}
+
+export async function getMemberProfile(): Promise<
+  ActionResponse<{ first_name: string | null; last_name: string | null; job_title: string | null }>
+> {
+  const tenantId = await getTenantId()
+  const user = await getUser()
+  if (!user) return { success: false, error: 'Not authorized.' }
+  const role = await getUserRole(tenantId)
+  if (!role) return { success: false, error: 'Not authorized.' }
+
+  const { supabase } = await createTenantClient()
+
+  const { data, error } = await (supabase
+    .from('memberships')
+    .select('first_name, last_name, job_title')
+    .eq('tenant_id', tenantId)
+    .eq('user_id', user.id)
+    .single() as any)
+
+  if (error) return { success: false, error: error.message }
+  const row = data as {
+    first_name: string | null
+    last_name: string | null
+    job_title: string | null
+  } | null
+  return {
+    success: true,
+    data: {
+      first_name: row?.first_name ?? null,
+      last_name: row?.last_name ?? null,
+      job_title: row?.job_title ?? null,
+    },
+  }
+}
+
+export async function updateMemberProfile(data: {
+  first_name: string
+  last_name: string
+  job_title: string
+}): Promise<ActionResponse> {
+  const tenantId = await getTenantId()
+  const user = await getUser()
+  if (!user) return { success: false, error: 'Not authorized.' }
+  const role = await getUserRole(tenantId)
+  if (!role) return { success: false, error: 'Not authorized.' }
+
+  const { supabase } = await createTenantClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updatePayload: any = {
+    first_name: data.first_name.trim() || null,
+    last_name: data.last_name.trim() || null,
+    job_title: data.job_title.trim() || null,
+  }
+  const { error } = await supabase
+    .from('memberships')
+    .update(updatePayload)
+    .eq('tenant_id', tenantId)
+    .eq('user_id', user.id)
 
   if (error) return { success: false, error: error.message }
   return { success: true, data: undefined }

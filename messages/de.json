@@ -77,7 +77,9 @@
     "nav": {
       "signOut": "Abmelden",
       "skipToContent": "Zum Hauptinhalt springen",
-      "today": "Heute"
+      "today": "Heute",
+      "mySchedule": "Mein Dienstplan",
+      "profile": "Mein Profil"
     },
     "join": {
       "homeAria": "Startseite",
@@ -374,7 +376,9 @@
       "cityUnexpectedResponse": "Unerwartete Antwort vom Geocoding-Dienst.",
       "clearLocationAria": "Standort löschen",
       "locationCoordsHint": "Löschen Sie die Koordinaten oben, um nach einer Stadt zu suchen.",
-      "staffScheduleDisabled": "Die Personalplanung ist für diesen Betrieb von einem Plattform-Administrator deaktiviert."
+      "staffScheduleDisabled": "Die Personalplanung ist für diesen Betrieb von einem Plattform-Administrator deaktiviert.",
+      "tabStaffRoster": "Dienstplan",
+      "tabMySchedule": "Mein Dienstplan"
     },
     "checklists": {
       "title": "Checklisten",
@@ -525,6 +529,56 @@
         "delete": "Löschen",
         "deleting": "Wird gelöscht…",
         "deleted": "Schicht entfernt."
+      },
+      "actuals": {
+        "clockIn": "Einchecken",
+        "clockOut": "Auschecken",
+        "clockedIn": "Eingecheckt.",
+        "clockedOut": "Ausgecheckt.",
+        "scheduled": "Geplant",
+        "actual": "Tatsächlich",
+        "editActualsAria": "Ist-Zeiten bearbeiten",
+        "title": "Ist-Zeiten bearbeiten",
+        "actualStart": "Ist-Beginn",
+        "actualEnd": "Ist-Ende",
+        "cancel": "Abbrechen",
+        "save": "Speichern",
+        "saving": "Speichern…",
+        "saved": "Zeiten aktualisiert."
+      },
+      "roster": {
+        "title": "Dienstplan",
+        "prevWeek": "Vorherige Woche",
+        "nextWeek": "Nächste Woche",
+        "today": "Heute",
+        "staffColumn": "Teammitglied",
+        "noStaff": "Noch keine Teammitglieder.",
+        "addShiftAria": "Schicht für {name} am {date} hinzufügen"
+      },
+      "mySchedule": {
+        "title": "Mein Dienstplan",
+        "empty": "Keine bevorstehenden Schichten.",
+        "emptyPast": "Keine vergangenen Schichten.",
+        "showPast": "Vergangene Schichten anzeigen",
+        "hidePast": "Vergangene Schichten ausblenden",
+        "loadingPast": "Laden…"
+      },
+      "icalFeed": {
+        "title": "Kalender-Feed",
+        "description": "Abonnieren Sie Ihre Schichten in Google Kalender, Apple Kalender oder einem anderen iCal-Client.",
+        "urlLabel": "Feed-URL",
+        "copy": "Kopieren",
+        "copied": "Kopiert!",
+        "rotate": "URL erneuern",
+        "rotateConfirmTitle": "Kalender-URL erneuern?",
+        "rotateConfirmDescription": "Dadurch wird die aktuelle URL ungültig. Sie müssen sich in Ihrer Kalender-App neu anmelden.",
+        "rotateConfirmCancel": "Abbrechen",
+        "rotateConfirmAction": "Erneuern",
+        "rotating": "Erneuern…",
+        "generate": "Feed-URL abrufen",
+        "generating": "Generieren…",
+        "errorGenerate": "Feed-URL konnte nicht generiert werden.",
+        "errorRotate": "URL konnte nicht erneuert werden."
       }
     },
     "venueType": {
@@ -542,6 +596,16 @@
       "delete": "Löschen",
       "deleted": "Raumart gelöscht.",
       "saved": "Raumart gespeichert."
+    },
+    "profile": {
+      "title": "Mein Profil",
+      "firstNameLabel": "Vorname",
+      "lastNameLabel": "Nachname",
+      "jobTitleLabel": "Berufsbezeichnung",
+      "jobTitlePlaceholder": "z.B. Chefkoch, Barkeeper, Manager",
+      "save": "Speichern",
+      "saving": "Speichern…",
+      "saved": "Profil aktualisiert."
     }
   }
 }

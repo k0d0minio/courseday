@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, CalendarDays, Settings, Sparkles, CalendarCheck } from 'lucide-react'
+import { Home, CalendarDays, Settings, Sparkles, CalendarCheck, UserCircle } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import {
@@ -50,6 +50,16 @@ export function MobileNav({ today, isEditor }: MobileNavProps) {
             label: navT('mySchedule'),
             icon: CalendarCheck,
             active: pathname.startsWith('/my-schedule'),
+          },
+        ]
+      : []),
+    ...(!isEditor
+      ? [
+          {
+            href: '/profile',
+            label: navT('profile'),
+            icon: UserCircle,
+            active: pathname.startsWith('/profile'),
           },
         ]
       : []),
@@ -116,6 +126,14 @@ export function MobileNav({ today, isEditor }: MobileNavProps) {
                 <DrawerTitle>{settingsT('title')}</DrawerTitle>
               </DrawerHeader>
               <div className="flex flex-col gap-1 px-4 pb-8">
+                <DrawerClose asChild>
+                  <Link
+                    href="/profile"
+                    className="hover:bg-accent flex items-center rounded-md px-3 py-3 text-sm transition-colors"
+                  >
+                    {navT('profile')}
+                  </Link>
+                </DrawerClose>
                 {settingsRoutes.map(({ href, labelKey }) => (
                   <DrawerClose key={href} asChild>
                     <Link
