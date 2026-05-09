@@ -587,7 +587,19 @@
       "removing": "Removing…",
       "removed": "Member removed.",
       "roleUpdated": "Role updated.",
-      "loading": "Loading…"
+      "loading": "Loading…",
+      "payRate": {
+        "header": "Pay rate",
+        "notSet": "—",
+        "editAria": "Edit pay rate",
+        "saveAria": "Save pay rate",
+        "cancelAria": "Cancel",
+        "rateLabel": "Hourly rate",
+        "currencyLabel": "Currency",
+        "saved": "Pay rate saved.",
+        "invalidRate": "Rate must be a positive number.",
+        "invalidCurrency": "Currency must be a 3-letter ISO code (e.g. EUR)."
+      }
     },
     "featureRequests": {
       "title": "Your requests",
@@ -709,6 +721,22 @@
         "generating": "Generating…",
         "errorGenerate": "Could not generate feed URL.",
         "errorRotate": "Could not rotate feed URL."
+      },
+      "laborCost": {
+        "title": "Labor cost",
+        "prevWeek": "Previous week",
+        "nextWeek": "Next week",
+        "thisWeek": "This week",
+        "totalScheduled": "Scheduled cost",
+        "totalActual": "Actual cost",
+        "breakdown": "Per-member breakdown",
+        "member": "Team member",
+        "scheduledHours": "Scheduled",
+        "scheduledCost": "Scheduled cost",
+        "actualHours": "Actual",
+        "actualCost": "Actual cost",
+        "noRate": "No rate set",
+        "noMembers": "No team members yet."
       }
     },
     "profile": {
