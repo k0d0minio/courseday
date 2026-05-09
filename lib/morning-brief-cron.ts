@@ -91,7 +91,7 @@ export async function runMorningBriefEmailCron(): Promise<MorningBriefCronResult
 
   const { data: tenants, error: tenantsError } = await supabase
     .from('tenants')
-    .select('id, name, slug, timezone, email_from_name, email_reply_to')
+    .select('id, name, slug, timezone, email_from_name, email_reply_to, language')
 
   if (tenantsError || !tenants) {
     return {
@@ -166,6 +166,7 @@ export async function runMorningBriefEmailCron(): Promise<MorningBriefCronResult
         breakfasts,
         dayNotes,
         weather,
+        language: tenant.language ?? 'en',
       })
       if (!gen.success) {
         errors.push(`${tenant.slug}: ${gen.error}`)

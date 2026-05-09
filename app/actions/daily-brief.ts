@@ -131,6 +131,12 @@ export async function ensureDailyBrief(args: {
   }
 
   try {
+    const { data: tenantRow } = await supabase
+      .from('tenants')
+      .select('language')
+      .eq('id', tenantId)
+      .single()
+
     const result = await generateAndPersistDailyBrief(supabase, {
       tenantId,
       dayId,
@@ -141,6 +147,7 @@ export async function ensureDailyBrief(args: {
       breakfasts,
       dayNotes,
       weather,
+      language: tenantRow?.language ?? 'en',
     })
     if (!result.success) return { status: 'error', error: result.error }
     return { status: 'ok', brief: result.data, stale: false }
@@ -223,6 +230,13 @@ export async function generateDailyBrief(
   ])
 
   const { supabase } = await createTenantClient()
+
+  const { data: tenantRow } = await supabase
+    .from('tenants')
+    .select('language')
+    .eq('id', tenantId)
+    .single()
+
   return generateAndPersistDailyBrief(supabase, {
     tenantId,
     dayId,
@@ -233,5 +247,6 @@ export async function generateDailyBrief(
     breakfasts,
     dayNotes,
     weather,
+    language: tenantRow?.language ?? 'en',
   })
 }

@@ -159,6 +159,13 @@ function llmPayload(args: {
   }
 }
 
+const LANGUAGE_NAMES: Record<string, string> = {
+  en: 'English',
+  fr: 'French',
+  de: 'German',
+  es: 'Spanish',
+}
+
 const BRIEF_SYSTEM = `You write concise operational day briefings for venue staff.
 Rules:
 - Use British English spelling if unsure; keep tone professional and calm.
@@ -166,6 +173,12 @@ Rules:
 - Never include guest personal names. If notes contain names, generalise (e.g. "a dietary note on one reservation").
 - vipNotes: short bullets for large parties, tight turnarounds, or anything that reads as priority from the data (not names).
 - If data is sparse, say so briefly; still give a useful headline and summary.`
+
+function buildSystemPrompt(language: string): string {
+  const langName = LANGUAGE_NAMES[language] ?? 'English'
+  if (language === 'en') return BRIEF_SYSTEM
+  return `${BRIEF_SYSTEM}\nRespond in ${langName}.`
+}
 
 export function dayHasPlannedContent(
   activities: Activity[],
@@ -188,6 +201,7 @@ export async function generateAndPersistDailyBrief(
     breakfasts: BreakfastConfiguration[]
     dayNotes: DayNote[]
     weather: WeatherData | null
+    language?: string
   }
 ): Promise<ActionResponse<DailyBriefRecord>> {
   if (!hasGatewayAuth()) {
@@ -215,7 +229,7 @@ export async function generateAndPersistDailyBrief(
     const result = await generateObject({
       model: gateway(DAILY_BRIEF_MODEL_ID),
       schema: narrativeSchema,
-      system: BRIEF_SYSTEM,
+      system: buildSystemPrompt(args.language ?? 'en'),
       prompt: `Produce a daily briefing from this JSON:\n${JSON.stringify(payload)}`,
       maxOutputTokens: 2048,
     })
@@ -244,6 +258,7 @@ export async function generateAndPersistDailyBrief(
     generated_at: new Date().toISOString(),
     model: DAILY_BRIEF_MODEL_ID,
     prompt_version: PROMPT_VERSION,
+    language: args.language ?? 'en',
   }
   if (args.generatedBy) row.generated_by = args.generatedBy
   else row.generated_by = null
