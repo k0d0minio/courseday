@@ -41,7 +41,7 @@ type Props = {
   editItem: ShiftWithAssignee | null
   onSuccess: (item: ShiftWithAssignee) => void
   /** Pre-select this user when opening the form for a new shift. */
-  defaultUserId?: string
+  defaultUserId?: string | undefined
 }
 
 export function ShiftForm({
