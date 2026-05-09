@@ -3,7 +3,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
 vi.mock('@/lib/tenant', () => ({ getTenantId: vi.fn().mockResolvedValue('tenant-1') }))
-vi.mock('@/lib/membership', () => ({ requireEditor: vi.fn() }))
+vi.mock('@/lib/membership', () => ({
+  requireEditor: vi.fn().mockResolvedValue({ id: 'user-1', email: 'test@example.com' }),
+  getUserRole: vi.fn().mockResolvedValue('editor'),
+}))
 vi.mock('@/app/actions/feature-flags', () => ({
   isFeatureEnabled: vi.fn().mockResolvedValue(true),
 }))
@@ -19,8 +22,15 @@ vi.mock('@/app/[tenant]/day/[date]/queries', () => ({
 // ── Imports ───────────────────────────────────────────────────────────────────
 
 import { isFeatureEnabled } from '@/app/actions/feature-flags'
-import { createTenantClient } from '@/lib/supabase-server'
-import { clockInShift, clockOutShift, setShiftActuals } from '@/app/actions/shifts'
+import { createTenantClient, createSupabaseServerClient } from '@/lib/supabase-server'
+import {
+  createShift,
+  updateShift,
+  deleteShift,
+  clockInShift,
+  clockOutShift,
+  setShiftActuals,
+} from '@/app/actions/shifts'
 import { assertSuccess, assertFailure } from '@/tests/helpers/action-response'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -29,7 +39,19 @@ type QueryResult = { data: unknown; error: { message: string; code?: string } | 
 
 function makeChain(result: QueryResult = { data: null, error: null }) {
   const chain: Record<string, unknown> = {}
-  ;['select', 'insert', 'update', 'delete', 'upsert', 'eq', 'neq', 'in', 'order'].forEach((m) => {
+  ;[
+    'select',
+    'insert',
+    'update',
+    'delete',
+    'upsert',
+    'eq',
+    'neq',
+    'in',
+    'is',
+    'order',
+    'limit',
+  ].forEach((m) => {
     chain[m] = vi.fn().mockReturnValue(chain)
   })
   chain.single = vi.fn().mockResolvedValue(result)
@@ -49,10 +71,121 @@ function mockClient(fromFn: ReturnType<typeof vi.fn>) {
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
 const SHIFT_ID = 'shift-1'
+const DAY_ID = 'day-1'
+const USER_UUID = '123e4567-e89b-12d3-a456-426614174000'
+
+const VALID_SHIFT_DATA = {
+  user_id: USER_UUID,
+  role: 'Chef',
+  start_time: '08:00',
+  end_time: '16:00',
+  notes: '',
+}
+
+const SHIFT_ROW = {
+  id: SHIFT_ID,
+  tenant_id: 'tenant-1',
+  day_id: DAY_ID,
+  user_id: USER_UUID,
+  role: 'Chef',
+  start_time: '08:00',
+  end_time: '16:00',
+  notes: null,
+  actual_start: null,
+  actual_end: null,
+}
 
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(isFeatureEnabled).mockResolvedValue(true)
+})
+
+// ── createShift ───────────────────────────────────────────────────────────────
+
+describe('createShift', () => {
+  it('creates a shift and returns it', async () => {
+    // assertDayAndMemberBelongToTenant: day check → membership check → insert
+    const dayChain = makeChain({ data: { id: DAY_ID }, error: null })
+    const memberChain = makeChain({ data: { id: 'member-1' }, error: null })
+    const insertChain = makeChain({ data: SHIFT_ROW, error: null })
+    const from = vi
+      .fn()
+      .mockReturnValueOnce(dayChain)
+      .mockReturnValueOnce(memberChain)
+      .mockReturnValueOnce(insertChain)
+    mockClient(from)
+
+    const result = await createShift(DAY_ID, VALID_SHIFT_DATA)
+    assertSuccess(result)
+    expect(result.data).toMatchObject({ role: 'Chef' })
+  })
+
+  it('returns validation error for invalid user_id', async () => {
+    const result = await createShift(DAY_ID, { ...VALID_SHIFT_DATA, user_id: 'not-a-uuid' })
+    assertFailure(result)
+    expect(result.error).toMatch(/team member/i)
+  })
+
+  it('returns error when day not found', async () => {
+    const dayChain = makeChain({ data: null, error: null })
+    const from = vi.fn().mockReturnValue(dayChain)
+    mockClient(from)
+
+    const result = await createShift(DAY_ID, VALID_SHIFT_DATA)
+    assertFailure(result)
+    expect(result.error).toMatch(/day not found/i)
+  })
+})
+
+// ── updateShift ───────────────────────────────────────────────────────────────
+
+describe('updateShift', () => {
+  it('updates a shift and returns it', async () => {
+    const dayChain = makeChain({ data: { id: DAY_ID }, error: null })
+    const memberChain = makeChain({ data: { id: 'member-1' }, error: null })
+    const updateChain = makeChain({ data: { ...SHIFT_ROW, role: 'Manager' }, error: null })
+    const from = vi
+      .fn()
+      .mockReturnValueOnce(dayChain)
+      .mockReturnValueOnce(memberChain)
+      .mockReturnValueOnce(updateChain)
+    mockClient(from)
+
+    const result = await updateShift(SHIFT_ID, DAY_ID, { ...VALID_SHIFT_DATA, role: 'Manager' })
+    assertSuccess(result)
+    expect(result.data).toMatchObject({ role: 'Manager' })
+  })
+
+  it('returns validation error for invalid user_id', async () => {
+    const result = await updateShift(SHIFT_ID, DAY_ID, {
+      ...VALID_SHIFT_DATA,
+      user_id: 'not-a-uuid',
+    })
+    assertFailure(result)
+  })
+})
+
+// ── deleteShift ───────────────────────────────────────────────────────────────
+
+describe('deleteShift', () => {
+  it('deletes the shift and returns success', async () => {
+    const chain = makeChain({ data: null, error: null })
+    const from = vi.fn().mockReturnValue(chain)
+    mockClient(from)
+
+    const result = await deleteShift(SHIFT_ID, DAY_ID)
+    expect(result.success).toBe(true)
+  })
+
+  it('surfaces DB error', async () => {
+    const chain = makeChain({ data: null, error: { message: 'DB error' } })
+    const from = vi.fn().mockReturnValue(chain)
+    mockClient(from)
+
+    const result = await deleteShift(SHIFT_ID, DAY_ID)
+    assertFailure(result)
+    expect(result.error).toBe('DB error')
+  })
 })
 
 // ── clockInShift ──────────────────────────────────────────────────────────────
