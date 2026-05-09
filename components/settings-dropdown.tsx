@@ -11,6 +11,7 @@ import { useFeatureFlag } from '@/lib/feature-flags-context'
 export const SETTINGS_ROUTES = [
   { href: '/my-schedule', labelKey: 'tabMySchedule' },
   { href: '/schedule', labelKey: 'tabStaffRoster' },
+  { href: '/admin/settings/shift-templates', labelKey: 'tabShiftTemplates' },
   { href: '/admin/settings/poc', labelKey: 'tabPoc' },
   { href: '/admin/settings/venue-types', labelKey: 'tabVenueTypes' },
   { href: '/admin/settings/activity-tags', labelKey: 'tabActivityTags' },
@@ -30,7 +31,12 @@ export function getVisibleSettingsRoutes(visibility: {
 }): SettingsRoute[] {
   let routes = [...SETTINGS_ROUTES]
   if (!visibility.staffSchedule) {
-    routes = routes.filter((route) => route.href !== '/schedule' && route.href !== '/my-schedule')
+    routes = routes.filter(
+      (route) =>
+        route.href !== '/schedule' &&
+        route.href !== '/my-schedule' &&
+        route.href !== '/admin/settings/shift-templates'
+    )
   }
   if (!visibility.checklists) {
     routes = routes.filter((route) => route.href !== '/admin/settings/checklists')

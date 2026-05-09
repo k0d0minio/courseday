@@ -95,6 +95,21 @@ export type ChecklistTemplateWithItems = ChecklistTemplate & {
   items: ChecklistTemplateItem[]
 }
 
+// ── Shift templates ───────────────────────────────────────────────────────────
+
+export type ShiftTemplate = {
+  id: string
+  tenant_id: string
+  name: string
+  role: string
+  start_time: string | null
+  end_time: string | null
+  default_user_id: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
 // ── Composite / relation types ────────────────────────────────────────────────
 
 export type ActivityWithRelations = Activity & {

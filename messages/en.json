@@ -506,7 +506,8 @@
       "locationCoordsHint": "Clear the coordinates above to search for a city by name.",
       "staffScheduleDisabled": "Staff scheduling is disabled for this venue by a platform admin.",
       "tabStaffRoster": "Staff Roster",
-      "tabMySchedule": "My schedule"
+      "tabMySchedule": "My schedule",
+      "tabShiftTemplates": "Shift Templates"
     },
     "checklists": {
       "title": "Checklists",
@@ -737,6 +738,38 @@
         "actualCost": "Actual cost",
         "noRate": "No rate set",
         "noMembers": "No team members yet."
+      },
+      "templates": {
+        "applyLabel": "Apply template",
+        "selectPlaceholder": "Select a template…",
+        "none": "—",
+        "title": "Shift Templates",
+        "add": "Add template",
+        "addTitle": "Add template",
+        "editTitle": "Edit template",
+        "nameLabel": "Name",
+        "nameCol": "Name",
+        "roleLabel": "Role",
+        "rolePlaceholder": "e.g. Head chef",
+        "roleCol": "Role",
+        "startLabel": "Start",
+        "endLabel": "End",
+        "timeCol": "Time",
+        "defaultUserLabel": "Default staff member",
+        "defaultUserPlaceholder": "Select…",
+        "notesLabel": "Notes",
+        "cancel": "Cancel",
+        "save": "Save",
+        "saving": "Saving…",
+        "saved": "Template saved.",
+        "updated": "Template updated.",
+        "deleted": "Template deleted.",
+        "delete": "Delete",
+        "deleting": "Deleting…",
+        "deleteTitle": "Delete template?",
+        "deleteDescription": "This will permanently delete {name}.",
+        "empty": "No shift templates yet.",
+        "loading": "Loading…"
       }
     },
     "profile": {

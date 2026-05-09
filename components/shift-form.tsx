@@ -1,13 +1,14 @@
 'use client'
 
-import { useEffect, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
 import { createShift, updateShift } from '@/app/actions/shifts'
+import { listShiftTemplates } from '@/app/actions/shift-templates'
 import { shiftSchema, type ShiftFormData } from '@/lib/shift-schema'
-import type { Shift, ShiftAssignee, ShiftWithAssignee } from '@/types/index'
+import type { Shift, ShiftAssignee, ShiftTemplate, ShiftWithAssignee } from '@/types/index'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -54,8 +55,18 @@ export function ShiftForm({
   defaultUserId,
 }: Props) {
   const t = useTranslations('Tenant.staff.shiftForm')
+  const tTpl = useTranslations('Tenant.staff.templates')
   const [isPending, startTransition] = useTransition()
   const isEditing = !!editItem
+
+  const [templates, setTemplates] = useState<ShiftTemplate[]>([])
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('')
+
+  useEffect(() => {
+    listShiftTemplates().then((result) => {
+      if (result.success) setTemplates(result.data)
+    })
+  }, [])
 
   const {
     register,
@@ -72,7 +83,22 @@ export function ShiftForm({
 
   useEffect(() => {
     reset(defaultValues(editItem, defaultUserId))
+    setSelectedTemplateId('')
   }, [editItem, isOpen, defaultUserId, reset])
+
+  function applyTemplate(templateId: string) {
+    setSelectedTemplateId(templateId)
+    if (!templateId) return
+    const tmpl = templates.find((t) => t.id === templateId)
+    if (!tmpl) return
+    if (tmpl.role) setValue('role', tmpl.role)
+    if (tmpl.start_time) setValue('start_time', tmpl.start_time.slice(0, 5))
+    if (tmpl.end_time) setValue('end_time', tmpl.end_time.slice(0, 5))
+    if (tmpl.notes) setValue('notes', tmpl.notes)
+    if (tmpl.default_user_id && !getValues('user_id')) {
+      setValue('user_id', tmpl.default_user_id)
+    }
+  }
 
   function onSubmit(data: ShiftFormData) {
     startTransition(async () => {
@@ -99,6 +125,25 @@ export function ShiftForm({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {templates.length > 0 && (
+            <div className="space-y-2">
+              <Label>{tTpl('applyLabel')}</Label>
+              <Select value={selectedTemplateId} onValueChange={applyTemplate}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={tTpl('selectPlaceholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">{tTpl('none')}</SelectItem>
+                  {templates.map((tmpl) => (
+                    <SelectItem key={tmpl.id} value={tmpl.id}>
+                      {tmpl.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label>{t('staffMemberLabel')}</Label>
             <Controller
