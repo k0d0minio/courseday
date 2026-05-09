@@ -77,15 +77,21 @@ export type MorningBriefCronResult = {
  * `getTenantToday` and compare `now` to 7:00 that local calendar day, so
  * short-interval crons (Pro) are not required.
  */
+function extractEmailAddress(from: string): string {
+  const match = from.match(/<([^>]+)>/)
+  return match ? (match[1] ?? from) : from
+}
+
 export async function runMorningBriefEmailCron(): Promise<MorningBriefCronResult> {
   const supabase = createSupabaseServiceClient()
   const resendKey = process.env.RESEND_API_KEY
-  const from = process.env.RESEND_FROM_EMAIL ?? 'Courseday <onboarding@resend.dev>'
+  const fromEnv = process.env.RESEND_FROM_EMAIL ?? 'Courseday <onboarding@resend.dev>'
+  const fromAddress = extractEmailAddress(fromEnv)
   const resend = resendKey ? new Resend(resendKey) : null
 
   const { data: tenants, error: tenantsError } = await supabase
     .from('tenants')
-    .select('id, name, slug, timezone')
+    .select('id, name, slug, timezone, email_from_name, email_reply_to')
 
   if (tenantsError || !tenants) {
     return {
@@ -218,13 +224,18 @@ export async function runMorningBriefEmailCron(): Promise<MorningBriefCronResult
         const subject = `Daily brief — ${tenant.name} — ${dateLabel}`
         const text = formatDailyBriefMarkdown(brief.content) + `\n\n${dayUrl}\n`
         const html = briefToHtml(brief, tenant.name, dayUrl, dateLabel)
+        const tenantFromName =
+          (tenant as { email_from_name?: string | null }).email_from_name ?? tenant.name
+        const tenantReplyTo =
+          (tenant as { email_reply_to?: string | null }).email_reply_to ?? undefined
 
         const { error: sendErr } = await resend.emails.send({
-          from,
+          from: `${tenantFromName} <${fromAddress}>`,
           to,
           subject,
           text,
           html,
+          ...(tenantReplyTo ? { replyTo: tenantReplyTo } : {}),
         })
         if (sendErr) {
           errors.push(`${to}: ${sendErr.message}`)
