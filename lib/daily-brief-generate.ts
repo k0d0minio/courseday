@@ -10,7 +10,12 @@ import type {
   DailyBriefAllergenRollupEntry,
   DailyBriefCovers,
 } from '@/types/daily-brief'
-import type { Activity, Reservation, BreakfastConfiguration } from '@/types/index'
+import type {
+  Activity,
+  Reservation,
+  BreakfastConfiguration,
+  ShiftWithAssignee,
+} from '@/types/index'
 import type { DayNote } from '@/app/actions/day-notes'
 
 const PROMPT_VERSION = 'v1'
@@ -117,6 +122,7 @@ function llmPayload(args: {
   dayNotes: DayNote[]
   covers: DailyBriefCovers
   allergenRollup: DailyBriefAllergenRollupEntry[]
+  shifts?: ShiftWithAssignee[]
 }) {
   return {
     date: args.dateIso,
@@ -156,6 +162,12 @@ function llmPayload(args: {
     dayNotes: args.dayNotes.map((n) => ({
       content: truncateNote(n.content),
     })),
+    staff: (args.shifts ?? []).map((s) => ({
+      name: s.assignee.display_name,
+      role: s.role || undefined,
+      start: s.start_time,
+      end: s.end_time,
+    })),
   }
 }
 
@@ -188,6 +200,7 @@ export async function generateAndPersistDailyBrief(
     breakfasts: BreakfastConfiguration[]
     dayNotes: DayNote[]
     weather: WeatherData | null
+    shifts?: ShiftWithAssignee[]
   }
 ): Promise<ActionResponse<DailyBriefRecord>> {
   if (!hasGatewayAuth()) {
@@ -208,6 +221,7 @@ export async function generateAndPersistDailyBrief(
     dayNotes: args.dayNotes,
     covers,
     allergenRollup,
+    shifts: args.shifts,
   })
 
   let narrative: z.infer<typeof narrativeSchema>

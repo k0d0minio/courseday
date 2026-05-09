@@ -13,10 +13,43 @@ import {
   getBreakfastConfigsForDayWithClient,
   getDayNotesForDayWithClient,
   getDailyBriefForDayWithClient,
+  getShiftsForDayWithClient,
 } from '@/app/[tenant]/day/[date]/queries'
+import type { ShiftWithAssignee } from '@/types/index'
 import { getWeatherForTenantId } from '@/app/actions/weather'
 import { dayHasPlannedContent, generateAndPersistDailyBrief } from '@/lib/daily-brief-generate'
 import type { DailyBriefRecord } from '@/types/daily-brief'
+
+function fmtShiftTime(t: string | null | undefined): string {
+  if (!t) return ''
+  return t.slice(0, 5)
+}
+
+function staffSectionHtml(shifts: ShiftWithAssignee[]): string {
+  if (shifts.length === 0) return ''
+  const items = shifts
+    .map((s) => {
+      const role = s.role ? ` (${escapeHtml(s.role)})` : ''
+      const start = fmtShiftTime(s.start_time)
+      const end = fmtShiftTime(s.end_time)
+      const times = start || end ? ` ${start}–${end}` : ''
+      return `<p style="margin:4px 0 4px 12px;">• ${escapeHtml(s.assignee.display_name)}${role}${escapeHtml(times)}</p>`
+    })
+    .join('')
+  return `<h2 style="font-size:15px;margin:20px 0 8px;">Staff today</h2>${items}`
+}
+
+function staffSectionText(shifts: ShiftWithAssignee[]): string {
+  if (shifts.length === 0) return ''
+  const lines = shifts.map((s) => {
+    const role = s.role ? ` (${s.role})` : ''
+    const start = fmtShiftTime(s.start_time)
+    const end = fmtShiftTime(s.end_time)
+    const times = start || end ? ` ${start}–${end}` : ''
+    return `- ${s.assignee.display_name}${role}${times}`
+  })
+  return `\n## Staff today\n${lines.join('\n')}`
+}
 
 function escapeHtml(value: string): string {
   return value
@@ -31,7 +64,8 @@ function briefToHtml(
   brief: DailyBriefRecord,
   tenantName: string,
   dayUrl: string,
-  dateLabel: string
+  dateLabel: string,
+  shifts: ShiftWithAssignee[]
 ) {
   const body = formatDailyBriefMarkdown(brief.content)
     .split('\n')
@@ -54,6 +88,7 @@ function briefToHtml(
     <div style="font-family: system-ui, -apple-system, Segoe UI, sans-serif; font-size: 14px; color: #111; max-width: 560px;">
       <p style="color:#555; font-size:13px; margin:0 0 16px;">${escapeHtml(tenantName)} · ${escapeHtml(dateLabel)}</p>
       ${body}
+      ${staffSectionHtml(shifts)}
       <p style="margin-top: 24px;"><a href="${escapeHtml(dayUrl)}" style="color: #2563eb;">Open day in Courseday</a></p>
     </div>
   `
@@ -132,11 +167,16 @@ export async function runMorningBriefEmailCron(): Promise<MorningBriefCronResult
     }
     const dayId = dayRes.data.id
 
-    const [activities, reservations, breakfasts, dayNotes] = await Promise.all([
+    const staffScheduleOn = flags.staff_schedule
+
+    const [activities, reservations, breakfasts, dayNotes, shifts] = await Promise.all([
       getProgramItemsForDayWithClient(supabase, tenant.id, dayId),
       getReservationsForDayWithClient(supabase, tenant.id, dayId),
       getBreakfastConfigsForDayWithClient(supabase, tenant.id, dayId),
       getDayNotesForDayWithClient(supabase, tenant.id, dayId),
+      staffScheduleOn
+        ? getShiftsForDayWithClient(supabase, tenant.id, dayId)
+        : Promise.resolve<ShiftWithAssignee[]>([]),
     ])
 
     if (!dayHasPlannedContent(activities, reservations, breakfasts)) {
@@ -166,6 +206,7 @@ export async function runMorningBriefEmailCron(): Promise<MorningBriefCronResult
         breakfasts,
         dayNotes,
         weather,
+        shifts: staffScheduleOn ? shifts : undefined,
       })
       if (!gen.success) {
         errors.push(`${tenant.slug}: ${gen.error}`)
@@ -222,8 +263,17 @@ export async function runMorningBriefEmailCron(): Promise<MorningBriefCronResult
         }
         const to = u.user.email
         const subject = `Daily brief — ${tenant.name} — ${dateLabel}`
-        const text = formatDailyBriefMarkdown(brief.content) + `\n\n${dayUrl}\n`
-        const html = briefToHtml(brief, tenant.name, dayUrl, dateLabel)
+        const text =
+          formatDailyBriefMarkdown(brief.content) +
+          (staffScheduleOn ? staffSectionText(shifts) : '') +
+          `\n\n${dayUrl}\n`
+        const html = briefToHtml(
+          brief,
+          tenant.name,
+          dayUrl,
+          dateLabel,
+          staffScheduleOn ? shifts : []
+        )
         const tenantFromName =
           (tenant as { email_from_name?: string | null }).email_from_name ?? tenant.name
         const tenantReplyTo =

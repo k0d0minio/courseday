@@ -6,6 +6,7 @@ import { Plus } from 'lucide-react'
 import { ShiftCard } from '@/components/shift-card'
 import { ShiftForm } from '@/components/shift-form'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { ShiftAssignee, ShiftWithAssignee } from '@/types/index'
 
 type Props = {
@@ -14,6 +15,8 @@ type Props = {
   assignees: ShiftAssignee[]
   isEditor: boolean
   onShiftsChange: React.Dispatch<React.SetStateAction<ShiftWithAssignee[]>>
+  recommendedCount: number
+  forecastBreakdown: { source: string; count: number }[]
 }
 
 function parseMinutes(time: string): number {
@@ -47,8 +50,11 @@ export function StaffScheduleSection({
   assignees,
   isEditor,
   onShiftsChange,
+  recommendedCount,
+  forecastBreakdown,
 }: Props) {
   const t = useTranslations('Tenant.staff.section')
+  const tForecast = useTranslations('Tenant.staff.forecast')
   const [formOpen, setFormOpen] = useState(false)
   const [editShift, setEditShift] = useState<ShiftWithAssignee | null>(null)
 
@@ -86,11 +92,42 @@ export function StaffScheduleSection({
     onShiftsChange((prev) => prev.map((s) => (s.id === item.id ? item : s)))
   }
 
+  const scheduledCount = shifts.length
+  const isMet = scheduledCount >= recommendedCount
+  const showForecastBadge = isEditor && recommendedCount > 0
+
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0 space-y-0.5">
-          <h2 className="font-semibold">{t('title')}</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold">{t('title')}</h2>
+            {showForecastBadge && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    className={`inline-flex cursor-default items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                      isMet
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                        : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
+                    }`}
+                  >
+                    {tForecast('badge', {
+                      recommended: recommendedCount,
+                      scheduled: scheduledCount,
+                    })}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <ul className="space-y-0.5 text-xs">
+                    {forecastBreakdown.map((b) => (
+                      <li key={b.source}>{tForecast(`tooltip_${b.source}`, { count: b.count })}</li>
+                    ))}
+                  </ul>
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
           {shifts.length > 0 && (
             <p className="text-muted-foreground text-xs">
               {t('scheduledSummary', { hours: fmtHours(totalScheduled) })}

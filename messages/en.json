@@ -638,6 +638,12 @@
       "bannerDismiss": "Dismiss"
     },
     "staff": {
+      "forecast": {
+        "badge": "Recommended {recommended} · Scheduled {scheduled}",
+        "tooltip_activities": "Activities: {count} covers",
+        "tooltip_reservations": "Reservations: {count} covers",
+        "tooltip_breakfast": "Breakfast: {count} covers"
+      },
       "section": {
         "title": "Staff schedule",
         "addShift": "Add shift",

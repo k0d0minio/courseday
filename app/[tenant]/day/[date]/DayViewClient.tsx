@@ -141,6 +141,8 @@ function DayViewEditor({
   venueTypes,
   authState,
   shiftAssignees,
+  staffRecommended,
+  staffForecastBreakdown,
   live,
   showStaffSchedule,
 }: DayViewProps & {
@@ -473,6 +475,8 @@ function DayViewEditor({
           assignees={shiftAssignees}
           isEditor={authState.isEditor}
           onShiftsChange={setShifts}
+          recommendedCount={staffRecommended}
+          forecastBreakdown={staffForecastBreakdown}
         />
       )}
 

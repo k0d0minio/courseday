@@ -230,3 +230,53 @@ export async function getTenantAssigneesList(tenantId: string): Promise<ShiftAss
   const map = await getTenantAssignees(tenantId)
   return [...map.values()].sort((a, b) => a.display_name.localeCompare(b.display_name))
 }
+
+export async function getShiftsForDayWithClient(
+  supabase: AppSupabaseClient,
+  tenantId: string,
+  dayId: string
+): Promise<ShiftWithAssignee[]> {
+  const { data } = await supabase
+    .from('shift')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .eq('day_id', dayId)
+    .order('start_time', { nullsFirst: true })
+
+  const rows = (data ?? []) as unknown as Array<Omit<ShiftWithAssignee, 'assignee'>>
+  if (rows.length === 0) return []
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: memberships } = await (supabase.from('memberships') as any)
+    .select('user_id, first_name, last_name, job_title')
+    .eq('tenant_id', tenantId)
+
+  const memberRows = (memberships ?? []) as Array<{
+    user_id: string
+    first_name: string | null
+    last_name: string | null
+    job_title: string | null
+  }>
+
+  const memberMap = new Map<string, { display_name: string; job_title: string | null }>()
+  for (const m of memberRows) {
+    const fullName = [m.first_name, m.last_name].filter(Boolean).join(' ')
+    memberMap.set(m.user_id, {
+      display_name: fullName || m.user_id.slice(0, 8),
+      job_title: m.job_title ?? null,
+    })
+  }
+
+  return rows.map((s) => {
+    const member = memberMap.get(s.user_id)
+    return {
+      ...s,
+      assignee: {
+        user_id: s.user_id,
+        email: '',
+        display_name: member?.display_name ?? '—',
+        job_title: member?.job_title ?? null,
+      },
+    }
+  })
+}
