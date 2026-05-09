@@ -236,5 +236,9 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next|[\\w-]+\\.\\w+).*)', '/api/mutations/:path*'],
+  matcher: [
+    '/((?!api|_next|[\\w-]+\\.\\w+).*)',
+    '/api/mutations/:path*',
+    '/api/daily-brief/:path*',
+  ],
 }

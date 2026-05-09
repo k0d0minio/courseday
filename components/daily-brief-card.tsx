@@ -5,8 +5,9 @@ import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { ClipboardCopy, Loader2, RefreshCw, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
+import { useObject } from '@ai-sdk/react'
 import { Button } from '@/components/ui/button'
-import { generateDailyBrief } from '@/app/actions/daily-brief'
+import { dailyBriefContentSchema } from '@/lib/daily-brief-schema'
 import type { DailyBriefRecord } from '@/types/daily-brief'
 import { formatDailyBriefMarkdown } from '@/lib/daily-brief-format'
 
@@ -33,41 +34,66 @@ export function DailyBriefCard({
   const router = useRouter()
   const [brief, setBrief] = useState<DailyBriefRecord | null>(initialBrief)
   const [stale, setStale] = useState(initialBriefStale)
-  const [loading, setLoading] = useState(false)
   const lastRegenerateAt = useRef(0)
+
+  const {
+    object: streamedObject,
+    submit,
+    isLoading,
+    error: streamError,
+  } = useObject({
+    api: '/api/daily-brief/stream',
+    schema: dailyBriefContentSchema,
+    onFinish({ object }) {
+      if (object) {
+        setBrief({
+          id: '',
+          content: {
+            headline: object.headline ?? '',
+            summary: object.summary ?? '',
+            covers: object.covers ?? { breakfast: 0, activities: 0, reservations: 0 },
+            vipNotes: object.vipNotes ?? [],
+            allergenRollup: object.allergenRollup ?? [],
+            risks: object.risks ?? [],
+            suggestedActions: object.suggestedActions ?? [],
+          },
+          generated_at: new Date().toISOString(),
+          model: '',
+          prompt_version: 'v1',
+        })
+        setStale(false)
+        toast.success(t('generated'))
+        router.refresh()
+      }
+    },
+    onError(err) {
+      toast.error(err.message || 'Brief generation failed.')
+    },
+  })
 
   useEffect(() => {
     setBrief(initialBrief)
     setStale(initialBriefStale)
   }, [initialBrief, initialBriefStale, dayId])
 
-  const runRegenerate = useCallback(async () => {
+  useEffect(() => {
+    if (streamError) toast.error(streamError.message || 'Brief generation failed.')
+  }, [streamError])
+
+  const runRegenerate = useCallback(() => {
     const now = Date.now()
     if (now - lastRegenerateAt.current < REGENERATE_DEBOUNCE_MS) {
       toast.message(t('debounced'))
       return
     }
     lastRegenerateAt.current = now
-
-    setLoading(true)
-    try {
-      const result = await generateDailyBrief(dateIso)
-      if (!result.success) {
-        toast.error(result.error)
-        return
-      }
-      setBrief(result.data)
-      setStale(false)
-      toast.success(t('generated'))
-      router.refresh()
-    } finally {
-      setLoading(false)
-    }
-  }, [dateIso, router, t])
+    submit({ dateIso })
+  }, [dateIso, submit, t])
 
   const copyMarkdown = useCallback(() => {
-    if (!brief) return
-    const md = formatDailyBriefMarkdown(brief.content)
+    const content = brief?.content
+    if (!content) return
+    const md = formatDailyBriefMarkdown(content)
     void navigator.clipboard.writeText(md).then(
       () => toast.success(t('copied')),
       () => toast.error(t('copyFailed'))
@@ -75,6 +101,8 @@ export function DailyBriefCard({
   }, [brief, t])
 
   const hasBrief = brief !== null
+  const streaming = isLoading && !hasBrief
+  const covers = streamedObject?.covers
 
   return (
     <section className="bg-card text-card-foreground overflow-hidden rounded-xl border shadow-sm">
@@ -98,10 +126,10 @@ export function DailyBriefCard({
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => void runRegenerate()}
-              disabled={loading}
+              onClick={runRegenerate}
+              disabled={isLoading}
             >
-              {loading ? (
+              {isLoading ? (
                 <Loader2 className="mr-1 h-4 w-4 animate-spin" />
               ) : (
                 <RefreshCw className="mr-1 h-4 w-4" />
@@ -113,15 +141,15 @@ export function DailyBriefCard({
       </div>
 
       <div className="space-y-3 p-4">
-        {stale && isEditor && (
+        {stale && isEditor && !isLoading && (
           <div className="flex items-center justify-between gap-2 rounded-md border border-amber-200/60 bg-amber-50 px-2.5 py-2 dark:border-amber-900/50 dark:bg-amber-950/40">
             <p className="text-xs text-amber-800/90 dark:text-amber-200/90">{t('stale')}</p>
             <Button
               type="button"
               size="xs"
               variant="outline"
-              onClick={() => void runRegenerate()}
-              disabled={loading}
+              onClick={runRegenerate}
+              disabled={isLoading}
               className="shrink-0"
             >
               <RefreshCw className="mr-1 h-3 w-3" />
@@ -132,18 +160,52 @@ export function DailyBriefCard({
 
         {briefIsEmpty && <p className="text-muted-foreground text-sm">{t('empty')}</p>}
 
-        {!hasBrief && !briefIsEmpty && !loading && (
+        {!hasBrief && !briefIsEmpty && !isLoading && (
           <p className="text-muted-foreground text-sm">{t('emptyViewer')}</p>
         )}
 
-        {loading && !hasBrief && (
-          <p className="text-muted-foreground flex items-center gap-2 text-sm">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            {t('generating')}
-          </p>
+        {/* Progressive streaming skeleton */}
+        {streaming && (
+          <div className="space-y-3">
+            {streamedObject?.headline ? (
+              <p className="animate-in fade-in text-base leading-snug font-semibold duration-300">
+                {streamedObject.headline}
+              </p>
+            ) : (
+              <div className="bg-muted h-5 w-3/4 animate-pulse rounded" />
+            )}
+
+            {streamedObject?.summary ? (
+              <p className="text-muted-foreground animate-in fade-in text-sm whitespace-pre-wrap duration-300">
+                {streamedObject.summary}
+              </p>
+            ) : (
+              <div className="space-y-1">
+                <div className="bg-muted h-4 w-full animate-pulse rounded" />
+                <div className="bg-muted h-4 w-5/6 animate-pulse rounded" />
+              </div>
+            )}
+
+            {covers && (
+              <div className="animate-in fade-in grid grid-cols-3 gap-2 text-center text-sm duration-300">
+                <div className="bg-muted/50 rounded-md py-2">
+                  <div className="text-muted-foreground text-xs">{t('coversBreakfast')}</div>
+                  <div className="font-semibold tabular-nums">{covers.breakfast ?? '—'}</div>
+                </div>
+                <div className="bg-muted/50 rounded-md py-2">
+                  <div className="text-muted-foreground text-xs">{t('coversActivities')}</div>
+                  <div className="font-semibold tabular-nums">{covers.activities ?? '—'}</div>
+                </div>
+                <div className="bg-muted/50 rounded-md py-2">
+                  <div className="text-muted-foreground text-xs">{t('coversReservations')}</div>
+                  <div className="font-semibold tabular-nums">{covers.reservations ?? '—'}</div>
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
-        {brief && (
+        {hasBrief && (
           <div className="space-y-3">
             <div>
               <p className="text-base leading-snug font-semibold">{brief.content.headline}</p>
@@ -179,12 +241,14 @@ export function DailyBriefCard({
                 <AllergenBlock rollup={brief.content.allergenRollup} t={t} />
                 <ListBlock title={t('risks')} items={brief.content.risks} />
                 <ListBlock title={t('actions')} items={brief.content.suggestedActions} />
-                <p className="text-muted-foreground pt-1 text-xs">
-                  {t('meta', {
-                    time: new Date(brief.generated_at).toLocaleString(),
-                    model: brief.model,
-                  })}
-                </p>
+                {brief.generated_at && brief.model && (
+                  <p className="text-muted-foreground pt-1 text-xs">
+                    {t('meta', {
+                      time: new Date(brief.generated_at).toLocaleString(),
+                      model: brief.model,
+                    })}
+                  </p>
+                )}
               </div>
             </details>
           </div>

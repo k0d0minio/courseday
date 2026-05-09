@@ -1,6 +1,5 @@
 import { generateObject } from 'ai'
 import { gateway } from '@ai-sdk/gateway'
-import { z } from 'zod'
 import type { AppSupabaseClient } from '@/app/[tenant]/day/[date]/queries'
 import type { WeatherData } from '@/app/actions/weather'
 import type { ActionResponse } from '@/types/actions'
@@ -13,7 +12,10 @@ import type {
 import type { Activity, Reservation, BreakfastConfiguration } from '@/types/index'
 import type { DayNote } from '@/app/actions/day-notes'
 
-const PROMPT_VERSION = 'v1'
+export { narrativeSchema, dailyBriefContentSchema } from '@/lib/daily-brief-schema'
+import { narrativeSchema } from '@/lib/daily-brief-schema'
+
+export const PROMPT_VERSION = 'v1'
 export const DAILY_BRIEF_MODEL_ID = 'openai/gpt-5.4' as const
 const NOTE_MAX = 200
 
@@ -21,43 +23,14 @@ function hasGatewayAuth(): boolean {
   return Boolean(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN)
 }
 
-const narrativeSchema = z.object({
-  headline: z.string(),
-  summary: z.string(),
-  vipNotes: z.array(z.string()),
-  risks: z.array(z.string()),
-  suggestedActions: z.array(z.string()),
-})
-
-export const dailyBriefContentSchema = z.object({
-  headline: z.string(),
-  summary: z.string(),
-  covers: z.object({
-    breakfast: z.number(),
-    activities: z.number(),
-    reservations: z.number(),
-  }),
-  vipNotes: z.array(z.string()),
-  allergenRollup: z.array(
-    z.object({
-      code: z.string(),
-      inActivities: z.number(),
-      inReservations: z.number(),
-      inBreakfast: z.number(),
-    })
-  ),
-  risks: z.array(z.string()),
-  suggestedActions: z.array(z.string()),
-})
-
-function truncateNote(text: string | null | undefined): string | undefined {
+export function truncateNote(text: string | null | undefined): string | undefined {
   if (!text?.trim()) return undefined
   const t = text.trim()
   if (t.length <= NOTE_MAX) return t
   return `${t.slice(0, NOTE_MAX)}…`
 }
 
-function buildCovers(
+export function buildCovers(
   activities: Activity[],
   reservations: Reservation[],
   breakfasts: BreakfastConfiguration[]
@@ -69,7 +42,7 @@ function buildCovers(
   }
 }
 
-function buildAllergenRollup(
+export function buildAllergenRollup(
   activities: Activity[],
   reservations: Reservation[],
   breakfasts: BreakfastConfiguration[]
@@ -108,7 +81,7 @@ function buildAllergenRollup(
     .sort((x, y) => x.code.localeCompare(y.code))
 }
 
-function llmPayload(args: {
+export function llmPayload(args: {
   dateIso: string
   weather: WeatherData | null
   activities: Activity[]
@@ -159,7 +132,7 @@ function llmPayload(args: {
   }
 }
 
-const BRIEF_SYSTEM = `You write concise operational day briefings for venue staff.
+export const BRIEF_SYSTEM = `You write concise operational day briefings for venue staff.
 Rules:
 - Use British English spelling if unsure; keep tone professional and calm.
 - Do not invent numbers. Covers and allergen counts in the input are authoritative; reflect them in prose only as appropriate.
