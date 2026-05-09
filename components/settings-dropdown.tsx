@@ -9,6 +9,7 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { useFeatureFlag } from '@/lib/feature-flags-context'
 
 export const SETTINGS_ROUTES = [
+  { href: '/schedule', labelKey: 'tabStaffRoster' },
   { href: '/admin/settings/poc', labelKey: 'tabPoc' },
   { href: '/admin/settings/venue-types', labelKey: 'tabVenueTypes' },
   { href: '/admin/settings/activity-tags', labelKey: 'tabActivityTags' },
@@ -22,8 +23,14 @@ export const SETTINGS_ROUTES = [
 type LabelKey = (typeof SETTINGS_ROUTES)[number]['labelKey']
 type SettingsRoute = (typeof SETTINGS_ROUTES)[number]
 
-export function getVisibleSettingsRoutes(visibility: { checklists: boolean }): SettingsRoute[] {
+export function getVisibleSettingsRoutes(visibility: {
+  checklists: boolean
+  staffSchedule: boolean
+}): SettingsRoute[] {
   let routes = [...SETTINGS_ROUTES]
+  if (!visibility.staffSchedule) {
+    routes = routes.filter((route) => route.href !== '/schedule')
+  }
   if (!visibility.checklists) {
     routes = routes.filter((route) => route.href !== '/admin/settings/checklists')
   }
@@ -35,8 +42,10 @@ export function SettingsDropdown() {
   const t = useTranslations('Tenant.settings')
   const navT = useTranslations('Tenant.nav')
   const showChecklists = useFeatureFlag('checklists')
+  const showStaffSchedule = useFeatureFlag('staff_schedule')
   const routes = getVisibleSettingsRoutes({
     checklists: showChecklists,
+    staffSchedule: showStaffSchedule,
   })
 
   return (

@@ -28,9 +28,11 @@ export function MobileNav({ today, isEditor }: MobileNavProps) {
   const settingsT = useTranslations('Tenant.settings')
   const qaT = useTranslations('Tenant.quickAdd')
   const showChecklists = useFeatureFlag('checklists')
+  const showStaffSchedule = useFeatureFlag('staff_schedule')
   const { setQuickAddOpen } = useKeyboardShortcuts()
   const settingsRoutes = getVisibleSettingsRoutes({
     checklists: showChecklists,
+    staffSchedule: showStaffSchedule,
   })
 
   const navItems = [
