@@ -1,12 +1,14 @@
 'use server'
 
-import { createTenantClient } from '@/lib/supabase-server'
+import { createTenantClient, createSupabaseServerClient } from '@/lib/supabase-server'
 import { getTenantId } from '@/lib/tenant'
 import { requireEditor } from '@/lib/membership'
 import { shiftSchema } from '@/lib/shift-schema'
 import type { ShiftFormData } from '@/lib/shift-schema'
 import type { ActionResponse } from '@/types/actions'
-import type { Shift } from '@/types/index'
+import type { Shift, ShiftWithAssignee } from '@/types/index'
+import { getTenantAssignees } from '@/app/[tenant]/day/[date]/queries'
+import { addDays, format, parseISO } from 'date-fns'
 
 function normaliseTime(s: string | undefined | null): string | null {
   const t = (s ?? '').trim()
@@ -142,4 +144,41 @@ export async function deleteShift(id: string, dayId: string): Promise<ActionResp
 
   if (error) return { success: false, error: error.message }
   return { success: true, data: undefined }
+}
+
+export async function getWeekShifts(weekStart: string): Promise<ShiftWithAssignee[]> {
+  const tenantId = await getTenantId()
+  const weekEnd = format(addDays(parseISO(weekStart), 6), 'yyyy-MM-dd')
+
+  const supabase = await createSupabaseServerClient()
+
+  const { data: days } = await supabase
+    .from('day')
+    .select('id')
+    .eq('tenant_id', tenantId)
+    .gte('date_iso', weekStart)
+    .lte('date_iso', weekEnd)
+
+  const dayIds = (days ?? []).map((d) => d.id)
+  if (dayIds.length === 0) return []
+
+  const { data } = await supabase
+    .from('shift')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .in('day_id', dayIds)
+    .order('start_time', { nullsFirst: true })
+
+  const rows = (data ?? []) as unknown as Array<Omit<ShiftWithAssignee, 'assignee'>>
+  if (rows.length === 0) return []
+
+  const assignees = await getTenantAssignees(tenantId)
+  return rows.map((s) => ({
+    ...s,
+    assignee: assignees.get(s.user_id) ?? {
+      user_id: s.user_id,
+      email: '',
+      display_name: '—',
+    },
+  }))
 }

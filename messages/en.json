@@ -502,7 +502,8 @@
       "cityUnexpectedResponse": "Unexpected response from geocoding service.",
       "clearLocationAria": "Clear location",
       "locationCoordsHint": "Clear the coordinates above to search for a city by name.",
-      "staffScheduleDisabled": "Staff scheduling is disabled for this venue by a platform admin."
+      "staffScheduleDisabled": "Staff scheduling is disabled for this venue by a platform admin.",
+      "tabStaffRoster": "Staff Roster"
     },
     "checklists": {
       "title": "Checklists",
@@ -653,6 +654,15 @@
         "delete": "Delete",
         "deleting": "Deleting…",
         "deleted": "Shift removed."
+      },
+      "roster": {
+        "title": "Staff Roster",
+        "prevWeek": "Previous week",
+        "nextWeek": "Next week",
+        "today": "Today",
+        "staffColumn": "Team member",
+        "noStaff": "No team members yet.",
+        "addShiftAria": "Add shift for {name} on {date}"
       }
     },
     "venueType": {

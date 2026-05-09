@@ -40,9 +40,19 @@ type Props = {
   assignees: ShiftAssignee[]
   editItem: ShiftWithAssignee | null
   onSuccess: (item: ShiftWithAssignee) => void
+  /** Pre-select this user when opening the form for a new shift. */
+  defaultUserId?: string | undefined
 }
 
-export function ShiftForm({ isOpen, onClose, dayId, assignees, editItem, onSuccess }: Props) {
+export function ShiftForm({
+  isOpen,
+  onClose,
+  dayId,
+  assignees,
+  editItem,
+  onSuccess,
+  defaultUserId,
+}: Props) {
   const t = useTranslations('Tenant.staff.shiftForm')
   const [isPending, startTransition] = useTransition()
   const isEditing = !!editItem
@@ -59,8 +69,8 @@ export function ShiftForm({ isOpen, onClose, dayId, assignees, editItem, onSucce
   })
 
   useEffect(() => {
-    reset(defaultValues(editItem))
-  }, [editItem, isOpen, reset])
+    reset(defaultValues(editItem, defaultUserId))
+  }, [editItem, isOpen, defaultUserId, reset])
 
   function onSubmit(data: ShiftFormData) {
     startTransition(async () => {
@@ -148,10 +158,10 @@ export function ShiftForm({ isOpen, onClose, dayId, assignees, editItem, onSucce
   )
 }
 
-function defaultValues(editItem: ShiftWithAssignee | null): ShiftFormData {
+function defaultValues(editItem: ShiftWithAssignee | null, defaultUserId?: string): ShiftFormData {
   if (!editItem) {
     return {
-      user_id: '',
+      user_id: defaultUserId ?? '',
       role: '',
       start_time: '',
       end_time: '',
