@@ -4,7 +4,13 @@ import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { getTenantPalette } from '@/lib/theme/palettes'
 
 export async function GET() {
-  const tenant = await getTenantFromHeaders()
+  let tenant
+  try {
+    tenant = await getTenantFromHeaders()
+  } catch {
+    return new NextResponse(null, { status: 404 })
+  }
+
   try {
     const supabase = await createSupabaseServerClient()
 
@@ -54,17 +60,6 @@ export async function GET() {
       },
     })
   } catch {
-    return NextResponse.json(
-      {
-        name: tenant.slug,
-        short_name: tenant.slug,
-        start_url: '/',
-        display: 'standalone',
-        background_color: '#ffffff',
-        theme_color: '#e5e7eb',
-        icons: [{ src: '/icon.svg', sizes: 'any', type: 'image/svg+xml' }],
-      },
-      { headers: { 'Content-Type': 'application/manifest+json' } }
-    )
+    return new NextResponse(null, { status: 404 })
   }
 }
