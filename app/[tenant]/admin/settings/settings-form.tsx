@@ -20,26 +20,26 @@ import {
 
 interface SettingsFormProps {
   tenantId: string
-  tenantName: string
+  tenantName?: string
   initialPaletteId: string | null
   initialAccentColor: string | null
   initialLogoUrl: string | null
   initialLatitude: number | null
   initialLongitude: number | null
-  initialEmailFromName: string | null
-  initialEmailReplyTo: string | null
+  initialEmailFromName?: string | null
+  initialEmailReplyTo?: string | null
 }
 
 export function SettingsForm({
   tenantId,
-  tenantName,
+  tenantName = '',
   initialPaletteId,
   initialAccentColor,
   initialLogoUrl,
   initialLatitude,
   initialLongitude,
-  initialEmailFromName,
-  initialEmailReplyTo,
+  initialEmailFromName = null,
+  initialEmailReplyTo = null,
 }: SettingsFormProps) {
   const [paletteId, setPaletteId] = useState<TenantPaletteId>(
     resolveTenantPaletteId(initialPaletteId, initialAccentColor)

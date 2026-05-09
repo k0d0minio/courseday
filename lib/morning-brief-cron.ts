@@ -79,7 +79,7 @@ export type MorningBriefCronResult = {
  */
 function extractEmailAddress(from: string): string {
   const match = from.match(/<([^>]+)>/)
-  return match ? match[1] : from
+  return match ? (match[1] ?? from) : from
 }
 
 export async function runMorningBriefEmailCron(): Promise<MorningBriefCronResult> {
