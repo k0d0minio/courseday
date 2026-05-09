@@ -15,6 +15,8 @@ export interface Member {
   email: string
   role: MemberRole
   created_at: string
+  hourly_rate: number | null
+  currency: string | null
 }
 
 export interface PendingInvitation {
@@ -85,24 +87,33 @@ export async function getMembers(): Promise<ActionResponse<Member[]>> {
   if (role !== 'editor') return { success: false, error: 'Not authorized.' }
 
   const { supabase } = await createTenantClient()
-  const { data: memberships, error } = await supabase
-    .from('memberships')
-    .select('id, user_id, role, created_at')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: memberships, error } = await (supabase.from('memberships') as any)
+    .select('id, user_id, role, created_at, hourly_rate, currency')
     .eq('tenant_id', tenantId)
     .order('created_at')
 
   if (error) return { success: false, error: error.message }
   if (!memberships?.length) return { success: true, data: [] }
 
+  const rows = memberships as Array<{
+    id: string
+    user_id: string
+    role: string
+    created_at: string
+    hourly_rate: number | null
+    currency: string | null
+  }>
+
   const serviceClient = createSupabaseServiceClient()
   // Use allSettled so one failed lookup doesn't crash the whole list.
   const emailResults = await Promise.allSettled(
-    memberships.map((m) => serviceClient.auth.admin.getUserById(m.user_id))
+    rows.map((m) => serviceClient.auth.admin.getUserById(m.user_id))
   )
 
   return {
     success: true,
-    data: memberships.map((m, i) => {
+    data: rows.map((m, i) => {
       const settled = emailResults[i]
       const email =
         settled && settled.status === 'fulfilled' ? (settled.value.data.user?.email ?? '') : ''
@@ -112,6 +123,8 @@ export async function getMembers(): Promise<ActionResponse<Member[]>> {
         email,
         role: m.role as MemberRole,
         created_at: m.created_at,
+        hourly_rate: m.hourly_rate,
+        currency: m.currency,
       }
     }),
   }

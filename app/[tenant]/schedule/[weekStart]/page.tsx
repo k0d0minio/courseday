@@ -7,6 +7,8 @@ import { ensureDaysRange } from '@/app/actions/days'
 import { getWeekShifts } from '@/app/actions/shifts'
 import { getTenantAssigneesList } from '@/app/[tenant]/day/[date]/queries'
 import { RosterGrid } from '@/components/roster-grid'
+import { getWeeklyLaborCost } from '@/lib/labor-cost'
+import { LaborCostSummaryCard } from '@/components/labor-cost-week'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -35,23 +37,27 @@ export default async function ScheduleWeekPage({
 
   const weekEnd = format(addDays(parseISO(weekStart), 6), 'yyyy-MM-dd')
 
-  const [daysResult, shifts, assignees] = await Promise.all([
+  const [daysResult, shifts, assignees, laborCost] = await Promise.all([
     ensureDaysRange(weekStart, weekEnd),
     getWeekShifts(weekStart),
     getTenantAssigneesList(tenant.id),
+    getWeeklyLaborCost(tenant.id, weekStart).catch(() => null),
   ])
 
   const days = daysResult.success ? daysResult.data : []
   const isEditor = role === 'editor'
 
   return (
-    <RosterGrid
-      weekStart={weekStart}
-      weekEnd={weekEnd}
-      days={days}
-      shifts={shifts}
-      assignees={assignees}
-      isEditor={isEditor}
-    />
+    <div className="space-y-4">
+      {isEditor && laborCost && <LaborCostSummaryCard data={laborCost} />}
+      <RosterGrid
+        weekStart={weekStart}
+        weekEnd={weekEnd}
+        days={days}
+        shifts={shifts}
+        assignees={assignees}
+        isEditor={isEditor}
+      />
+    </div>
   )
 }

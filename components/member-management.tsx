@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { Trash2, UserPlus } from 'lucide-react'
+import { Check, Pencil, Trash2, UserPlus, X } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import {
   getMembers,
@@ -13,6 +13,7 @@ import {
   cancelInvitation,
 } from '@/app/actions/memberships'
 import type { Member, PendingInvitation, MemberRole } from '@/app/actions/memberships'
+import { updateMemberPayRate } from '@/app/actions/pay-rates'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -48,6 +49,120 @@ function RoleBadge({ role, label }: { role: MemberRole; label: string }) {
     <Badge variant={role === 'editor' ? 'default' : 'secondary'} className="font-normal">
       {label}
     </Badge>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Pay rate inline editor
+// ---------------------------------------------------------------------------
+
+function PayRateEditor({
+  member,
+  onSaved,
+}: {
+  member: Member
+  onSaved: (id: string, rate: number | null, currency: string | null) => void
+}) {
+  const t = useTranslations('Tenant.members')
+  const [editing, setEditing] = useState(false)
+  const [rateStr, setRateStr] = useState(member.hourly_rate?.toString() ?? '')
+  const [currency, setCurrency] = useState(member.currency ?? 'EUR')
+  const [isPending, startTransition] = useTransition()
+
+  function handleEdit() {
+    setRateStr(member.hourly_rate?.toString() ?? '')
+    setCurrency(member.currency ?? 'EUR')
+    setEditing(true)
+  }
+
+  function handleCancel() {
+    setEditing(false)
+  }
+
+  function handleSave() {
+    const parsed = rateStr.trim() === '' ? null : parseFloat(rateStr)
+    if (parsed !== null && (isNaN(parsed) || parsed < 0)) {
+      toast.error(t('payRate.invalidRate'))
+      return
+    }
+    const cur = currency.trim().toUpperCase()
+    if (cur && !/^[A-Z]{3}$/.test(cur)) {
+      toast.error(t('payRate.invalidCurrency'))
+      return
+    }
+    startTransition(async () => {
+      const result = await updateMemberPayRate(member.id, {
+        hourly_rate: parsed,
+        currency: cur || null,
+      })
+      if (!result.success) {
+        toast.error(result.error)
+        return
+      }
+      toast.success(t('payRate.saved'))
+      onSaved(member.id, parsed, cur || null)
+      setEditing(false)
+    })
+  }
+
+  if (!editing) {
+    const display =
+      member.hourly_rate !== null
+        ? `${member.hourly_rate} ${member.currency ?? ''}`
+        : t('payRate.notSet')
+    return (
+      <div className="flex items-center gap-1.5">
+        <span className="text-muted-foreground text-sm tabular-nums">{display}</span>
+        <Button
+          variant="ghost"
+          size="iconXs"
+          onClick={handleEdit}
+          aria-label={t('payRate.editAria')}
+        >
+          <Pencil className="size-3.5" />
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <Input
+        type="number"
+        min={0}
+        step="0.01"
+        value={rateStr}
+        onChange={(e) => setRateStr(e.target.value)}
+        placeholder="0.00"
+        className="h-8 w-20 text-sm"
+        aria-label={t('payRate.rateLabel')}
+      />
+      <Input
+        value={currency}
+        onChange={(e) => setCurrency(e.target.value.toUpperCase().slice(0, 3))}
+        placeholder="EUR"
+        className="h-8 w-16 text-sm uppercase"
+        aria-label={t('payRate.currencyLabel')}
+        maxLength={3}
+      />
+      <Button
+        variant="ghost"
+        size="iconXs"
+        disabled={isPending}
+        onClick={handleSave}
+        aria-label={t('payRate.saveAria')}
+      >
+        <Check className="size-3.5" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="iconXs"
+        onClick={handleCancel}
+        aria-label={t('payRate.cancelAria')}
+      >
+        <X className="size-3.5" />
+      </Button>
+    </div>
   )
 }
 
@@ -165,6 +280,10 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
     refresh().finally(() => setLoading(false))
   }, [])
 
+  function handlePayRateSaved(id: string, rate: number | null, currency: string | null) {
+    setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, hourly_rate: rate, currency } : m)))
+  }
+
   function handleRoleChange(member: Member, newRole: MemberRole) {
     startRemoveTransition(async () => {
       const result = await updateMemberRole(member.id, newRole)
@@ -231,6 +350,7 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
                       {t('role')}
                     </TableHead>
                     <TableHead className="h-11 w-36 font-medium">{t('joined')}</TableHead>
+                    <TableHead className="h-11 w-40 font-medium">{t('payRate.header')}</TableHead>
                     <TableHead className="h-11 w-14 pr-6" aria-hidden />
                   </TableRow>
                 </TableHeader>
@@ -266,6 +386,9 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
                         </TableCell>
                         <TableCell className="text-muted-foreground py-3 text-sm tabular-nums">
                           {new Date(member.created_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="py-3">
+                          <PayRateEditor member={member} onSaved={handlePayRateSaved} />
                         </TableCell>
                         <TableCell className="py-3 pr-6 text-right">
                           {!isSelf && (
