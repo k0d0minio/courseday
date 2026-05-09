@@ -138,6 +138,17 @@ export default async function TenantLayout({ children }: { children: React.React
                         <SettingsDropdown />
                       </span>
                     )}
+                    {/* My schedule link — non-editors on desktop when staff_schedule on */}
+                    {!editor && featureFlags.staff_schedule && user && (
+                      <span className="hidden sm:inline-flex">
+                        <Link
+                          href="/my-schedule"
+                          className="text-muted-foreground hover:text-foreground px-2 text-sm font-medium transition-colors"
+                        >
+                          {t('mySchedule')}
+                        </Link>
+                      </span>
+                    )}
                     <NotificationBell initialCount={unreadCount} />
                     {user && (
                       <span className={editor ? undefined : 'hidden sm:inline-flex'}>
