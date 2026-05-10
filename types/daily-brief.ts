@@ -14,7 +14,11 @@ export type DailyBriefAllergenRollupEntry = {
 export const REGENERATABLE_SECTIONS = ['vipNotes', 'risks', 'suggestedActions'] as const
 export type RegenerableSection = (typeof REGENERATABLE_SECTIONS)[number]
 
-export type DailyBriefSectionTimestamps = Partial<Record<RegenerableSection, string>>
+export type DailyBriefSectionTimestamps = {
+  vipNotes?: string | undefined
+  risks?: string | undefined
+  suggestedActions?: string | undefined
+}
 
 export type DailyBriefContent = {
   headline: string
@@ -24,7 +28,7 @@ export type DailyBriefContent = {
   allergenRollup: DailyBriefAllergenRollupEntry[]
   risks: string[]
   suggestedActions: string[]
-  sectionTimestamps?: DailyBriefSectionTimestamps
+  sectionTimestamps?: DailyBriefSectionTimestamps | undefined
 }
 
 export type DailyBriefRecord = {
