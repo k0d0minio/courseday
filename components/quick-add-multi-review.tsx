@@ -123,14 +123,13 @@ export function QuickAddMultiReview({
     setIsSaving(true)
 
     const next = [...statuses]
-    let allSaved = true
+    let attempted = 0
+    let errors = 0
     for (let i = 0; i < items.length; i++) {
-      if (!accepted[i] || !allowed[i]) {
-        if (next[i]!.state !== 'saved') allSaved = false
-        continue
-      }
+      if (!accepted[i] || !allowed[i]) continue
       if (next[i]!.state === 'saved') continue
 
+      attempted++
       next[i] = { state: 'saving' }
       setStatuses([...next])
       const payload = payloadFromItem(items[i]!)
@@ -139,7 +138,7 @@ export function QuickAddMultiReview({
         next[i] = { state: 'saved' }
       } else {
         next[i] = { state: 'error', error: result.error }
-        allSaved = false
+        errors++
         // Auto-uncheck failed row so user can retry without un-checking manually.
         setAccepted((a) => a.map((v, j) => (j === i ? false : v)))
       }
@@ -148,9 +147,7 @@ export function QuickAddMultiReview({
 
     setIsSaving(false)
 
-    const allDone = next.every((s, i) => s.state === 'saved' || !accepted[i] || !allowed[i])
-    const anySaved = next.some((s) => s.state === 'saved')
-    if (allDone && anySaved && allSaved) onAllDone()
+    if (attempted > 0 && errors === 0) onAllDone()
   }
 
   return (
