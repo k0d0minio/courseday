@@ -44,14 +44,16 @@ export function Logo({ className, logoUrl, tenantName }: LogoProps) {
 
   if (logoUrl) {
     content = (
-      <Image
-        src={logoUrl}
-        alt={tenantName ?? 'Logo'}
-        width={120}
-        height={36}
-        className={cn('max-h-9 object-contain', className)}
-        priority
-      />
+      <span className="inline-flex items-center rounded bg-white/90 px-1.5 py-0.5 dark:bg-white/95">
+        <Image
+          src={logoUrl}
+          alt={tenantName ?? 'Logo'}
+          width={160}
+          height={36}
+          className="h-8 w-auto max-w-[160px] object-contain sm:h-9"
+          priority
+        />
+      </span>
     )
   } else if (tenantName) {
     content = (
@@ -71,7 +73,12 @@ export function Logo({ className, logoUrl, tenantName }: LogoProps) {
   }
 
   return (
-    <Link href="/" prefetch={false} aria-label={tenantName ?? 'Courseday'}>
+    <Link
+      href="/"
+      prefetch={false}
+      aria-label={tenantName ?? 'Courseday'}
+      className="inline-flex items-center"
+    >
       {content}
     </Link>
   )
