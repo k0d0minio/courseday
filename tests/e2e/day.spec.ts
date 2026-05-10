@@ -28,6 +28,7 @@ test.describe('Day view', () => {
   }) => {
     await signedInPage.goto(`${tenantUrl}/day/${dayDate}`)
 
+    await signedInPage.getByTestId('day-add-menu').click()
     await signedInPage.getByTestId('add-activity').click()
     await signedInPage.getByTestId('activity-form-title').fill('E2E Test Activity')
     await signedInPage.getByTestId('activity-form-save').click()
@@ -68,6 +69,7 @@ test.describe('Reservation CRUD', () => {
   test('add reservation — appears in list', async ({ signedInPage, tenantUrl }) => {
     await signedInPage.goto(`${tenantUrl}/day/${dayDate}`)
 
+    await signedInPage.getByTestId('day-add-menu').click()
     await signedInPage.getByTestId('add-reservation').click()
     await signedInPage.getByTestId('reservation-form-guest-name').fill('E2E Guest')
     await signedInPage.getByTestId('reservation-form-save').click()
@@ -92,6 +94,7 @@ test.describe('Breakfast CRUD', () => {
   test('add breakfast — appears in list', async ({ signedInPage, tenantUrl }) => {
     await signedInPage.goto(`${tenantUrl}/day/${dayDate}`)
 
+    await signedInPage.getByTestId('day-add-menu').click()
     await signedInPage.getByTestId('add-breakfast').click()
     await signedInPage.getByTestId('breakfast-form-group-name').fill('E2E Breakfast Group')
     await signedInPage.getByTestId('breakfast-form-save').click()
