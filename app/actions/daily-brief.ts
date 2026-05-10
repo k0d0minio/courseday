@@ -9,10 +9,10 @@
  * - Reservation guest_count, times, allergens, truncated notes (guest_name excluded).
  * - Breakfast group_name, total_guests, times, allergens, truncated notes.
  * - Day note text only (author omitted); may still hold PII if editors typed names.
+ * - Staff shifts: first name + role + start/end times (when staff_schedule flag is on).
  *
  * Excluded:
  * - Reservation guest_name, table_breakdown (may identify guests).
- * - Staff/shifts (names).
  * - Raw POC / internal IDs.
  *
  * Instruct model: do not invent counts; do not repeat personal names from notes;
@@ -31,6 +31,7 @@ import {
   getBreakfastConfigsForDay,
   getDayNotesForDay,
   getDailyBriefForDayWithClient,
+  getShiftsForDay,
 } from '@/app/[tenant]/day/[date]/queries'
 import { getWeatherForDay } from '@/app/actions/weather'
 import {
@@ -44,6 +45,7 @@ import type { DailyBriefRecord } from '@/types/daily-brief'
 import type { Activity, Reservation, BreakfastConfiguration } from '@/types/index'
 import type { DayNote } from '@/app/actions/day-notes'
 import type { WeatherData } from '@/app/actions/weather'
+import type { StaffShiftContext } from '@/lib/daily-brief-generate'
 
 export type { DailyBriefContent, DailyBriefRecord } from '@/types/daily-brief'
 
@@ -89,8 +91,19 @@ export async function ensureDailyBrief(args: {
   breakfasts: BreakfastConfiguration[]
   dayNotes: DayNote[]
   weather: WeatherData | null
+  staffShifts?: StaffShiftContext[] | undefined
 }): Promise<EnsureDailyBriefResult> {
-  const { tenantId, dayId, dateIso, activities, reservations, breakfasts, dayNotes, weather } = args
+  const {
+    tenantId,
+    dayId,
+    dateIso,
+    activities,
+    reservations,
+    breakfasts,
+    dayNotes,
+    weather,
+    staffShifts,
+  } = args
 
   if (!(await isFeatureEnabled(tenantId, 'daily_brief'))) return { status: 'empty' }
 
@@ -141,6 +154,7 @@ export async function ensureDailyBrief(args: {
       breakfasts,
       dayNotes,
       weather,
+      staffShifts,
     })
     if (!result.success) return { status: 'error', error: result.error }
     return { status: 'ok', brief: result.data, stale: false }
@@ -210,17 +224,27 @@ export async function generateDailyBrief(
     }
   }
 
+  const staffScheduleOn = await isFeatureEnabled(tenantId, 'staff_schedule')
+
   const dayResult = await ensureDayExists(dateIso)
   if (!dayResult.success) return { success: false, error: dayResult.error }
   const dayId = dayResult.data.id
 
-  const [activities, reservations, breakfasts, dayNotes, weather] = await Promise.all([
+  const [activities, reservations, breakfasts, dayNotes, weather, rawShifts] = await Promise.all([
     getProgramItemsForDay(tenantId, dayId),
     getReservationsForDay(tenantId, dayId),
     getBreakfastConfigsForDay(tenantId, dayId),
     getDayNotesForDay(tenantId, dayId),
     getWeatherForDay(dateIso),
+    staffScheduleOn ? getShiftsForDay(tenantId, dayId) : Promise.resolve([]),
   ])
+
+  const staffShifts = rawShifts.map((s) => ({
+    name: s.assignee.display_name,
+    role: s.role ?? null,
+    start_time: s.start_time ?? null,
+    end_time: s.end_time ?? null,
+  }))
 
   const { supabase } = await createTenantClient()
   return generateAndPersistDailyBrief(supabase, {
@@ -233,5 +257,6 @@ export async function generateDailyBrief(
     breakfasts,
     dayNotes,
     weather,
+    ...(staffScheduleOn && staffShifts.length > 0 ? { staffShifts } : {}),
   })
 }

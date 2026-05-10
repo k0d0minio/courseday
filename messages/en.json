@@ -647,6 +647,13 @@
         "scheduledSummary": "Scheduled {hours}",
         "actualSummary": "Actual {hours}"
       },
+      "forecast": {
+        "badge": "Recommended {recommended} · Scheduled {scheduled}",
+        "activities": "Activities",
+        "reservations": "Reservations",
+        "breakfast": "Breakfast",
+        "covers": "{count} covers"
+      },
       "shiftForm": {
         "addTitle": "Add shift",
         "editTitle": "Edit shift",
