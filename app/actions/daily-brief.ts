@@ -91,7 +91,8 @@ export async function ensureDailyBrief(args: {
   dayNotes: DayNote[]
   weather: WeatherData | null
 }): Promise<EnsureDailyBriefResult> {
-  const { tenantId, dayId, dateIso, language, activities, reservations, breakfasts, dayNotes, weather } = args
+  const { tenantId, dayId, dateIso, language, activities, reservations, breakfasts, dayNotes, weather } =
+    args
 
   if (!(await isFeatureEnabled(tenantId, 'daily_brief'))) return { status: 'empty' }
 
@@ -137,7 +138,7 @@ export async function ensureDailyBrief(args: {
       dayId,
       dateIso,
       generatedBy: null,
-      language,
+      language: language ?? 'en',
       activities,
       reservations,
       breakfasts,

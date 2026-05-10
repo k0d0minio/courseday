@@ -69,13 +69,8 @@ export async function POST(request: Request) {
   if (!dayResult.success) return new Response(dayResult.error, { status: 500 })
   const dayId = dayResult.data.id
 
-  const { supabase: sbForTenant } = await createTenantClient()
-  const { data: tenantRow } = await sbForTenant
-    .from('tenants')
-    .select('language')
-    .eq('id', tenantId)
-    .single()
-  const language = tenantRow?.language ?? 'en'
+  // Middleware sets x-tenant-language from tenants.language on every request.
+  const language = request.headers.get('x-tenant-language') ?? 'en'
 
   const [activities, reservations, breakfasts, dayNotes, weather] = await Promise.all([
     getProgramItemsForDay(tenantId, dayId),
