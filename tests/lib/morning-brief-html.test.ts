@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { briefToHtml } from '@/lib/morning-brief-cron'
+import { briefToHtml } from '@/lib/morning-brief-html'
 import type { DailyBriefRecord } from '@/types/daily-brief'
 
 const sampleBrief: DailyBriefRecord = {
