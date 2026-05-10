@@ -1,37 +1,22 @@
 'use client'
 
-import { useCallback } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
 import { Sparkles } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { QuickAddInput } from '@/components/quick-add-input'
 import { Button } from '@/components/ui/button'
 import { useActiveDay } from '@/lib/active-day-context'
 import { useKeyboardShortcuts } from '@/lib/keyboard-shortcuts'
-import type { QuickAddParseData } from '@/lib/quick-add-types'
 
 /**
  * Navbar trigger button + QuickAddInput dialog, mounted once in the tenant layout.
  * Open state lives in KeyboardShortcutsContext so the command palette can trigger it too.
- * Parse results are ferried to DayViewClient via ActiveDayContext.pendingQuickAddResult.
+ * QuickAddInput handles parse → review → save end-to-end and navigates to the
+ * resulting day on commit.
  */
 export function GlobalQuickAdd() {
   const t = useTranslations('Tenant.quickAdd')
-  const router = useRouter()
-  const pathname = usePathname()
-  const { activeDayYmd, setPendingQuickAddResult } = useActiveDay()
+  const { activeDayYmd } = useActiveDay()
   const { quickAddOpen, setQuickAddOpen } = useKeyboardShortcuts()
-
-  const handleSuccess = useCallback(
-    (data: QuickAddParseData, raw: string) => {
-      setPendingQuickAddResult({ type: 'success', data, raw })
-      const targetPath = `/day/${data.contextDate}`
-      if (!pathname.startsWith(targetPath)) {
-        router.push(targetPath)
-      }
-    },
-    [pathname, router, setPendingQuickAddResult]
-  )
 
   return (
     <>
@@ -47,7 +32,6 @@ export function GlobalQuickAdd() {
         open={quickAddOpen}
         onOpenChange={setQuickAddOpen}
         contextDate={activeDayYmd}
-        onSuccess={handleSuccess}
       />
     </>
   )

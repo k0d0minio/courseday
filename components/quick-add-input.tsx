@@ -1,125 +1,291 @@
 'use client'
 
-import { useState, useTransition, type FormEvent, useId } from 'react'
+import { useEffect, useState, useTransition, type FormEvent, useId } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Loader2, Sparkles } from 'lucide-react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import { parseQuickAdd } from '@/app/actions/quick-add'
+import { ensureDayExists } from '@/app/actions/days'
 import type { QuickAddParseData } from '@/lib/quick-add-types'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { mutateWithOfflineQueue } from '@/lib/day-mutation-client'
+import { useTenant } from '@/lib/tenant-context'
+import { QuickAddReview, type QuickAddReviewPayload } from '@/components/quick-add-review'
+import type { Activity, BreakfastConfiguration, Reservation } from '@/types/index'
 
 type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
   contextDate: string
-  onSuccess: (data: QuickAddParseData, raw: string) => void
-  /** Kept for API compatibility; no longer invoked — errors are shown inline. */
-  onParseFailed?: (raw: string, errorMessage: string) => void
   disabled?: boolean
 }
 
-export function QuickAddInput({ open, onOpenChange, contextDate, onSuccess, disabled }: Props) {
+type View = { stage: 'input' } | { stage: 'review'; data: QuickAddParseData; raw: string }
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 639px)')
+    setIsMobile(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+  return isMobile
+}
+
+export function QuickAddInput({ open, onOpenChange, contextDate, disabled }: Props) {
   const t = useTranslations('Tenant.quickAdd')
+  const router = useRouter()
+  const pathname = usePathname()
+  const isMobile = useIsMobile()
+  const { tenantSlug } = useTenant()
+
   const [text, setText] = useState('')
+  const [view, setView] = useState<View>({ stage: 'input' })
   const [error, setError] = useState<string | null>(null)
-  const [isPending, startTransition] = useTransition()
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [isParsing, startParse] = useTransition()
+  const [isSaving, startSave] = useTransition()
   const descId = useId()
   const errId = useId()
 
+  useEffect(() => {
+    if (!open) {
+      setText('')
+      setView({ stage: 'input' })
+      setError(null)
+      setSaveError(null)
+    }
+  }, [open])
+
   function close() {
     onOpenChange(false)
-    setText('')
-    setError(null)
   }
 
-  function handleSubmit(e: FormEvent) {
+  function handleParse(e: FormEvent) {
     e.preventDefault()
     const v = text.trim()
-    if (!v || isPending) return
+    if (!v || isParsing) return
     setError(null)
-    startTransition(async () => {
+    startParse(async () => {
       const r = await parseQuickAdd(v, contextDate)
       if (!r.success) {
         setError(r.error)
         return
       }
-      onSuccess(r.data, v)
+      setView({ stage: 'review', data: r.data, raw: v })
+    })
+  }
+
+  function handleBack() {
+    setView({ stage: 'input' })
+    setSaveError(null)
+  }
+
+  function handleConfirm(payload: QuickAddReviewPayload) {
+    if (isSaving) return
+    setSaveError(null)
+    startSave(async () => {
+      // If user changed the date (via the dateAmbiguous picker), resolve a new dayId.
+      let dayId = payload.dayId
+      if (payload.contextDate !== (view.stage === 'review' ? view.data.contextDate : '')) {
+        const ensured = await ensureDayExists(payload.contextDate)
+        if (!ensured.success) {
+          setSaveError(ensured.error)
+          return
+        }
+        dayId = ensured.data.id
+      }
+
+      if (payload.kind === 'activity') {
+        const result = await mutateWithOfflineQueue<Activity>({
+          entity: 'activities',
+          operation: 'create',
+          tenantSlug,
+          dayId,
+          payload: {
+            dayId,
+            title: payload.title,
+            startTime: payload.startTime || undefined,
+            endTime: payload.endTime || undefined,
+            expectedCovers: payload.expectedCovers,
+            notes: payload.notes || undefined,
+            allergens: payload.allergens.length > 0 ? payload.allergens : undefined,
+          },
+        })
+        if (!result.success) {
+          setSaveError(result.error)
+          return
+        }
+      } else if (payload.kind === 'reservation') {
+        const result = await mutateWithOfflineQueue<Reservation>({
+          entity: 'reservations',
+          operation: 'create',
+          tenantSlug,
+          dayId,
+          payload: {
+            dayId,
+            guestName: payload.guestName || undefined,
+            guestCount: payload.guestCount,
+            startTime: payload.startTime || undefined,
+            endTime: payload.endTime || undefined,
+            notes: payload.notes || undefined,
+            tableBreakdown: payload.tableBreakdown.length > 0 ? payload.tableBreakdown : undefined,
+            allergens: payload.allergens.length > 0 ? payload.allergens : undefined,
+          },
+        })
+        if (!result.success) {
+          setSaveError(result.error)
+          return
+        }
+      } else {
+        const result = await mutateWithOfflineQueue<BreakfastConfiguration>({
+          entity: 'breakfast',
+          operation: 'create',
+          tenantSlug,
+          dayId,
+          payload: {
+            dayId,
+            groupName: payload.groupName || undefined,
+            guestCount: payload.guestCount,
+            startTime: payload.startTime || undefined,
+            notes: payload.notes || undefined,
+            tableBreakdown: payload.tableBreakdown.length > 0 ? payload.tableBreakdown : undefined,
+            allergens: payload.allergens.length > 0 ? payload.allergens : undefined,
+          },
+        })
+        if (!result.success) {
+          setSaveError(result.error)
+          return
+        }
+      }
+
+      toast.success(t('saved'))
       close()
+      const target = `/day/${payload.contextDate}`
+      if (!pathname.startsWith(target)) router.push(target)
+      else router.refresh()
     })
   }
 
   const isAiNotConfigured = Boolean(error?.includes('AI is not configured'))
 
+  const inputBody = (
+    <form onSubmit={handleParse} className="space-y-3">
+      <p id={descId} className="text-muted-foreground text-sm">
+        {t('description', { contextDate })}
+      </p>
+      <div className="space-y-1.5">
+        <Label htmlFor="quick-add-textarea">{t('inputLabel')}</Label>
+        <Textarea
+          id="quick-add-textarea"
+          className="min-h-[100px] resize-y"
+          value={text}
+          onChange={(e) => {
+            setText(e.target.value)
+            setError(null)
+          }}
+          placeholder={t('placeholder')}
+          disabled={isParsing || disabled}
+          aria-invalid={error ? true : undefined}
+          aria-errormessage={error ? errId : undefined}
+        />
+        {error && (
+          <p id={errId} role="alert" className="text-destructive text-sm">
+            {error}
+            {isAiNotConfigured && (
+              <>
+                {' '}
+                <Link href="/admin/settings" className="underline" onClick={close}>
+                  Go to settings
+                </Link>
+              </>
+            )}
+          </p>
+        )}
+      </div>
+      <div className="flex justify-end gap-2 pt-1">
+        <Button type="button" variant="outline" onClick={close} disabled={isParsing}>
+          {t('cancel')}
+        </Button>
+        <Button type="submit" disabled={isParsing || !text.trim() || disabled}>
+          {isParsing ? (
+            <>
+              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+              {t('parsing')}
+            </>
+          ) : (
+            t('submit')
+          )}
+        </Button>
+      </div>
+    </form>
+  )
+
+  const reviewBody =
+    view.stage === 'review' ? (
+      <QuickAddReview
+        data={view.data}
+        rawText={view.raw}
+        onConfirm={handleConfirm}
+        onBack={handleBack}
+        isPending={isSaving}
+        error={saveError}
+      />
+    ) : null
+
+  const title = view.stage === 'input' ? t('title') : t('reviewTitle')
+
+  if (isMobile) {
+    return (
+      <Drawer
+        open={open}
+        onOpenChange={(o) => {
+          if (!o) onOpenChange(false)
+          else onOpenChange(true)
+        }}
+      >
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              {title}
+            </DrawerTitle>
+          </DrawerHeader>
+          <div className="max-h-[75vh] overflow-y-auto px-4 pb-6">
+            {view.stage === 'input' ? inputBody : reviewBody}
+          </div>
+        </DrawerContent>
+      </Drawer>
+    )
+  }
+
   return (
     <Dialog
       open={open}
       onOpenChange={(o) => {
-        if (!o) {
-          onOpenChange(false)
-          setText('')
-          setError(null)
-        } else onOpenChange(true)
+        if (!o) onOpenChange(false)
+        else onOpenChange(true)
       }}
     >
-      <DialogContent className="sm:max-w-md" aria-describedby={descId}>
+      <DialogContent
+        className="max-h-[90vh] overflow-y-auto sm:max-w-md"
+        aria-describedby={view.stage === 'input' ? descId : undefined}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-4 w-4" />
-            {t('title')}
+            {title}
           </DialogTitle>
         </DialogHeader>
-        <p id={descId} className="text-muted-foreground text-sm">
-          {t('description', { contextDate })}
-        </p>
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="quick-add-textarea">{t('inputLabel')}</Label>
-            <Textarea
-              id="quick-add-textarea"
-              className="min-h-[100px] resize-y"
-              value={text}
-              onChange={(e) => {
-                setText(e.target.value)
-                setError(null)
-              }}
-              placeholder={t('placeholder')}
-              disabled={isPending || disabled}
-              aria-invalid={error ? true : undefined}
-              aria-errormessage={error ? errId : undefined}
-            />
-            {error && (
-              <p id={errId} role="alert" className="text-destructive text-sm">
-                {error}
-                {isAiNotConfigured && (
-                  <>
-                    {' '}
-                    <Link href="/admin/settings" className="underline" onClick={close}>
-                      Go to settings
-                    </Link>
-                  </>
-                )}
-              </p>
-            )}
-          </div>
-          <div className="flex justify-end gap-2 pt-1">
-            <Button type="button" variant="outline" onClick={close} disabled={isPending}>
-              {t('cancel')}
-            </Button>
-            <Button type="submit" disabled={isPending || !text.trim() || disabled}>
-              {isPending ? (
-                <>
-                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                  {t('parsing')}
-                </>
-              ) : (
-                t('submit')
-              )}
-            </Button>
-          </div>
-        </form>
+        {view.stage === 'input' ? inputBody : reviewBody}
       </DialogContent>
     </Dialog>
   )

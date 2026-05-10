@@ -6,7 +6,6 @@ import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 import { useDayRealtime } from './useDayRealtime'
 import { useTranslations } from 'next-intl'
 import { Plus } from 'lucide-react'
-import { toast } from 'sonner'
 import { DayNav } from '@/components/day-nav'
 import { DaySummaryCard } from '@/components/day-summary-card'
 import { ViewerDayDashboard } from '@/components/viewer-day-dashboard'
@@ -26,9 +25,6 @@ const BreakfastForm = dynamic(() =>
 import { DayNotes } from '@/components/day-notes'
 import { DayInfoBanner } from '@/components/day-info-banner'
 import { StaffScheduleSection } from '@/components/staff-schedule-section'
-import type { ActivityQuickAddSeed } from '@/components/activity-form'
-import type { ReservationQuickAdd } from '@/components/reservation-form'
-import type { BreakfastQuickAdd } from '@/components/breakfast-form'
 import { Button } from '@/components/ui/button'
 import { KbdHint } from '@/components/kbd-hint'
 import { useFeatureFlag } from '@/lib/feature-flags-context'
@@ -42,7 +38,6 @@ import type {
   ShiftWithAssignee,
 } from '@/types/index'
 import type { DayViewProps } from './page'
-import type { QuickAddParseData } from '@/lib/quick-add-types'
 import type { DayNote } from '@/app/actions/day-notes'
 
 function useDayViewLiveState(p: DayViewProps, staffScheduleEnabled: boolean) {
@@ -151,7 +146,6 @@ function DayViewEditor({
   showStaffSchedule: boolean
 }) {
   const t = useTranslations('Tenant.day')
-  const tQa = useTranslations('Tenant.quickAdd')
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -159,7 +153,6 @@ function DayViewEditor({
   const showBreakfast = useFeatureFlag('breakfast_config')
   const showWeatherReporting = useFeatureFlag('weather_reporting')
   const showDailyBrief = useFeatureFlag('daily_brief')
-  const { pendingQuickAddResult, setPendingQuickAddResult } = useActiveDay()
 
   const {
     activities,
@@ -180,9 +173,6 @@ function DayViewEditor({
 
   const [breakfastModalOpen, setBreakfastModalOpen] = useState(false)
   const [editBreakfast, setEditBreakfast] = useState<BreakfastConfiguration | null>(null)
-  const [activityQuickAdd, setActivityQuickAdd] = useState<ActivityQuickAddSeed | null>(null)
-  const [reservationQuickAdd, setReservationQuickAdd] = useState<ReservationQuickAdd | null>(null)
-  const [breakfastQuickAdd, setBreakfastQuickAdd] = useState<BreakfastQuickAdd | null>(null)
 
   const returnFocusRef = useRef<HTMLElement | null>(null)
   const activityAddRef = useRef<HTMLButtonElement>(null)
@@ -191,19 +181,16 @@ function DayViewEditor({
 
   const openAddActivity = useCallback(() => {
     setEditActivity(null)
-    setActivityQuickAdd(null)
     setActivityModalOpen(true)
   }, [])
 
   const openAddReservation = useCallback(() => {
     setEditReservation(null)
-    setReservationQuickAdd(null)
     setReservationModalOpen(true)
   }, [])
 
   const openAddBreakfast = useCallback(() => {
     setEditBreakfast(null)
-    setBreakfastQuickAdd(null)
     setBreakfastModalOpen(true)
   }, [])
 
@@ -281,97 +268,6 @@ function DayViewEditor({
     setBreakfastConfigs((prev) => prev.filter((c) => c.id !== id))
   }
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setActivityQuickAdd(null)
-
-    setReservationQuickAdd(null)
-
-    setBreakfastQuickAdd(null)
-  }, [date, dayId])
-
-  const handleQuickAddSuccess = useCallback(
-    (data: QuickAddParseData, raw: string) => {
-      if (data.dateAmbiguous) {
-        toast.info(tQa('dateAmbiguous'))
-      }
-      if (data.kind === 'breakfast' && !showBreakfast) {
-        toast(tQa('typeDisabled'))
-        setReservationQuickAdd({ kind: 'failed', rawText: raw })
-        setEditReservation(null)
-        setReservationModalOpen(true)
-        return
-      }
-      if (data.kind === 'reservation' && !showReservations) {
-        toast(tQa('typeDisabled'))
-        setActivityQuickAdd({
-          defaults: {
-            title: '',
-            description: '',
-            startTime: '',
-            endTime: '',
-            expectedCovers: '',
-            notes: raw,
-          },
-          allergens: [],
-          gapFieldKeys: ['title', 'startTime', 'expectedCovers'],
-        })
-        setEditActivity(null)
-        setActivityModalOpen(true)
-        return
-      }
-      if (data.kind === 'activity') {
-        setActivityQuickAdd({
-          defaults: data.defaults,
-          allergens: data.allergens,
-          gapFieldKeys: data.gapFieldKeys,
-        })
-        setEditActivity(null)
-        setActivityModalOpen(true)
-        return
-      }
-      if (data.kind === 'reservation') {
-        setReservationQuickAdd({
-          kind: 'parsed',
-          defaults: data.defaults,
-          tableBreakdown: data.tableBreakdown,
-          allergens: data.allergens,
-          gapFieldKeys: data.gapFieldKeys,
-        })
-        setEditReservation(null)
-        setReservationModalOpen(true)
-        return
-      }
-      setBreakfastQuickAdd({
-        defaults: data.defaults,
-        tableBreakdown: data.tableBreakdown,
-        allergens: data.allergens,
-        gapFieldKeys: data.gapFieldKeys,
-      })
-      setEditBreakfast(null)
-      setBreakfastModalOpen(true)
-    },
-    [showBreakfast, showReservations, tQa]
-  )
-
-  const handleQuickAddParseFailed = useCallback(
-    (raw: string, error: string) => {
-      if (error.includes('Too many') || error.includes('Not authorized')) {
-        toast.error(error)
-        return
-      }
-      if (error.includes('AI is not configured') || error.includes('AI_GATEWAY')) {
-        toast.error(error)
-        return
-      }
-      toast.error(error || tQa('parseFailed'))
-      setReservationQuickAdd({ kind: 'failed', rawText: raw })
-      setEditReservation(null)
-      setReservationModalOpen(true)
-    },
-    [tQa]
-  )
-
   useDayViewHotkeys({
     date,
     today,
@@ -397,22 +293,6 @@ function DayViewEditor({
         }
       : {}),
   })
-
-  useEffect(() => {
-    if (!pendingQuickAddResult) return
-
-    setPendingQuickAddResult(null)
-    if (pendingQuickAddResult.type === 'success') {
-      handleQuickAddSuccess(pendingQuickAddResult.data, pendingQuickAddResult.raw)
-    } else {
-      handleQuickAddParseFailed(pendingQuickAddResult.raw, pendingQuickAddResult.error)
-    }
-  }, [
-    pendingQuickAddResult,
-    setPendingQuickAddResult,
-    handleQuickAddSuccess,
-    handleQuickAddParseFailed,
-  ])
 
   useEffect(() => {
     const create = searchParams.get('create')
@@ -605,7 +485,6 @@ function DayViewEditor({
         isOpen={activityModalOpen}
         onClose={() => {
           setActivityModalOpen(false)
-          setActivityQuickAdd(null)
         }}
         date={date}
         dayId={dayId}
@@ -614,33 +493,28 @@ function DayViewEditor({
         editItem={editActivity}
         onSuccess={handleActivitySaved}
         returnFocusRef={returnFocusRef}
-        quickAdd={!editActivity ? activityQuickAdd : null}
       />
 
       <ReservationForm
         isOpen={reservationModalOpen}
         onClose={() => {
           setReservationModalOpen(false)
-          setReservationQuickAdd(null)
         }}
         dayId={dayId}
         editItem={editReservation}
         onSuccess={handleReservationSaved}
         returnFocusRef={returnFocusRef}
-        quickAdd={!editReservation ? reservationQuickAdd : null}
       />
 
       <BreakfastForm
         isOpen={breakfastModalOpen}
         onClose={() => {
           setBreakfastModalOpen(false)
-          setBreakfastQuickAdd(null)
         }}
         dayId={dayId}
         editItem={editBreakfast}
         onSuccess={handleBreakfastSaved}
         returnFocusRef={returnFocusRef}
-        quickAdd={!editBreakfast ? breakfastQuickAdd : null}
       />
     </div>
   )
