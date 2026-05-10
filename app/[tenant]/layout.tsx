@@ -147,7 +147,12 @@ export default async function TenantLayout({ children }: { children: React.React
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button variant="ghost" size="iconSm" aria-label={t('mySchedule')} asChild>
+                              <Button
+                                variant="ghost"
+                                size="iconSm"
+                                aria-label={t('mySchedule')}
+                                asChild
+                              >
                                 <Link href="/my-schedule">
                                   <CalendarDays />
                                 </Link>
@@ -164,7 +169,12 @@ export default async function TenantLayout({ children }: { children: React.React
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button variant="ghost" size="iconSm" aria-label={t('profile')} asChild>
+                              <Button
+                                variant="ghost"
+                                size="iconSm"
+                                aria-label={t('profile')}
+                                asChild
+                              >
                                 <Link href="/profile">
                                   <User />
                                 </Link>
