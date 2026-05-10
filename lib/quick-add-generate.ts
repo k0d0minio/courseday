@@ -52,10 +52,14 @@ const allFields = z.object({
   allergenHints: z.array(z.string()).nullable(),
 })
 
-const quickAddLlmSchema = z.object({
+const quickAddLlmItemSchema = z.object({
   kind: z.enum(['activity', 'reservation', 'breakfast']),
   dateAmbiguous: z.boolean(),
   fields: allFields,
+})
+
+const quickAddLlmSchema = z.object({
+  items: z.array(quickAddLlmItemSchema).min(1).max(20),
 })
 
 // ---------------------------------------------------------------------------
@@ -391,7 +395,7 @@ function nu<T>(v: T | null | undefined): T | undefined {
 }
 
 function buildDataFromLlm(
-  out: z.infer<typeof quickAddLlmSchema>,
+  out: z.infer<typeof quickAddLlmItemSchema>,
   dayId: string,
   contextDate: string
 ): QuickAddParseData {
@@ -535,7 +539,7 @@ function buildDataFromLlm(
 
 export type GenerateQuickAddError = { success: false; error: string }
 export type GenerateQuickAddResult =
-  | { success: true; data: QuickAddParseData; promptVersion: string }
+  | { success: true; items: QuickAddParseData[]; promptVersion: string }
   | GenerateQuickAddError
 
 type AiUsage = {
@@ -614,6 +618,6 @@ export async function generateQuickAddParse(
     return { success: false, error: `Quick add AI error: ${short}` }
   }
 
-  const data = buildDataFromLlm(out, dayId, contextDate)
-  return { success: true, data, promptVersion: PROMPT_VERSION }
+  const items = out.items.map((item) => buildDataFromLlm(item, dayId, contextDate))
+  return { success: true, items, promptVersion: PROMPT_VERSION }
 }

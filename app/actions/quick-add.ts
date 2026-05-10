@@ -8,15 +8,22 @@ import { generateQuickAddParse } from '@/lib/quick-add-generate'
 import type { QuickAddParseData } from '@/lib/quick-add-types'
 import type { ActionResponse } from '@/types/actions'
 
+export type QuickAddParseResult = {
+  items: QuickAddParseData[]
+}
+
 /**
- * Classify and extract fields from free text. No DB writes.
+ * Classify and extract fields from free text. Returns one or more parsed items
+ * (the LLM emits an array — single-item input yields a length-1 array).
+ * Rate limiting is per request, not per item.
+ * No DB writes.
  * @param input raw user text
  * @param contextDate Y-M-D of the day view
  */
 export async function parseQuickAdd(
   input: string,
   contextDate: string
-): Promise<ActionResponse<QuickAddParseData>> {
+): Promise<ActionResponse<QuickAddParseResult>> {
   const tenantId = await getTenantId()
   const user = await requireEditor(tenantId)
 
@@ -41,5 +48,5 @@ export async function parseQuickAdd(
     return { success: false, error: gen.error }
   }
 
-  return { success: true, data: gen.data }
+  return { success: true, data: { items: gen.items } }
 }

@@ -17,6 +17,10 @@ import { Label } from '@/components/ui/label'
 import { mutateWithOfflineQueue } from '@/lib/day-mutation-client'
 import { useTenant } from '@/lib/tenant-context'
 import { QuickAddReview, type QuickAddReviewPayload } from '@/components/quick-add-review'
+import {
+  QuickAddMultiReview,
+  type QuickAddMultiSaveResult,
+} from '@/components/quick-add-multi-review'
 import type { Activity, BreakfastConfiguration, Reservation } from '@/types/index'
 
 type Props = {
@@ -26,18 +30,92 @@ type Props = {
   disabled?: boolean
 }
 
-type View = { stage: 'input' } | { stage: 'review'; data: QuickAddParseData; raw: string }
+type View =
+  | { stage: 'input' }
+  | { stage: 'review'; data: QuickAddParseData; raw: string }
+  | { stage: 'multi-review'; items: QuickAddParseData[]; raw: string }
 
 function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false)
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window === 'undefined' ? false : window.matchMedia('(max-width: 639px)').matches
+  )
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 639px)')
-    setIsMobile(mq.matches)
     const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
     mq.addEventListener('change', handler)
     return () => mq.removeEventListener('change', handler)
   }, [])
   return isMobile
+}
+
+async function savePayload(
+  payload: QuickAddReviewPayload,
+  tenantSlug: string,
+  fallbackContextDate: string
+): Promise<QuickAddMultiSaveResult> {
+  let dayId = payload.dayId
+  if (payload.contextDate !== fallbackContextDate) {
+    const ensured = await ensureDayExists(payload.contextDate)
+    if (!ensured.success) return { success: false, error: ensured.error }
+    dayId = ensured.data.id
+  }
+
+  if (payload.kind === 'activity') {
+    const result = await mutateWithOfflineQueue<Activity>({
+      entity: 'activities',
+      operation: 'create',
+      tenantSlug,
+      dayId,
+      payload: {
+        dayId,
+        title: payload.title,
+        startTime: payload.startTime || undefined,
+        endTime: payload.endTime || undefined,
+        expectedCovers: payload.expectedCovers,
+        notes: payload.notes || undefined,
+        allergens: payload.allergens.length > 0 ? payload.allergens : undefined,
+      },
+    })
+    if (!result.success) return { success: false, error: result.error }
+    return { success: true }
+  }
+  if (payload.kind === 'reservation') {
+    const result = await mutateWithOfflineQueue<Reservation>({
+      entity: 'reservations',
+      operation: 'create',
+      tenantSlug,
+      dayId,
+      payload: {
+        dayId,
+        guestName: payload.guestName || undefined,
+        guestCount: payload.guestCount,
+        startTime: payload.startTime || undefined,
+        endTime: payload.endTime || undefined,
+        notes: payload.notes || undefined,
+        tableBreakdown: payload.tableBreakdown.length > 0 ? payload.tableBreakdown : undefined,
+        allergens: payload.allergens.length > 0 ? payload.allergens : undefined,
+      },
+    })
+    if (!result.success) return { success: false, error: result.error }
+    return { success: true }
+  }
+  const result = await mutateWithOfflineQueue<BreakfastConfiguration>({
+    entity: 'breakfast',
+    operation: 'create',
+    tenantSlug,
+    dayId,
+    payload: {
+      dayId,
+      groupName: payload.groupName || undefined,
+      guestCount: payload.guestCount,
+      startTime: payload.startTime || undefined,
+      notes: payload.notes || undefined,
+      tableBreakdown: payload.tableBreakdown.length > 0 ? payload.tableBreakdown : undefined,
+      allergens: payload.allergens.length > 0 ? payload.allergens : undefined,
+    },
+  })
+  if (!result.success) return { success: false, error: result.error }
+  return { success: true }
 }
 
 export function QuickAddInput({ open, onOpenChange, contextDate, disabled }: Props) {
@@ -55,6 +133,10 @@ export function QuickAddInput({ open, onOpenChange, contextDate, disabled }: Pro
   const [isSaving, startSave] = useTransition()
   const descId = useId()
   const errId = useId()
+
+  // Reset transient state when the dialog/drawer closes. Cascading renders are
+  // expected here — the alternative (key-based remount) would interrupt the
+  // close animation.
 
   useEffect(() => {
     if (!open) {
@@ -80,7 +162,12 @@ export function QuickAddInput({ open, onOpenChange, contextDate, disabled }: Pro
         setError(r.error)
         return
       }
-      setView({ stage: 'review', data: r.data, raw: v })
+      const items = r.data.items
+      if (items.length > 1) {
+        setView({ stage: 'multi-review', items, raw: v })
+      } else {
+        setView({ stage: 'review', data: items[0]!, raw: v })
+      }
     })
   }
 
@@ -93,86 +180,37 @@ export function QuickAddInput({ open, onOpenChange, contextDate, disabled }: Pro
     if (isSaving) return
     setSaveError(null)
     startSave(async () => {
-      // If user changed the date (via the dateAmbiguous picker), resolve a new dayId.
-      let dayId = payload.dayId
-      if (payload.contextDate !== (view.stage === 'review' ? view.data.contextDate : '')) {
-        const ensured = await ensureDayExists(payload.contextDate)
-        if (!ensured.success) {
-          setSaveError(ensured.error)
-          return
-        }
-        dayId = ensured.data.id
+      const fallback = view.stage === 'review' ? view.data.contextDate : ''
+      const result = await savePayload(payload, tenantSlug, fallback)
+      if (!result.success) {
+        setSaveError(result.error)
+        return
       }
-
-      if (payload.kind === 'activity') {
-        const result = await mutateWithOfflineQueue<Activity>({
-          entity: 'activities',
-          operation: 'create',
-          tenantSlug,
-          dayId,
-          payload: {
-            dayId,
-            title: payload.title,
-            startTime: payload.startTime || undefined,
-            endTime: payload.endTime || undefined,
-            expectedCovers: payload.expectedCovers,
-            notes: payload.notes || undefined,
-            allergens: payload.allergens.length > 0 ? payload.allergens : undefined,
-          },
-        })
-        if (!result.success) {
-          setSaveError(result.error)
-          return
-        }
-      } else if (payload.kind === 'reservation') {
-        const result = await mutateWithOfflineQueue<Reservation>({
-          entity: 'reservations',
-          operation: 'create',
-          tenantSlug,
-          dayId,
-          payload: {
-            dayId,
-            guestName: payload.guestName || undefined,
-            guestCount: payload.guestCount,
-            startTime: payload.startTime || undefined,
-            endTime: payload.endTime || undefined,
-            notes: payload.notes || undefined,
-            tableBreakdown: payload.tableBreakdown.length > 0 ? payload.tableBreakdown : undefined,
-            allergens: payload.allergens.length > 0 ? payload.allergens : undefined,
-          },
-        })
-        if (!result.success) {
-          setSaveError(result.error)
-          return
-        }
-      } else {
-        const result = await mutateWithOfflineQueue<BreakfastConfiguration>({
-          entity: 'breakfast',
-          operation: 'create',
-          tenantSlug,
-          dayId,
-          payload: {
-            dayId,
-            groupName: payload.groupName || undefined,
-            guestCount: payload.guestCount,
-            startTime: payload.startTime || undefined,
-            notes: payload.notes || undefined,
-            tableBreakdown: payload.tableBreakdown.length > 0 ? payload.tableBreakdown : undefined,
-            allergens: payload.allergens.length > 0 ? payload.allergens : undefined,
-          },
-        })
-        if (!result.success) {
-          setSaveError(result.error)
-          return
-        }
-      }
-
       toast.success(t('saved'))
       close()
       const target = `/day/${payload.contextDate}`
       if (!pathname.startsWith(target)) router.push(target)
       else router.refresh()
     })
+  }
+
+  function navigateAfterMulti(target: string) {
+    close()
+    if (!pathname.startsWith(target)) router.push(target)
+    else router.refresh()
+  }
+
+  async function handleMultiSaveOne(
+    payload: QuickAddReviewPayload
+  ): Promise<QuickAddMultiSaveResult> {
+    return savePayload(payload, tenantSlug, payload.contextDate)
+  }
+
+  function handleMultiAllDone() {
+    toast.success(t('saved'))
+    const dest =
+      view.stage === 'multi-review' ? (view.items[0]?.contextDate ?? contextDate) : contextDate
+    navigateAfterMulti(`/day/${dest}`)
   }
 
   const isAiNotConfigured = Boolean(error?.includes('AI is not configured'))
@@ -239,9 +277,21 @@ export function QuickAddInput({ open, onOpenChange, contextDate, disabled }: Pro
         isPending={isSaving}
         error={saveError}
       />
+    ) : view.stage === 'multi-review' ? (
+      <QuickAddMultiReview
+        items={view.items}
+        onSaveOne={handleMultiSaveOne}
+        onAllDone={handleMultiAllDone}
+        onBack={handleBack}
+      />
     ) : null
 
-  const title = view.stage === 'input' ? t('title') : t('reviewTitle')
+  const title =
+    view.stage === 'input'
+      ? t('title')
+      : view.stage === 'multi-review'
+        ? t('multiReviewTitle')
+        : t('reviewTitle')
 
   if (isMobile) {
     return (
