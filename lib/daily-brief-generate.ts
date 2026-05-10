@@ -82,6 +82,13 @@ export function buildAllergenRollup(
     .sort((x, y) => x.code.localeCompare(y.code))
 }
 
+export type StaffShiftContext = {
+  name: string
+  role: string | null
+  start_time: string | null
+  end_time: string | null
+}
+
 export function llmPayload(args: {
   dateIso: string
   weather: WeatherData | null
@@ -91,6 +98,7 @@ export function llmPayload(args: {
   dayNotes: DayNote[]
   covers: DailyBriefCovers
   allergenRollup: DailyBriefAllergenRollupEntry[]
+  staffShifts?: StaffShiftContext[]
 }) {
   return {
     date: args.dateIso,
@@ -130,6 +138,16 @@ export function llmPayload(args: {
     dayNotes: args.dayNotes.map((n) => ({
       content: truncateNote(n.content),
     })),
+    ...(args.staffShifts && args.staffShifts.length > 0
+      ? {
+          staffScheduled: args.staffShifts.map((s) => ({
+            name: s.name,
+            role: s.role,
+            start_time: s.start_time,
+            end_time: s.end_time,
+          })),
+        }
+      : {}),
   }
 }
 
@@ -162,6 +180,7 @@ export async function generateAndPersistDailyBrief(
     breakfasts: BreakfastConfiguration[]
     dayNotes: DayNote[]
     weather: WeatherData | null
+    staffShifts?: StaffShiftContext[]
   }
 ): Promise<ActionResponse<DailyBriefRecord>> {
   if (!hasGatewayAuth()) {
@@ -182,6 +201,7 @@ export async function generateAndPersistDailyBrief(
     dayNotes: args.dayNotes,
     covers,
     allergenRollup,
+    staffShifts: args.staffShifts,
   })
 
   let narrative: z.infer<typeof narrativeSchema>

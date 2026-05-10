@@ -38,6 +38,7 @@ import { getWeatherForDay } from '@/app/actions/weather'
 import type { WeatherData } from '@/app/actions/weather'
 import { getFeatureFlags } from '@/app/actions/feature-flags'
 import { dayHasPlannedContent } from '@/lib/daily-brief-generate'
+import { recommendStaffCount } from '@/lib/staffing-forecast'
 
 // Inline stale check to avoid pulling the LLM-generation server action onto
 // the request critical path. Mirrors the helper in app/actions/daily-brief.ts.
@@ -84,6 +85,8 @@ export type DayViewProps = {
   authState: AuthState
   shifts: ShiftWithAssignee[]
   shiftAssignees: ShiftAssignee[]
+  forecastRecommended: number
+  forecastBreakdown: { source: string; count: number }[]
 }
 
 const YMD_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -170,6 +173,18 @@ export default async function DayPage({ params }: { params: Promise<{ date: stri
     flags.reservations ? reservations : [],
     flags.breakfast_config ? breakfastConfigs : []
   )
+
+  const forecast = recommendStaffCount({
+    activitiesCovers: activities.reduce((s, a) => s + (a.expected_covers ?? 0), 0),
+    reservationsCovers: (flags.reservations ? reservations : []).reduce(
+      (s, r) => s + (r.guest_count ?? 0),
+      0
+    ),
+    breakfastCovers: (flags.breakfast_config ? breakfastConfigs : []).reduce(
+      (s, b) => s + (b.total_guests ?? 0),
+      0
+    ),
+  })
   const dailyBrief = dailyBriefOn ? existingBrief : null
   const briefStale =
     dailyBriefOn && dailyBrief
@@ -205,6 +220,8 @@ export default async function DayPage({ params }: { params: Promise<{ date: stri
         authState={authState}
         shifts={shifts}
         shiftAssignees={shiftAssignees}
+        forecastRecommended={forecast.recommended}
+        forecastBreakdown={forecast.breakdown}
       />
     </Suspense>
   )

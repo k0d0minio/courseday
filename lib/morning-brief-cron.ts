@@ -27,11 +27,26 @@ function escapeHtml(value: string): string {
     .replace(/'/g, '&#39;')
 }
 
+type StaffLine = {
+  name: string
+  role: string | null
+  start_time: string | null
+  end_time: string | null
+}
+
+function formatStaffLine(s: StaffLine): string {
+  const time =
+    s.start_time && s.end_time ? `${s.start_time.slice(0, 5)}–${s.end_time.slice(0, 5)}` : null
+  const detail = [s.role, time].filter(Boolean).join(' ')
+  return detail ? `${s.name} (${detail})` : s.name
+}
+
 function briefToHtml(
   brief: DailyBriefRecord,
   tenantName: string,
   dayUrl: string,
-  dateLabel: string
+  dateLabel: string,
+  staffLines?: StaffLine[]
 ) {
   const body = formatDailyBriefMarkdown(brief.content)
     .split('\n')
@@ -50,10 +65,16 @@ function briefToHtml(
     })
     .join('')
 
+  const staffSection =
+    staffLines && staffLines.length > 0
+      ? `<h2 style="font-size:15px;margin:20px 0 8px;">Staff today</h2>${staffLines.map((s) => `<p style="margin:4px 0 4px 12px;">• ${escapeHtml(formatStaffLine(s))}</p>`).join('')}`
+      : ''
+
   return `
     <div style="font-family: system-ui, -apple-system, Segoe UI, sans-serif; font-size: 14px; color: #111; max-width: 560px;">
       <p style="color:#555; font-size:13px; margin:0 0 16px;">${escapeHtml(tenantName)} · ${escapeHtml(dateLabel)}</p>
       ${body}
+      ${staffSection}
       <p style="margin-top: 24px;"><a href="${escapeHtml(dayUrl)}" style="color: #2563eb;">Open day in Courseday</a></p>
     </div>
   `
@@ -132,12 +153,63 @@ export async function runMorningBriefEmailCron(): Promise<MorningBriefCronResult
     }
     const dayId = dayRes.data.id
 
-    const [activities, reservations, breakfasts, dayNotes] = await Promise.all([
-      getProgramItemsForDayWithClient(supabase, tenant.id, dayId),
-      getReservationsForDayWithClient(supabase, tenant.id, dayId),
-      getBreakfastConfigsForDayWithClient(supabase, tenant.id, dayId),
-      getDayNotesForDayWithClient(supabase, tenant.id, dayId),
-    ])
+    const [activities, reservations, breakfasts, dayNotes, shiftRows, memberRows] =
+      await Promise.all([
+        getProgramItemsForDayWithClient(supabase, tenant.id, dayId),
+        getReservationsForDayWithClient(supabase, tenant.id, dayId),
+        getBreakfastConfigsForDayWithClient(supabase, tenant.id, dayId),
+        getDayNotesForDayWithClient(supabase, tenant.id, dayId),
+        flags.staff_schedule
+          ? supabase
+              .from('shift')
+              .select('user_id, role, start_time, end_time')
+              .eq('tenant_id', tenant.id)
+              .eq('day_id', dayId)
+              .order('start_time', { nullsFirst: true })
+              .then((r) => r.data ?? [])
+          : Promise.resolve([]),
+        flags.staff_schedule
+          ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (supabase.from('memberships') as any)
+              .select('user_id, first_name, last_name')
+              .eq('tenant_id', tenant.id)
+              .then(
+                (r: {
+                  data: Array<{
+                    user_id: string
+                    first_name: string | null
+                    last_name: string | null
+                  }> | null
+                }) => r.data ?? []
+              )
+          : Promise.resolve([]),
+      ])
+
+    const memberNameMap = new Map(
+      (
+        memberRows as Array<{
+          user_id: string
+          first_name: string | null
+          last_name: string | null
+        }>
+      ).map((m) => [m.user_id, [m.first_name, m.last_name].filter(Boolean).join(' ') || null])
+    )
+
+    const staffShiftsForEmail = flags.staff_schedule
+      ? (
+          shiftRows as Array<{
+            user_id: string
+            role: string | null
+            start_time: string | null
+            end_time: string | null
+          }>
+        ).map((s) => ({
+          name: memberNameMap.get(s.user_id) ?? 'Staff',
+          role: s.role ?? null,
+          start_time: s.start_time ?? null,
+          end_time: s.end_time ?? null,
+        }))
+      : []
 
     if (!dayHasPlannedContent(activities, reservations, breakfasts)) {
       tenantsSkippedNoPlan += 1
@@ -166,6 +238,7 @@ export async function runMorningBriefEmailCron(): Promise<MorningBriefCronResult
         breakfasts,
         dayNotes,
         weather,
+        staffShifts: staffShiftsForEmail.length > 0 ? staffShiftsForEmail : undefined,
       })
       if (!gen.success) {
         errors.push(`${tenant.slug}: ${gen.error}`)
@@ -222,8 +295,18 @@ export async function runMorningBriefEmailCron(): Promise<MorningBriefCronResult
         }
         const to = u.user.email
         const subject = `Daily brief — ${tenant.name} — ${dateLabel}`
-        const text = formatDailyBriefMarkdown(brief.content) + `\n\n${dayUrl}\n`
-        const html = briefToHtml(brief, tenant.name, dayUrl, dateLabel)
+        const staffSection =
+          staffShiftsForEmail.length > 0
+            ? `\n\n## Staff today\n${staffShiftsForEmail.map((s) => `- ${formatStaffLine(s)}`).join('\n')}`
+            : ''
+        const text = formatDailyBriefMarkdown(brief.content) + staffSection + `\n\n${dayUrl}\n`
+        const html = briefToHtml(
+          brief,
+          tenant.name,
+          dayUrl,
+          dateLabel,
+          staffShiftsForEmail.length > 0 ? staffShiftsForEmail : undefined
+        )
         const tenantFromName =
           (tenant as { email_from_name?: string | null }).email_from_name ?? tenant.name
         const tenantReplyTo =

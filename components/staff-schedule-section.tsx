@@ -6,7 +6,11 @@ import { Plus } from 'lucide-react'
 import { ShiftCard } from '@/components/shift-card'
 import { ShiftForm } from '@/components/shift-form'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { cn } from '@/lib/utils'
 import type { ShiftAssignee, ShiftWithAssignee } from '@/types/index'
+
+type ForecastBreakdownItem = { source: string; count: number }
 
 type Props = {
   dayId: string
@@ -14,6 +18,8 @@ type Props = {
   assignees: ShiftAssignee[]
   isEditor: boolean
   onShiftsChange: React.Dispatch<React.SetStateAction<ShiftWithAssignee[]>>
+  forecastRecommended: number
+  forecastBreakdown: ForecastBreakdownItem[]
 }
 
 function parseMinutes(time: string): number {
@@ -47,8 +53,11 @@ export function StaffScheduleSection({
   assignees,
   isEditor,
   onShiftsChange,
+  forecastRecommended,
+  forecastBreakdown,
 }: Props) {
   const t = useTranslations('Tenant.staff.section')
+  const tForecast = useTranslations('Tenant.staff.forecast')
   const [formOpen, setFormOpen] = useState(false)
   const [editShift, setEditShift] = useState<ShiftWithAssignee | null>(null)
 
@@ -86,6 +95,9 @@ export function StaffScheduleSection({
     onShiftsChange((prev) => prev.map((s) => (s.id === item.id ? item : s)))
   }
 
+  const scheduledCount = shifts.length
+  const isAdequate = scheduledCount >= forecastRecommended
+
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between gap-2">
@@ -98,16 +110,44 @@ export function StaffScheduleSection({
             </p>
           )}
         </div>
-        {isEditor && (
-          <Button
-            size="xs"
-            onClick={openAdd}
-            disabled={assignees.length === 0}
-            className="shrink-0"
-          >
-            <Plus className="size-3.5" /> {t('addShift')}
-          </Button>
-        )}
+        <div className="flex shrink-0 items-center gap-2">
+          {isEditor && forecastRecommended > 0 && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    className={cn(
+                      'inline-flex cursor-default items-center rounded-full border px-2 py-0.5 text-xs font-medium',
+                      isAdequate
+                        ? 'border-green-200 bg-green-100 text-green-800 dark:border-green-800 dark:bg-green-900/30 dark:text-green-300'
+                        : 'border-amber-200 bg-amber-100 text-amber-800 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
+                    )}
+                  >
+                    {tForecast('badge', {
+                      recommended: forecastRecommended,
+                      scheduled: scheduledCount,
+                    })}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <ul className="space-y-0.5">
+                    {forecastBreakdown.map((item) => (
+                      <li key={item.source}>
+                        {tForecast(item.source as 'activities' | 'reservations' | 'breakfast')}:{' '}
+                        {tForecast('covers', { count: item.count })}
+                      </li>
+                    ))}
+                  </ul>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          {isEditor && (
+            <Button size="xs" onClick={openAdd} disabled={assignees.length === 0}>
+              <Plus className="size-3.5" /> {t('addShift')}
+            </Button>
+          )}
+        </div>
       </div>
       {assignees.length === 0 && isEditor && (
         <p className="text-muted-foreground text-sm">{t('noStaffHint')}</p>
