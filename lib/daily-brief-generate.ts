@@ -392,15 +392,24 @@ export async function generateAndPersistDailyBrief(
     generated_at: new Date().toISOString(),
     model: DAILY_BRIEF_MODEL_ID,
     prompt_version: PROMPT_VERSION,
+    // A fresh AI generation always discards any prior editor overrides — the
+    // user has been warned in the UI before getting here.
+    headline_override: null,
+    summary_override: null,
+    overridden_by: null,
+    overridden_at: null,
   }
   if (args.generatedBy) row.generated_by = args.generatedBy
   else row.generated_by = null
 
-  const { data, error } = await supabase
-    .from('daily_brief')
-    .upsert(row as never, { onConflict: 'tenant_id,day_id' })
-    .select('id, content, generated_at, model, prompt_version')
-    .single()
+  // Override columns added in 00050; cast until `pnpm db:types` regenerates `types/supabase.ts`.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = (await (supabase.from('daily_brief') as any)
+    .upsert(row, { onConflict: 'tenant_id,day_id' })
+    .select(
+      'id, content, generated_at, model, prompt_version, headline_override, summary_override, overridden_by, overridden_at'
+    )
+    .single()) as { data: DailyBriefPersistedRow; error: { message: string } | null }
 
   if (error) return { success: false, error: error.message }
 
@@ -415,6 +424,22 @@ export async function generateAndPersistDailyBrief(
       generated_at: data.generated_at,
       model: data.model,
       prompt_version: data.prompt_version,
+      headline_override: data.headline_override,
+      summary_override: data.summary_override,
+      overridden_by: data.overridden_by,
+      overridden_at: data.overridden_at,
     },
   }
+}
+
+type DailyBriefPersistedRow = {
+  id: string
+  content: unknown
+  generated_at: string
+  model: string
+  prompt_version: string
+  headline_override: string | null
+  summary_override: string | null
+  overridden_by: string | null
+  overridden_at: string | null
 }

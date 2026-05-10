@@ -21,6 +21,12 @@ type Props = {
   isEditor: boolean
   briefStale?: boolean
   briefIsEmpty?: boolean
+  /**
+   * Display name of the editor who last overrode the headline / summary —
+   * resolved server-side from membership. Used for the "edited by …"
+   * tooltip; when null we still show the badge but with a generic label.
+   */
+  overrideAuthorName?: string | null
 }
 
 export function DailyBriefCard({
@@ -30,6 +36,7 @@ export function DailyBriefCard({
   isEditor,
   briefStale: initialBriefStale = false,
   briefIsEmpty = false,
+  overrideAuthorName = null,
 }: Props) {
   const t = useTranslations('Tenant.dailyBrief')
   const router = useRouter()
@@ -65,6 +72,10 @@ export function DailyBriefCard({
           generated_at: new Date().toISOString(),
           model: '',
           prompt_version: 'v1',
+          headline_override: null,
+          summary_override: null,
+          overridden_by: null,
+          overridden_at: null,
         })
         setStale(false)
         toast.success(t('generated'))
@@ -96,9 +107,11 @@ export function DailyBriefCard({
   }, [dateIso, submit, t])
 
   const copyMarkdown = useCallback(() => {
-    const content = brief?.content
-    if (!content) return
-    const md = formatDailyBriefMarkdown(content)
+    if (!brief) return
+    const md = formatDailyBriefMarkdown(brief.content, {
+      headline_override: brief.headline_override,
+      summary_override: brief.summary_override,
+    })
     void navigator.clipboard.writeText(md).then(
       () => toast.success(t('copied')),
       () => toast.error(t('copyFailed'))
@@ -238,10 +251,19 @@ export function DailyBriefCard({
         {hasBrief && (
           <div className="space-y-3">
             <div>
-              <p className="text-base leading-snug font-semibold">{brief.content.headline}</p>
-              <p className="text-muted-foreground mt-2 text-sm whitespace-pre-wrap">
-                {brief.content.summary}
+              <p className="text-base leading-snug font-semibold">
+                {brief.headline_override?.trim() || brief.content.headline}
               </p>
+              <p className="text-muted-foreground mt-2 text-sm whitespace-pre-wrap">
+                {brief.summary_override?.trim() || brief.content.summary}
+              </p>
+              {(brief.headline_override || brief.summary_override) && (
+                <EditedBadge
+                  authorName={overrideAuthorName}
+                  overriddenAt={brief.overridden_at}
+                  t={t}
+                />
+              )}
             </div>
 
             <div className="grid grid-cols-3 gap-2 text-center text-sm">
@@ -369,6 +391,30 @@ function ListBlock({
         <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errorMessage}</p>
       )}
     </div>
+  )
+}
+
+function EditedBadge({
+  authorName,
+  overriddenAt,
+  t,
+}: {
+  authorName: string | null
+  overriddenAt: string | null
+  t: (key: string, values?: Record<string, string | number>) => string
+}) {
+  const tooltip = authorName
+    ? overriddenAt
+      ? t('editedByAt', { name: authorName, time: new Date(overriddenAt).toLocaleString() })
+      : t('editedBy', { name: authorName })
+    : t('editedBadge')
+  return (
+    <span
+      className="bg-muted text-muted-foreground mt-2 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium"
+      title={tooltip}
+    >
+      {t('edited')}
+    </span>
   )
 }
 

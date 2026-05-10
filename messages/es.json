@@ -165,7 +165,16 @@
       "regenerateActions": "Regenerar acciones sugeridas",
       "sectionRegenerated": "Sección actualizada",
       "sectionRegenFailed": "No se pudo regenerar la sección",
-      "sectionRateLimited": "Límite de regeneración de sección alcanzado. Intente mañana."
+      "sectionRateLimited": "Límite de regeneración de sección alcanzado. Intente mañana.",
+      "editHeadlineLabel": "Editar titular",
+      "editSummaryLabel": "Editar resumen",
+      "editSaved": "Resumen actualizado",
+      "editSaveFailed": "No se pudo guardar la edición",
+      "edited": "Editado",
+      "editedBy": "Editado por {name}",
+      "editedByAt": "Editado por {name} · {time}",
+      "editedBadge": "Editado por un editor",
+      "regenerateDiscardWarning": "Regenerar descartará tus ediciones al titular y al resumen. ¿Continuar?"
     },
     "quickAdd": {
       "openButton": "Añadir rápido",

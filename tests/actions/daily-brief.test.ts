@@ -67,6 +67,10 @@ function makeBriefRecord(generatedAt = NOW): DailyBriefRecord {
     generated_at: generatedAt,
     model: 'openai/gpt-5.4',
     prompt_version: 'v1',
+    headline_override: null,
+    summary_override: null,
+    overridden_by: null,
+    overridden_at: null,
   }
 }
 

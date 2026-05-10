@@ -37,4 +37,8 @@ export type DailyBriefRecord = {
   generated_at: string
   model: string
   prompt_version: string
+  headline_override: string | null
+  summary_override: string | null
+  overridden_by: string | null
+  overridden_at: string | null
 }

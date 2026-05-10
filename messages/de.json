@@ -165,7 +165,16 @@
       "regenerateActions": "Vorgeschlagene Maßnahmen neu erzeugen",
       "sectionRegenerated": "Abschnitt aktualisiert",
       "sectionRegenFailed": "Abschnitt konnte nicht neu erzeugt werden",
-      "sectionRateLimited": "Limit für Abschnittserneuerung erreicht. Bitte morgen erneut versuchen."
+      "sectionRateLimited": "Limit für Abschnittserneuerung erreicht. Bitte morgen erneut versuchen.",
+      "editHeadlineLabel": "Überschrift bearbeiten",
+      "editSummaryLabel": "Zusammenfassung bearbeiten",
+      "editSaved": "Briefing aktualisiert",
+      "editSaveFailed": "Bearbeitung konnte nicht gespeichert werden",
+      "edited": "Bearbeitet",
+      "editedBy": "Bearbeitet von {name}",
+      "editedByAt": "Bearbeitet von {name} · {time}",
+      "editedBadge": "Von einem Editor bearbeitet",
+      "regenerateDiscardWarning": "Bei einer Neugenerierung gehen deine Änderungen an Überschrift und Zusammenfassung verloren. Fortfahren?"
     },
     "quickAdd": {
       "openButton": "Schnell hinzufügen",

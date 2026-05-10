@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ClipboardCopy, Loader2, RefreshCw, Sparkles } from 'lucide-react'
+import { ClipboardCopy, Loader2, Pencil, RefreshCw, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { formatDailyBriefMarkdown } from '@/lib/daily-brief-format'
 import { dailyBriefContentSchema } from '@/lib/daily-brief-schema'
+import { updateBriefOverride } from '@/app/actions/daily-brief'
 import type { WeatherData } from '@/app/actions/weather'
 import type { DailyBriefContent, DailyBriefRecord } from '@/types/daily-brief'
 
@@ -32,6 +33,12 @@ type Props = {
   dateIso: string
   dayId: string
   isEditor: boolean
+  /**
+   * Display name of the editor who last overrode the headline / summary
+   * (resolved server-side from membership). Used in the "edited by …"
+   * tooltip on the inline-edit badge.
+   */
+  overrideAuthorName?: string | null
 }
 
 function ListBlock({ title, items }: { title: string; items: string[] }) {
@@ -90,6 +97,7 @@ export function DayInfoBanner({
   dateIso,
   dayId,
   isEditor,
+  overrideAuthorName = null,
 }: Props) {
   const t = useTranslations('Tenant.dailyBrief')
   const router = useRouter()
@@ -124,6 +132,12 @@ export function DayInfoBanner({
           generated_at: new Date().toISOString(),
           model: '',
           prompt_version: 'v1',
+          // A fresh AI generation discards any prior overrides — the user
+          // is prompted to confirm before runGenerate is called.
+          headline_override: null,
+          summary_override: null,
+          overridden_by: null,
+          overridden_at: null,
         })
         setStale(false)
         toast.success(t('generated'))
@@ -147,18 +161,39 @@ export function DayInfoBanner({
       toast.message(t('debounced'))
       return
     }
+    // Editor has manually edited the headline/summary; warn before discarding.
+    const hasOverride = Boolean(brief?.headline_override || brief?.summary_override)
+    if (hasOverride && !window.confirm(t('regenerateDiscardWarning'))) return
     lastGenerateAt.current = now
     submit({ dateIso })
-  }, [dateIso, submit, t])
+  }, [brief, dateIso, submit, t])
 
   const copyMarkdown = useCallback(() => {
     if (!brief) return
-    const md = formatDailyBriefMarkdown(brief.content)
+    const md = formatDailyBriefMarkdown(brief.content, {
+      headline_override: brief.headline_override,
+      summary_override: brief.summary_override,
+    })
     void navigator.clipboard.writeText(md).then(
       () => toast.success(t('copied')),
       () => toast.error(t('copyFailed'))
     )
   }, [brief, t])
+
+  const saveOverride = useCallback(
+    async (overrides: { headline?: string; summary?: string }) => {
+      const result = await updateBriefOverride(dateIso, overrides)
+      if (result.success) {
+        setBrief(result.data)
+        toast.success(t('editSaved'))
+        router.refresh()
+        return true
+      }
+      toast.error(result.error || t('editSaveFailed'))
+      return false
+    },
+    [dateIso, router, t]
+  )
 
   // Auto-generate when the page loads with no brief yet (editor only).
   useEffect(() => {
@@ -213,8 +248,12 @@ export function DayInfoBanner({
             tabIndex={0}
             onKeyDown={(e) => e.key === 'Enter' && setDialogOpen(true)}
           >
-            <p className="truncate text-sm font-medium">{brief.content.headline}</p>
-            <p className="text-muted-foreground line-clamp-1 text-xs">{brief.content.summary}</p>
+            <p className="truncate text-sm font-medium">
+              {brief.headline_override?.trim() || brief.content.headline}
+            </p>
+            <p className="text-muted-foreground line-clamp-1 text-xs">
+              {brief.summary_override?.trim() || brief.content.summary}
+            </p>
           </div>
         )}
 
@@ -318,7 +357,15 @@ export function DayInfoBanner({
               {isLoading && <StreamingBriefContent object={streamedObject} t={t} />}
 
               {/* Settled brief */}
-              {hasBrief && !isLoading && <SettledBriefContent brief={brief} t={t} />}
+              {hasBrief && !isLoading && (
+                <SettledBriefContent
+                  brief={brief}
+                  t={t}
+                  isEditor={isEditor}
+                  overrideAuthorName={overrideAuthorName}
+                  onSaveOverride={saveOverride}
+                />
+              )}
             </div>
           </DialogContent>
         </Dialog>
@@ -387,17 +434,48 @@ function StreamingBriefContent({
 function SettledBriefContent({
   brief,
   t,
+  isEditor,
+  overrideAuthorName,
+  onSaveOverride,
 }: {
   brief: DailyBriefRecord
   t: ReturnType<typeof useTranslations<'Tenant.dailyBrief'>>
+  isEditor: boolean
+  overrideAuthorName: string | null
+  onSaveOverride: (overrides: { headline?: string; summary?: string }) => Promise<boolean>
 }) {
+  const headlineDisplay = brief.headline_override?.trim() || brief.content.headline
+  const summaryDisplay = brief.summary_override?.trim() || brief.content.summary
+  const hasOverride = Boolean(brief.headline_override || brief.summary_override)
+
   return (
     <div className="space-y-3">
       <div>
-        <p className="text-base leading-snug font-semibold">{brief.content.headline}</p>
-        <p className="text-muted-foreground mt-2 text-sm whitespace-pre-wrap">
-          {brief.content.summary}
-        </p>
+        <InlineEditableText
+          value={headlineDisplay}
+          isEditor={isEditor}
+          multiline={false}
+          ariaLabel={t('editHeadlineLabel')}
+          textClassName="text-base leading-snug font-semibold"
+          onSave={(next) => onSaveOverride({ headline: next })}
+        />
+        <div className="mt-2">
+          <InlineEditableText
+            value={summaryDisplay}
+            isEditor={isEditor}
+            multiline
+            ariaLabel={t('editSummaryLabel')}
+            textClassName="text-muted-foreground text-sm whitespace-pre-wrap"
+            onSave={(next) => onSaveOverride({ summary: next })}
+          />
+        </div>
+        {hasOverride && (
+          <BriefEditedBadge
+            authorName={overrideAuthorName}
+            overriddenAt={brief.overridden_at}
+            t={t}
+          />
+        )}
       </div>
 
       <div className="grid grid-cols-3 gap-2 text-center text-sm">
@@ -436,5 +514,151 @@ function SettledBriefContent({
         </div>
       </details>
     </div>
+  )
+}
+
+/**
+ * Read-only display by default; reveals a pencil affordance on hover/focus
+ * for editors. Click the pencil (or the text itself) → textarea + save/cancel
+ * footer with keyboard shortcuts. Esc cancels and reverts; Cmd/Ctrl+Enter
+ * saves. Single-line mode disables Enter line breaks (pressing Enter saves).
+ */
+function InlineEditableText({
+  value,
+  isEditor,
+  multiline,
+  ariaLabel,
+  textClassName,
+  onSave,
+}: {
+  value: string
+  isEditor: boolean
+  multiline: boolean
+  ariaLabel: string
+  textClassName: string
+  onSave: (next: string) => Promise<boolean>
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(value)
+  const [saving, setSaving] = useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null)
+
+  useEffect(() => {
+    if (editing) {
+      setDraft(value)
+      // Defer focus so the element is in the DOM
+      requestAnimationFrame(() => {
+        textareaRef.current?.focus()
+        textareaRef.current?.select()
+      })
+    }
+  }, [editing, value])
+
+  const cancel = useCallback(() => {
+    setDraft(value)
+    setEditing(false)
+  }, [value])
+
+  const commit = useCallback(async () => {
+    if (saving) return
+    if (draft.trim() === value.trim()) {
+      setEditing(false)
+      return
+    }
+    setSaving(true)
+    const ok = await onSave(draft)
+    setSaving(false)
+    if (ok) setEditing(false)
+  }, [draft, onSave, saving, value])
+
+  if (!isEditor) {
+    return <p className={textClassName}>{value}</p>
+  }
+
+  if (!editing) {
+    return (
+      <div className="group relative flex items-start gap-2">
+        <p className={`${textClassName} flex-1`}>{value}</p>
+        <Button
+          type="button"
+          size="iconXs"
+          variant="ghost"
+          aria-label={ariaLabel}
+          title={ariaLabel}
+          className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+          onClick={() => setEditing(true)}
+        >
+          <Pencil className="h-3 w-3" />
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-1">
+      <textarea
+        ref={textareaRef}
+        value={draft}
+        rows={multiline ? 4 : 1}
+        aria-label={ariaLabel}
+        disabled={saving}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            e.preventDefault()
+            cancel()
+            return
+          }
+          if (e.key === 'Enter') {
+            if (!multiline || e.metaKey || e.ctrlKey) {
+              e.preventDefault()
+              void commit()
+            }
+          }
+        }}
+        className={`${textClassName} bg-background w-full resize-y rounded-md border px-2 py-1 outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-50`}
+      />
+      <div className="text-muted-foreground flex items-center justify-end gap-2 text-xs">
+        <span className="mr-auto">
+          {multiline ? 'Esc cancels · ⌘/Ctrl+Enter saves' : 'Esc cancels · Enter saves'}
+        </span>
+        <Button type="button" size="xs" variant="ghost" onClick={cancel} disabled={saving}>
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          size="xs"
+          variant="default"
+          onClick={() => void commit()}
+          disabled={saving}
+        >
+          {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Save'}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function BriefEditedBadge({
+  authorName,
+  overriddenAt,
+  t,
+}: {
+  authorName: string | null
+  overriddenAt: string | null
+  t: ReturnType<typeof useTranslations<'Tenant.dailyBrief'>>
+}) {
+  const tooltip = authorName
+    ? overriddenAt
+      ? t('editedByAt', { name: authorName, time: new Date(overriddenAt).toLocaleString() })
+      : t('editedBy', { name: authorName })
+    : t('editedBadge')
+  return (
+    <span
+      className="bg-muted text-muted-foreground mt-2 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium"
+      title={tooltip}
+    >
+      {t('edited')}
+    </span>
   )
 }
