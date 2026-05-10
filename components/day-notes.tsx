@@ -154,6 +154,7 @@ export function DayNotes({
                       onChange={(e) => setEditDraft(e.target.value)}
                       rows={3}
                       maxLength={MAX_LEN}
+                      // eslint-disable-next-line jsx-a11y/no-autofocus
                       autoFocus
                       className="text-sm"
                     />

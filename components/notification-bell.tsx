@@ -51,7 +51,6 @@ export function NotificationBell({ initialCount }: { initialCount: number }) {
   }
 
   const hasUnread = unreadCount > 0
-  const displayCount = initialCount + unreadCount // just use live unread count
 
   return (
     <Popover open={open} onOpenChange={handleOpen}>
