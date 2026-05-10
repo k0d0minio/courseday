@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { recommendStaffCount } from './staffing-forecast'
+import { recommendStaffCount } from '@/lib/staffing-forecast'
 
 describe('recommendStaffCount', () => {
   it('returns 0 for empty input', () => {
@@ -43,7 +43,7 @@ describe('recommendStaffCount', () => {
       reservationsCovers: 25,
       breakfastCovers: 25,
     })
-    expect(result.recommended).toBe(4) // 100 / 25 = 4
+    expect(result.recommended).toBe(4)
     expect(result.breakdown).toEqual([
       { source: 'activities', count: 50 },
       { source: 'reservations', count: 25 },

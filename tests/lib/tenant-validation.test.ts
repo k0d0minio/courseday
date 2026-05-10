@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest'
 import { isValidSlug } from '@/lib/tenant-validation'
 
 describe('isValidSlug', () => {

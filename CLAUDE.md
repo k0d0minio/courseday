@@ -36,7 +36,7 @@ Prettier config: `.prettierrc` — no semis, single quotes, 100-char width, Tail
 
 ### Unit Tests (Vitest)
 
-- Location: `tests/lib/`, `tests/actions/`, `tests/quick-add-normalize.test.ts`, `lib/*.test.ts`
+- Location: all unit tests live under `tests/`, mirroring source paths (e.g. `lib/foo.ts` → `tests/lib/foo.test.ts`, `app/actions/bar.ts` → `tests/actions/bar.test.ts`, `middleware.ts` → `tests/middleware.test.ts`). Do not colocate `*.test.ts` next to source files.
 - No running DB required — all tests mock Supabase, Redis, and Next.js internals
 - Mock pattern: `vi.mock('@/lib/supabase-server', () => ({ createSupabaseServerClient: vi.fn() }))`
 - Setup file: `tests/setup.ts` (imports `@testing-library/jest-dom`)
