@@ -1,10 +1,25 @@
 import type { DailyBriefContent } from '@/types/daily-brief'
 
-export function formatDailyBriefMarkdown(brief: DailyBriefContent): string {
+export type DailyBriefOverrides = {
+  headline_override?: string | null
+  summary_override?: string | null
+}
+
+/**
+ * Markdown rendering for clipboard copy + cron emails. Editor overrides
+ * (when present) replace the AI-generated headline / summary so external
+ * recipients always see the human-curated wording.
+ */
+export function formatDailyBriefMarkdown(
+  brief: DailyBriefContent,
+  overrides?: DailyBriefOverrides
+): string {
+  const headline = overrides?.headline_override?.trim() || brief.headline
+  const summary = overrides?.summary_override?.trim() || brief.summary
   const lines: string[] = []
-  lines.push(`# ${brief.headline}`)
+  lines.push(`# ${headline}`)
   lines.push('')
-  lines.push(brief.summary)
+  lines.push(summary)
   lines.push('')
   lines.push('## Covers')
   lines.push(`- Breakfast: ${brief.covers.breakfast}`)

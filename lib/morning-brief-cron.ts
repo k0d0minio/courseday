@@ -48,7 +48,10 @@ function briefToHtml(
   dateLabel: string,
   staffLines?: StaffLine[]
 ) {
-  const body = formatDailyBriefMarkdown(brief.content)
+  const body = formatDailyBriefMarkdown(brief.content, {
+    headline_override: brief.headline_override,
+    summary_override: brief.summary_override,
+  })
     .split('\n')
     .map((line) => {
       if (line.startsWith('# ')) {
@@ -299,7 +302,13 @@ export async function runMorningBriefEmailCron(): Promise<MorningBriefCronResult
           staffShiftsForEmail.length > 0
             ? `\n\n## Staff today\n${staffShiftsForEmail.map((s) => `- ${formatStaffLine(s)}`).join('\n')}`
             : ''
-        const text = formatDailyBriefMarkdown(brief.content) + staffSection + `\n\n${dayUrl}\n`
+        const text =
+          formatDailyBriefMarkdown(brief.content, {
+            headline_override: brief.headline_override,
+            summary_override: brief.summary_override,
+          }) +
+          staffSection +
+          `\n\n${dayUrl}\n`
         const html = briefToHtml(
           brief,
           tenant.name,

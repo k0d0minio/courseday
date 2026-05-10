@@ -19,6 +19,7 @@ import {
   getDailyBriefForDay,
   getShiftsForDay,
   getTenantAssigneesList,
+  getTenantAssignees,
 } from './queries'
 import { Suspense } from 'react'
 import { DayViewClient } from './DayViewClient'
@@ -87,6 +88,12 @@ export type DayViewProps = {
   shiftAssignees: ShiftAssignee[]
   forecastRecommended: number
   forecastBreakdown: { source: string; count: number }[]
+  /**
+   * Display name of the editor who last edited the brief's headline /
+   * summary, or null when no override exists or the user is no longer a
+   * tenant member. Drives the "edited by …" tooltip.
+   */
+  briefOverrideAuthorName: string | null
 }
 
 const YMD_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -198,6 +205,19 @@ export default async function DayPage({ params }: { params: Promise<{ date: stri
       : false
   const briefIsEmpty = dailyBriefOn ? !dayHasContent : false
 
+  // Resolve the override author's display name. `shiftAssignees` is only loaded
+  // when staff_schedule is on, so fall back to a direct lookup otherwise.
+  let briefOverrideAuthorName: string | null = null
+  if (dailyBrief?.overridden_by) {
+    const fromList = shiftAssignees.find((a) => a.user_id === dailyBrief.overridden_by)
+    if (fromList) {
+      briefOverrideAuthorName = fromList.display_name
+    } else {
+      const assignees = await getTenantAssignees(tenant.id)
+      briefOverrideAuthorName = assignees.get(dailyBrief.overridden_by)?.display_name ?? null
+    }
+  }
+
   return (
     <Suspense
       fallback={<div className="text-muted-foreground mx-auto max-w-3xl px-3 py-8 text-sm" />}
@@ -222,6 +242,7 @@ export default async function DayPage({ params }: { params: Promise<{ date: stri
         shiftAssignees={shiftAssignees}
         forecastRecommended={forecast.recommended}
         forecastBreakdown={forecast.breakdown}
+        briefOverrideAuthorName={briefOverrideAuthorName}
       />
     </Suspense>
   )

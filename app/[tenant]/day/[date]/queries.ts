@@ -125,17 +125,32 @@ const dailyBriefContentSchema = z.object({
     .optional(),
 })
 
+type DailyBriefRow = {
+  id: string
+  content: unknown
+  generated_at: string
+  model: string
+  prompt_version: string
+  headline_override: string | null
+  summary_override: string | null
+  overridden_by: string | null
+  overridden_at: string | null
+}
+
 export async function getDailyBriefForDayWithClient(
   supabase: AppSupabaseClient,
   tenantId: string,
   dayId: string
 ): Promise<DailyBriefRecord | null> {
-  const { data } = await supabase
-    .from('daily_brief')
-    .select('id, content, generated_at, model, prompt_version')
+  // Override columns added in 00050; cast until `pnpm db:types` regenerates `types/supabase.ts`.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = (await (supabase.from('daily_brief') as any)
+    .select(
+      'id, content, generated_at, model, prompt_version, headline_override, summary_override, overridden_by, overridden_at'
+    )
     .eq('tenant_id', tenantId)
     .eq('day_id', dayId)
-    .maybeSingle()
+    .maybeSingle()) as { data: DailyBriefRow | null }
 
   if (!data) return null
   const parsed = dailyBriefContentSchema.safeParse(data.content)
@@ -147,6 +162,10 @@ export async function getDailyBriefForDayWithClient(
     generated_at: data.generated_at,
     model: data.model,
     prompt_version: data.prompt_version,
+    headline_override: data.headline_override,
+    summary_override: data.summary_override,
+    overridden_by: data.overridden_by,
+    overridden_at: data.overridden_at,
   }
 }
 
