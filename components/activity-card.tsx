@@ -45,8 +45,8 @@ export function ActivityCard({ item, isEditor, onEdit, onDeleted, onBeforeEdit }
   const allergens = filterAllergenCodes(item.allergens)
   const checklistItems = item.checklist_items ?? []
   const checklistDone = useMemo(
-    () => checklistItems.filter((it) => it.is_done).length,
-    [checklistItems]
+    () => (item.checklist_items ?? []).filter((it) => it.is_done).length,
+    [item.checklist_items]
   )
 
   function handleDelete(mode: 'single' | 'all' | 'from-here') {
