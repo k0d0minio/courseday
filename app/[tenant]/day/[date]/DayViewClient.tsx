@@ -356,7 +356,7 @@ function DayViewEditor({
           {showBreakfast && (
             // eslint-disable-next-line no-restricted-syntax
             <button
-              className="bg-card cursor-pointer rounded-lg border px-3 py-4 text-center transition-colors hover:bg-muted/30"
+              className="bg-card hover:bg-muted/30 cursor-pointer rounded-lg border px-3 py-4 text-center transition-colors"
               onClick={() => toggleBlock('breakfast')}
               aria-expanded={openBlocks.has('breakfast')}
             >
@@ -370,7 +370,7 @@ function DayViewEditor({
           )}
           {/* eslint-disable-next-line no-restricted-syntax */}
           <button
-            className="bg-card cursor-pointer rounded-lg border px-3 py-4 text-center transition-colors hover:bg-muted/30"
+            className="bg-card hover:bg-muted/30 cursor-pointer rounded-lg border px-3 py-4 text-center transition-colors"
             onClick={() => toggleBlock('activities')}
             aria-expanded={openBlocks.has('activities')}
           >
@@ -384,7 +384,7 @@ function DayViewEditor({
           {showReservations && (
             // eslint-disable-next-line no-restricted-syntax
             <button
-              className="bg-card cursor-pointer rounded-lg border px-3 py-4 text-center transition-colors hover:bg-muted/30"
+              className="bg-card hover:bg-muted/30 cursor-pointer rounded-lg border px-3 py-4 text-center transition-colors"
               onClick={() => toggleBlock('reservations')}
               aria-expanded={openBlocks.has('reservations')}
             >
