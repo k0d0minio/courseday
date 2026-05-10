@@ -1,5 +1,4 @@
 import * as Sentry from '@sentry/nextjs'
-import type { Event } from '@sentry/nextjs'
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
@@ -9,7 +8,7 @@ Sentry.init({
 
   enabled: !!process.env.SENTRY_DSN,
 
-  beforeSend(event: Event, hint) {
+  beforeSend(event, hint) {
     const err = hint?.originalException
 
     // Drop Next.js internal navigation signals — they're controlled flow, not bugs.

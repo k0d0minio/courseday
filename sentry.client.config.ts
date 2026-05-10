@@ -1,5 +1,4 @@
 import * as Sentry from '@sentry/nextjs'
-import type { Event } from '@sentry/nextjs'
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -15,7 +14,7 @@ Sentry.init({
   // Local dev has no DSN set, so the SDK is effectively a no-op there.
   enabled: !!process.env.NEXT_PUBLIC_SENTRY_DSN,
 
-  beforeSend(event: Event) {
+  beforeSend(event) {
     // Drop Next.js internal navigation errors that aren't real failures.
     const digest = (event.extra as Record<string, unknown> | undefined)?.digest as
       | string

@@ -65,7 +65,7 @@ export default withSentryConfig(withNextIntl(nextConfig), {
   // The Sentry Vercel integration sets these automatically in Vercel project settings.
   silent: !process.env.CI,
   widenClientFileUpload: true,
-  hideSourceMaps: true,
+  // hideSourceMaps was removed in @sentry/nextjs v9 — hidden by default now.
   disableLogger: true,
   // Cron monitoring is out of scope.
   automaticVercelMonitors: false,

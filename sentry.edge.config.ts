@@ -1,5 +1,4 @@
 import * as Sentry from '@sentry/nextjs'
-import type { Event } from '@sentry/nextjs'
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
@@ -8,7 +7,7 @@ Sentry.init({
 
   enabled: !!process.env.SENTRY_DSN,
 
-  beforeSend(event: Event) {
+  beforeSend(event) {
     // Strip request body to avoid capturing PII.
     if (event.request) {
       delete event.request.data
