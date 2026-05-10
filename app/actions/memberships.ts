@@ -17,6 +17,9 @@ export interface Member {
   created_at: string
   hourly_rate: number | null
   currency: string | null
+  first_name: string | null
+  last_name: string | null
+  job_title: string | null
 }
 
 export interface PendingInvitation {
@@ -89,7 +92,9 @@ export async function getMembers(): Promise<ActionResponse<Member[]>> {
   const { supabase } = await createTenantClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: memberships, error } = await (supabase.from('memberships') as any)
-    .select('id, user_id, role, created_at, hourly_rate, currency')
+    .select(
+      'id, user_id, role, created_at, hourly_rate, currency, first_name, last_name, job_title'
+    )
     .eq('tenant_id', tenantId)
     .order('created_at')
 
@@ -103,6 +108,9 @@ export async function getMembers(): Promise<ActionResponse<Member[]>> {
     created_at: string
     hourly_rate: number | null
     currency: string | null
+    first_name: string | null
+    last_name: string | null
+    job_title: string | null
   }>
 
   const serviceClient = createSupabaseServiceClient()
@@ -125,6 +133,9 @@ export async function getMembers(): Promise<ActionResponse<Member[]>> {
         created_at: m.created_at,
         hourly_rate: m.hourly_rate,
         currency: m.currency,
+        first_name: m.first_name,
+        last_name: m.last_name,
+        job_title: m.job_title,
       }
     }),
   }
@@ -406,9 +417,11 @@ export async function updateMemberProfile(data: {
   const role = await getUserRole(tenantId)
   if (!role) return { success: false, error: 'Not authorized.' }
 
-  const { supabase } = await createTenantClient()
+  // Use service client: RLS UPDATE policy is editors-only, but any member
+  // should be able to update their own profile fields.
+  const serviceClient = createSupabaseServiceClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase.from('memberships') as any)
+  const { error } = await (serviceClient.from('memberships') as any)
     .update({
       first_name: data.first_name.trim() || null,
       last_name: data.last_name.trim() || null,
@@ -416,6 +429,43 @@ export async function updateMemberProfile(data: {
     })
     .eq('tenant_id', tenantId)
     .eq('user_id', user.id)
+
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: undefined }
+}
+
+export async function updateStaffProfile(
+  membershipId: string,
+  data: { first_name: string; last_name: string; job_title: string }
+): Promise<ActionResponse> {
+  const tenantId = await getTenantId()
+  const currentRole = await getUserRole(tenantId)
+  if (currentRole !== 'editor') return { success: false, error: 'Not authorized.' }
+
+  const serviceClient = createSupabaseServiceClient()
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: target, error: fetchError } = await (serviceClient.from('memberships') as any)
+    .select('role')
+    .eq('id', membershipId)
+    .eq('tenant_id', tenantId)
+    .maybeSingle()
+
+  if (fetchError) return { success: false, error: fetchError.message }
+  if (!target) return { success: false, error: 'Member not found.' }
+  if ((target as { role: string }).role !== 'staff') {
+    return { success: false, error: 'Can only edit staff profiles.' }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (serviceClient.from('memberships') as any)
+    .update({
+      first_name: data.first_name.trim() || null,
+      last_name: data.last_name.trim() || null,
+      job_title: data.job_title.trim() || null,
+    })
+    .eq('id', membershipId)
+    .eq('tenant_id', tenantId)
 
   if (error) return { success: false, error: error.message }
   return { success: true, data: undefined }

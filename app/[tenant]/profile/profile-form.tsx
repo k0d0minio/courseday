@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
-import { updateMemberProfile } from '@/app/actions/memberships'
+import { updateMemberProfile, updateStaffProfile } from '@/app/actions/memberships'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -13,12 +13,17 @@ interface ProfileFormProps {
   initialFirstName: string
   initialLastName: string
   initialJobTitle: string
+  /** When set, the form edits another user's profile (editor-edits-staff mode). */
+  membershipId?: string
+  onSaved?: () => void
 }
 
 export function ProfileForm({
   initialFirstName,
   initialLastName,
   initialJobTitle,
+  membershipId,
+  onSaved,
 }: ProfileFormProps) {
   const t = useTranslations('Tenant.profile')
   const [firstName, setFirstName] = useState(initialFirstName)
@@ -29,16 +34,23 @@ export function ProfileForm({
   async function handleSave() {
     setSaving(true)
     try {
-      const result = await updateMemberProfile({
-        first_name: firstName,
-        last_name: lastName,
-        job_title: jobTitle,
-      })
+      const result = membershipId
+        ? await updateStaffProfile(membershipId, {
+            first_name: firstName,
+            last_name: lastName,
+            job_title: jobTitle,
+          })
+        : await updateMemberProfile({
+            first_name: firstName,
+            last_name: lastName,
+            job_title: jobTitle,
+          })
       if (!result.success) {
         toast.error(result.error)
         return
       }
       toast.success(t('saved'))
+      onSaved?.()
     } finally {
       setSaving(false)
     }

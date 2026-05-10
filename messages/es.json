@@ -475,7 +475,9 @@
       "removing": "Eliminando…",
       "removed": "Miembro eliminado.",
       "roleUpdated": "Rol actualizado.",
-      "loading": "Cargando…"
+      "loading": "Cargando…",
+      "editProfile": "Edit profile",
+      "editProfileTitle": "Edit profile"
     },
     "featureRequests": {
       "title": "Tus solicitudes",

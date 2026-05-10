@@ -13,6 +13,7 @@ import {
   cancelInvitation,
 } from '@/app/actions/memberships'
 import type { Member, PendingInvitation, MemberRole } from '@/app/actions/memberships'
+import { ProfileForm } from '@/app/[tenant]/profile/profile-form'
 import { updateMemberPayRate } from '@/app/actions/pay-rates'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -35,6 +36,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
   Table,
   TableBody,
@@ -255,6 +257,7 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [removeTarget, setRemoveTarget] = useState<Member | null>(null)
+  const [editProfileTarget, setEditProfileTarget] = useState<Member | null>(null)
   const [isRemoving, startRemoveTransition] = useTransition()
   const [isCancelling, startCancelTransition] = useTransition()
 
@@ -392,15 +395,27 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
                         </TableCell>
                         <TableCell className="py-3 pr-6 text-right">
                           {!isSelf && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-muted-foreground hover:text-destructive size-9"
-                              onClick={() => setRemoveTarget(member)}
-                              aria-label={t('removeTitle')}
-                            >
-                              <Trash2 className="size-4" />
-                            </Button>
+                            <div className="flex items-center justify-end gap-1">
+                              {member.role === 'staff' && (
+                                <Button
+                                  variant="ghost"
+                                  size="iconSm"
+                                  onClick={() => setEditProfileTarget(member)}
+                                  aria-label={t('editProfile')}
+                                >
+                                  <Pencil className="size-4" />
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-muted-foreground hover:text-destructive size-9"
+                                onClick={() => setRemoveTarget(member)}
+                                aria-label={t('removeTitle')}
+                              >
+                                <Trash2 className="size-4" />
+                              </Button>
+                            </div>
                           )}
                         </TableCell>
                       </TableRow>
@@ -461,6 +476,28 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
           </CardContent>
         </Card>
       )}
+
+      <Dialog
+        open={!!editProfileTarget}
+        onOpenChange={(v) => {
+          if (!v) setEditProfileTarget(null)
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('editProfileTitle')}</DialogTitle>
+          </DialogHeader>
+          {editProfileTarget && (
+            <ProfileForm
+              membershipId={editProfileTarget.id}
+              initialFirstName={editProfileTarget.first_name ?? ''}
+              initialLastName={editProfileTarget.last_name ?? ''}
+              initialJobTitle={editProfileTarget.job_title ?? ''}
+              onSaved={() => setEditProfileTarget(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog
         open={!!removeTarget}

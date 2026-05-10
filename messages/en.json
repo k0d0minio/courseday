@@ -631,6 +631,8 @@
       "removed": "Member removed.",
       "roleUpdated": "Role updated.",
       "loading": "Loading…",
+      "editProfile": "Edit profile",
+      "editProfileTitle": "Edit profile",
       "payRate": {
         "header": "Pay rate",
         "notSet": "—",

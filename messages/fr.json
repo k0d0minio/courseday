@@ -603,7 +603,9 @@
       "removing": "Suppression…",
       "removed": "Membre retiré.",
       "roleUpdated": "Rôle mis à jour.",
-      "loading": "Chargement…"
+      "loading": "Chargement…",
+      "editProfile": "Edit profile",
+      "editProfileTitle": "Edit profile"
     },
     "featureRequests": {
       "title": "Vos demandes",
