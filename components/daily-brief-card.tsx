@@ -270,12 +270,8 @@ export function DailyBriefCard({
                 <ListBlock
                   title={t('vip')}
                   items={brief.content.vipNotes}
-                  {...(isEditor
-                    ? {
-                        onRegenerate: () => runSectionRegenerate('vipNotes'),
-                        regenerateLabel: t('regenerateVip'),
-                      }
-                    : {})}
+                  onRegenerate={isEditor ? () => runSectionRegenerate('vipNotes') : undefined}
+                  regenerateLabel={isEditor ? t('regenerateVip') : undefined}
                   isRegenerating={regeneratingSection === 'vipNotes'}
                   regenerateDisabled={!isEditor || regeneratingSection !== null}
                   errorMessage={sectionErrors.vipNotes}
@@ -284,12 +280,8 @@ export function DailyBriefCard({
                 <ListBlock
                   title={t('risks')}
                   items={brief.content.risks}
-                  {...(isEditor
-                    ? {
-                        onRegenerate: () => runSectionRegenerate('risks'),
-                        regenerateLabel: t('regenerateRisks'),
-                      }
-                    : {})}
+                  onRegenerate={isEditor ? () => runSectionRegenerate('risks') : undefined}
+                  regenerateLabel={isEditor ? t('regenerateRisks') : undefined}
                   isRegenerating={regeneratingSection === 'risks'}
                   regenerateDisabled={!isEditor || regeneratingSection !== null}
                   errorMessage={sectionErrors.risks}
@@ -297,12 +289,10 @@ export function DailyBriefCard({
                 <ListBlock
                   title={t('actions')}
                   items={brief.content.suggestedActions}
-                  {...(isEditor
-                    ? {
-                        onRegenerate: () => runSectionRegenerate('suggestedActions'),
-                        regenerateLabel: t('regenerateActions'),
-                      }
-                    : {})}
+                  onRegenerate={
+                    isEditor ? () => runSectionRegenerate('suggestedActions') : undefined
+                  }
+                  regenerateLabel={isEditor ? t('regenerateActions') : undefined}
                   isRegenerating={regeneratingSection === 'suggestedActions'}
                   regenerateDisabled={!isEditor || regeneratingSection !== null}
                   errorMessage={sectionErrors.suggestedActions}
@@ -335,11 +325,11 @@ function ListBlock({
 }: {
   title: string
   items: string[]
-  onRegenerate?: () => void
-  regenerateLabel?: string
+  onRegenerate?: (() => void) | undefined
+  regenerateLabel?: string | undefined
   regenerateDisabled?: boolean
   isRegenerating?: boolean
-  errorMessage?: string
+  errorMessage?: string | undefined
 }) {
   if (items.length === 0 && !onRegenerate) return null
   return (

@@ -9,6 +9,7 @@ import type {
   DailyBriefRecord,
   DailyBriefAllergenRollupEntry,
   DailyBriefCovers,
+  DailyBriefSectionTimestamps,
   RegenerableSection,
 } from '@/types/daily-brief'
 import type { Activity, Reservation, BreakfastConfiguration } from '@/types/index'
@@ -215,13 +216,17 @@ export function mergeBriefSection(
   items: string[],
   timestamp: string = new Date().toISOString()
 ): DailyBriefContent {
-  return {
-    ...content,
-    [section]: items,
-    sectionTimestamps: {
-      ...(content.sectionTimestamps ?? {}),
-      [section]: timestamp,
-    },
+  const sectionTimestamps: DailyBriefSectionTimestamps = {
+    ...(content.sectionTimestamps ?? {}),
+  }
+  sectionTimestamps[section] = timestamp
+  switch (section) {
+    case 'vipNotes':
+      return { ...content, vipNotes: items, sectionTimestamps }
+    case 'risks':
+      return { ...content, risks: items, sectionTimestamps }
+    case 'suggestedActions':
+      return { ...content, suggestedActions: items, sectionTimestamps }
   }
 }
 
