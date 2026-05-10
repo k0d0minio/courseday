@@ -120,10 +120,12 @@ describe('POST /api/daily-brief/stream', () => {
     const response = await POST(makeRequest())
     expect(response.status).toBe(200)
     expect(streamObject).toHaveBeenCalledOnce()
-    const call = vi.mocked(streamObject).mock.calls[0][0]
-    expect(call.schema).toBeDefined()
-    expect(typeof call.prompt).toBe('string')
-    expect(call.prompt).toContain('daily briefing')
+    expect(streamObject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        schema: expect.anything(),
+        prompt: expect.stringContaining('daily briefing'),
+      })
+    )
   })
 
   it('returns 403 when feature flag is disabled', async () => {
