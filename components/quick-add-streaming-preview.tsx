@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl'
 import { Loader2 } from 'lucide-react'
 import { Label } from '@/components/ui/label'
+import { Skeleton as UiSkeleton } from '@/components/ui/skeleton'
 
 type StreamedItem = {
   kind?: 'activity' | 'reservation' | 'breakfast'
@@ -28,7 +29,7 @@ type Props = {
 }
 
 function Skeleton({ className = '' }: { className?: string }) {
-  return <div aria-hidden="true" className={`bg-muted h-9 animate-pulse rounded-md ${className}`} />
+  return <UiSkeleton aria-hidden="true" className={`bg-muted h-9 ${className}`} />
 }
 
 function ValueBox({ children }: { children: React.ReactNode }) {
