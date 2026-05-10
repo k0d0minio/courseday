@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import {
   getISOWeek,
@@ -80,9 +81,10 @@ function formatTimeRange(start: string | null, end: string | null): string {
 type Props = {
   initialShifts: MyShiftWithDate[]
   today: string
+  tenantSlug: string
 }
 
-export function MyScheduleList({ initialShifts, today }: Props) {
+export function MyScheduleList({ initialShifts, today, tenantSlug }: Props) {
   const t = useTranslations('Tenant.staff.mySchedule')
   const [pastShifts, setPastShifts] = useState<MyShiftWithDate[]>([])
   const [showPast, setShowPast] = useState(false)
@@ -129,7 +131,11 @@ export function MyScheduleList({ initialShifts, today }: Props) {
               const timeLabel = formatTimeRange(shift.start_time, shift.end_time)
               const roleLabel = shift.role?.trim()
               return (
-                <div key={shift.id} className="bg-card space-y-1 rounded-lg border p-4">
+                <Link
+                  key={shift.id}
+                  href={`/${tenantSlug}/day/${day.dateIso}`}
+                  className="bg-card hover:bg-accent block space-y-1 rounded-lg border p-4 transition-colors"
+                >
                   <p className="text-muted-foreground text-xs font-medium">
                     {formatShiftDate(day.dateIso)}
                   </p>
@@ -142,7 +148,7 @@ export function MyScheduleList({ initialShifts, today }: Props) {
                   {shift.notes && (
                     <p className="text-muted-foreground text-sm italic">{shift.notes}</p>
                   )}
-                </div>
+                </Link>
               )
             })
           )}
