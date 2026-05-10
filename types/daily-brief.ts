@@ -11,6 +11,15 @@ export type DailyBriefAllergenRollupEntry = {
   inBreakfast: number
 }
 
+export const REGENERATABLE_SECTIONS = ['vipNotes', 'risks', 'suggestedActions'] as const
+export type RegenerableSection = (typeof REGENERATABLE_SECTIONS)[number]
+
+export type DailyBriefSectionTimestamps = {
+  vipNotes?: string | undefined
+  risks?: string | undefined
+  suggestedActions?: string | undefined
+}
+
 export type DailyBriefContent = {
   headline: string
   summary: string
@@ -19,6 +28,7 @@ export type DailyBriefContent = {
   allergenRollup: DailyBriefAllergenRollupEntry[]
   risks: string[]
   suggestedActions: string[]
+  sectionTimestamps?: DailyBriefSectionTimestamps | undefined
 }
 
 export type DailyBriefRecord = {

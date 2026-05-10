@@ -9,12 +9,18 @@ import type {
   DailyBriefRecord,
   DailyBriefAllergenRollupEntry,
   DailyBriefCovers,
+  DailyBriefSectionTimestamps,
+  RegenerableSection,
 } from '@/types/daily-brief'
 import type { Activity, Reservation, BreakfastConfiguration } from '@/types/index'
 import type { DayNote } from '@/app/actions/day-notes'
-import { narrativeSchema, dailyBriefContentSchema } from '@/lib/daily-brief-schema'
+import {
+  narrativeSchema,
+  dailyBriefContentSchema,
+  sectionItemsSchema,
+} from '@/lib/daily-brief-schema'
 
-export { narrativeSchema, dailyBriefContentSchema }
+export { narrativeSchema, dailyBriefContentSchema, sectionItemsSchema }
 
 export const PROMPT_VERSION = 'v2'
 export const DAILY_BRIEF_MODEL_ID = 'anthropic/claude-sonnet-4-6' as const
@@ -158,6 +164,71 @@ Rules:
 - Never include guest personal names. If notes contain names, generalise (e.g. "a dietary note on one reservation").
 - vipNotes: short bullets for large parties, tight turnarounds, or anything that reads as priority from the data (not names).
 - If data is sparse, say so briefly; still give a useful headline and summary.`
+
+const SECTION_INSTRUCTIONS: Record<RegenerableSection, string> = {
+  vipNotes:
+    'Produce ONLY the VIP / priority notes for this day, as `items`. Short bullets for large parties, tight turnarounds, or items that read as priority from the data. Never include guest personal names. If nothing qualifies, return an empty array.',
+  risks:
+    'Produce ONLY the operational risks for this day, as `items`. Short bullets covering allergen pressure, weather impact, capacity strain, or note-driven concerns. Never include guest personal names. If nothing qualifies, return an empty array.',
+  suggestedActions:
+    'Produce ONLY suggested actions for staff for this day, as `items`. Concrete, actionable bullets the team should consider before service. Never include guest personal names. If nothing qualifies, return an empty array.',
+}
+
+export async function generateBriefSection(
+  payload: ReturnType<typeof llmPayload>,
+  section: RegenerableSection
+): Promise<{ success: true; items: string[] } | { success: false; error: string }> {
+  if (!hasGatewayAuth()) {
+    return {
+      success: false,
+      error: 'AI brief is not configured (set AI_GATEWAY_API_KEY or run `vercel env pull`).',
+    }
+  }
+
+  try {
+    const result = await generateObject({
+      model: gateway(DAILY_BRIEF_MODEL_ID),
+      schema: sectionItemsSchema,
+      system: BRIEF_SYSTEM,
+      prompt: `${SECTION_INSTRUCTIONS[section]}\n\nFrom this JSON:\n${JSON.stringify(payload)}`,
+      maxOutputTokens: 1024,
+      providerOptions: {
+        gateway: { caching: 'auto' },
+      },
+    })
+    return { success: true, items: result.object.items }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Generation failed.'
+    return {
+      success: false,
+      error:
+        msg.length > 200
+          ? 'Section generation failed. Check AI Gateway configuration and try again.'
+          : msg,
+    }
+  }
+}
+
+/** Replace one section's items in a brief, recording a per-section timestamp. */
+export function mergeBriefSection(
+  content: DailyBriefContent,
+  section: RegenerableSection,
+  items: string[],
+  timestamp: string = new Date().toISOString()
+): DailyBriefContent {
+  const sectionTimestamps: DailyBriefSectionTimestamps = {
+    ...(content.sectionTimestamps ?? {}),
+  }
+  sectionTimestamps[section] = timestamp
+  switch (section) {
+    case 'vipNotes':
+      return { ...content, vipNotes: items, sectionTimestamps }
+    case 'risks':
+      return { ...content, risks: items, sectionTimestamps }
+    case 'suggestedActions':
+      return { ...content, suggestedActions: items, sectionTimestamps }
+  }
+}
 
 export function dayHasPlannedContent(
   activities: Activity[],

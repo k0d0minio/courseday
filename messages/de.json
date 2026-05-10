@@ -159,7 +159,13 @@
       "srcBreakfast": "{n} Frühstück(e)",
       "risks": "Risiken",
       "actions": "Vorgeschlagene Maßnahmen",
-      "meta": "Erzeugt {time} · {model}"
+      "meta": "Erzeugt {time} · {model}",
+      "regenerateVip": "VIP-Notizen neu erzeugen",
+      "regenerateRisks": "Risiken neu erzeugen",
+      "regenerateActions": "Vorgeschlagene Maßnahmen neu erzeugen",
+      "sectionRegenerated": "Abschnitt aktualisiert",
+      "sectionRegenFailed": "Abschnitt konnte nicht neu erzeugt werden",
+      "sectionRateLimited": "Limit für Abschnittserneuerung erreicht. Bitte morgen erneut versuchen."
     },
     "quickAdd": {
       "openButton": "Schnell hinzufügen",

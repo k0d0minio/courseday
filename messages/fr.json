@@ -263,7 +263,13 @@
       "srcBreakfast": "{n} petit(s)-déjeuner",
       "risks": "Risques",
       "actions": "Actions suggérées",
-      "meta": "Généré {time} · {model}"
+      "meta": "Généré {time} · {model}",
+      "regenerateVip": "Régénérer les notes VIP",
+      "regenerateRisks": "Régénérer les risques",
+      "regenerateActions": "Régénérer les actions suggérées",
+      "sectionRegenerated": "Section mise à jour",
+      "sectionRegenFailed": "Impossible de régénérer la section",
+      "sectionRateLimited": "Limite de régénération de section atteinte. Réessayez demain."
     },
     "quickAdd": {
       "openButton": "Ajout rapide",

@@ -263,7 +263,13 @@
       "srcBreakfast": "{n} breakfast(s)",
       "risks": "Risks",
       "actions": "Suggested actions",
-      "meta": "Generated {time} · {model}"
+      "meta": "Generated {time} · {model}",
+      "regenerateVip": "Regenerate VIP notes",
+      "regenerateRisks": "Regenerate risks",
+      "regenerateActions": "Regenerate suggested actions",
+      "sectionRegenerated": "Section updated",
+      "sectionRegenFailed": "Could not regenerate section",
+      "sectionRateLimited": "Section regen limit reached. Try again tomorrow."
     },
     "quickAdd": {
       "openButton": "Quick add",
