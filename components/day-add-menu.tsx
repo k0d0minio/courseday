@@ -29,9 +29,9 @@ function useIsMobile() {
 type Props = {
   ref?: React.Ref<HTMLButtonElement>
   onAddActivity: () => void
-  onAddReservation?: () => void
-  onAddBreakfast?: () => void
-  onAddShift?: () => void
+  onAddReservation?: (() => void) | undefined
+  onAddBreakfast?: (() => void) | undefined
+  onAddShift?: (() => void) | undefined
 }
 
 export function DayAddMenu({
