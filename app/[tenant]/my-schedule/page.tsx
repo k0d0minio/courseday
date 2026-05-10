@@ -53,7 +53,7 @@ export default async function MySchedulePage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
       <h1 className="mb-6 text-xl font-bold">{t('title')}</h1>
-      <MyScheduleList initialShifts={shifts} today={today} />
+      <MyScheduleList initialShifts={shifts} today={today} tenantSlug={tenant.slug} />
       <IcalFeedSection initialUrl={initialUrl} />
     </div>
   )
