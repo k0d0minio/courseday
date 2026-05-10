@@ -41,7 +41,7 @@ function formatStaffLine(s: StaffLine): string {
   return detail ? `${s.name} (${detail})` : s.name
 }
 
-function briefToHtml(
+export function briefToHtml(
   brief: DailyBriefRecord,
   tenantName: string,
   dayUrl: string,
@@ -78,7 +78,7 @@ function briefToHtml(
       <p style="color:#555; font-size:13px; margin:0 0 16px;">${escapeHtml(tenantName)} · ${escapeHtml(dateLabel)}</p>
       ${body}
       ${staffSection}
-      <p style="margin-top: 24px;"><a href="${escapeHtml(dayUrl)}" style="color: #2563eb;">Open day in Courseday</a></p>
+      <p style="margin-top: 24px;"><a href="${escapeHtml(dayUrl)}" style="color: #2563eb;">Open day in ${escapeHtml(tenantName)}</a></p>
     </div>
   `
 }
