@@ -83,7 +83,6 @@ export function QuickAddInput({
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder={t('placeholder')}
-              autoFocus
               disabled={isPending || disabled}
             />
           </div>

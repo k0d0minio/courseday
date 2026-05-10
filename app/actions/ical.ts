@@ -1,6 +1,6 @@
 'use server'
 
-import { createSupabaseServerClient, createSupabaseServiceClient } from '@/lib/supabase-server'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { getTenantFromHeaders } from '@/lib/tenant'
 import { getUser } from '@/app/actions/auth'
 import type { ActionResponse } from '@/types/actions'
