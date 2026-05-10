@@ -10,7 +10,11 @@ vi.mock('@/lib/supabase-server', () => ({
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function makeChain(data: unknown, error: unknown = null) {
-  const chain = {
+  // Make the chain thenable so `await query` (list queries with no terminal
+  // .maybeSingle()/.single()) resolves to { data, error } just like the real
+  // Supabase query builder does.
+  const resolved = Promise.resolve({ data, error })
+  const chain: Record<string, unknown> = {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
     gte: vi.fn().mockReturnThis(),
@@ -19,6 +23,15 @@ function makeChain(data: unknown, error: unknown = null) {
     order: vi.fn().mockReturnThis(),
     maybeSingle: vi.fn().mockResolvedValue({ data, error }),
     single: vi.fn().mockResolvedValue({ data, error }),
+    // thenable interface
+    then: resolved.then.bind(resolved),
+    catch: resolved.catch.bind(resolved),
+    finally: resolved.finally.bind(resolved),
+  }
+  // mockReturnThis() won't work once we cast to Record — rewire each method so
+  // chaining still works after the cast.
+  for (const key of ['select', 'eq', 'gte', 'lte', 'in', 'order']) {
+    ;(chain[key] as ReturnType<typeof vi.fn>).mockReturnValue(chain)
   }
   return chain
 }
