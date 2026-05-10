@@ -180,7 +180,8 @@
     "quickAdd": {
       "openButton": "Añadir rápido",
       "title": "Añadir rápido",
-      "description": "Describa la entrada. Rellenaremos un formulario para {contextDate}. Nada se guarda hasta que confirme.",
+      "description": "Describa la entrada. Rellenaremos un formulario para usted. Nada se guarda hasta que confirme.",
+      "addingTo": "Añadiendo a",
       "inputLabel": "Qué añadir",
       "placeholder": "p. ej. Mesa de 6 a las 20h, Sánchez, sin frutos secos",
       "cancel": "Cancelar",
