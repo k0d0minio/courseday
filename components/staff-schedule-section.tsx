@@ -1,11 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Plus } from 'lucide-react'
 import { ShiftCard } from '@/components/shift-card'
 import { ShiftForm } from '@/components/shift-form'
-import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import type { ShiftAssignee, ShiftWithAssignee } from '@/types/index'
@@ -20,6 +18,7 @@ type Props = {
   onShiftsChange: React.Dispatch<React.SetStateAction<ShiftWithAssignee[]>>
   forecastRecommended: number
   forecastBreakdown: ForecastBreakdownItem[]
+  addTriggerRef?: React.MutableRefObject<(() => void) | null>
 }
 
 function parseMinutes(time: string): number {
@@ -55,6 +54,7 @@ export function StaffScheduleSection({
   onShiftsChange,
   forecastRecommended,
   forecastBreakdown,
+  addTriggerRef,
 }: Props) {
   const t = useTranslations('Tenant.staff.section')
   const tForecast = useTranslations('Tenant.staff.forecast')
@@ -65,10 +65,19 @@ export function StaffScheduleSection({
   const totalActual = shifts.reduce((sum, s) => sum + shiftActualMinutes(s), 0)
   const hasActuals = shifts.some((s) => s.actual_start)
 
-  function openAdd() {
+  const openAdd = useCallback(() => {
     setEditShift(null)
     setFormOpen(true)
-  }
+  }, [])
+
+  useEffect(() => {
+    if (addTriggerRef) {
+      addTriggerRef.current = openAdd
+      return () => {
+        addTriggerRef.current = null
+      }
+    }
+  }, [addTriggerRef, openAdd])
 
   function openEdit(item: ShiftWithAssignee) {
     setEditShift(item)
@@ -141,11 +150,6 @@ export function StaffScheduleSection({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-          )}
-          {isEditor && (
-            <Button size="xs" onClick={openAdd} disabled={assignees.length === 0}>
-              <Plus className="size-3.5" /> {t('addShift')}
-            </Button>
           )}
         </div>
       </div>
