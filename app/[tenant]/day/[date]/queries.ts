@@ -116,6 +116,13 @@ const dailyBriefContentSchema = z.object({
   ),
   risks: z.array(z.string()),
   suggestedActions: z.array(z.string()),
+  sectionTimestamps: z
+    .object({
+      vipNotes: z.string().optional(),
+      risks: z.string().optional(),
+      suggestedActions: z.string().optional(),
+    })
+    .optional(),
 })
 
 export async function getDailyBriefForDayWithClient(

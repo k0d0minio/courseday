@@ -23,7 +23,7 @@ import { createTenantClient } from '@/lib/supabase-server'
 import { getTenantId } from '@/lib/tenant'
 import { getUserRole, requireEditor } from '@/lib/membership'
 import { isFeatureEnabled } from '@/app/actions/feature-flags'
-import { dailyBriefRateLimit } from '@/lib/rate-limit'
+import { dailyBriefRateLimit, dailyBriefSectionRateLimit } from '@/lib/rate-limit'
 import { ensureDayExists } from '@/app/actions/days'
 import {
   getProgramItemsForDay,
@@ -37,11 +37,20 @@ import { getWeatherForDay } from '@/app/actions/weather'
 import {
   dailyBriefContentSchema,
   generateAndPersistDailyBrief,
+  generateBriefSection,
+  mergeBriefSection,
   dayHasPlannedContent,
+  buildCovers,
+  buildAllergenRollup,
+  llmPayload,
 } from '@/lib/daily-brief-generate'
 import { redis } from '@/lib/redis'
 import type { ActionResponse } from '@/types/actions'
-import type { DailyBriefRecord } from '@/types/daily-brief'
+import {
+  REGENERATABLE_SECTIONS,
+  type DailyBriefRecord,
+  type RegenerableSection,
+} from '@/types/daily-brief'
 import type { Activity, Reservation, BreakfastConfiguration } from '@/types/index'
 import type { DayNote } from '@/app/actions/day-notes'
 import type { WeatherData } from '@/app/actions/weather'
@@ -259,4 +268,124 @@ export async function generateDailyBrief(
     weather,
     ...(staffScheduleOn && staffShifts.length > 0 ? { staffShifts } : {}),
   })
+}
+
+function isRegenerableSection(value: string): value is RegenerableSection {
+  return (REGENERATABLE_SECTIONS as readonly string[]).includes(value)
+}
+
+/**
+ * Regenerate a single brief section (vipNotes / risks / suggestedActions).
+ * Editor-only. Has its own per-section rate limit so a small change doesn't
+ * burn the whole-brief quota.
+ */
+export async function regenerateBriefSection(
+  dateIso: string,
+  section: RegenerableSection
+): Promise<ActionResponse<DailyBriefRecord>> {
+  if (!isRegenerableSection(section)) {
+    return { success: false, error: 'Invalid section.' }
+  }
+
+  const tenantId = await getTenantId()
+  if (!(await isFeatureEnabled(tenantId, 'daily_brief'))) {
+    return { success: false, error: 'Daily brief is disabled for this venue.' }
+  }
+  await requireEditor(tenantId)
+
+  if (!process.env.AI_GATEWAY_API_KEY) {
+    return {
+      success: false,
+      error: 'AI brief is not configured (missing AI_GATEWAY_API_KEY).',
+    }
+  }
+
+  const rl = await dailyBriefSectionRateLimit(tenantId, dateIso, section)
+  if (!rl.success) {
+    return {
+      success: false,
+      error: 'Section regen limit reached. Try again tomorrow.',
+    }
+  }
+
+  const dayResult = await ensureDayExists(dateIso)
+  if (!dayResult.success) return { success: false, error: dayResult.error }
+  const dayId = dayResult.data.id
+
+  const { supabase } = await createTenantClient()
+
+  const existing = await getDailyBriefForDayWithClient(supabase, tenantId, dayId)
+  if (!existing) {
+    return {
+      success: false,
+      error: 'No existing brief to regenerate. Generate the full brief first.',
+    }
+  }
+
+  const staffScheduleOn = await isFeatureEnabled(tenantId, 'staff_schedule')
+
+  const [activities, reservations, breakfasts, dayNotes, weather, rawShifts] = await Promise.all([
+    getProgramItemsForDay(tenantId, dayId),
+    getReservationsForDay(tenantId, dayId),
+    getBreakfastConfigsForDay(tenantId, dayId),
+    getDayNotesForDay(tenantId, dayId),
+    getWeatherForDay(dateIso),
+    staffScheduleOn ? getShiftsForDay(tenantId, dayId) : Promise.resolve([]),
+  ])
+
+  const staffShifts: StaffShiftContext[] = rawShifts.map((s) => ({
+    name: s.assignee.display_name,
+    role: s.role ?? null,
+    start_time: s.start_time ?? null,
+    end_time: s.end_time ?? null,
+  }))
+
+  const covers = buildCovers(activities, reservations, breakfasts)
+  const allergenRollup = buildAllergenRollup(activities, reservations, breakfasts)
+  const payload = llmPayload({
+    dateIso,
+    weather,
+    activities,
+    reservations,
+    breakfasts,
+    dayNotes,
+    covers,
+    allergenRollup,
+    ...(staffScheduleOn && staffShifts.length > 0 ? { staffShifts } : {}),
+  })
+
+  const sectionResult = await generateBriefSection(payload, section)
+  if (!sectionResult.success) {
+    return { success: false, error: sectionResult.error }
+  }
+
+  const generatedAt = new Date().toISOString()
+  const merged = mergeBriefSection(existing.content, section, sectionResult.items, generatedAt)
+
+  const { data, error } = await supabase
+    .from('daily_brief')
+    .update({
+      content: merged as never,
+      generated_at: generatedAt,
+    })
+    .eq('tenant_id', tenantId)
+    .eq('day_id', dayId)
+    .select('id, content, generated_at, model, prompt_version')
+    .single()
+
+  if (error) return { success: false, error: error.message }
+
+  const parsed = dailyBriefContentSchema.safeParse(data.content)
+  if (!parsed.success) return { success: false, error: 'Could not validate saved brief.' }
+
+  return {
+    success: true,
+    data: {
+      id: data.id,
+      content: parsed.data,
+      generated_at: data.generated_at,
+      model: data.model,
+      prompt_version: data.prompt_version,
+    },
+  }
 }
