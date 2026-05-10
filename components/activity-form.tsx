@@ -361,11 +361,11 @@ export function ActivityForm({
   }
 
   const formBody = (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" data-testid="activity-form">
       {/* Title */}
       <div className={cn('space-y-1', qaRing('title'))}>
         <Label htmlFor="af-title">{t('titleLabel')} *</Label>
-        <Input id="af-title" {...register('title')} />
+        <Input id="af-title" {...register('title')} data-testid="activity-form-title" />
         {errors.title && <p className="text-destructive text-sm">{errors.title.message}</p>}
       </div>
 
@@ -598,7 +598,7 @@ export function ActivityForm({
         <Button type="button" variant="outline" onClick={onClose}>
           {t('cancel')}
         </Button>
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" disabled={isPending} data-testid="activity-form-save">
           {isPending ? t('saving') : t('save')}
         </Button>
       </div>

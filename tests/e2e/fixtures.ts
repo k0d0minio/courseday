@@ -116,9 +116,11 @@ export const test = base.extend<TestFixtures>({
     await setupTenant()
     // Navigate to sign-in page
     await page.goto(`${tenantUrl}/auth/sign-in`)
-    await page.getByLabel(/email/i).fill(TEST_EMAIL)
-    await page.getByLabel(/password/i).fill(TEST_PASSWORD)
-    await page.getByRole('button', { name: /sign in/i }).click()
+    await page.getByTestId('sign-in-email').fill(TEST_EMAIL)
+    // Reveal password field before filling
+    await page.getByTestId('sign-in-use-password').click()
+    await page.getByTestId('sign-in-password').fill(TEST_PASSWORD)
+    await page.getByTestId('sign-in-submit').click()
     // Wait for redirect to home
     await page.waitForURL(`${tenantUrl}/`)
     await use(page)

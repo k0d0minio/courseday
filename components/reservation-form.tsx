@@ -220,10 +220,10 @@ export function ReservationForm({
   }
 
   const formBody = (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" data-testid="reservation-form">
       <div className={cn('space-y-1', qaRing('guestName'))}>
         <Label htmlFor="rf-name">{t('guestNameLabel')}</Label>
-        <Input id="rf-name" {...register('guestName')} />
+        <Input id="rf-name" {...register('guestName')} data-testid="reservation-form-guest-name" />
       </div>
 
       <div className={cn('space-y-1', qaRing('guestCount'))}>
@@ -263,7 +263,7 @@ export function ReservationForm({
         <Button type="button" variant="outline" onClick={onClose}>
           {t('cancel')}
         </Button>
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" disabled={isPending} data-testid="reservation-form-save">
           {isPending ? t('saving') : t('save')}
         </Button>
       </div>

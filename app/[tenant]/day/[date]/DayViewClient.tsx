@@ -373,6 +373,7 @@ function DayViewEditor({
                 returnFocusRef.current = breakfastAddRef.current
                 openAddBreakfast()
               }}
+              data-testid="add-breakfast"
             >
               <Plus className="mr-1 h-4 w-4" /> {t('addBreakfast')}
               <KbdHint className="ml-1">B</KbdHint>
@@ -410,6 +411,7 @@ function DayViewEditor({
               openAddActivity()
             }}
             className="shrink-0"
+            data-testid="add-activity"
           >
             <Plus className="size-3.5" /> {t('addActivity')}
             <KbdHint className="ml-0.5">A</KbdHint>
@@ -446,6 +448,7 @@ function DayViewEditor({
                 returnFocusRef.current = reservationAddRef.current
                 openAddReservation()
               }}
+              data-testid="add-reservation"
             >
               <Plus className="mr-1 h-4 w-4" /> {t('addReservation')}
               <KbdHint className="ml-1">R</KbdHint>
