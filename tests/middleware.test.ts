@@ -65,7 +65,17 @@ function setupServiceClient(
 
 function makeReq(url: string) {
   const u = new URL(url)
-  return new NextRequest(url, { headers: { host: u.host } })
+  const req = new NextRequest(url)
+  // `host` is a forbidden header in undici's Headers, so init.headers.host is
+  // silently dropped. Shadow `get` on the headers instance so middleware's
+  // `request.headers.get('host')` returns the URL host. Iteration / cloning
+  // (`new Headers(request.headers)`) still uses the real instance — host is
+  // not propagated to the rewrite, which is fine since middleware only reads
+  // it for subdomain detection.
+  const origGet = req.headers.get.bind(req.headers)
+  ;(req.headers as { get: (name: string) => string | null }).get = (name: string) =>
+    name.toLowerCase() === 'host' ? u.host : origGet(name)
+  return req
 }
 
 beforeEach(() => {
