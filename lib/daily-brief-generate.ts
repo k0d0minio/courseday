@@ -16,8 +16,8 @@ import { narrativeSchema, dailyBriefContentSchema } from '@/lib/daily-brief-sche
 
 export { narrativeSchema, dailyBriefContentSchema }
 
-export const PROMPT_VERSION = 'v1'
-export const DAILY_BRIEF_MODEL_ID = 'openai/gpt-5.4' as const
+export const PROMPT_VERSION = 'v2'
+export const DAILY_BRIEF_MODEL_ID = 'anthropic/claude-sonnet-4-6' as const
 const NOTE_MAX = 200
 
 function hasGatewayAuth(): boolean {
@@ -212,6 +212,9 @@ export async function generateAndPersistDailyBrief(
       system: BRIEF_SYSTEM,
       prompt: `Produce a daily briefing from this JSON:\n${JSON.stringify(payload)}`,
       maxOutputTokens: 2048,
+      providerOptions: {
+        gateway: { caching: 'auto' },
+      },
     })
     narrative = result.object
   } catch (e) {
