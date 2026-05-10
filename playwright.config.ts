@@ -16,6 +16,8 @@ export default defineConfig({
     // Root domain base URL; tests navigate to subdomain URLs explicitly
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
+    video: 'retain-on-failure',
+    screenshot: 'only-on-failure',
   },
 
   projects: [

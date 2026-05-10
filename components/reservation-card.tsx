@@ -62,7 +62,7 @@ export function ReservationCard({ item, isEditor, onEdit, onDeleted, onBeforeEdi
 
   return (
     <>
-      <Card className={isPending ? 'opacity-70' : undefined}>
+      <Card className={isPending ? 'opacity-70' : undefined} data-testid="reservation-card">
         <CardContent className="px-4 py-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1 space-y-1.5">
@@ -108,6 +108,7 @@ export function ReservationCard({ item, isEditor, onEdit, onDeleted, onBeforeEdi
                     onEdit(item)
                   }}
                   aria-label={`Edit: ${item.guest_name ?? t('fallbackName')}`}
+                  data-testid="reservation-card-edit"
                 >
                   <Pencil className="h-4 w-4" aria-hidden="true" />
                 </Button>
@@ -116,6 +117,7 @@ export function ReservationCard({ item, isEditor, onEdit, onDeleted, onBeforeEdi
                   size="icon"
                   onClick={() => setDeleteOpen(true)}
                   aria-label={`Delete: ${item.guest_name ?? t('fallbackName')}`}
+                  data-testid="reservation-card-delete"
                 >
                   <Trash2 className="h-4 w-4" aria-hidden="true" />
                 </Button>
@@ -137,6 +139,7 @@ export function ReservationCard({ item, isEditor, onEdit, onDeleted, onBeforeEdi
               onClick={handleDelete}
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="reservation-card-delete-confirm"
             >
               {isDeleting ? t('deleting') : t('delete')}
             </AlertDialogAction>

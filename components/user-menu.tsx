@@ -18,6 +18,7 @@ export function UserMenu({ user: _user, signOutLabel = 'Sign out' }: UserMenuPro
         className="text-muted-foreground hover:text-foreground"
         aria-label={signOutLabel}
         title={signOutLabel}
+        data-testid="sign-out"
       >
         <LogOut className="h-4 w-4" />
       </Button>

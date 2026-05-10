@@ -48,6 +48,22 @@ Prettier config: `.prettierrc` — no semis, single quotes, 100-char width, Tail
 - Requires: local Supabase running (`supabase start`), dev server running (`pnpm dev`)
 - Uses Supabase service role key to create/teardown test tenants — never run against production
 - E2E is excluded from CI (needs full local stack); run locally before merging auth/routing changes
+- Failure artifacts: `playwright.config.ts` enables `video: 'retain-on-failure'` and `screenshot: 'only-on-failure'` — videos + screenshots land in `test-results/` for failed runs only.
+
+#### `data-testid` convention
+
+E2E selectors prefer `getByTestId` over text/role-based selectors for any element that is content-driven (translated, copy-edited, or user-data). Role-based selectors stay for genuinely accessible-named elements (page headings, persistent landmarks).
+
+Naming — kebab-case, scope-prefixed:
+
+- Cards: `<entity>-card`, `<entity>-card-edit`, `<entity>-card-delete`, `<entity>-card-delete-confirm` (e.g. `activity-card`, `activity-card-edit`).
+- Forms: `<entity>-form`, `<entity>-form-<field>`, `<entity>-form-save` (e.g. `activity-form-title`, `reservation-form-guest-name`).
+- Page-level add buttons: `add-<entity>` (e.g. `add-activity`, `add-reservation`, `add-breakfast`).
+- Auth: `sign-in-form`, `sign-in-email`, `sign-in-password`, `sign-in-use-password`, `sign-in-submit`, `sign-out`.
+
+Post-mutation assertions: always wrap with an explicit timeout — `expect(...).toBeVisible({ timeout: 5000 })` or `expect(...).toHaveCount(0, { timeout: 5000 })` — to absorb server-action latency.
+
+Per-test dates: never share a `TODAY` across tests. Compute `format(addDays(new Date(), N), 'yyyy-MM-dd')` per `describe` block so parallel workers (if `workers` ever increases) don't collide.
 
 ## Database Migrations
 

@@ -92,7 +92,7 @@ export function ActivityCard({ item, isEditor, onEdit, onDeleted, onBeforeEdit }
 
   return (
     <>
-      <Card className={isPending ? 'opacity-70' : undefined}>
+      <Card className={isPending ? 'opacity-70' : undefined} data-testid="activity-card">
         <CardContent className="px-4 py-3">
           <div className="flex items-start justify-between gap-3">
             {/* Left: details */}
@@ -208,6 +208,7 @@ export function ActivityCard({ item, isEditor, onEdit, onDeleted, onBeforeEdit }
                     onEdit(item)
                   }}
                   aria-label={`Edit: ${item.title}`}
+                  data-testid="activity-card-edit"
                 >
                   <Pencil className="h-4 w-4" aria-hidden="true" />
                 </Button>
@@ -216,6 +217,7 @@ export function ActivityCard({ item, isEditor, onEdit, onDeleted, onBeforeEdit }
                   size="icon"
                   onClick={() => setDeleteOpen(true)}
                   aria-label={`Delete: ${item.title}`}
+                  data-testid="activity-card-delete"
                 >
                   <Trash2 className="h-4 w-4" aria-hidden="true" />
                 </Button>
@@ -266,6 +268,7 @@ export function ActivityCard({ item, isEditor, onEdit, onDeleted, onBeforeEdit }
                 onClick={() => handleDelete('single')}
                 disabled={isDeleting}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                data-testid="activity-card-delete-confirm"
               >
                 {isDeleting ? t('deleting') : t('delete')}
               </AlertDialogAction>

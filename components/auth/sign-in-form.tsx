@@ -98,7 +98,7 @@ export function SignInForm({ defaultSlug, tenantName, logoUrl }: SignInFormProps
             <h1 className="text-center text-xl font-semibold tracking-tight">{heading}</h1>
           </CardHeader>
 
-          <form action={action}>
+          <form action={action} data-testid="sign-in-form">
             <input type="hidden" name="slug" value={slug} />
             <CardContent className="space-y-4">
               {state?.error && <p className="text-destructive text-sm">{state.error}</p>}
@@ -117,6 +117,7 @@ export function SignInForm({ defaultSlug, tenantName, logoUrl }: SignInFormProps
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   required
+                  data-testid="sign-in-email"
                 />
               </div>
 
@@ -129,6 +130,7 @@ export function SignInForm({ defaultSlug, tenantName, logoUrl }: SignInFormProps
                     type="password"
                     autoComplete="current-password"
                     required={showPassword}
+                    data-testid="sign-in-password"
                   />
                 </div>
               )}
@@ -150,11 +152,17 @@ export function SignInForm({ defaultSlug, tenantName, logoUrl }: SignInFormProps
                   className="w-full"
                   variant="secondary"
                   onClick={() => setShowPassword(true)}
+                  data-testid="sign-in-use-password"
                 >
                   {t('usePasswordButton')}
                 </Button>
               ) : (
-                <Button type="submit" className="w-full" disabled={isPending}>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isPending}
+                  data-testid="sign-in-submit"
+                >
                   {isPending ? t('signingIn') : t('signInButton')}
                 </Button>
               )}

@@ -208,10 +208,15 @@ export function BreakfastForm({
   const title = isEditing ? t('editTitle') : t('addTitle')
 
   const formBody = (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" data-testid="breakfast-form">
       <div className={cn('space-y-1', qaRing('groupName'))}>
         <Label htmlFor="bf-group">{t('groupNameLabel')}</Label>
-        <Input id="bf-group" placeholder={t('groupNamePlaceholder')} {...register('groupName')} />
+        <Input
+          id="bf-group"
+          placeholder={t('groupNamePlaceholder')}
+          {...register('groupName')}
+          data-testid="breakfast-form-group-name"
+        />
       </div>
 
       <div className={cn('space-y-1', qaRing('guestCount'))}>
@@ -251,7 +256,7 @@ export function BreakfastForm({
         <Button type="button" variant="outline" onClick={onClose}>
           {t('cancel')}
         </Button>
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" disabled={isPending} data-testid="breakfast-form-save">
           {isPending ? t('saving') : t('save')}
         </Button>
       </div>
