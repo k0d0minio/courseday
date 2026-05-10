@@ -160,7 +160,7 @@ export async function ensureDailyBrief(args: {
       dayId,
       dateIso,
       generatedBy: null,
-      language,
+      language: language ?? 'en',
       activities,
       reservations,
       breakfasts,
