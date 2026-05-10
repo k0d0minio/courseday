@@ -64,6 +64,8 @@ export function HomeClient({ month, today, days: initialDays, variant = 'editor'
   })
   /** Below Tailwind `sm` (640px): calendar day cells go straight to full day page. */
   const [isNarrowScreen, setIsNarrowScreen] = useState(false)
+  /** On narrow screens, always force agenda regardless of stored preference. */
+  const effectiveViewMode: ViewMode = isNarrowScreen ? 'agenda' : viewMode
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 639px)')
@@ -93,13 +95,13 @@ export function HomeClient({ month, today, days: initialDays, variant = 'editor'
 
   const handleDayCellClick = useCallback(
     (dateStr: string, isSelected: boolean) => {
-      if (isEditor && viewMode === 'calendar' && isNarrowScreen) {
+      if (isEditor && effectiveViewMode === 'calendar' && isNarrowScreen) {
         router.push(`/day/${dateStr}`)
         return
       }
       setSelectedDate(isSelected ? null : dateStr)
     },
-    [isEditor, viewMode, isNarrowScreen, router]
+    [isEditor, effectiveViewMode, isNarrowScreen, router]
   )
 
   const dayMap = new Map(days.map((d) => [d.date, d]))
@@ -134,13 +136,13 @@ export function HomeClient({ month, today, days: initialDays, variant = 'editor'
     <div className="mx-auto max-w-5xl px-3 py-4 sm:px-6 sm:py-8">
       {/* Heading row */}
       <div className="mb-6 flex items-center justify-between">
-        {viewMode === 'calendar' && isEditor ? (
+        {effectiveViewMode === 'calendar' && isEditor ? (
           <h1 className="text-xl font-semibold">{format(firstOfMonth, 'MMMM yyyy')}</h1>
         ) : (
           <h1 className="text-xl font-semibold">{t('agenda')}</h1>
         )}
         {isEditor && (
-          <div className="flex items-center gap-2">
+          <div className="hidden items-center gap-2 sm:flex">
             {/* View toggle */}
             <div
               className="flex overflow-hidden rounded-md border"
@@ -148,27 +150,27 @@ export function HomeClient({ month, today, days: initialDays, variant = 'editor'
               aria-label="View mode"
             >
               <Button
-                variant={viewMode === 'calendar' ? 'secondary' : 'ghost'}
+                variant={effectiveViewMode === 'calendar' ? 'secondary' : 'ghost'}
                 size="sm"
                 className="rounded-none border-0"
                 onClick={() => changeViewMode('calendar')}
-                aria-pressed={viewMode === 'calendar'}
+                aria-pressed={effectiveViewMode === 'calendar'}
               >
                 {t('calendar')}
               </Button>
               <Button
-                variant={viewMode === 'agenda' ? 'secondary' : 'ghost'}
+                variant={effectiveViewMode === 'agenda' ? 'secondary' : 'ghost'}
                 size="sm"
                 className="rounded-none border-0 border-l"
                 onClick={() => changeViewMode('agenda')}
-                aria-pressed={viewMode === 'agenda'}
+                aria-pressed={effectiveViewMode === 'agenda'}
               >
                 {t('agenda')}
               </Button>
             </div>
 
             {/* Calendar navigation — only in calendar mode */}
-            {viewMode === 'calendar' && (
+            {effectiveViewMode === 'calendar' && (
               <div className="flex items-center gap-1">
                 {!isCurrentMonth && (
                   <Button variant="ghost" size="sm" onClick={() => navigate(todayMonth)}>
@@ -200,9 +202,9 @@ export function HomeClient({ month, today, days: initialDays, variant = 'editor'
       </div>
 
       {/* Agenda view */}
-      {viewMode === 'agenda' && <AgendaView today={today} isEditor={isEditor} />}
+      {effectiveViewMode === 'agenda' && <AgendaView today={today} isEditor={isEditor} />}
 
-      {viewMode === 'calendar' && (
+      {effectiveViewMode === 'calendar' && (
         <div className={cn('flex gap-6', selectedDate && 'lg:gap-8')}>
           {/* Calendar grid */}
           <div className="min-w-0 flex-1">
@@ -266,7 +268,7 @@ export function HomeClient({ month, today, days: initialDays, variant = 'editor'
       )}
 
       {/* Legend — calendar mode only */}
-      {viewMode === 'calendar' && (
+      {effectiveViewMode === 'calendar' && (
         <div className="text-muted-foreground mt-4 flex flex-wrap gap-3 text-xs">
           <LegendItem color="emerald" label={t('legendActivity')} />
           {showReservations && <LegendItem color="amber" label={t('legendReservation')} />}
