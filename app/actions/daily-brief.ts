@@ -95,6 +95,7 @@ export async function ensureDailyBrief(args: {
   tenantId: string
   dayId: string
   dateIso: string
+  language?: string
   activities: Activity[]
   reservations: Reservation[]
   breakfasts: BreakfastConfiguration[]
@@ -106,6 +107,7 @@ export async function ensureDailyBrief(args: {
     tenantId,
     dayId,
     dateIso,
+    language,
     activities,
     reservations,
     breakfasts,
@@ -158,6 +160,7 @@ export async function ensureDailyBrief(args: {
       dayId,
       dateIso,
       generatedBy: null,
+      language,
       activities,
       reservations,
       breakfasts,
@@ -239,28 +242,31 @@ export async function generateDailyBrief(
   if (!dayResult.success) return { success: false, error: dayResult.error }
   const dayId = dayResult.data.id
 
-  const [activities, reservations, breakfasts, dayNotes, weather, rawShifts] = await Promise.all([
-    getProgramItemsForDay(tenantId, dayId),
-    getReservationsForDay(tenantId, dayId),
-    getBreakfastConfigsForDay(tenantId, dayId),
-    getDayNotesForDay(tenantId, dayId),
-    getWeatherForDay(dateIso),
-    staffScheduleOn ? getShiftsForDay(tenantId, dayId) : Promise.resolve([]),
-  ])
+  const { supabase } = await createTenantClient()
 
+  const [activities, reservations, breakfasts, dayNotes, weather, rawShifts, tenantRow] =
+    await Promise.all([
+      getProgramItemsForDay(tenantId, dayId),
+      getReservationsForDay(tenantId, dayId),
+      getBreakfastConfigsForDay(tenantId, dayId),
+      getDayNotesForDay(tenantId, dayId),
+      getWeatherForDay(dateIso),
+      staffScheduleOn ? getShiftsForDay(tenantId, dayId) : Promise.resolve([]),
+      supabase.from('tenants').select('language').eq('id', tenantId).single(),
+    ])
+  const language = tenantRow.data?.language ?? 'en'
   const staffShifts = rawShifts.map((s) => ({
     name: s.assignee.display_name,
     role: s.role ?? null,
     start_time: s.start_time ?? null,
     end_time: s.end_time ?? null,
   }))
-
-  const { supabase } = await createTenantClient()
   return generateAndPersistDailyBrief(supabase, {
     tenantId,
     dayId,
     dateIso,
     generatedBy: user.id,
+    language,
     activities,
     reservations,
     breakfasts,
