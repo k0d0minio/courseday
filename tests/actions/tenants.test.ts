@@ -50,7 +50,10 @@ function makeStorageChain({
   }
 }
 
-function _makeFrom(rows: Record<string, unknown[]>, deleteError: { message: string } | null = null) {
+function _makeFrom(
+  rows: Record<string, unknown[]>,
+  deleteError: { message: string } | null = null
+) {
   const remaining: Record<string, unknown[]> = { ...rows }
 
   return vi.fn().mockImplementation((table: string) => {
