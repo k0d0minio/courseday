@@ -209,25 +209,12 @@ export async function generateAndPersistDailyBrief(
     const result = await generateObject({
       model: gateway(DAILY_BRIEF_MODEL_ID),
       schema: narrativeSchema,
-      messages: [
-        {
-          role: 'system' as const,
-          content: [
-            {
-              type: 'text' as const,
-              text: BRIEF_SYSTEM,
-              providerOptions: {
-                anthropic: { cacheControl: { type: 'ephemeral' } },
-              },
-            },
-          ],
-        },
-        {
-          role: 'user' as const,
-          content: `Produce a daily briefing from this JSON:\n${JSON.stringify(payload)}`,
-        },
-      ],
+      system: BRIEF_SYSTEM,
+      prompt: `Produce a daily briefing from this JSON:\n${JSON.stringify(payload)}`,
       maxOutputTokens: 2048,
+      providerOptions: {
+        gateway: { caching: 'auto' },
+      },
     })
     narrative = result.object
   } catch (e) {
