@@ -239,6 +239,7 @@ export function ActivityForm({
     getAllActivityTags().then((r) => {
       if (r.success) setAllTags(r.data)
     })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, editItem, quickAdd, reset])
 
   const watchIsRecurring = watch('isRecurring')
@@ -753,6 +754,7 @@ function TagSelector({
                   handleSave()
                 }
               }}
+              // eslint-disable-next-line jsx-a11y/no-autofocus
               autoFocus
             />
             <div className="flex justify-end gap-1">
