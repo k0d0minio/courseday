@@ -264,8 +264,6 @@ export function QuickAddInput({ open, onOpenChange, contextDate, disabled }: Pro
 
   const isAiNotConfigured = Boolean(error?.includes('AI is not configured'))
   const isParsing = view.stage === 'streaming'
-  // Spinner only until the first token arrives.
-  const showSpinner = isParsing && !streamObj
 
   const inputBody = (
     <form
@@ -327,18 +325,7 @@ export function QuickAddInput({ open, onOpenChange, contextDate, disabled }: Pro
   const streamingBody =
     view.stage === 'streaming' ? (
       <div className="space-y-3">
-        {showSpinner ? (
-          <div
-            className="text-muted-foreground flex items-center justify-center gap-2 py-12 text-sm"
-            role="status"
-            aria-live="polite"
-          >
-            <Loader2 className="h-4 w-4 animate-spin" />
-            {t('parsing')}
-          </div>
-        ) : (
-          <QuickAddStreamingPreview partial={streamObj} label={t('parsing')} />
-        )}
+        <QuickAddStreamingPreview partial={streamObj} label={t('parsing')} />
         <div className="flex justify-end gap-2 pt-1">
           <Button
             type="button"

@@ -7,6 +7,7 @@ import { ClipboardCopy, Loader2, RefreshCw, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { experimental_useObject as useObject } from '@ai-sdk/react'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { dailyBriefContentSchema } from '@/lib/daily-brief-schema'
 import type { DailyBriefContent, DailyBriefRecord, RegenerableSection } from '@/types/daily-brief'
 import { formatDailyBriefMarkdown } from '@/lib/daily-brief-format'
@@ -209,13 +210,13 @@ export function DailyBriefCard({
 
         {/* Progressive streaming skeleton */}
         {streaming && (
-          <div className="space-y-3">
+          <div className="space-y-3" role="status" aria-live="polite" aria-label={t('generating')}>
             {streamedObject?.headline ? (
               <p className="animate-in fade-in text-base leading-snug font-semibold duration-300">
                 {streamedObject.headline}
               </p>
             ) : (
-              <div className="bg-muted h-5 w-3/4 animate-pulse rounded" />
+              <Skeleton className="h-5 w-3/4" />
             )}
 
             {streamedObject?.summary ? (
@@ -223,13 +224,13 @@ export function DailyBriefCard({
                 {streamedObject.summary}
               </p>
             ) : (
-              <div className="space-y-1">
-                <div className="bg-muted h-4 w-full animate-pulse rounded" />
-                <div className="bg-muted h-4 w-5/6 animate-pulse rounded" />
+              <div className="space-y-1.5">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6" />
               </div>
             )}
 
-            {covers && (
+            {covers ? (
               <div className="animate-in fade-in grid grid-cols-3 gap-2 text-center text-sm duration-300">
                 <div className="bg-muted/50 rounded-md py-2">
                   <div className="text-muted-foreground text-xs">{t('coversBreakfast')}</div>
@@ -244,7 +245,20 @@ export function DailyBriefCard({
                   <div className="font-semibold tabular-nums">{covers.reservations ?? '—'}</div>
                 </div>
               </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                <Skeleton className="h-12 rounded-md" />
+                <Skeleton className="h-12 rounded-md" />
+                <Skeleton className="h-12 rounded-md" />
+              </div>
             )}
+
+            <div className="space-y-1.5 pt-1">
+              <Skeleton className="h-3 w-1/3" />
+              <Skeleton className="h-3 w-11/12" />
+              <Skeleton className="h-3 w-10/12" />
+              <Skeleton className="h-3 w-9/12" />
+            </div>
           </div>
         )}
 
