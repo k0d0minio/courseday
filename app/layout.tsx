@@ -39,17 +39,36 @@ export const viewport: Viewport = {
   themeColor: '#1f5d3a',
 }
 
+function supabaseOrigin(): string | null {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  if (!url) return null
+  try {
+    return new URL(url).origin
+  } catch {
+    return null
+  }
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const supabase = supabaseOrigin()
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable}`}
       suppressHydrationWarning
     >
+      <head>
+        {supabase && (
+          <>
+            <link rel="preconnect" href={supabase} crossOrigin="anonymous" />
+            <link rel="dns-prefetch" href={supabase} />
+          </>
+        )}
+      </head>
       <body className="antialiased">
         <ThemeProvider>
           {children}

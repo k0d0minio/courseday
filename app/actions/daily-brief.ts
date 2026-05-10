@@ -15,6 +15,18 @@
  * - Reservation guest_name, table_breakdown (may identify guests).
  * - Raw POC / internal IDs.
  *
+ * PII scrubbing (defense-in-depth, see `scrubPii` in `lib/daily-brief-generate.ts`):
+ * Free-text fields (activity description/notes, reservation/breakfast notes,
+ * day-note content) are passed through `truncateNote`, which strips obvious
+ * patterns before the prompt is built:
+ *   - email addresses
+ *   - phone-like number sequences with separators (e.g. 555-123-4567, +44 20 1234 5678)
+ *   - @-mentions / handles
+ *
+ * NOT scrubbed (the system-prompt rules are the primary control for these):
+ *   - Personal names, place names, room/plate numbers, free-form addresses,
+ *     bare digit sequences without separators, ISO dates.
+ *
  * Instruct model: do not invent counts; do not repeat personal names from notes;
  * refer to reservations as "a party of N" when relevant.
  */

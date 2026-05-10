@@ -44,11 +44,12 @@ Create `.env.local`:
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-KV_REST_API_URL=your_upstash_redis_url
-KV_REST_API_TOKEN=your_upstash_redis_token
+REDIS_URL=your_redis_connection_url
 NEXT_PUBLIC_ROOT_DOMAIN=localhost:3000
 OPENWEATHER_API_KEY=your_openweather_api_key
 ```
+
+`REDIS_URL` is a single connection string consumed by `ioredis` (e.g. `rediss://default:<token>@<host>:<port>` for Upstash, or `redis://localhost:6379` for a local instance). The legacy `KV_REST_API_URL` / `KV_REST_API_TOKEN` REST variables are not used.
 
 ### Run
 
@@ -57,6 +58,24 @@ pnpm dev        # http://localhost:3000
 pnpm build
 pnpm start
 ```
+
+### Running E2E tests locally
+
+End-to-end tests live in `tests/e2e/` and are excluded from CI — they need a full local stack.
+
+```bash
+supabase start            # boots local Postgres, Auth, Storage
+pnpm dev                  # in another shell, on http://localhost:3000
+pnpm test:e2e             # or pnpm test:e2e:ui for the Playwright UI
+```
+
+The suite uses the Supabase **service role key** to provision and tear down throwaway tenants, so it must only ever be pointed at the local Supabase instance — never at production. `.env.local` should set `SUPABASE_SERVICE_ROLE_KEY` to the local service key printed by `supabase start`.
+
+### Troubleshooting
+
+- **Middleware fails with a Redis error** — `REDIS_URL` is required even in dev. The middleware resolves tenants from Redis on every request; without a reachable Redis the app cannot boot.
+- **`supabase` CLI not found** — install it first (`brew install supabase/tap/supabase` or see the [Supabase docs](https://supabase.com/docs/guides/local-development)).
+- **Node / pnpm version mismatch** — the project requires Node.js 20+ and pnpm 10+. Check with `node -v` and `pnpm -v`.
 
 ## Routing model
 
