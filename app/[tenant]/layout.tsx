@@ -122,13 +122,7 @@ export default async function TenantLayout({ children }: { children: React.React
                 style={accentStyle}
               >
                 <header className="flex h-14 items-center justify-between border-b px-6">
-                  <Link
-                    href="/"
-                    className="inline-flex items-center"
-                    aria-label={row?.name ?? 'Home'}
-                  >
-                    <Logo logoUrl={row?.logo_url ?? null} tenantName={row?.name ?? null} />
-                  </Link>
+                  <Logo logoUrl={row?.logo_url ?? null} tenantName={row?.name ?? null} />
                   <div className="flex items-center gap-1">
                     <OfflineStatusPill />
                     {/* Theme toggle — visible to all signed-in users */}
