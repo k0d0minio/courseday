@@ -360,7 +360,7 @@ export async function regenerateBriefSection(
     ...(staffScheduleOn && staffShifts.length > 0 ? { staffShifts } : {}),
   })
 
-  const sectionResult = await generateBriefSection(payload, section)
+  const sectionResult = await generateBriefSection(payload, section, tenantId)
   if (!sectionResult.success) {
     return { success: false, error: sectionResult.error }
   }

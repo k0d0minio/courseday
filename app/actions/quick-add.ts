@@ -36,7 +36,7 @@ export async function parseQuickAdd(
   }
   const dayId = dayResult.data.id
 
-  const gen = await generateQuickAddParse(input.trim(), dayId, contextDate)
+  const gen = await generateQuickAddParse(input.trim(), dayId, contextDate, tenantId)
   if (!gen.success) {
     return { success: false, error: gen.error }
   }

@@ -4,6 +4,7 @@ import type { z } from 'zod'
 import type { AppSupabaseClient } from '@/app/[tenant]/day/[date]/queries'
 import type { WeatherData } from '@/app/actions/weather'
 import type { ActionResponse } from '@/types/actions'
+import { logAiCall } from '@/lib/ai-call-log'
 import type {
   DailyBriefContent,
   DailyBriefRecord,
@@ -188,9 +189,28 @@ const SECTION_INSTRUCTIONS: Record<RegenerableSection, string> = {
     'Produce ONLY suggested actions for staff for this day, as `items`. Concrete, actionable bullets the team should consider before service. Never include guest personal names. If nothing qualifies, return an empty array.',
 }
 
+type AiUsage = {
+  promptTokens?: number | null
+  completionTokens?: number | null
+  inputTokens?: number | null
+  outputTokens?: number | null
+}
+
+function readUsage(usage: AiUsage | undefined): {
+  promptTokens: number | null
+  completionTokens: number | null
+} {
+  if (!usage) return { promptTokens: null, completionTokens: null }
+  return {
+    promptTokens: usage.promptTokens ?? usage.inputTokens ?? null,
+    completionTokens: usage.completionTokens ?? usage.outputTokens ?? null,
+  }
+}
+
 export async function generateBriefSection(
   payload: ReturnType<typeof llmPayload>,
-  section: RegenerableSection
+  section: RegenerableSection,
+  tenantId: string | null = null
 ): Promise<{ success: true; items: string[] } | { success: false; error: string }> {
   if (!hasGatewayAuth()) {
     return {
@@ -199,6 +219,7 @@ export async function generateBriefSection(
     }
   }
 
+  const startedAt = Date.now()
   try {
     const result = await generateObject({
       model: gateway(DAILY_BRIEF_MODEL_ID),
@@ -210,9 +231,29 @@ export async function generateBriefSection(
         gateway: { caching: 'auto' },
       },
     })
+    const { promptTokens, completionTokens } = readUsage(result.usage as AiUsage | undefined)
+    void logAiCall({
+      tenantId,
+      feature: 'daily_brief',
+      model: DAILY_BRIEF_MODEL_ID,
+      promptTokens,
+      completionTokens,
+      durationMs: Date.now() - startedAt,
+      status: 'ok',
+    })
     return { success: true, items: result.object.items }
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Generation failed.'
+    void logAiCall({
+      tenantId,
+      feature: 'daily_brief',
+      model: DAILY_BRIEF_MODEL_ID,
+      promptTokens: null,
+      completionTokens: null,
+      durationMs: Date.now() - startedAt,
+      status: 'error',
+      error: msg,
+    })
     return {
       success: false,
       error:
@@ -293,6 +334,7 @@ export async function generateAndPersistDailyBrief(
   const language = args.language ?? 'en'
 
   let narrative: z.infer<typeof narrativeSchema>
+  const startedAt = Date.now()
   try {
     const result = await generateObject({
       model: gateway(DAILY_BRIEF_MODEL_ID),
@@ -305,8 +347,28 @@ export async function generateAndPersistDailyBrief(
       },
     })
     narrative = result.object
+    const { promptTokens, completionTokens } = readUsage(result.usage as AiUsage | undefined)
+    void logAiCall({
+      tenantId: args.tenantId,
+      feature: 'daily_brief',
+      model: DAILY_BRIEF_MODEL_ID,
+      promptTokens,
+      completionTokens,
+      durationMs: Date.now() - startedAt,
+      status: 'ok',
+    })
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Generation failed.'
+    void logAiCall({
+      tenantId: args.tenantId,
+      feature: 'daily_brief',
+      model: DAILY_BRIEF_MODEL_ID,
+      promptTokens: null,
+      completionTokens: null,
+      durationMs: Date.now() - startedAt,
+      status: 'error',
+      error: msg,
+    })
     return {
       success: false,
       error:
