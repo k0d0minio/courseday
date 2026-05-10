@@ -263,7 +263,22 @@
       "srcBreakfast": "{n} breakfast(s)",
       "risks": "Risks",
       "actions": "Suggested actions",
-      "meta": "Generated {time} · {model}"
+      "meta": "Generated {time} · {model}",
+      "regenerateVip": "Regenerate VIP notes",
+      "regenerateRisks": "Regenerate risks",
+      "regenerateActions": "Regenerate suggested actions",
+      "sectionRegenerated": "Section updated",
+      "sectionRegenFailed": "Could not regenerate section",
+      "sectionRateLimited": "Section regen limit reached. Try again tomorrow.",
+      "editHeadlineLabel": "Edit headline",
+      "editSummaryLabel": "Edit summary",
+      "editSaved": "Brief updated",
+      "editSaveFailed": "Could not save edit",
+      "edited": "Edited",
+      "editedBy": "Edited by {name}",
+      "editedByAt": "Edited by {name} · {time}",
+      "editedBadge": "Edited by an editor",
+      "regenerateDiscardWarning": "Regenerating will discard your edits to the headline and summary. Continue?"
     },
     "quickAdd": {
       "openButton": "Quick add",

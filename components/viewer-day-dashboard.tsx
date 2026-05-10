@@ -39,6 +39,7 @@ type Props = {
   briefStale?: boolean
   briefIsEmpty?: boolean
   shifts: ShiftWithAssignee[]
+  briefOverrideAuthorName?: string | null
 }
 
 // ---------------------------------------------------------------------------
@@ -59,6 +60,7 @@ export function ViewerDayDashboard({
   briefStale,
   briefIsEmpty,
   shifts,
+  briefOverrideAuthorName = null,
 }: Props) {
   const { impersonationRole } = useAuth()
 
@@ -94,6 +96,7 @@ export function ViewerDayDashboard({
           isEditor={false}
           briefStale={briefStale ?? false}
           briefIsEmpty={briefIsEmpty ?? false}
+          overrideAuthorName={briefOverrideAuthorName}
         />
       )}
 

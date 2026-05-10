@@ -23,7 +23,7 @@ import { createTenantClient } from '@/lib/supabase-server'
 import { getTenantId } from '@/lib/tenant'
 import { getUserRole, requireEditor } from '@/lib/membership'
 import { isFeatureEnabled } from '@/app/actions/feature-flags'
-import { dailyBriefRateLimit } from '@/lib/rate-limit'
+import { dailyBriefRateLimit, dailyBriefSectionRateLimit } from '@/lib/rate-limit'
 import { ensureDayExists } from '@/app/actions/days'
 import {
   getProgramItemsForDay,
@@ -37,11 +37,20 @@ import { getWeatherForDay } from '@/app/actions/weather'
 import {
   dailyBriefContentSchema,
   generateAndPersistDailyBrief,
+  generateBriefSection,
+  mergeBriefSection,
   dayHasPlannedContent,
+  buildCovers,
+  buildAllergenRollup,
+  llmPayload,
 } from '@/lib/daily-brief-generate'
 import { redis } from '@/lib/redis'
 import type { ActionResponse } from '@/types/actions'
-import type { DailyBriefRecord } from '@/types/daily-brief'
+import {
+  REGENERATABLE_SECTIONS,
+  type DailyBriefRecord,
+  type RegenerableSection,
+} from '@/types/daily-brief'
 import type { Activity, Reservation, BreakfastConfiguration } from '@/types/index'
 import type { DayNote } from '@/app/actions/day-notes'
 import type { WeatherData } from '@/app/actions/weather'
@@ -86,6 +95,7 @@ export async function ensureDailyBrief(args: {
   tenantId: string
   dayId: string
   dateIso: string
+  language?: string
   activities: Activity[]
   reservations: Reservation[]
   breakfasts: BreakfastConfiguration[]
@@ -97,6 +107,7 @@ export async function ensureDailyBrief(args: {
     tenantId,
     dayId,
     dateIso,
+    language,
     activities,
     reservations,
     breakfasts,
@@ -149,6 +160,7 @@ export async function ensureDailyBrief(args: {
       dayId,
       dateIso,
       generatedBy: null,
+      language: language ?? 'en',
       activities,
       reservations,
       breakfasts,
@@ -175,29 +187,8 @@ export async function getDailyBrief(
   if (!role) return { success: false, error: 'Not authorized.' }
 
   const { supabase } = await createTenantClient()
-  const { data, error } = await supabase
-    .from('daily_brief')
-    .select('id, content, generated_at, model, prompt_version')
-    .eq('tenant_id', tenantId)
-    .eq('day_id', dayId)
-    .maybeSingle()
-
-  if (error) return { success: false, error: error.message }
-  if (!data) return { success: true, data: null }
-
-  const parsed = dailyBriefContentSchema.safeParse(data.content)
-  if (!parsed.success) return { success: true, data: null }
-
-  return {
-    success: true,
-    data: {
-      id: data.id,
-      content: parsed.data,
-      generated_at: data.generated_at,
-      model: data.model,
-      prompt_version: data.prompt_version,
-    },
-  }
+  const brief = await getDailyBriefForDayWithClient(supabase, tenantId, dayId)
+  return { success: true, data: brief }
 }
 
 export async function generateDailyBrief(
@@ -230,6 +221,94 @@ export async function generateDailyBrief(
   if (!dayResult.success) return { success: false, error: dayResult.error }
   const dayId = dayResult.data.id
 
+  const { supabase } = await createTenantClient()
+
+  const [activities, reservations, breakfasts, dayNotes, weather, rawShifts, tenantRow] =
+    await Promise.all([
+      getProgramItemsForDay(tenantId, dayId),
+      getReservationsForDay(tenantId, dayId),
+      getBreakfastConfigsForDay(tenantId, dayId),
+      getDayNotesForDay(tenantId, dayId),
+      getWeatherForDay(dateIso),
+      staffScheduleOn ? getShiftsForDay(tenantId, dayId) : Promise.resolve([]),
+      supabase.from('tenants').select('language').eq('id', tenantId).single(),
+    ])
+  const language = tenantRow.data?.language ?? 'en'
+  const staffShifts = rawShifts.map((s) => ({
+    name: s.assignee.display_name,
+    role: s.role ?? null,
+    start_time: s.start_time ?? null,
+    end_time: s.end_time ?? null,
+  }))
+  return generateAndPersistDailyBrief(supabase, {
+    tenantId,
+    dayId,
+    dateIso,
+    generatedBy: user.id,
+    language,
+    activities,
+    reservations,
+    breakfasts,
+    dayNotes,
+    weather,
+    ...(staffScheduleOn && staffShifts.length > 0 ? { staffShifts } : {}),
+  })
+}
+
+function isRegenerableSection(value: string): value is RegenerableSection {
+  return (REGENERATABLE_SECTIONS as readonly string[]).includes(value)
+}
+
+/**
+ * Regenerate a single brief section (vipNotes / risks / suggestedActions).
+ * Editor-only. Has its own per-section rate limit so a small change doesn't
+ * burn the whole-brief quota.
+ */
+export async function regenerateBriefSection(
+  dateIso: string,
+  section: RegenerableSection
+): Promise<ActionResponse<DailyBriefRecord>> {
+  if (!isRegenerableSection(section)) {
+    return { success: false, error: 'Invalid section.' }
+  }
+
+  const tenantId = await getTenantId()
+  if (!(await isFeatureEnabled(tenantId, 'daily_brief'))) {
+    return { success: false, error: 'Daily brief is disabled for this venue.' }
+  }
+  await requireEditor(tenantId)
+
+  if (!process.env.AI_GATEWAY_API_KEY) {
+    return {
+      success: false,
+      error: 'AI brief is not configured (missing AI_GATEWAY_API_KEY).',
+    }
+  }
+
+  const rl = await dailyBriefSectionRateLimit(tenantId, dateIso, section)
+  if (!rl.success) {
+    return {
+      success: false,
+      error: 'Section regen limit reached. Try again tomorrow.',
+    }
+  }
+
+  const dayResult = await ensureDayExists(dateIso)
+  if (!dayResult.success) return { success: false, error: dayResult.error }
+  const dayId = dayResult.data.id
+
+  const { supabase } = await createTenantClient()
+
+  const existing = await getDailyBriefForDayWithClient(supabase, tenantId, dayId)
+  if (!existing) {
+    return {
+      success: false,
+      error: 'No existing brief to regenerate. Generate the full brief first.',
+    }
+  }
+
+  const staffScheduleOn = await isFeatureEnabled(tenantId, 'staff_schedule')
+
   const [activities, reservations, breakfasts, dayNotes, weather, rawShifts] = await Promise.all([
     getProgramItemsForDay(tenantId, dayId),
     getReservationsForDay(tenantId, dayId),
@@ -239,24 +318,128 @@ export async function generateDailyBrief(
     staffScheduleOn ? getShiftsForDay(tenantId, dayId) : Promise.resolve([]),
   ])
 
-  const staffShifts = rawShifts.map((s) => ({
+  const staffShifts: StaffShiftContext[] = rawShifts.map((s) => ({
     name: s.assignee.display_name,
     role: s.role ?? null,
     start_time: s.start_time ?? null,
     end_time: s.end_time ?? null,
   }))
 
-  const { supabase } = await createTenantClient()
-  return generateAndPersistDailyBrief(supabase, {
-    tenantId,
-    dayId,
+  const covers = buildCovers(activities, reservations, breakfasts)
+  const allergenRollup = buildAllergenRollup(activities, reservations, breakfasts)
+  const payload = llmPayload({
     dateIso,
-    generatedBy: user.id,
+    weather,
     activities,
     reservations,
     breakfasts,
     dayNotes,
-    weather,
+    covers,
+    allergenRollup,
     ...(staffScheduleOn && staffShifts.length > 0 ? { staffShifts } : {}),
   })
+
+  const sectionResult = await generateBriefSection(payload, section, tenantId)
+  if (!sectionResult.success) {
+    return { success: false, error: sectionResult.error }
+  }
+
+  const generatedAt = new Date().toISOString()
+  const merged = mergeBriefSection(existing.content, section, sectionResult.items, generatedAt)
+
+  const { error } = await supabase
+    .from('daily_brief')
+    .update({
+      content: merged as never,
+      generated_at: generatedAt,
+    })
+    .eq('tenant_id', tenantId)
+    .eq('day_id', dayId)
+
+  if (error) return { success: false, error: error.message }
+
+  const updated = await getDailyBriefForDayWithClient(supabase, tenantId, dayId)
+  if (!updated) return { success: false, error: 'Could not validate saved brief.' }
+
+  return { success: true, data: updated }
+}
+
+/**
+ * Editor inline-edit of the brief's headline / summary.
+ *
+ * Stored as separate `*_override` columns alongside the original AI `content`
+ * so a future Regenerate cleanly drops the human edits (see
+ * `generateAndPersistDailyBrief`). Either field may be omitted to leave
+ * untouched; passing an empty string clears that override.
+ *
+ * RLS already restricts UPDATE on daily_brief to tenant editors, so this is
+ * editor-only at the database level — `requireEditor` here just gives a
+ * cleaner error message.
+ */
+export async function updateBriefOverride(
+  dateIso: string,
+  overrides: { headline?: string; summary?: string }
+): Promise<ActionResponse<DailyBriefRecord>> {
+  const tenantId = await getTenantId()
+  if (!(await isFeatureEnabled(tenantId, 'daily_brief'))) {
+    return { success: false, error: 'Daily brief is disabled for this venue.' }
+  }
+  const user = await requireEditor(tenantId)
+
+  const dayResult = await ensureDayExists(dateIso)
+  if (!dayResult.success) return { success: false, error: dayResult.error }
+  const dayId = dayResult.data.id
+
+  const { supabase } = await createTenantClient()
+
+  const existing = await getDailyBriefForDayWithClient(supabase, tenantId, dayId)
+  if (!existing) {
+    return {
+      success: false,
+      error: 'No brief to edit. Generate the full brief first.',
+    }
+  }
+
+  const update: Record<string, unknown> = {
+    overridden_by: user.id,
+    overridden_at: new Date().toISOString(),
+  }
+  if (overrides.headline !== undefined) {
+    const trimmed = overrides.headline.trim()
+    update.headline_override = trimmed === '' ? null : trimmed
+  }
+  if (overrides.summary !== undefined) {
+    const trimmed = overrides.summary.trim()
+    update.summary_override = trimmed === '' ? null : trimmed
+  }
+
+  // If the editor cleared both fields and no prior override existed, the
+  // overridden_by/at stamps would still be set — that's fine: it records the
+  // last edit attempt. If both fields are now null we drop the stamps so the
+  // "edited" badge disappears.
+  const willHaveHeadlineOverride =
+    'headline_override' in update
+      ? update.headline_override !== null
+      : existing.headline_override !== null
+  const willHaveSummaryOverride =
+    'summary_override' in update
+      ? update.summary_override !== null
+      : existing.summary_override !== null
+  if (!willHaveHeadlineOverride && !willHaveSummaryOverride) {
+    update.overridden_by = null
+    update.overridden_at = null
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.from('daily_brief') as any)
+    .update(update)
+    .eq('tenant_id', tenantId)
+    .eq('day_id', dayId)
+
+  if (error) return { success: false, error: (error as { message: string }).message }
+
+  const updated = await getDailyBriefForDayWithClient(supabase, tenantId, dayId)
+  if (!updated) return { success: false, error: 'Could not load updated brief.' }
+
+  return { success: true, data: updated }
 }

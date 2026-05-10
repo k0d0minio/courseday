@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { createSupabaseServiceClient } from '@/lib/supabase-server'
 import { getFeatureFlagsByTenants } from '@/app/actions/feature-flags'
 import { AdminDashboard } from './dashboard'
+import { AdminAiUsage } from './ai-usage'
 import { AdminFeatureRequests } from '@/components/admin-feature-requests'
 import { rootDomain } from '@/lib/utils'
 
@@ -18,10 +19,13 @@ export default async function AdminPage() {
 
   const tenantList = tenants ?? []
   const flagsByTenant = await getFeatureFlagsByTenants(tenantList.map((t) => t.id))
+  const tenantNamesById = Object.fromEntries(tenantList.map((t) => [t.id, t.name]))
 
   return (
     <div className="space-y-12">
       <AdminDashboard tenants={tenantList} flagsByTenant={flagsByTenant} />
+
+      <AdminAiUsage tenantNamesById={tenantNamesById} />
 
       <div id="feature-requests">
         <h2 className="mb-6 text-2xl font-bold">Feature Requests</h2>

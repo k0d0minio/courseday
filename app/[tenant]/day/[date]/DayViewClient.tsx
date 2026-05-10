@@ -138,6 +138,7 @@ function DayViewEditor({
   shiftAssignees,
   forecastRecommended,
   forecastBreakdown,
+  briefOverrideAuthorName,
   live,
   showStaffSchedule,
 }: DayViewProps & {
@@ -339,6 +340,7 @@ function DayViewEditor({
           dateIso={date}
           dayId={dayId}
           isEditor
+          overrideAuthorName={briefOverrideAuthorName}
         />
       )}
 

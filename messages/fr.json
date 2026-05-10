@@ -263,7 +263,22 @@
       "srcBreakfast": "{n} petit(s)-déjeuner",
       "risks": "Risques",
       "actions": "Actions suggérées",
-      "meta": "Généré {time} · {model}"
+      "meta": "Généré {time} · {model}",
+      "regenerateVip": "Régénérer les notes VIP",
+      "regenerateRisks": "Régénérer les risques",
+      "regenerateActions": "Régénérer les actions suggérées",
+      "sectionRegenerated": "Section mise à jour",
+      "sectionRegenFailed": "Impossible de régénérer la section",
+      "sectionRateLimited": "Limite de régénération de section atteinte. Réessayez demain.",
+      "editHeadlineLabel": "Modifier le titre",
+      "editSummaryLabel": "Modifier le résumé",
+      "editSaved": "Briefing mis à jour",
+      "editSaveFailed": "Impossible d'enregistrer la modification",
+      "edited": "Modifié",
+      "editedBy": "Modifié par {name}",
+      "editedByAt": "Modifié par {name} · {time}",
+      "editedBadge": "Modifié par un éditeur",
+      "regenerateDiscardWarning": "La régénération supprimera vos modifications du titre et du résumé. Continuer ?"
     },
     "quickAdd": {
       "openButton": "Ajout rapide",

@@ -8,6 +8,18 @@ export const narrativeSchema = z.object({
   suggestedActions: z.array(z.string()),
 })
 
+export const sectionItemsSchema = z.object({
+  items: z.array(z.string()),
+})
+
+export const sectionTimestampsSchema = z
+  .object({
+    vipNotes: z.string().optional(),
+    risks: z.string().optional(),
+    suggestedActions: z.string().optional(),
+  })
+  .optional()
+
 export const dailyBriefContentSchema = z.object({
   headline: z.string(),
   summary: z.string(),
@@ -27,4 +39,5 @@ export const dailyBriefContentSchema = z.object({
   ),
   risks: z.array(z.string()),
   suggestedActions: z.array(z.string()),
+  sectionTimestamps: sectionTimestampsSchema,
 })

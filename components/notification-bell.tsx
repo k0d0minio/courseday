@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils'
 
 const POLL_INTERVAL_MS = 30_000
 
-export function NotificationBell({ initialCount }: { initialCount: number }) {
+export function NotificationBell({ initialCount: _initialCount }: { initialCount: number }) {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [open, setOpen] = useState(false)
   const [isMarkingAll, startMarkAllTransition] = useTransition()
@@ -51,7 +51,6 @@ export function NotificationBell({ initialCount }: { initialCount: number }) {
   }
 
   const hasUnread = unreadCount > 0
-  const displayCount = initialCount + unreadCount // just use live unread count
 
   return (
     <Popover open={open} onOpenChange={handleOpen}>

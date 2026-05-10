@@ -323,7 +323,6 @@ export function QuickAddReview({
           value={state.primary}
           onChange={(e) => setState((s) => ({ ...s, primary: e.target.value }))}
           disabled={isPending ?? false}
-          autoFocus
         />
       </div>
 

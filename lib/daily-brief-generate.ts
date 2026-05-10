@@ -4,17 +4,24 @@ import type { z } from 'zod'
 import type { AppSupabaseClient } from '@/app/[tenant]/day/[date]/queries'
 import type { WeatherData } from '@/app/actions/weather'
 import type { ActionResponse } from '@/types/actions'
+import { logAiCall } from '@/lib/ai-call-log'
 import type {
   DailyBriefContent,
   DailyBriefRecord,
   DailyBriefAllergenRollupEntry,
   DailyBriefCovers,
+  DailyBriefSectionTimestamps,
+  RegenerableSection,
 } from '@/types/daily-brief'
 import type { Activity, Reservation, BreakfastConfiguration } from '@/types/index'
 import type { DayNote } from '@/app/actions/day-notes'
-import { narrativeSchema, dailyBriefContentSchema } from '@/lib/daily-brief-schema'
+import {
+  narrativeSchema,
+  dailyBriefContentSchema,
+  sectionItemsSchema,
+} from '@/lib/daily-brief-schema'
 
-export { narrativeSchema, dailyBriefContentSchema }
+export { narrativeSchema, dailyBriefContentSchema, sectionItemsSchema }
 
 export const PROMPT_VERSION = 'v2'
 export const DAILY_BRIEF_MODEL_ID = 'anthropic/claude-sonnet-4-6' as const
@@ -151,13 +158,132 @@ export function llmPayload(args: {
   }
 }
 
-export const BRIEF_SYSTEM = `You write concise operational day briefings for venue staff.
+const BRIEF_SYSTEM_BASE = `You write concise operational day briefings for venue staff.
 Rules:
-- Use British English spelling if unsure; keep tone professional and calm.
+- Keep tone professional and calm.
 - Do not invent numbers. Covers and allergen counts in the input are authoritative; reflect them in prose only as appropriate.
 - Never include guest personal names. If notes contain names, generalise (e.g. "a dietary note on one reservation").
 - vipNotes: short bullets for large parties, tight turnarounds, or anything that reads as priority from the data (not names).
 - If data is sparse, say so briefly; still give a useful headline and summary.`
+
+const LANGUAGE_NAMES: Record<string, string> = {
+  en: 'English',
+  fr: 'French',
+  de: 'German',
+  es: 'Spanish',
+}
+
+export function buildBriefSystem(language = 'en'): string {
+  const lang = LANGUAGE_NAMES[language] ?? 'English'
+  return `${BRIEF_SYSTEM_BASE}\n- Respond in ${lang}.`
+}
+
+export const BRIEF_SYSTEM = buildBriefSystem('en')
+
+const SECTION_INSTRUCTIONS: Record<RegenerableSection, string> = {
+  vipNotes:
+    'Produce ONLY the VIP / priority notes for this day, as `items`. Short bullets for large parties, tight turnarounds, or items that read as priority from the data. Never include guest personal names. If nothing qualifies, return an empty array.',
+  risks:
+    'Produce ONLY the operational risks for this day, as `items`. Short bullets covering allergen pressure, weather impact, capacity strain, or note-driven concerns. Never include guest personal names. If nothing qualifies, return an empty array.',
+  suggestedActions:
+    'Produce ONLY suggested actions for staff for this day, as `items`. Concrete, actionable bullets the team should consider before service. Never include guest personal names. If nothing qualifies, return an empty array.',
+}
+
+type AiUsage = {
+  promptTokens?: number | null
+  completionTokens?: number | null
+  inputTokens?: number | null
+  outputTokens?: number | null
+}
+
+function readUsage(usage: AiUsage | undefined): {
+  promptTokens: number | null
+  completionTokens: number | null
+} {
+  if (!usage) return { promptTokens: null, completionTokens: null }
+  return {
+    promptTokens: usage.promptTokens ?? usage.inputTokens ?? null,
+    completionTokens: usage.completionTokens ?? usage.outputTokens ?? null,
+  }
+}
+
+export async function generateBriefSection(
+  payload: ReturnType<typeof llmPayload>,
+  section: RegenerableSection,
+  tenantId: string | null = null
+): Promise<{ success: true; items: string[] } | { success: false; error: string }> {
+  if (!hasGatewayAuth()) {
+    return {
+      success: false,
+      error: 'AI brief is not configured (set AI_GATEWAY_API_KEY or run `vercel env pull`).',
+    }
+  }
+
+  const startedAt = Date.now()
+  try {
+    const result = await generateObject({
+      model: gateway(DAILY_BRIEF_MODEL_ID),
+      schema: sectionItemsSchema,
+      system: BRIEF_SYSTEM,
+      prompt: `${SECTION_INSTRUCTIONS[section]}\n\nFrom this JSON:\n${JSON.stringify(payload)}`,
+      maxOutputTokens: 1024,
+      providerOptions: {
+        gateway: { caching: 'auto' },
+      },
+    })
+    const { promptTokens, completionTokens } = readUsage(result.usage as AiUsage | undefined)
+    void logAiCall({
+      tenantId,
+      feature: 'daily_brief',
+      model: DAILY_BRIEF_MODEL_ID,
+      promptTokens,
+      completionTokens,
+      durationMs: Date.now() - startedAt,
+      status: 'ok',
+    })
+    return { success: true, items: result.object.items }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Generation failed.'
+    void logAiCall({
+      tenantId,
+      feature: 'daily_brief',
+      model: DAILY_BRIEF_MODEL_ID,
+      promptTokens: null,
+      completionTokens: null,
+      durationMs: Date.now() - startedAt,
+      status: 'error',
+      error: msg,
+    })
+    return {
+      success: false,
+      error:
+        msg.length > 200
+          ? 'Section generation failed. Check AI Gateway configuration and try again.'
+          : msg,
+    }
+  }
+}
+
+/** Replace one section's items in a brief, recording a per-section timestamp. */
+export function mergeBriefSection(
+  content: DailyBriefContent,
+  section: RegenerableSection,
+  items: string[],
+  timestamp: string = new Date().toISOString()
+): DailyBriefContent {
+  const sectionTimestamps: DailyBriefSectionTimestamps = {
+    ...(content.sectionTimestamps ?? {}),
+  }
+  sectionTimestamps[section] = timestamp
+  switch (section) {
+    case 'vipNotes':
+      return { ...content, vipNotes: items, sectionTimestamps }
+    case 'risks':
+      return { ...content, risks: items, sectionTimestamps }
+    case 'suggestedActions':
+      return { ...content, suggestedActions: items, sectionTimestamps }
+  }
+}
 
 export function dayHasPlannedContent(
   activities: Activity[],
@@ -175,6 +301,7 @@ export async function generateAndPersistDailyBrief(
     dayId: string
     dateIso: string
     generatedBy: string | null
+    language?: string
     activities: Activity[]
     reservations: Reservation[]
     breakfasts: BreakfastConfiguration[]
@@ -204,12 +331,15 @@ export async function generateAndPersistDailyBrief(
     staffShifts: args.staffShifts,
   })
 
+  const language = args.language ?? 'en'
+
   let narrative: z.infer<typeof narrativeSchema>
+  const startedAt = Date.now()
   try {
     const result = await generateObject({
       model: gateway(DAILY_BRIEF_MODEL_ID),
       schema: narrativeSchema,
-      system: BRIEF_SYSTEM,
+      system: buildBriefSystem(language),
       prompt: `Produce a daily briefing from this JSON:\n${JSON.stringify(payload)}`,
       maxOutputTokens: 2048,
       providerOptions: {
@@ -217,8 +347,28 @@ export async function generateAndPersistDailyBrief(
       },
     })
     narrative = result.object
+    const { promptTokens, completionTokens } = readUsage(result.usage as AiUsage | undefined)
+    void logAiCall({
+      tenantId: args.tenantId,
+      feature: 'daily_brief',
+      model: DAILY_BRIEF_MODEL_ID,
+      promptTokens,
+      completionTokens,
+      durationMs: Date.now() - startedAt,
+      status: 'ok',
+    })
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Generation failed.'
+    void logAiCall({
+      tenantId: args.tenantId,
+      feature: 'daily_brief',
+      model: DAILY_BRIEF_MODEL_ID,
+      promptTokens: null,
+      completionTokens: null,
+      durationMs: Date.now() - startedAt,
+      status: 'error',
+      error: msg,
+    })
     return {
       success: false,
       error:
@@ -238,18 +388,28 @@ export async function generateAndPersistDailyBrief(
     tenant_id: args.tenantId,
     day_id: args.dayId,
     content,
+    language,
     generated_at: new Date().toISOString(),
     model: DAILY_BRIEF_MODEL_ID,
     prompt_version: PROMPT_VERSION,
+    // A fresh AI generation always discards any prior editor overrides — the
+    // user has been warned in the UI before getting here.
+    headline_override: null,
+    summary_override: null,
+    overridden_by: null,
+    overridden_at: null,
   }
   if (args.generatedBy) row.generated_by = args.generatedBy
   else row.generated_by = null
 
-  const { data, error } = await supabase
-    .from('daily_brief')
-    .upsert(row as never, { onConflict: 'tenant_id,day_id' })
-    .select('id, content, generated_at, model, prompt_version')
-    .single()
+  // Override columns added in 00050; cast until `pnpm db:types` regenerates `types/supabase.ts`.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = (await (supabase.from('daily_brief') as any)
+    .upsert(row, { onConflict: 'tenant_id,day_id' })
+    .select(
+      'id, content, generated_at, model, prompt_version, headline_override, summary_override, overridden_by, overridden_at'
+    )
+    .single()) as { data: DailyBriefPersistedRow; error: { message: string } | null }
 
   if (error) return { success: false, error: error.message }
 
@@ -264,6 +424,22 @@ export async function generateAndPersistDailyBrief(
       generated_at: data.generated_at,
       model: data.model,
       prompt_version: data.prompt_version,
+      headline_override: data.headline_override,
+      summary_override: data.summary_override,
+      overridden_by: data.overridden_by,
+      overridden_at: data.overridden_at,
     },
   }
+}
+
+type DailyBriefPersistedRow = {
+  id: string
+  content: unknown
+  generated_at: string
+  model: string
+  prompt_version: string
+  headline_override: string | null
+  summary_override: string | null
+  overridden_by: string | null
+  overridden_at: string | null
 }

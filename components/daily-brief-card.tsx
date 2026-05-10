@@ -8,8 +8,9 @@ import { toast } from 'sonner'
 import { experimental_useObject as useObject } from '@ai-sdk/react'
 import { Button } from '@/components/ui/button'
 import { dailyBriefContentSchema } from '@/lib/daily-brief-schema'
-import type { DailyBriefContent, DailyBriefRecord } from '@/types/daily-brief'
+import type { DailyBriefContent, DailyBriefRecord, RegenerableSection } from '@/types/daily-brief'
 import { formatDailyBriefMarkdown } from '@/lib/daily-brief-format'
+import { regenerateBriefSection } from '@/app/actions/daily-brief'
 
 const REGENERATE_DEBOUNCE_MS = 2000
 
@@ -20,6 +21,12 @@ type Props = {
   isEditor: boolean
   briefStale?: boolean
   briefIsEmpty?: boolean
+  /**
+   * Display name of the editor who last overrode the headline / summary —
+   * resolved server-side from membership. Used for the "edited by …"
+   * tooltip; when null we still show the badge but with a generic label.
+   */
+  overrideAuthorName?: string | null
 }
 
 export function DailyBriefCard({
@@ -29,12 +36,17 @@ export function DailyBriefCard({
   isEditor,
   briefStale: initialBriefStale = false,
   briefIsEmpty = false,
+  overrideAuthorName = null,
 }: Props) {
   const t = useTranslations('Tenant.dailyBrief')
   const router = useRouter()
   const [brief, setBrief] = useState<DailyBriefRecord | null>(initialBrief)
   const [stale, setStale] = useState(initialBriefStale)
   const lastRegenerateAt = useRef(0)
+  const [regeneratingSection, setRegeneratingSection] = useState<RegenerableSection | null>(null)
+  const [sectionErrors, setSectionErrors] = useState<Partial<Record<RegenerableSection, string>>>(
+    {}
+  )
 
   const {
     object: streamedObject,
@@ -60,6 +72,10 @@ export function DailyBriefCard({
           generated_at: new Date().toISOString(),
           model: '',
           prompt_version: 'v1',
+          headline_override: null,
+          summary_override: null,
+          overridden_by: null,
+          overridden_at: null,
         })
         setStale(false)
         toast.success(t('generated'))
@@ -91,14 +107,41 @@ export function DailyBriefCard({
   }, [dateIso, submit, t])
 
   const copyMarkdown = useCallback(() => {
-    const content = brief?.content
-    if (!content) return
-    const md = formatDailyBriefMarkdown(content)
+    if (!brief) return
+    const md = formatDailyBriefMarkdown(brief.content, {
+      headline_override: brief.headline_override,
+      summary_override: brief.summary_override,
+    })
     void navigator.clipboard.writeText(md).then(
       () => toast.success(t('copied')),
       () => toast.error(t('copyFailed'))
     )
   }, [brief, t])
+
+  const runSectionRegenerate = useCallback(
+    (section: RegenerableSection) => {
+      if (regeneratingSection) return
+      setRegeneratingSection(section)
+      setSectionErrors((prev) => {
+        const next = { ...prev }
+        delete next[section]
+        return next
+      })
+      void regenerateBriefSection(dateIso, section).then((result) => {
+        if (result.success) {
+          setBrief(result.data)
+          setStale(false)
+          toast.success(t('sectionRegenerated'))
+          router.refresh()
+        } else {
+          setSectionErrors((prev) => ({ ...prev, [section]: result.error }))
+          toast.error(result.error || t('sectionRegenFailed'))
+        }
+        setRegeneratingSection(null)
+      })
+    },
+    [dateIso, regeneratingSection, router, t]
+  )
 
   const hasBrief = brief !== null
   const streaming = isLoading && !hasBrief
@@ -208,10 +251,19 @@ export function DailyBriefCard({
         {hasBrief && (
           <div className="space-y-3">
             <div>
-              <p className="text-base leading-snug font-semibold">{brief.content.headline}</p>
-              <p className="text-muted-foreground mt-2 text-sm whitespace-pre-wrap">
-                {brief.content.summary}
+              <p className="text-base leading-snug font-semibold">
+                {brief.headline_override?.trim() || brief.content.headline}
               </p>
+              <p className="text-muted-foreground mt-2 text-sm whitespace-pre-wrap">
+                {brief.summary_override?.trim() || brief.content.summary}
+              </p>
+              {(brief.headline_override || brief.summary_override) && (
+                <EditedBadge
+                  authorName={overrideAuthorName}
+                  overriddenAt={brief.overridden_at}
+                  t={t}
+                />
+              )}
             </div>
 
             <div className="grid grid-cols-3 gap-2 text-center text-sm">
@@ -237,10 +289,36 @@ export function DailyBriefCard({
                 <span className="hidden group-open:inline">{t('less')}</span>
               </summary>
               <div className="space-y-3 pt-2">
-                <ListBlock title={t('vip')} items={brief.content.vipNotes} />
+                <ListBlock
+                  title={t('vip')}
+                  items={brief.content.vipNotes}
+                  onRegenerate={isEditor ? () => runSectionRegenerate('vipNotes') : undefined}
+                  regenerateLabel={isEditor ? t('regenerateVip') : undefined}
+                  isRegenerating={regeneratingSection === 'vipNotes'}
+                  regenerateDisabled={!isEditor || regeneratingSection !== null}
+                  errorMessage={sectionErrors.vipNotes}
+                />
                 <AllergenBlock rollup={brief.content.allergenRollup} t={t} />
-                <ListBlock title={t('risks')} items={brief.content.risks} />
-                <ListBlock title={t('actions')} items={brief.content.suggestedActions} />
+                <ListBlock
+                  title={t('risks')}
+                  items={brief.content.risks}
+                  onRegenerate={isEditor ? () => runSectionRegenerate('risks') : undefined}
+                  regenerateLabel={isEditor ? t('regenerateRisks') : undefined}
+                  isRegenerating={regeneratingSection === 'risks'}
+                  regenerateDisabled={!isEditor || regeneratingSection !== null}
+                  errorMessage={sectionErrors.risks}
+                />
+                <ListBlock
+                  title={t('actions')}
+                  items={brief.content.suggestedActions}
+                  onRegenerate={
+                    isEditor ? () => runSectionRegenerate('suggestedActions') : undefined
+                  }
+                  regenerateLabel={isEditor ? t('regenerateActions') : undefined}
+                  isRegenerating={regeneratingSection === 'suggestedActions'}
+                  regenerateDisabled={!isEditor || regeneratingSection !== null}
+                  errorMessage={sectionErrors.suggestedActions}
+                />
                 {brief.generated_at && brief.model && (
                   <p className="text-muted-foreground pt-1 text-xs">
                     {t('meta', {
@@ -258,17 +336,85 @@ export function DailyBriefCard({
   )
 }
 
-function ListBlock({ title, items }: { title: string; items: string[] }) {
-  if (items.length === 0) return null
+function ListBlock({
+  title,
+  items,
+  onRegenerate,
+  regenerateLabel,
+  regenerateDisabled = false,
+  isRegenerating = false,
+  errorMessage,
+}: {
+  title: string
+  items: string[]
+  onRegenerate?: (() => void) | undefined
+  regenerateLabel?: string | undefined
+  regenerateDisabled?: boolean
+  isRegenerating?: boolean
+  errorMessage?: string | undefined
+}) {
+  if (items.length === 0 && !onRegenerate) return null
   return (
     <div>
-      <div className="text-foreground mb-1 font-medium">{title}</div>
-      <ul className="text-muted-foreground list-disc space-y-0.5 pl-5">
-        {items.map((x, i) => (
-          <li key={i}>{x}</li>
-        ))}
-      </ul>
+      <div className="text-foreground mb-1 flex items-center gap-1 font-medium">
+        <span>{title}</span>
+        {onRegenerate && (
+          <Button
+            type="button"
+            size="iconXxs"
+            variant="ghost"
+            onClick={onRegenerate}
+            disabled={regenerateDisabled || isRegenerating}
+            aria-label={regenerateLabel ?? title}
+            title={regenerateLabel ?? title}
+          >
+            {isRegenerating ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <RefreshCw className="h-3 w-3" />
+            )}
+          </Button>
+        )}
+      </div>
+      {items.length > 0 && (
+        <ul
+          className={`text-muted-foreground list-disc space-y-0.5 pl-5 transition-opacity ${
+            isRegenerating ? 'opacity-50' : ''
+          }`}
+        >
+          {items.map((x, i) => (
+            <li key={i}>{x}</li>
+          ))}
+        </ul>
+      )}
+      {errorMessage && (
+        <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errorMessage}</p>
+      )}
     </div>
+  )
+}
+
+function EditedBadge({
+  authorName,
+  overriddenAt,
+  t,
+}: {
+  authorName: string | null
+  overriddenAt: string | null
+  t: (key: string, values?: Record<string, string | number>) => string
+}) {
+  const tooltip = authorName
+    ? overriddenAt
+      ? t('editedByAt', { name: authorName, time: new Date(overriddenAt).toLocaleString() })
+      : t('editedBy', { name: authorName })
+    : t('editedBadge')
+  return (
+    <span
+      className="bg-muted text-muted-foreground mt-2 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium"
+      title={tooltip}
+    >
+      {t('edited')}
+    </span>
   )
 }
 

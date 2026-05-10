@@ -193,7 +193,6 @@ export function QuickAddInput({ open, onOpenChange, contextDate, disabled }: Pro
             setError(null)
           }}
           placeholder={t('placeholder')}
-          autoFocus
           disabled={isParsing || disabled}
           aria-invalid={error ? true : undefined}
           aria-errormessage={error ? errId : undefined}

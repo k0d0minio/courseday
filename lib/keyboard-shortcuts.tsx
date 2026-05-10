@@ -1,20 +1,11 @@
 'use client'
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from 'react'
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/AuthProvider'
 import { useFeatureFlag } from '@/lib/feature-flags-context'
 import { SUPERADMIN_ROLE_QUERY_PARAM, type SuperadminRole } from '@/lib/superadmin-impersonation'
 import { adjacentDayYmd } from '@/lib/day-navigation'
-import { useActiveDay } from '@/lib/active-day-context'
 import { CommandPalette } from '@/components/command-palette'
 import { KeyboardShortcutsSheet } from '@/components/keyboard-shortcuts-sheet'
 import { isEditableTarget } from '@/lib/is-editable-target'

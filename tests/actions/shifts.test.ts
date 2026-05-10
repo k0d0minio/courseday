@@ -35,7 +35,7 @@ vi.mock('@/lib/shift-notifications', () => ({
 // ── Imports ───────────────────────────────────────────────────────────────────
 
 import { isFeatureEnabled } from '@/app/actions/feature-flags'
-import { createTenantClient, createSupabaseServerClient } from '@/lib/supabase-server'
+import { createTenantClient } from '@/lib/supabase-server'
 import { awaitNotifications } from '@/lib/notifications'
 import {
   notifyShiftAssigned,

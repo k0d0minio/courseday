@@ -48,7 +48,10 @@ function briefToHtml(
   dateLabel: string,
   staffLines?: StaffLine[]
 ) {
-  const body = formatDailyBriefMarkdown(brief.content)
+  const body = formatDailyBriefMarkdown(brief.content, {
+    headline_override: brief.headline_override,
+    summary_override: brief.summary_override,
+  })
     .split('\n')
     .map((line) => {
       if (line.startsWith('# ')) {
@@ -112,7 +115,7 @@ export async function runMorningBriefEmailCron(): Promise<MorningBriefCronResult
 
   const { data: tenants, error: tenantsError } = await supabase
     .from('tenants')
-    .select('id, name, slug, timezone, email_from_name, email_reply_to')
+    .select('id, name, slug, timezone, language, email_from_name, email_reply_to')
 
   if (tenantsError || !tenants) {
     return {
@@ -233,6 +236,7 @@ export async function runMorningBriefEmailCron(): Promise<MorningBriefCronResult
         dayId,
         dateIso,
         generatedBy: null,
+        language: (tenant as { language?: string | null }).language ?? 'en',
         activities,
         reservations,
         breakfasts,
@@ -299,7 +303,13 @@ export async function runMorningBriefEmailCron(): Promise<MorningBriefCronResult
           staffShiftsForEmail.length > 0
             ? `\n\n## Staff today\n${staffShiftsForEmail.map((s) => `- ${formatStaffLine(s)}`).join('\n')}`
             : ''
-        const text = formatDailyBriefMarkdown(brief.content) + staffSection + `\n\n${dayUrl}\n`
+        const text =
+          formatDailyBriefMarkdown(brief.content, {
+            headline_override: brief.headline_override,
+            summary_override: brief.summary_override,
+          }) +
+          staffSection +
+          `\n\n${dayUrl}\n`
         const html = briefToHtml(
           brief,
           tenant.name,
