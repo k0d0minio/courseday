@@ -1,4 +1,5 @@
-// RFC 5545 minimal iCal generator — no external deps
+// RFC 5545 minimal iCal generator
+import { fromZonedTime } from 'date-fns-tz'
 
 function escapeIcal(value: string): string {
   return value
@@ -32,13 +33,17 @@ function prop(name: string, value: string): string {
   return foldLine(`${name}:${value}`)
 }
 
-// Format Date to iCal DATE-TIME in UTC: 20230101T120000Z
-function toIcalDate(dateStr: string, timeStr: string): string {
+// Convert a local date+time in the given IANA timezone to a UTC iCal DATE-TIME: 20230101T120000Z
+function toIcalUtc(dateStr: string, timeStr: string, timezone: string): string {
   const [h, m] = timeStr.split(':')
-  const d = dateStr.replace(/-/g, '')
   const hh = (h ?? '00').padStart(2, '0')
   const mm = (m ?? '00').padStart(2, '0')
-  return `${d}T${hh}${mm}00`
+  const utc = fromZonedTime(`${dateStr}T${hh}:${mm}:00`, timezone)
+  return utc
+    .toISOString()
+    .replace(/[-:]/g, '')
+    .replace(/\.\d{3}/, '')
+  // e.g. "20230101T120000Z"
 }
 
 export interface IcalShift {
@@ -50,7 +55,8 @@ export interface IcalShift {
   notes: string | null
 }
 
-export function buildIcal(shifts: IcalShift[], prodId: string): string {
+export function buildIcal(shifts: IcalShift[], prodId: string, timezone: string): string {
+  // now already ends with "Z", e.g. "20230101T120000Z"
   const now = new Date()
     .toISOString()
     .replace(/[-:]/g, '')
@@ -67,14 +73,14 @@ export function buildIcal(shifts: IcalShift[], prodId: string): string {
   for (const shift of shifts) {
     if (!shift.start_time || !shift.end_time) continue
 
-    const dtstart = toIcalDate(shift.date_iso, shift.start_time)
-    const dtend = toIcalDate(shift.date_iso, shift.end_time)
+    const dtstart = toIcalUtc(shift.date_iso, shift.start_time, timezone)
+    const dtend = toIcalUtc(shift.date_iso, shift.end_time, timezone)
     const summary = escapeIcal(shift.role_label ?? 'Shift')
     const uid = `${shift.id}@courseday`
 
     lines.push('BEGIN:VEVENT\r\n')
     lines.push(prop('UID', uid))
-    lines.push(prop('DTSTAMP', now + 'Z'))
+    lines.push(prop('DTSTAMP', now))
     lines.push(prop('DTSTART', dtstart))
     lines.push(prop('DTEND', dtend))
     lines.push(prop('SUMMARY', summary))
