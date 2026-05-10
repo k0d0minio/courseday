@@ -5,10 +5,10 @@ import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { ClipboardCopy, Loader2, RefreshCw, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
-import { useObject } from '@ai-sdk/react'
+import { experimental_useObject as useObject } from '@ai-sdk/react'
 import { Button } from '@/components/ui/button'
 import { dailyBriefContentSchema } from '@/lib/daily-brief-schema'
-import type { DailyBriefRecord } from '@/types/daily-brief'
+import type { DailyBriefContent, DailyBriefRecord } from '@/types/daily-brief'
 import { formatDailyBriefMarkdown } from '@/lib/daily-brief-format'
 
 const REGENERATE_DEBOUNCE_MS = 2000
@@ -44,7 +44,7 @@ export function DailyBriefCard({
   } = useObject({
     api: '/api/daily-brief/stream',
     schema: dailyBriefContentSchema,
-    onFinish({ object }) {
+    onFinish({ object }: { object: DailyBriefContent | undefined }) {
       if (object) {
         setBrief({
           id: '',
@@ -66,7 +66,7 @@ export function DailyBriefCard({
         router.refresh()
       }
     },
-    onError(err) {
+    onError(err: Error) {
       toast.error(err.message || 'Brief generation failed.')
     },
   })

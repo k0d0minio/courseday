@@ -56,17 +56,6 @@ vi.mock('@/lib/supabase-server', () => ({
   }),
 }))
 
-// Mock streamObject to return a controlled stream
-const mockStreamedObject = {
-  headline: 'A Busy Day Ahead',
-  summary: 'Ten guests expected for activities, four for lunch reservations.',
-  covers: { breakfast: 0, activities: 10, reservations: 4 },
-  vipNotes: ['Large party at noon'],
-  allergenRollup: [{ code: 'gluten', inActivities: 1, inReservations: 0, inBreakfast: 0 }],
-  risks: [],
-  suggestedActions: [],
-}
-
 vi.mock('ai', () => ({
   streamObject: vi.fn().mockReturnValue({
     toTextStreamResponse: vi
@@ -74,7 +63,15 @@ vi.mock('ai', () => ({
       .mockReturnValue(
         new Response('streamed', { status: 200, headers: { 'Content-Type': 'text/plain' } })
       ),
-    object: Promise.resolve(mockStreamedObject),
+    object: Promise.resolve({
+      headline: 'A Busy Day Ahead',
+      summary: 'Ten guests expected for activities, four for lunch reservations.',
+      covers: { breakfast: 0, activities: 10, reservations: 4 },
+      vipNotes: ['Large party at noon'],
+      allergenRollup: [{ code: 'gluten', inActivities: 1, inReservations: 0, inBreakfast: 0 }],
+      risks: [],
+      suggestedActions: [],
+    }),
   }),
 }))
 
@@ -116,12 +113,7 @@ describe('POST /api/daily-brief/stream', () => {
     vi.mocked(getTenantFromHeaders).mockResolvedValue({ id: 'tenant-1', slug: 'test' })
     vi.mocked(getUser).mockResolvedValue({ id: 'user-1', email: 'editor@test.com' } as never)
     vi.mocked(getUserRole).mockResolvedValue('editor')
-    vi.mocked(dailyBriefRateLimit).mockResolvedValue({
-      success: true,
-      limit: 5,
-      remaining: 4,
-      reset: 0,
-    })
+    vi.mocked(dailyBriefRateLimit).mockResolvedValue({ success: true })
   })
 
   it('happy-path: returns 200 streaming response and calls streamObject', async () => {
@@ -156,12 +148,7 @@ describe('POST /api/daily-brief/stream', () => {
   })
 
   it('returns 429 when rate limit is exceeded', async () => {
-    vi.mocked(dailyBriefRateLimit).mockResolvedValue({
-      success: false,
-      limit: 5,
-      remaining: 0,
-      reset: 0,
-    })
+    vi.mocked(dailyBriefRateLimit).mockResolvedValue({ success: false })
     const response = await POST(makeRequest())
     expect(response.status).toBe(429)
     expect(streamObject).not.toHaveBeenCalled()

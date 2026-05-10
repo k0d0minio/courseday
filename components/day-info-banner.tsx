@@ -5,13 +5,13 @@ import { ClipboardCopy, Loader2, RefreshCw, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { useObject } from '@ai-sdk/react'
+import { experimental_useObject as useObject } from '@ai-sdk/react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { formatDailyBriefMarkdown } from '@/lib/daily-brief-format'
 import { dailyBriefContentSchema } from '@/lib/daily-brief-schema'
 import type { WeatherData } from '@/app/actions/weather'
-import type { DailyBriefRecord } from '@/types/daily-brief'
+import type { DailyBriefContent, DailyBriefRecord } from '@/types/daily-brief'
 
 const REGENERATE_DEBOUNCE_MS = 2000
 
@@ -107,7 +107,7 @@ export function DayInfoBanner({
   } = useObject({
     api: '/api/daily-brief/stream',
     schema: dailyBriefContentSchema,
-    onFinish({ object }) {
+    onFinish({ object }: { object: DailyBriefContent | undefined }) {
       if (object) {
         setBrief({
           // id and generated_at will be refreshed from server; use placeholders
@@ -131,7 +131,7 @@ export function DayInfoBanner({
         router.refresh()
       }
     },
-    onError(err) {
+    onError(err: Error) {
       toast.error(err.message || 'Brief generation failed.')
     },
   })

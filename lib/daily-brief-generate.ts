@@ -1,5 +1,6 @@
 import { generateObject } from 'ai'
 import { gateway } from '@ai-sdk/gateway'
+import type { z } from 'zod'
 import type { AppSupabaseClient } from '@/app/[tenant]/day/[date]/queries'
 import type { WeatherData } from '@/app/actions/weather'
 import type { ActionResponse } from '@/types/actions'
@@ -11,9 +12,9 @@ import type {
 } from '@/types/daily-brief'
 import type { Activity, Reservation, BreakfastConfiguration } from '@/types/index'
 import type { DayNote } from '@/app/actions/day-notes'
+import { narrativeSchema, dailyBriefContentSchema } from '@/lib/daily-brief-schema'
 
-export { narrativeSchema, dailyBriefContentSchema } from '@/lib/daily-brief-schema'
-import { narrativeSchema } from '@/lib/daily-brief-schema'
+export { narrativeSchema, dailyBriefContentSchema }
 
 export const PROMPT_VERSION = 'v1'
 export const DAILY_BRIEF_MODEL_ID = 'openai/gpt-5.4' as const
