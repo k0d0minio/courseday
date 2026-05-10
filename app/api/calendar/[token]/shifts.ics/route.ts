@@ -21,19 +21,24 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
     return new NextResponse('Not Found', { status: 404 })
   }
 
-  // Check staff_schedule feature flag for this tenant
-  const { data: flagRow } = await serviceClient
-    .from('feature_flags')
-    .select('enabled')
-    .eq('tenant_id', membership.tenant_id)
-    .eq('flag_key', 'staff_schedule')
-    .maybeSingle()
+  // Check staff_schedule feature flag + fetch tenant timezone in parallel
+  const [flagResult, tenantResult] = await Promise.all([
+    serviceClient
+      .from('feature_flags')
+      .select('enabled')
+      .eq('tenant_id', membership.tenant_id)
+      .eq('flag_key', 'staff_schedule')
+      .maybeSingle(),
+    serviceClient.from('tenants').select('timezone').eq('id', membership.tenant_id).single(),
+  ])
 
   // Missing row = enabled by default
-  const flagEnabled = flagRow ? flagRow.enabled : true
+  const flagEnabled = flagResult.data ? flagResult.data.enabled : true
   if (!flagEnabled) {
     return new NextResponse('Not Found', { status: 404 })
   }
+
+  const timezone = tenantResult.data?.timezone ?? 'UTC'
 
   // Fetch shifts for next 90 days
   const today = format(new Date(), 'yyyy-MM-dd')
@@ -73,7 +78,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
     }
   }
 
-  const ical = buildIcal(shifts, '-//Courseday//Shift Feed//EN')
+  const ical = buildIcal(shifts, '-//Courseday//Shift Feed//EN', timezone)
 
   return new NextResponse(ical, {
     status: 200,
