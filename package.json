@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@ai-sdk/gateway": "^3.0.104",
+    "@ai-sdk/react": "^3.0.179",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-dialog": "^1.1.13",
     "@radix-ui/react-label": "^2.1.6",

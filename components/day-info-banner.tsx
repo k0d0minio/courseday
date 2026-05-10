@@ -5,12 +5,13 @@ import { ClipboardCopy, Loader2, RefreshCw, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { experimental_useObject as useObject } from '@ai-sdk/react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { generateDailyBrief } from '@/app/actions/daily-brief'
 import { formatDailyBriefMarkdown } from '@/lib/daily-brief-format'
+import { dailyBriefContentSchema } from '@/lib/daily-brief-schema'
 import type { WeatherData } from '@/app/actions/weather'
-import type { DailyBriefRecord } from '@/types/daily-brief'
+import type { DailyBriefContent, DailyBriefRecord } from '@/types/daily-brief'
 
 const REGENERATE_DEBOUNCE_MS = 2000
 
@@ -72,6 +73,12 @@ function AllergenBlock({
   )
 }
 
+/** Fades in a section when it first receives content during streaming. */
+function StreamSection({ show, children }: { show: boolean; children: React.ReactNode }) {
+  if (!show) return null
+  return <div className="animate-in fade-in duration-300">{children}</div>
+}
+
 export function DayInfoBanner({
   weather,
   showWeather,
@@ -88,38 +95,61 @@ export function DayInfoBanner({
   const router = useRouter()
   const [brief, setBrief] = useState<DailyBriefRecord | null>(initialBrief)
   const [stale, setStale] = useState(briefStale)
-  const [loading, setLoading] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const lastGenerateAt = useRef(0)
-  // One-shot guard so we never auto-fire generation more than once per
-  // (dayId, mount) pair.
   const autoFiredFor = useRef<string | null>(null)
 
-  const hasWeather = showWeather && weather !== null
-  const hasBrief = brief !== null
+  const {
+    object: streamedObject,
+    submit,
+    isLoading,
+    error: streamError,
+  } = useObject({
+    api: '/api/daily-brief/stream',
+    schema: dailyBriefContentSchema,
+    onFinish({ object }: { object: DailyBriefContent | undefined }) {
+      if (object) {
+        setBrief({
+          // id and generated_at will be refreshed from server; use placeholders
+          id: '',
+          content: {
+            headline: object.headline ?? '',
+            summary: object.summary ?? '',
+            covers: object.covers ?? { breakfast: 0, activities: 0, reservations: 0 },
+            vipNotes: object.vipNotes ?? [],
+            allergenRollup: object.allergenRollup ?? [],
+            risks: object.risks ?? [],
+            suggestedActions: object.suggestedActions ?? [],
+          },
+          generated_at: new Date().toISOString(),
+          model: '',
+          prompt_version: 'v1',
+        })
+        setStale(false)
+        toast.success(t('generated'))
+        // Refresh to hydrate from DB (gets real id, model, generated_at)
+        router.refresh()
+      }
+    },
+    onError(err: Error) {
+      toast.error(err.message || 'Brief generation failed.')
+    },
+  })
 
-  const runRegenerate = useCallback(async () => {
+  useEffect(() => {
+    setBrief(initialBrief)
+    setStale(briefStale)
+  }, [initialBrief, briefStale, dayId])
+
+  const runGenerate = useCallback(() => {
     const now = Date.now()
     if (now - lastGenerateAt.current < REGENERATE_DEBOUNCE_MS) {
       toast.message(t('debounced'))
       return
     }
     lastGenerateAt.current = now
-    setLoading(true)
-    try {
-      const result = await generateDailyBrief(dateIso)
-      if (!result.success) {
-        toast.error(result.error)
-        return
-      }
-      setBrief(result.data)
-      setStale(false)
-      toast.success(t('generated'))
-      router.refresh()
-    } finally {
-      setLoading(false)
-    }
-  }, [dateIso, router, t])
+    submit({ dateIso })
+  }, [dateIso, submit, t])
 
   const copyMarkdown = useCallback(() => {
     if (!brief) return
@@ -130,18 +160,28 @@ export function DayInfoBanner({
     )
   }, [brief, t])
 
-  // Auto-generate a brief when the page loads with no brief yet for an editor.
-  // The previous server-side ensureDailyBrief call blocked rendering on the
-  // LLM round-trip; now the page renders fast and the brief streams in.
+  // Auto-generate when the page loads with no brief yet (editor only).
   useEffect(() => {
     if (!showBrief || !isEditor) return
     if (brief) return
     if (!dayHasContent) return
-    if (loading) return
+    if (isLoading) return
     if (autoFiredFor.current === dayId) return
     autoFiredFor.current = dayId
-    void runRegenerate()
-  }, [showBrief, isEditor, brief, dayHasContent, loading, dayId, runRegenerate])
+    runGenerate()
+  }, [showBrief, isEditor, brief, dayHasContent, isLoading, dayId, runGenerate])
+
+  // Dismiss stream error on re-render if brief was set
+  useEffect(() => {
+    if (streamError) toast.error(streamError.message || 'Brief generation failed.')
+  }, [streamError, t])
+
+  const hasWeather = showWeather && weather !== null
+  const hasBrief = brief !== null
+  // Show streaming partial content while loading and no settled brief
+  const streaming = isLoading && !hasBrief
+  const streamedHeadline = streamedObject?.headline
+  const streamedSummary = streamedObject?.summary
 
   if (!hasWeather && !showBrief) return null
 
@@ -178,7 +218,34 @@ export function DayInfoBanner({
           </div>
         )}
 
-        {showBrief && !hasBrief && !briefIsEmpty && !hasWeather && <div className="flex-1" />}
+        {showBrief && streaming && (
+          <div
+            className={`min-w-0 flex-1 ${hasWeather ? 'border-l pl-3' : ''}`}
+            onClick={() => setDialogOpen(true)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === 'Enter' && setDialogOpen(true)}
+          >
+            {streamedHeadline ? (
+              <p className="animate-in fade-in truncate text-sm font-medium duration-300">
+                {streamedHeadline}
+              </p>
+            ) : (
+              <div className="bg-muted h-4 w-40 animate-pulse rounded" />
+            )}
+            {streamedSummary ? (
+              <p className="text-muted-foreground animate-in fade-in line-clamp-1 text-xs duration-300">
+                {streamedSummary}
+              </p>
+            ) : (
+              <div className="bg-muted mt-1 h-3 w-24 animate-pulse rounded" />
+            )}
+          </div>
+        )}
+
+        {showBrief && !hasBrief && !streaming && !briefIsEmpty && !hasWeather && (
+          <div className="flex-1" />
+        )}
 
         {showBrief && briefIsEmpty && (
           <div className={`min-w-0 flex-1 ${hasWeather ? 'border-l pl-3' : ''}`}>
@@ -186,7 +253,7 @@ export function DayInfoBanner({
           </div>
         )}
 
-        {showBrief && hasBrief && (
+        {showBrief && (hasBrief || streaming) && (
           <Button
             type="button"
             variant="ghost"
@@ -194,7 +261,7 @@ export function DayInfoBanner({
             className="text-muted-foreground hover:text-foreground shrink-0"
             onClick={() => setDialogOpen(true)}
           >
-            {loading ? (
+            {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : stale ? (
               <RefreshCw className="h-4 w-4 text-amber-500" />
@@ -205,7 +272,7 @@ export function DayInfoBanner({
         )}
       </div>
 
-      {showBrief && hasBrief && (
+      {showBrief && (hasBrief || streaming) && (
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="max-h-[80vh] max-w-lg overflow-y-auto">
             <DialogHeader>
@@ -216,7 +283,7 @@ export function DayInfoBanner({
             </DialogHeader>
 
             <div className="space-y-4">
-              {stale && (
+              {stale && !isLoading && (
                 <p className="rounded-md border border-amber-200/60 bg-amber-50 px-2.5 py-2 text-xs text-amber-800/90 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200/90">
                   {t('stale')}
                 </p>
@@ -234,10 +301,10 @@ export function DayInfoBanner({
                     type="button"
                     size="sm"
                     variant="outline"
-                    onClick={() => void runRegenerate()}
-                    disabled={loading}
+                    onClick={runGenerate}
+                    disabled={isLoading}
                   >
-                    {loading ? (
+                    {isLoading ? (
                       <Loader2 className="mr-1 h-4 w-4 animate-spin" />
                     ) : (
                       <RefreshCw className="mr-1 h-4 w-4" />
@@ -247,67 +314,127 @@ export function DayInfoBanner({
                 )}
               </div>
 
-              {loading && (
-                <p className="text-muted-foreground flex items-center gap-2 text-sm">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {t('generating')}
-                </p>
-              )}
+              {/* Progressive streaming content */}
+              {isLoading && <StreamingBriefContent object={streamedObject} t={t} />}
 
-              {brief && (
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-base leading-snug font-semibold">{brief.content.headline}</p>
-                    <p className="text-muted-foreground mt-2 text-sm whitespace-pre-wrap">
-                      {brief.content.summary}
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2 text-center text-sm">
-                    <div className="bg-muted/50 rounded-md py-2">
-                      <div className="text-muted-foreground text-xs">{t('coversBreakfast')}</div>
-                      <div className="font-semibold tabular-nums">
-                        {brief.content.covers.breakfast}
-                      </div>
-                    </div>
-                    <div className="bg-muted/50 rounded-md py-2">
-                      <div className="text-muted-foreground text-xs">{t('coversActivities')}</div>
-                      <div className="font-semibold tabular-nums">
-                        {brief.content.covers.activities}
-                      </div>
-                    </div>
-                    <div className="bg-muted/50 rounded-md py-2">
-                      <div className="text-muted-foreground text-xs">{t('coversReservations')}</div>
-                      <div className="font-semibold tabular-nums">
-                        {brief.content.covers.reservations}
-                      </div>
-                    </div>
-                  </div>
-
-                  <details className="group text-sm">
-                    <summary className="text-muted-foreground hover:text-foreground flex cursor-pointer list-none items-center gap-1 py-1 font-medium [&::-webkit-details-marker]:hidden">
-                      <span className="group-open:hidden">{t('more')}</span>
-                      <span className="hidden group-open:inline">{t('less')}</span>
-                    </summary>
-                    <div className="space-y-3 pt-2">
-                      <ListBlock title={t('vip')} items={brief.content.vipNotes} />
-                      <AllergenBlock rollup={brief.content.allergenRollup} t={t} />
-                      <ListBlock title={t('risks')} items={brief.content.risks} />
-                      <ListBlock title={t('actions')} items={brief.content.suggestedActions} />
-                      <p className="text-muted-foreground pt-1 text-xs">
-                        {t('meta', {
-                          time: new Date(brief.generated_at).toLocaleString(),
-                          model: brief.model,
-                        })}
-                      </p>
-                    </div>
-                  </details>
-                </div>
-              )}
+              {/* Settled brief */}
+              {hasBrief && !isLoading && <SettledBriefContent brief={brief} t={t} />}
             </div>
           </DialogContent>
         </Dialog>
       )}
     </>
+  )
+}
+
+type StreamPartial =
+  | {
+      headline?: string
+      summary?: string
+      covers?: { breakfast?: number; activities?: number; reservations?: number }
+    }
+  | undefined
+
+function StreamingBriefContent({
+  object,
+  t,
+}: {
+  object: StreamPartial
+  t: ReturnType<typeof useTranslations<'Tenant.dailyBrief'>>
+}) {
+  const covers = object?.covers
+  return (
+    <div className="space-y-3">
+      {object?.headline ? (
+        <p className="animate-in fade-in text-base leading-snug font-semibold duration-300">
+          {object.headline}
+        </p>
+      ) : (
+        <div className="bg-muted h-5 w-3/4 animate-pulse rounded" />
+      )}
+
+      {object?.summary ? (
+        <p className="text-muted-foreground animate-in fade-in text-sm whitespace-pre-wrap duration-300">
+          {object.summary}
+        </p>
+      ) : (
+        <div className="space-y-1">
+          <div className="bg-muted h-4 w-full animate-pulse rounded" />
+          <div className="bg-muted h-4 w-5/6 animate-pulse rounded" />
+        </div>
+      )}
+
+      <StreamSection show={Boolean(covers)}>
+        <div className="grid grid-cols-3 gap-2 text-center text-sm">
+          <div className="bg-muted/50 rounded-md py-2">
+            <div className="text-muted-foreground text-xs">{t('coversBreakfast')}</div>
+            <div className="font-semibold tabular-nums">{covers?.breakfast ?? '—'}</div>
+          </div>
+          <div className="bg-muted/50 rounded-md py-2">
+            <div className="text-muted-foreground text-xs">{t('coversActivities')}</div>
+            <div className="font-semibold tabular-nums">{covers?.activities ?? '—'}</div>
+          </div>
+          <div className="bg-muted/50 rounded-md py-2">
+            <div className="text-muted-foreground text-xs">{t('coversReservations')}</div>
+            <div className="font-semibold tabular-nums">{covers?.reservations ?? '—'}</div>
+          </div>
+        </div>
+      </StreamSection>
+    </div>
+  )
+}
+
+function SettledBriefContent({
+  brief,
+  t,
+}: {
+  brief: DailyBriefRecord
+  t: ReturnType<typeof useTranslations<'Tenant.dailyBrief'>>
+}) {
+  return (
+    <div className="space-y-3">
+      <div>
+        <p className="text-base leading-snug font-semibold">{brief.content.headline}</p>
+        <p className="text-muted-foreground mt-2 text-sm whitespace-pre-wrap">
+          {brief.content.summary}
+        </p>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 text-center text-sm">
+        <div className="bg-muted/50 rounded-md py-2">
+          <div className="text-muted-foreground text-xs">{t('coversBreakfast')}</div>
+          <div className="font-semibold tabular-nums">{brief.content.covers.breakfast}</div>
+        </div>
+        <div className="bg-muted/50 rounded-md py-2">
+          <div className="text-muted-foreground text-xs">{t('coversActivities')}</div>
+          <div className="font-semibold tabular-nums">{brief.content.covers.activities}</div>
+        </div>
+        <div className="bg-muted/50 rounded-md py-2">
+          <div className="text-muted-foreground text-xs">{t('coversReservations')}</div>
+          <div className="font-semibold tabular-nums">{brief.content.covers.reservations}</div>
+        </div>
+      </div>
+
+      <details className="group text-sm">
+        <summary className="text-muted-foreground hover:text-foreground flex cursor-pointer list-none items-center gap-1 py-1 font-medium [&::-webkit-details-marker]:hidden">
+          <span className="group-open:hidden">{t('more')}</span>
+          <span className="hidden group-open:inline">{t('less')}</span>
+        </summary>
+        <div className="space-y-3 pt-2">
+          <ListBlock title={t('vip')} items={brief.content.vipNotes} />
+          <AllergenBlock rollup={brief.content.allergenRollup} t={t} />
+          <ListBlock title={t('risks')} items={brief.content.risks} />
+          <ListBlock title={t('actions')} items={brief.content.suggestedActions} />
+          {brief.generated_at && brief.model && (
+            <p className="text-muted-foreground pt-1 text-xs">
+              {t('meta', {
+                time: new Date(brief.generated_at).toLocaleString(),
+                model: brief.model,
+              })}
+            </p>
+          )}
+        </div>
+      </details>
+    </div>
   )
 }
