@@ -264,6 +264,7 @@
       "risks": "Risks",
       "actions": "Suggested actions",
       "meta": "Generated {time} · {model}",
+      "updatedAt": "Updated {time}",
       "regenerateVip": "Regenerate VIP notes",
       "regenerateRisks": "Regenerate risks",
       "regenerateActions": "Regenerate suggested actions",

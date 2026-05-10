@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { formatDistanceToNow } from 'date-fns'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { ClipboardCopy, Loader2, RefreshCw, Sparkles } from 'lucide-react'
@@ -343,6 +344,13 @@ export function DailyBriefCard({
                 )}
               </div>
             </details>
+            {brief.generated_at && (
+              <p className="text-muted-foreground text-xs">
+                {t('updatedAt', {
+                  time: formatDistanceToNow(new Date(brief.generated_at), { addSuffix: true }),
+                })}
+              </p>
+            )}
           </div>
         )}
       </div>

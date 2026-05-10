@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { formatDistanceToNow } from 'date-fns'
 import { ClipboardCopy, Loader2, Pencil, RefreshCw, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
@@ -513,6 +514,13 @@ function SettledBriefContent({
           )}
         </div>
       </details>
+      {brief.generated_at && (
+        <p className="text-muted-foreground text-xs">
+          {t('updatedAt', {
+            time: formatDistanceToNow(new Date(brief.generated_at), { addSuffix: true }),
+          })}
+        </p>
+      )}
     </div>
   )
 }
