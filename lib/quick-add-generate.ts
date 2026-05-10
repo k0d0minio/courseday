@@ -5,6 +5,7 @@ import { createBreakfastSchema, type CreateBreakfastFormData } from '@/lib/break
 import { activitySchema } from '@/lib/program-item-schema'
 import { reservationSchema, type ReservationFormData } from '@/lib/reservation-schema'
 import { type AllergenCode, filterAllergenCodes, isAllergenCode } from '@/lib/allergens'
+import { logAiCall } from '@/lib/ai-call-log'
 
 import { PROMPT_VERSION, QUICK_ADD_SYSTEM, buildUserPrompt } from './quick-add-prompt'
 import type { QuickAddParseData, QuickAddGapId } from '@/lib/quick-add-types'
@@ -537,10 +538,29 @@ export type GenerateQuickAddResult =
   | { success: true; data: QuickAddParseData; promptVersion: string }
   | GenerateQuickAddError
 
+type AiUsage = {
+  promptTokens?: number | null
+  completionTokens?: number | null
+  inputTokens?: number | null
+  outputTokens?: number | null
+}
+
+function readUsage(usage: AiUsage | undefined): {
+  promptTokens: number | null
+  completionTokens: number | null
+} {
+  if (!usage) return { promptTokens: null, completionTokens: null }
+  return {
+    promptTokens: usage.promptTokens ?? usage.inputTokens ?? null,
+    completionTokens: usage.completionTokens ?? usage.outputTokens ?? null,
+  }
+}
+
 export async function generateQuickAddParse(
   userText: string,
   dayId: string,
-  contextDate: string
+  contextDate: string,
+  tenantId: string | null = null
 ): Promise<GenerateQuickAddResult> {
   const t = userText.trim()
   if (t.length < 2) {
@@ -557,6 +577,7 @@ export async function generateQuickAddParse(
   const prompt = buildUserPrompt(t, dayId, contextDate)
 
   let out: z.infer<typeof quickAddLlmSchema>
+  const startedAt = Date.now()
   try {
     const res = await generateObject({
       model: gateway(QUICK_ADD_MODEL_ID),
@@ -566,9 +587,29 @@ export async function generateQuickAddParse(
       maxOutputTokens: 2048,
     })
     out = res.object
+    const { promptTokens, completionTokens } = readUsage(res.usage as AiUsage | undefined)
+    void logAiCall({
+      tenantId,
+      feature: 'quick_add',
+      model: QUICK_ADD_MODEL_ID,
+      promptTokens,
+      completionTokens,
+      durationMs: Date.now() - startedAt,
+      status: 'ok',
+    })
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Generation failed.'
     console.error('[quick-add] generateObject failed:', e)
+    void logAiCall({
+      tenantId,
+      feature: 'quick_add',
+      model: QUICK_ADD_MODEL_ID,
+      promptTokens: null,
+      completionTokens: null,
+      durationMs: Date.now() - startedAt,
+      status: 'error',
+      error: msg,
+    })
     const short = msg.length > 200 ? msg.slice(0, 200) : msg
     return { success: false, error: `Quick add AI error: ${short}` }
   }
