@@ -28,6 +28,9 @@ import { getSuperadminImpersonationRole } from '@/lib/superadmin'
 import { getTenantPalette, getTenantThemeCssVariables } from '@/lib/theme/palettes'
 import { TenantKeyboardShell } from '@/components/tenant-keyboard-shell'
 import { GlobalQuickAdd } from '@/components/global-quick-add'
+import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { CalendarDays, User } from 'lucide-react'
 
 const getTenantRow = cache(async (tenantId: string) => {
   const supabase = await createSupabaseServerClient()
@@ -141,23 +144,45 @@ export default async function TenantLayout({ children }: { children: React.React
                     {/* My schedule link — non-editors on desktop when staff_schedule on */}
                     {!editor && featureFlags.staff_schedule && user && (
                       <span className="hidden sm:inline-flex">
-                        <Link
-                          href="/my-schedule"
-                          className="text-muted-foreground hover:text-foreground px-2 text-sm font-medium transition-colors"
-                        >
-                          {t('mySchedule')}
-                        </Link>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="iconSm"
+                                aria-label={t('mySchedule')}
+                                asChild
+                              >
+                                <Link href="/my-schedule">
+                                  <CalendarDays />
+                                </Link>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>{t('mySchedule')}</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </span>
                     )}
                     {/* Profile link — all signed-in members, desktop */}
                     {user && (
                       <span className="hidden sm:inline-flex">
-                        <Link
-                          href="/profile"
-                          className="text-muted-foreground hover:text-foreground px-2 text-sm font-medium transition-colors"
-                        >
-                          {t('profile')}
-                        </Link>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="iconSm"
+                                aria-label={t('profile')}
+                                asChild
+                              >
+                                <Link href="/profile">
+                                  <User />
+                                </Link>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>{t('profile')}</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </span>
                     )}
                     <NotificationBell initialCount={unreadCount} />
