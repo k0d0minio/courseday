@@ -216,7 +216,7 @@ export async function generateAndPersistDailyBrief(
             {
               type: 'text' as const,
               text: BRIEF_SYSTEM,
-              experimental_providerMetadata: {
+              providerOptions: {
                 anthropic: { cacheControl: { type: 'ephemeral' } },
               },
             },
