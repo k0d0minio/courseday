@@ -3,6 +3,15 @@ import createNextIntlPlugin from 'next-intl/plugin'
 
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts')
 
+const isDev = process.env.NODE_ENV !== 'production'
+
+// 'unsafe-eval' is needed by Next.js dev tooling and Vercel Live preview comments.
+// In production it's unnecessary attack surface — Vercel injects its own headers
+// for preview deployments, so dropping it here doesn't break preview comments.
+const scriptSrc = ["'self'", "'unsafe-inline'", isDev && "'unsafe-eval'", 'https://vercel.live']
+  .filter(Boolean)
+  .join(' ')
+
 const securityHeaders = [
   { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
@@ -12,7 +21,7 @@ const securityHeaders = [
     key: 'Content-Security-Policy',
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live",
+      `script-src ${scriptSrc}`,
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https://*.supabase.co",
       "font-src 'self'",

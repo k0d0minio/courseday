@@ -31,11 +31,36 @@ function hasGatewayAuth(): boolean {
   return Boolean(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN)
 }
 
+// Defense-in-depth: strip obvious PII patterns before any free-text field is sent
+// to the LLM. The model is also instructed not to echo personal data, but a regex
+// pre-pass means the data simply isn't in the prompt to leak. This is intentionally
+// dumb — it does NOT try to detect names, addresses, or anything requiring NLP.
+//
+// Scrubbed:
+// - email addresses → [redacted-email]
+// - phone-like number sequences (7+ digits, optionally separated by - . space) → [redacted-phone]
+// - @-mentions / handles → [redacted-handle]
+//
+// NOT scrubbed (out of scope — the system prompt is the primary control):
+// - Personal names, place names, room numbers, plate numbers, free-form addresses.
+const EMAIL_RE = /[\w.+-]+@[\w-]+\.[\w.-]+/g
+// Matches typical phone formats (with optional country code and grouped digits)
+// without false-positiving on ISO dates like 2026-05-10.
+const PHONE_RE = /\b(?:\+?\d{1,3}[\s.-]?)?\(?\d{3,4}\)?[\s.-]\d{3,4}[\s.-]\d{3,4}\b/g
+const HANDLE_RE = /(?<![\w.+-])@\w{2,}/g
+
+export function scrubPii(text: string): string {
+  return text
+    .replace(EMAIL_RE, '[redacted-email]')
+    .replace(PHONE_RE, '[redacted-phone]')
+    .replace(HANDLE_RE, '[redacted-handle]')
+}
+
 export function truncateNote(text: string | null | undefined): string | undefined {
   if (!text?.trim()) return undefined
-  const t = text.trim()
-  if (t.length <= NOTE_MAX) return t
-  return `${t.slice(0, NOTE_MAX)}…`
+  const scrubbed = scrubPii(text.trim())
+  if (scrubbed.length <= NOTE_MAX) return scrubbed
+  return `${scrubbed.slice(0, NOTE_MAX)}…`
 }
 
 export function buildCovers(
