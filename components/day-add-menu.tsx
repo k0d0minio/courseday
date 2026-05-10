@@ -1,6 +1,6 @@
 'use client'
 
-import { forwardRef, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Plus, CalendarClock, UtensilsCrossed, Coffee, Users } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
@@ -27,16 +27,20 @@ function useIsMobile() {
 }
 
 type Props = {
+  ref?: React.Ref<HTMLButtonElement>
   onAddActivity: () => void
   onAddReservation?: () => void
   onAddBreakfast?: () => void
   onAddShift?: () => void
 }
 
-export const DayAddMenu = forwardRef<HTMLButtonElement, Props>(function DayAddMenu(
-  { onAddActivity, onAddReservation, onAddBreakfast, onAddShift },
-  ref
-) {
+export function DayAddMenu({
+  ref,
+  onAddActivity,
+  onAddReservation,
+  onAddBreakfast,
+  onAddShift,
+}: Props) {
   const tDay = useTranslations('Tenant.day')
   const tStaff = useTranslations('Tenant.staff.section')
   const tPoc = useTranslations('Tenant.poc')
@@ -107,4 +111,4 @@ export const DayAddMenu = forwardRef<HTMLButtonElement, Props>(function DayAddMe
       </PopoverContent>
     </Popover>
   )
-})
+}
