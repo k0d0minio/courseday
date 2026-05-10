@@ -22,9 +22,11 @@ export async function parseQuickAdd(
 
   const { success: allowed } = await quickAddRateLimit(user.id)
   if (!allowed) {
+    const nowMs = Date.now()
+    const secsRemaining = Math.ceil(((Math.floor(nowMs / 60000) + 1) * 60000 - nowMs) / 1000)
     return {
       success: false,
-      error: 'Too many quick add attempts. Wait a minute and try again.',
+      error: `Too many quick add attempts. Try again in ${secsRemaining}s.`,
     }
   }
 
