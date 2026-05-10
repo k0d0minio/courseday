@@ -227,36 +227,39 @@ export function QuickAddReview({
     }
 
     if (state.kind === 'activity') {
-      onConfirm({
+      const payload: QuickAddReviewActivityPayload = {
         ...base,
         kind: 'activity',
         title: state.primary.trim(),
         startTime: state.startTime,
         endTime: state.endTime,
-        expectedCovers,
-      })
+        ...(expectedCovers !== undefined ? { expectedCovers } : {}),
+      }
+      onConfirm(payload)
       return
     }
     if (state.kind === 'reservation') {
-      onConfirm({
+      const payload: QuickAddReviewReservationPayload = {
         ...base,
         kind: 'reservation',
         guestName: state.primary.trim(),
-        guestCount,
         startTime: state.startTime,
         endTime: state.endTime,
         tableBreakdown: state.tableBreakdown,
-      })
+        ...(guestCount !== undefined ? { guestCount } : {}),
+      }
+      onConfirm(payload)
       return
     }
-    onConfirm({
+    const payload: QuickAddReviewBreakfastPayload = {
       ...base,
       kind: 'breakfast',
       groupName: state.primary.trim(),
-      guestCount,
       startTime: state.startTime,
       tableBreakdown: state.tableBreakdown,
-    })
+      ...(guestCount !== undefined ? { guestCount } : {}),
+    }
+    onConfirm(payload)
   }
 
   const primaryLabel =
@@ -285,7 +288,7 @@ export function QuickAddReview({
         <Select
           value={state.kind}
           onValueChange={(v) => changeKind(v as QuickAddReviewKind)}
-          disabled={isPending}
+          disabled={isPending ?? false}
         >
           <SelectTrigger id={kindId} className="w-full">
             <SelectValue />
@@ -308,7 +311,7 @@ export function QuickAddReview({
             type="date"
             value={state.date}
             onChange={(e) => setState((s) => ({ ...s, date: e.target.value }))}
-            disabled={isPending}
+            disabled={isPending ?? false}
           />
         </div>
       )}
@@ -319,7 +322,7 @@ export function QuickAddReview({
           id={primaryId}
           value={state.primary}
           onChange={(e) => setState((s) => ({ ...s, primary: e.target.value }))}
-          disabled={isPending}
+          disabled={isPending ?? false}
           autoFocus
         />
       </div>
@@ -332,7 +335,7 @@ export function QuickAddReview({
             type="time"
             value={state.startTime}
             onChange={(e) => setState((s) => ({ ...s, startTime: e.target.value }))}
-            disabled={isPending}
+            disabled={isPending ?? false}
           />
         </div>
         {showEndTime && (
@@ -343,7 +346,7 @@ export function QuickAddReview({
               type="time"
               value={state.endTime}
               onChange={(e) => setState((s) => ({ ...s, endTime: e.target.value }))}
-              disabled={isPending}
+              disabled={isPending ?? false}
             />
           </div>
         )}
@@ -357,7 +360,7 @@ export function QuickAddReview({
           min={state.kind === 'activity' ? 0 : 1}
           value={state.count}
           onChange={(e) => setState((s) => ({ ...s, count: e.target.value }))}
-          disabled={isPending}
+          disabled={isPending ?? false}
         />
       </div>
 
@@ -373,7 +376,7 @@ export function QuickAddReview({
                 onPressedChange={() => toggleAllergen(a.code)}
                 variant="outline"
                 size="sm"
-                disabled={isPending}
+                disabled={isPending ?? false}
                 aria-label={tNames(a.labelKey)}
                 className={cn(
                   'h-auto justify-start gap-2 px-2 py-1.5 text-left text-sm font-normal',
@@ -397,7 +400,7 @@ export function QuickAddReview({
           rows={2}
           value={state.notes}
           onChange={(e) => setState((s) => ({ ...s, notes: e.target.value }))}
-          disabled={isPending}
+          disabled={isPending ?? false}
         />
       </div>
 
@@ -408,7 +411,7 @@ export function QuickAddReview({
       )}
 
       <div className="flex justify-end gap-2 pt-1">
-        <Button type="button" variant="outline" onClick={onBack} disabled={isPending}>
+        <Button type="button" variant="outline" onClick={onBack} disabled={isPending ?? false}>
           {t('back')}
         </Button>
         <Button type="submit" disabled={!canSave}>
