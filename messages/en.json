@@ -284,7 +284,8 @@
     "quickAdd": {
       "openButton": "Quick add",
       "title": "Quick add",
-      "description": "Describe what to add. We will pre-fill a form for {contextDate}. Nothing is saved until you confirm.",
+      "description": "Describe what to add. We will pre-fill a form for you. Nothing is saved until you confirm.",
+      "addingTo": "Adding to",
       "inputLabel": "What to add",
       "placeholder": "E.g. Party of 6 at 8pm, Smith, no nuts",
       "cancel": "Cancel",

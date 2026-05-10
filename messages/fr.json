@@ -284,7 +284,8 @@
     "quickAdd": {
       "openButton": "Ajout rapide",
       "title": "Ajout rapide",
-      "description": "Décrivez l'ajout. Nous préremplirons un formulaire pour le {contextDate}. Rien n'est enregistré tant que vous ne validez pas.",
+      "description": "Décrivez l'ajout. Nous préremplirons un formulaire pour vous. Rien n'est enregistré tant que vous ne validez pas.",
+      "addingTo": "Ajout pour",
       "inputLabel": "Quoi ajouter",
       "placeholder": "Ex. table de 6 à 20h, Martin, sans noix",
       "cancel": "Annuler",

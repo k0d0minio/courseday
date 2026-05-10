@@ -273,8 +273,14 @@ export function QuickAddInput({ open, onOpenChange, contextDate, disabled }: Pro
       className="space-y-3"
     >
       <p id={descId} className="text-muted-foreground text-sm">
-        {t('description', { contextDate })}
+        {t('description')}
       </p>
+      <div className="flex items-center gap-1.5">
+        <span className="text-muted-foreground text-xs">{t('addingTo')}:</span>
+        <span className="bg-muted text-foreground rounded px-2 py-0.5 text-xs font-medium">
+          {contextDate}
+        </span>
+      </div>
       <div className="space-y-1.5">
         <Label htmlFor="quick-add-textarea">{t('inputLabel')}</Label>
         <Textarea
