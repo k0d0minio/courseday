@@ -1,5 +1,5 @@
 'use client'
-
+// temp
 import { useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import { useTranslations } from 'next-intl'
@@ -297,9 +297,7 @@ function formatTimeRange(
 ): string {
   const fmt = (s: string) => s.slice(0, 5)
   if (start && end) {
-    return t
-      ? t('timeRange', { start: fmt(start), end: fmt(end) })
-      : `${fmt(start)} – ${fmt(end)}`
+    return t ? t('timeRange', { start: fmt(start), end: fmt(end) }) : `${fmt(start)} – ${fmt(end)}`
   }
   if (start) return t ? t('timeFrom', { time: fmt(start) }) : fmt(start)
   if (end) return t ? t('timeUntil', { time: fmt(end) }) : fmt(end)
