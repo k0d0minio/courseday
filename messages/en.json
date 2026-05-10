@@ -310,7 +310,14 @@
       "back": "Back",
       "save": "Save",
       "saving": "Saving…",
-      "saved": "Added."
+      "saved": "Added.",
+      "multiReviewTitle": "Review items",
+      "multiReviewDescription": "We found {count} items. Toggle which to create, then confirm.",
+      "multiCreateButton": "Create {count} items",
+      "multiAcceptToggle": "Include {title}",
+      "multiKindDisabled": "This item type is not enabled for this club.",
+      "multiRowSaved": "Saved.",
+      "dateAmbiguousShort": "Date unclear"
     },
     "shortcuts": {
       "paletteTitle": "Command palette",

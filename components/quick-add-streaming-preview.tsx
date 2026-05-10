@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl'
 import { Loader2 } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 
-type StreamedShape = {
+type StreamedItem = {
   kind?: 'activity' | 'reservation' | 'breakfast'
   fields?: {
     title?: string | null
@@ -16,6 +16,10 @@ type StreamedShape = {
     guestCount?: number | null
     notes?: string | null
   }
+}
+
+type StreamedShape = {
+  items?: Array<StreamedItem | undefined>
 }
 
 type Props = {
@@ -35,12 +39,19 @@ function ValueBox({ children }: { children: React.ReactNode }) {
   )
 }
 
-export function QuickAddStreamingPreview({ partial, label }: Props) {
+function ItemPreview({
+  item,
+  index,
+  total,
+}: {
+  item: StreamedItem | undefined
+  index: number
+  total: number
+}) {
   const t = useTranslations('Tenant.quickAdd')
 
-  const data = (partial ?? {}) as StreamedShape
-  const kind = data.kind
-  const fields = data.fields
+  const kind = item?.kind
+  const fields = item?.fields
 
   const primaryLabel =
     kind === 'reservation'
@@ -62,11 +73,12 @@ export function QuickAddStreamingPreview({ partial, label }: Props) {
   const showEndTime = kind !== 'breakfast'
 
   return (
-    <div className="space-y-3" role="status" aria-live="polite" aria-label={label}>
-      <p className="text-muted-foreground flex items-center gap-2 text-sm">
-        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-        {label}
-      </p>
+    <div className="space-y-3">
+      {total > 1 && (
+        <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+          {`${index + 1} / ${total}`}
+        </p>
+      )}
 
       <div className="space-y-1.5">
         <Label>{t('kindLabel')}</Label>
@@ -112,6 +124,24 @@ export function QuickAddStreamingPreview({ partial, label }: Props) {
           <ValueBox>{fields.notes}</ValueBox>
         </div>
       ) : null}
+    </div>
+  )
+}
+
+export function QuickAddStreamingPreview({ partial, label }: Props) {
+  const data = (partial ?? {}) as StreamedShape
+  const items = Array.isArray(data.items) ? data.items : []
+  const visible = items.length === 0 ? [undefined] : items
+
+  return (
+    <div className="space-y-4" role="status" aria-live="polite" aria-label={label}>
+      <p className="text-muted-foreground flex items-center gap-2 text-sm">
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        {label}
+      </p>
+      {visible.map((item, i) => (
+        <ItemPreview key={i} item={item} index={i} total={visible.length} />
+      ))}
     </div>
   )
 }

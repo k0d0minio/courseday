@@ -4,10 +4,12 @@ export { PROMPT_VERSION } from './quick-add-prompt'
 export {
   buildDataFromLlm,
   quickAddLlmSchema,
+  quickAddLlmItemSchema,
   mapAllergenHints,
   mapSynonymToCode,
   normalizeToTimeInput,
 } from '@/lib/quick-add-build'
+export type { QuickAddLlmItem, QuickAddLlmOutput } from '@/lib/quick-add-build'
 export type {
   QuickAddActivityFormDefaults,
   QuickAddParseData,

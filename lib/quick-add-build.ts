@@ -28,12 +28,17 @@ const allFields = z.object({
   allergenHints: z.array(z.string()).nullable(),
 })
 
-export const quickAddLlmSchema = z.object({
+export const quickAddLlmItemSchema = z.object({
   kind: z.enum(['activity', 'reservation', 'breakfast']),
   dateAmbiguous: z.boolean(),
   fields: allFields,
 })
 
+export const quickAddLlmSchema = z.object({
+  items: z.array(quickAddLlmItemSchema).min(1).max(20),
+})
+
+export type QuickAddLlmItem = z.infer<typeof quickAddLlmItemSchema>
 export type QuickAddLlmOutput = z.infer<typeof quickAddLlmSchema>
 
 // ---------------------------------------------------------------------------
@@ -369,7 +374,7 @@ function nu<T>(v: T | null | undefined): T | undefined {
 }
 
 export function buildDataFromLlm(
-  out: QuickAddLlmOutput,
+  out: QuickAddLlmItem,
   dayId: string,
   contextDate: string
 ): QuickAddParseData {
