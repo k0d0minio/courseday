@@ -91,7 +91,7 @@ export async function ensureDailyBrief(args: {
   breakfasts: BreakfastConfiguration[]
   dayNotes: DayNote[]
   weather: WeatherData | null
-  staffShifts?: StaffShiftContext[]
+  staffShifts?: StaffShiftContext[] | undefined
 }): Promise<EnsureDailyBriefResult> {
   const {
     tenantId,
@@ -257,6 +257,6 @@ export async function generateDailyBrief(
     breakfasts,
     dayNotes,
     weather,
-    staffShifts: staffScheduleOn ? staffShifts : undefined,
+    ...(staffScheduleOn && staffShifts.length > 0 ? { staffShifts } : {}),
   })
 }

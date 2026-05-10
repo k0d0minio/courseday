@@ -98,7 +98,7 @@ export function llmPayload(args: {
   dayNotes: DayNote[]
   covers: DailyBriefCovers
   allergenRollup: DailyBriefAllergenRollupEntry[]
-  staffShifts?: StaffShiftContext[]
+  staffShifts?: StaffShiftContext[] | undefined
 }) {
   return {
     date: args.dateIso,
@@ -180,7 +180,7 @@ export async function generateAndPersistDailyBrief(
     breakfasts: BreakfastConfiguration[]
     dayNotes: DayNote[]
     weather: WeatherData | null
-    staffShifts?: StaffShiftContext[]
+    staffShifts?: StaffShiftContext[] | undefined
   }
 ): Promise<ActionResponse<DailyBriefRecord>> {
   if (!hasGatewayAuth()) {
