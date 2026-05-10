@@ -91,7 +91,7 @@ export async function runMorningBriefEmailCron(): Promise<MorningBriefCronResult
 
   const { data: tenants, error: tenantsError } = await supabase
     .from('tenants')
-    .select('id, name, slug, timezone, email_from_name, email_reply_to')
+    .select('id, name, slug, timezone, language, email_from_name, email_reply_to')
 
   if (tenantsError || !tenants) {
     return {
@@ -161,6 +161,7 @@ export async function runMorningBriefEmailCron(): Promise<MorningBriefCronResult
         dayId,
         dateIso,
         generatedBy: null,
+        language: (tenant as { language?: string | null }).language ?? 'en',
         activities,
         reservations,
         breakfasts,

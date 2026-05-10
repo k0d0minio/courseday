@@ -84,13 +84,14 @@ export async function ensureDailyBrief(args: {
   tenantId: string
   dayId: string
   dateIso: string
+  language?: string
   activities: Activity[]
   reservations: Reservation[]
   breakfasts: BreakfastConfiguration[]
   dayNotes: DayNote[]
   weather: WeatherData | null
 }): Promise<EnsureDailyBriefResult> {
-  const { tenantId, dayId, dateIso, activities, reservations, breakfasts, dayNotes, weather } = args
+  const { tenantId, dayId, dateIso, language, activities, reservations, breakfasts, dayNotes, weather } = args
 
   if (!(await isFeatureEnabled(tenantId, 'daily_brief'))) return { status: 'empty' }
 
@@ -136,6 +137,7 @@ export async function ensureDailyBrief(args: {
       dayId,
       dateIso,
       generatedBy: null,
+      language,
       activities,
       reservations,
       breakfasts,
@@ -214,20 +216,24 @@ export async function generateDailyBrief(
   if (!dayResult.success) return { success: false, error: dayResult.error }
   const dayId = dayResult.data.id
 
-  const [activities, reservations, breakfasts, dayNotes, weather] = await Promise.all([
+  const { supabase } = await createTenantClient()
+
+  const [activities, reservations, breakfasts, dayNotes, weather, tenantRow] = await Promise.all([
     getProgramItemsForDay(tenantId, dayId),
     getReservationsForDay(tenantId, dayId),
     getBreakfastConfigsForDay(tenantId, dayId),
     getDayNotesForDay(tenantId, dayId),
     getWeatherForDay(dateIso),
+    supabase.from('tenants').select('language').eq('id', tenantId).single(),
   ])
+  const language = tenantRow.data?.language ?? 'en'
 
-  const { supabase } = await createTenantClient()
   return generateAndPersistDailyBrief(supabase, {
     tenantId,
     dayId,
     dateIso,
     generatedBy: user.id,
+    language,
     activities,
     reservations,
     breakfasts,

@@ -133,13 +133,28 @@ export function llmPayload(args: {
   }
 }
 
-export const BRIEF_SYSTEM = `You write concise operational day briefings for venue staff.
+const BRIEF_SYSTEM_BASE = `You write concise operational day briefings for venue staff.
 Rules:
-- Use British English spelling if unsure; keep tone professional and calm.
+- Keep tone professional and calm.
 - Do not invent numbers. Covers and allergen counts in the input are authoritative; reflect them in prose only as appropriate.
 - Never include guest personal names. If notes contain names, generalise (e.g. "a dietary note on one reservation").
 - vipNotes: short bullets for large parties, tight turnarounds, or anything that reads as priority from the data (not names).
 - If data is sparse, say so briefly; still give a useful headline and summary.`
+
+const LANGUAGE_NAMES: Record<string, string> = {
+  en: 'English',
+  fr: 'French',
+  de: 'German',
+  es: 'Spanish',
+}
+
+export function buildBriefSystem(language = 'en'): string {
+  const lang = LANGUAGE_NAMES[language] ?? 'English'
+  return `${BRIEF_SYSTEM_BASE}\n- Respond in ${lang}.`
+}
+
+/** @deprecated use buildBriefSystem() */
+export const BRIEF_SYSTEM = buildBriefSystem('en')
 
 export function dayHasPlannedContent(
   activities: Activity[],
@@ -157,6 +172,7 @@ export async function generateAndPersistDailyBrief(
     dayId: string
     dateIso: string
     generatedBy: string | null
+    language?: string
     activities: Activity[]
     reservations: Reservation[]
     breakfasts: BreakfastConfiguration[]
@@ -184,12 +200,14 @@ export async function generateAndPersistDailyBrief(
     allergenRollup,
   })
 
+  const language = args.language ?? 'en'
+
   let narrative: z.infer<typeof narrativeSchema>
   try {
     const result = await generateObject({
       model: gateway(DAILY_BRIEF_MODEL_ID),
       schema: narrativeSchema,
-      system: BRIEF_SYSTEM,
+      system: buildBriefSystem(language),
       prompt: `Produce a daily briefing from this JSON:\n${JSON.stringify(payload)}`,
       maxOutputTokens: 2048,
     })
@@ -215,6 +233,7 @@ export async function generateAndPersistDailyBrief(
     tenant_id: args.tenantId,
     day_id: args.dayId,
     content,
+    language,
     generated_at: new Date().toISOString(),
     model: DAILY_BRIEF_MODEL_ID,
     prompt_version: PROMPT_VERSION,

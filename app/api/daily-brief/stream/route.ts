@@ -20,7 +20,7 @@ import {
   buildCovers,
   buildAllergenRollup,
   llmPayload,
-  BRIEF_SYSTEM,
+  buildBriefSystem,
   DAILY_BRIEF_MODEL_ID,
   PROMPT_VERSION,
 } from '@/lib/daily-brief-generate'
@@ -69,6 +69,14 @@ export async function POST(request: Request) {
   if (!dayResult.success) return new Response(dayResult.error, { status: 500 })
   const dayId = dayResult.data.id
 
+  const { supabase: sbForTenant } = await createTenantClient()
+  const { data: tenantRow } = await sbForTenant
+    .from('tenants')
+    .select('language')
+    .eq('id', tenantId)
+    .single()
+  const language = tenantRow?.language ?? 'en'
+
   const [activities, reservations, breakfasts, dayNotes, weather] = await Promise.all([
     getProgramItemsForDay(tenantId, dayId),
     getReservationsForDay(tenantId, dayId),
@@ -93,7 +101,7 @@ export async function POST(request: Request) {
   const result = streamObject({
     model: gateway(DAILY_BRIEF_MODEL_ID),
     schema: dailyBriefContentSchema,
-    system: BRIEF_SYSTEM,
+    system: buildBriefSystem(language),
     prompt: `Produce a daily briefing from this JSON. The covers and allergenRollup values in the input are authoritative — echo them back verbatim:\n${JSON.stringify(payload)}`,
     maxOutputTokens: 2048,
   })
@@ -110,6 +118,7 @@ export async function POST(request: Request) {
         tenant_id: tenantId,
         day_id: dayId,
         content,
+        language,
         generated_at: new Date().toISOString(),
         model: DAILY_BRIEF_MODEL_ID,
         prompt_version: PROMPT_VERSION,
