@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { scheduledMinutesFromTimes, actualMinutesFromTimestamps } from './labor-cost'
+import { scheduledMinutesFromTimes, actualMinutesFromTimestamps } from '@/lib/labor-cost'
 
 describe('scheduledMinutesFromTimes', () => {
   it('computes normal shift duration', () => {
@@ -55,13 +55,13 @@ describe('actualMinutesFromTimestamps', () => {
 
 describe('cost math', () => {
   it('computes hourly cost from scheduled minutes', () => {
-    const minutes = scheduledMinutesFromTimes('08:00', '16:00') // 480
-    const cost = (minutes / 60) * 15 // 8h * €15 = €120
+    const minutes = scheduledMinutesFromTimes('08:00', '16:00')
+    const cost = (minutes / 60) * 15
     expect(cost).toBeCloseTo(120)
   })
 
   it('computes zero cost when rate is null (treat as 0)', () => {
-    const minutes = scheduledMinutesFromTimes('08:00', '16:00') // 480
+    const minutes = scheduledMinutesFromTimes('08:00', '16:00')
     const rate = null
     const cost = (minutes / 60) * (rate ?? 0)
     expect(cost).toBe(0)
