@@ -1,5 +1,6 @@
 import type { NextConfig } from 'next'
 import createNextIntlPlugin from 'next-intl/plugin'
+import { withSentryConfig } from '@sentry/nextjs'
 
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts')
 
@@ -25,7 +26,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https://*.supabase.co",
       "font-src 'self'",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.upstash.io https://vercel.live wss://vercel.live",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.upstash.io https://vercel.live wss://vercel.live https://*.ingest.sentry.io https://*.ingest.us.sentry.io",
       "frame-ancestors 'self'",
     ].join('; '),
   },
@@ -59,4 +60,13 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default withNextIntl(nextConfig)
+export default withSentryConfig(withNextIntl(nextConfig), {
+  // Source map upload requires SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT env vars.
+  // The Sentry Vercel integration sets these automatically in Vercel project settings.
+  silent: !process.env.CI,
+  widenClientFileUpload: true,
+  // hideSourceMaps was removed in @sentry/nextjs v9 — hidden by default now.
+  disableLogger: true,
+  // Cron monitoring is out of scope.
+  automaticVercelMonitors: false,
+})
