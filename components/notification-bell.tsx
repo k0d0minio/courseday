@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils'
 
 const POLL_INTERVAL_MS = 30_000
 
-export function NotificationBell({ initialCount }: { initialCount: number }) {
+export function NotificationBell({ initialCount: _initialCount }: { initialCount: number }) {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [open, setOpen] = useState(false)
   const [isMarkingAll, startMarkAllTransition] = useTransition()
