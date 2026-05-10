@@ -29,6 +29,8 @@ type Props = {
    * tooltip; when null we still show the badge but with a generic label.
    */
   overrideAuthorName?: string | null
+  /** Viewer mode: hides card chrome (title, copy button). Empty/not-generated state renders nothing. */
+  chromeless?: boolean
 }
 
 export function DailyBriefCard({
@@ -39,6 +41,7 @@ export function DailyBriefCard({
   briefStale: initialBriefStale = false,
   briefIsEmpty = false,
   overrideAuthorName = null,
+  chromeless = false,
 }: Props) {
   const t = useTranslations('Tenant.dailyBrief')
   const router = useRouter()
@@ -149,43 +152,48 @@ export function DailyBriefCard({
   const streaming = isLoading && !hasBrief
   const covers = streamedObject?.covers
 
+  // Chromeless + no brief = render nothing (viewer sees no placeholder)
+  if (chromeless && !hasBrief && !streaming) return null
+
   return (
     <section className="bg-card text-card-foreground overflow-hidden rounded-xl border shadow-sm">
-      <div className="bg-muted/30 flex flex-wrap items-start justify-between gap-3 border-b p-4">
-        <div className="min-w-0 space-y-1">
-          <h2 className="flex items-center gap-2 text-sm font-semibold">
-            <Sparkles className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-            {t('title')}
-          </h2>
-          <p className="text-muted-foreground text-xs">{t('subtitle')}</p>
+      {!chromeless && (
+        <div className="bg-muted/30 flex flex-wrap items-start justify-between gap-3 border-b p-4">
+          <div className="min-w-0 space-y-1">
+            <h2 className="flex items-center gap-2 text-sm font-semibold">
+              <Sparkles className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+              {t('title')}
+            </h2>
+            <p className="text-muted-foreground text-xs">{t('subtitle')}</p>
+          </div>
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {hasBrief && (
+              <Button type="button" variant="outline" size="sm" onClick={copyMarkdown}>
+                <ClipboardCopy className="mr-1 h-4 w-4" />
+                {t('copy')}
+              </Button>
+            )}
+            {isEditor && hasBrief && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={runRegenerate}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-1 h-4 w-4" />
+                )}
+                {t('regenerate')}
+              </Button>
+            )}
+          </div>
         </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
-          {hasBrief && (
-            <Button type="button" variant="outline" size="sm" onClick={copyMarkdown}>
-              <ClipboardCopy className="mr-1 h-4 w-4" />
-              {t('copy')}
-            </Button>
-          )}
-          {isEditor && hasBrief && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={runRegenerate}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="mr-1 h-4 w-4" />
-              )}
-              {t('regenerate')}
-            </Button>
-          )}
-        </div>
-      </div>
+      )}
 
-      <div className="space-y-3 p-4">
+      <div className={`space-y-3 ${chromeless ? 'p-0' : 'p-4'}`}>
         {stale && isEditor && !isLoading && (
           <div className="flex items-center justify-between gap-2 rounded-md border border-amber-200/60 bg-amber-50 px-2.5 py-2 dark:border-amber-900/50 dark:bg-amber-950/40">
             <p className="text-xs text-amber-800/90 dark:text-amber-200/90">{t('stale')}</p>
@@ -203,9 +211,11 @@ export function DailyBriefCard({
           </div>
         )}
 
-        {briefIsEmpty && <p className="text-muted-foreground text-sm">{t('empty')}</p>}
+        {briefIsEmpty && !chromeless && (
+          <p className="text-muted-foreground text-sm">{t('empty')}</p>
+        )}
 
-        {!hasBrief && !briefIsEmpty && !isLoading && (
+        {!hasBrief && !briefIsEmpty && !isLoading && !chromeless && (
           <p className="text-muted-foreground text-sm">{t('emptyViewer')}</p>
         )}
 

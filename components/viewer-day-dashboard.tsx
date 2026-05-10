@@ -97,6 +97,7 @@ export function ViewerDayDashboard({
           briefStale={briefStale ?? false}
           briefIsEmpty={briefIsEmpty ?? false}
           overrideAuthorName={briefOverrideAuthorName}
+          chromeless
         />
       )}
 
