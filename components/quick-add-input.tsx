@@ -1,13 +1,14 @@
 'use client'
 
-import { useEffect, useState, useTransition, type FormEvent, useId } from 'react'
+import { useEffect, useRef, useState, useTransition, type FormEvent, useId } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Loader2, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { parseQuickAdd } from '@/app/actions/quick-add'
+import { experimental_useObject as useObject } from '@ai-sdk/react'
 import { ensureDayExists } from '@/app/actions/days'
+import { quickAddLlmSchema, buildDataFromLlm, type QuickAddLlmOutput } from '@/lib/quick-add-build'
 import type { QuickAddParseData } from '@/lib/quick-add-types'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer'
@@ -21,6 +22,7 @@ import {
   QuickAddMultiReview,
   type QuickAddMultiSaveResult,
 } from '@/components/quick-add-multi-review'
+import { QuickAddStreamingPreview } from '@/components/quick-add-streaming-preview'
 import type { Activity, BreakfastConfiguration, Reservation } from '@/types/index'
 
 type Props = {
@@ -32,6 +34,7 @@ type Props = {
 
 type View =
   | { stage: 'input' }
+  | { stage: 'streaming' }
   | { stage: 'review'; data: QuickAddParseData; raw: string }
   | { stage: 'multi-review'; items: QuickAddParseData[]; raw: string }
 
@@ -129,14 +132,47 @@ export function QuickAddInput({ open, onOpenChange, contextDate, disabled }: Pro
   const [view, setView] = useState<View>({ stage: 'input' })
   const [error, setError] = useState<string | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [isParsing, startParse] = useTransition()
   const [isSaving, startSave] = useTransition()
   const descId = useId()
   const errId = useId()
 
-  // Reset transient state when the dialog/drawer closes. Cascading renders are
-  // expected here — the alternative (key-based remount) would interrupt the
-  // close animation.
+  // dayId is resolved client-side via ensureDayExists before the stream is
+  // submitted, so it's available when buildDataFromLlm runs on finish.
+  const dayIdRef = useRef<string | null>(null)
+  // Capture the raw input at submit time so it survives the user editing the
+  // textarea while the stream is in flight.
+  const submittedTextRef = useRef<string>('')
+
+  const {
+    object: streamObj,
+    submit: submitStream,
+    isLoading,
+    error: streamError,
+    stop: stopStream,
+  } = useObject({
+    api: '/api/quick-add/stream',
+    schema: quickAddLlmSchema,
+    onFinish({ object }: { object: QuickAddLlmOutput | undefined }) {
+      const parsed = quickAddLlmSchema.safeParse(object)
+      const dayId = dayIdRef.current
+      if (!parsed.success || !dayId) {
+        setView({ stage: 'input' })
+        if (!error) setError(t('parseFailed'))
+        return
+      }
+      const items = parsed.data.items.map((it) => buildDataFromLlm(it, dayId, contextDate))
+      const raw = submittedTextRef.current
+      if (items.length > 1) {
+        setView({ stage: 'multi-review', items, raw })
+      } else {
+        setView({ stage: 'review', data: items[0]!, raw })
+      }
+    },
+    onError(err: Error) {
+      setError(err?.message || t('parseFailed'))
+      setView({ stage: 'input' })
+    },
+  })
 
   useEffect(() => {
     if (!open) {
@@ -144,31 +180,36 @@ export function QuickAddInput({ open, onOpenChange, contextDate, disabled }: Pro
       setView({ stage: 'input' })
       setError(null)
       setSaveError(null)
+      dayIdRef.current = null
+      submittedTextRef.current = ''
+      if (isLoading) stopStream()
     }
+    // We intentionally do not depend on isLoading/stopStream — only run on close.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
   function close() {
     onOpenChange(false)
   }
 
-  function handleParse(e: FormEvent) {
+  async function handleParse(e: FormEvent) {
     e.preventDefault()
     const v = text.trim()
-    if (!v || isParsing) return
+    if (!v || isLoading) return
     setError(null)
-    startParse(async () => {
-      const r = await parseQuickAdd(v, contextDate)
-      if (!r.success) {
-        setError(r.error)
-        return
-      }
-      const items = r.data.items
-      if (items.length > 1) {
-        setView({ stage: 'multi-review', items, raw: v })
-      } else {
-        setView({ stage: 'review', data: items[0]!, raw: v })
-      }
-    })
+    dayIdRef.current = null
+    submittedTextRef.current = v
+    setView({ stage: 'streaming' })
+
+    // Resolve dayId up-front so buildDataFromLlm has it on stream finish.
+    const ensured = await ensureDayExists(contextDate)
+    if (!ensured.success) {
+      setError(ensured.error)
+      setView({ stage: 'input' })
+      return
+    }
+    dayIdRef.current = ensured.data.id
+    submitStream({ input: v, contextDate })
   }
 
   function handleBack() {
@@ -213,10 +254,26 @@ export function QuickAddInput({ open, onOpenChange, contextDate, disabled }: Pro
     navigateAfterMulti(`/day/${dest}`)
   }
 
+  // Surface stream errors to the inline error region.
+  useEffect(() => {
+    if (streamError && !error) {
+      setError(streamError.message || t('parseFailed'))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [streamError])
+
   const isAiNotConfigured = Boolean(error?.includes('AI is not configured'))
+  const isParsing = view.stage === 'streaming'
+  // Spinner only until the first token arrives.
+  const showSpinner = isParsing && !streamObj
 
   const inputBody = (
-    <form onSubmit={handleParse} className="space-y-3">
+    <form
+      onSubmit={(e) => {
+        void handleParse(e)
+      }}
+      className="space-y-3"
+    >
       <p id={descId} className="text-muted-foreground text-sm">
         {t('description', { contextDate })}
       </p>
@@ -267,6 +324,36 @@ export function QuickAddInput({ open, onOpenChange, contextDate, disabled }: Pro
     </form>
   )
 
+  const streamingBody =
+    view.stage === 'streaming' ? (
+      <div className="space-y-3">
+        {showSpinner ? (
+          <div
+            className="text-muted-foreground flex items-center justify-center gap-2 py-12 text-sm"
+            role="status"
+            aria-live="polite"
+          >
+            <Loader2 className="h-4 w-4 animate-spin" />
+            {t('parsing')}
+          </div>
+        ) : (
+          <QuickAddStreamingPreview partial={streamObj} label={t('parsing')} />
+        )}
+        <div className="flex justify-end gap-2 pt-1">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              stopStream()
+              setView({ stage: 'input' })
+            }}
+          >
+            {t('cancel')}
+          </Button>
+        </div>
+      </div>
+    ) : null
+
   const reviewBody =
     view.stage === 'review' ? (
       <QuickAddReview
@@ -287,11 +374,14 @@ export function QuickAddInput({ open, onOpenChange, contextDate, disabled }: Pro
     ) : null
 
   const title =
-    view.stage === 'input'
+    view.stage === 'input' || view.stage === 'streaming'
       ? t('title')
       : view.stage === 'multi-review'
         ? t('multiReviewTitle')
         : t('reviewTitle')
+
+  const body =
+    view.stage === 'input' ? inputBody : view.stage === 'streaming' ? streamingBody : reviewBody
 
   if (isMobile) {
     return (
@@ -309,9 +399,7 @@ export function QuickAddInput({ open, onOpenChange, contextDate, disabled }: Pro
               {title}
             </DrawerTitle>
           </DrawerHeader>
-          <div className="max-h-[75vh] overflow-y-auto px-4 pb-6">
-            {view.stage === 'input' ? inputBody : reviewBody}
-          </div>
+          <div className="max-h-[75vh] overflow-y-auto px-4 pb-6">{body}</div>
         </DrawerContent>
       </Drawer>
     )
@@ -335,7 +423,7 @@ export function QuickAddInput({ open, onOpenChange, contextDate, disabled }: Pro
             {title}
           </DialogTitle>
         </DialogHeader>
-        {view.stage === 'input' ? inputBody : reviewBody}
+        {body}
       </DialogContent>
     </Dialog>
   )
