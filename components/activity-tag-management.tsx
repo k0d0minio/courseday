@@ -155,8 +155,7 @@ export function ActivityTagManagement() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Activity Tags</h2>
+      <div className="flex justify-end">
         <Button
           size="sm"
           onClick={() => {
