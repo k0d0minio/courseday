@@ -19,8 +19,7 @@ export function GlobalQuickAdd() {
   const t = useTranslations('Tenant.quickAdd')
   const router = useRouter()
   const pathname = usePathname()
-  const { activeDayYmd } = useActiveDay()
-  const { setPendingQuickAddResult } = useActiveDay()
+  const { activeDayYmd, setPendingQuickAddResult } = useActiveDay()
   const { quickAddOpen, setQuickAddOpen } = useKeyboardShortcuts()
 
   const handleSuccess = useCallback(
@@ -32,17 +31,6 @@ export function GlobalQuickAdd() {
       }
     },
     [pathname, router, setPendingQuickAddResult]
-  )
-
-  const handleParseFailed = useCallback(
-    (raw: string, error: string) => {
-      setPendingQuickAddResult({ type: 'failed', raw, error })
-      const targetPath = `/day/${activeDayYmd}`
-      if (!pathname.startsWith(targetPath)) {
-        router.push(targetPath)
-      }
-    },
-    [activeDayYmd, pathname, router, setPendingQuickAddResult]
   )
 
   return (
@@ -60,7 +48,6 @@ export function GlobalQuickAdd() {
         onOpenChange={setQuickAddOpen}
         contextDate={activeDayYmd}
         onSuccess={handleSuccess}
-        onParseFailed={handleParseFailed}
       />
     </>
   )
