@@ -4,27 +4,22 @@ import { useTranslations } from 'next-intl'
 import { Loader2 } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 
-type DeepPartial<T> = {
-  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P]
+type StreamedShape = {
+  kind?: 'activity' | 'reservation' | 'breakfast'
+  fields?: {
+    title?: string | null
+    guestName?: string | null
+    groupName?: string | null
+    startTime?: string | null
+    endTime?: string | null
+    expectedCovers?: number | null
+    guestCount?: number | null
+    notes?: string | null
+  }
 }
 
-type QuickAddPartial = DeepPartial<{
-  kind: 'activity' | 'reservation' | 'breakfast'
-  dateAmbiguous: boolean
-  fields: {
-    title: string | null
-    guestName: string | null
-    groupName: string | null
-    startTime: string | null
-    endTime: string | null
-    expectedCovers: number | null
-    guestCount: number | null
-    notes: string | null
-  }
-}>
-
 type Props = {
-  partial: QuickAddPartial | undefined
+  partial: unknown
   label: string
 }
 
@@ -43,8 +38,9 @@ function ValueBox({ children }: { children: React.ReactNode }) {
 export function QuickAddStreamingPreview({ partial, label }: Props) {
   const t = useTranslations('Tenant.quickAdd')
 
-  const kind = partial?.kind
-  const fields = partial?.fields
+  const data = (partial ?? {}) as StreamedShape
+  const kind = data.kind
+  const fields = data.fields
 
   const primaryLabel =
     kind === 'reservation'
@@ -107,7 +103,7 @@ export function QuickAddStreamingPreview({ partial, label }: Props) {
 
       <div className="space-y-1.5">
         <Label>{countLabel}</Label>
-        {count != null && count !== '' ? <ValueBox>{String(count)}</ValueBox> : <Skeleton />}
+        {count != null ? <ValueBox>{String(count)}</ValueBox> : <Skeleton />}
       </div>
 
       {fields?.notes ? (

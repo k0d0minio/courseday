@@ -8,7 +8,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { experimental_useObject as useObject } from '@ai-sdk/react'
 import { ensureDayExists } from '@/app/actions/days'
-import { quickAddLlmSchema, buildDataFromLlm } from '@/lib/quick-add-build'
+import { quickAddLlmSchema, buildDataFromLlm, type QuickAddLlmOutput } from '@/lib/quick-add-build'
 import type { QuickAddParseData } from '@/lib/quick-add-types'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer'
@@ -76,7 +76,7 @@ export function QuickAddInput({ open, onOpenChange, contextDate, disabled }: Pro
   } = useObject({
     api: '/api/quick-add/stream',
     schema: quickAddLlmSchema,
-    onFinish({ object }: { object: unknown }) {
+    onFinish({ object }: { object: QuickAddLlmOutput | undefined }) {
       const parsed = quickAddLlmSchema.safeParse(object)
       const dayId = dayIdRef.current
       if (!parsed.success || !dayId) {

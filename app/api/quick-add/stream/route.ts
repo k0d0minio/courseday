@@ -2,7 +2,8 @@ import { after } from 'next/server'
 import { streamObject } from 'ai'
 import { gateway } from '@ai-sdk/gateway'
 import { getTenantId } from '@/lib/tenant'
-import { requireEditor } from '@/lib/membership'
+import { getUserRole } from '@/lib/membership'
+import { getUser } from '@/app/actions/auth'
 import { quickAddRateLimit } from '@/lib/rate-limit'
 import { logAiCall } from '@/lib/ai-call-log'
 import { quickAddLlmSchema } from '@/lib/quick-add-build'
@@ -46,12 +47,10 @@ export async function POST(request: Request) {
     return jsonError('Tenant context required', 400)
   }
 
-  let user: { id: string }
-  try {
-    user = await requireEditor(tenantId)
-  } catch {
-    return jsonError('Forbidden', 403)
-  }
+  const user = await getUser()
+  if (!user) return jsonError('Unauthorized', 401)
+  const role = await getUserRole(tenantId)
+  if (role !== 'editor') return jsonError('Forbidden', 403)
 
   let body: { input?: string; contextDate?: string }
   try {
@@ -94,7 +93,9 @@ export async function POST(request: Request) {
   after(async () => {
     try {
       await result.object
-      const usage = (await result.usage) as AiUsage | undefined
+      const usage = (await (result as unknown as { usage?: Promise<unknown> }).usage) as
+        | AiUsage
+        | undefined
       const { promptTokens, completionTokens } = readUsage(usage)
       void logAiCall({
         tenantId,
