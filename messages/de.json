@@ -174,7 +174,8 @@
       "editedBy": "Bearbeitet von {name}",
       "editedByAt": "Bearbeitet von {name} · {time}",
       "editedBadge": "Von einem Editor bearbeitet",
-      "regenerateDiscardWarning": "Bei einer Neugenerierung gehen deine Änderungen an Überschrift und Zusammenfassung verloren. Fortfahren?"
+      "regenerateDiscardWarning": "Bei einer Neugenerierung gehen deine Änderungen an Überschrift und Zusammenfassung verloren. Fortfahren?",
+      "updatedAt": "Aktualisiert {time}"
     },
     "quickAdd": {
       "openButton": "Schnell hinzufügen",

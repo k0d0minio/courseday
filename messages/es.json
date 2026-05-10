@@ -174,7 +174,8 @@
       "editedBy": "Editado por {name}",
       "editedByAt": "Editado por {name} · {time}",
       "editedBadge": "Editado por un editor",
-      "regenerateDiscardWarning": "Regenerar descartará tus ediciones al titular y al resumen. ¿Continuar?"
+      "regenerateDiscardWarning": "Regenerar descartará tus ediciones al titular y al resumen. ¿Continuar?",
+      "updatedAt": "Actualizado {time}"
     },
     "quickAdd": {
       "openButton": "Añadir rápido",

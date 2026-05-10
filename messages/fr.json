@@ -278,7 +278,8 @@
       "editedBy": "Modifié par {name}",
       "editedByAt": "Modifié par {name} · {time}",
       "editedBadge": "Modifié par un éditeur",
-      "regenerateDiscardWarning": "La régénération supprimera vos modifications du titre et du résumé. Continuer ?"
+      "regenerateDiscardWarning": "La régénération supprimera vos modifications du titre et du résumé. Continuer ?",
+      "updatedAt": "Mis à jour {time}"
     },
     "quickAdd": {
       "openButton": "Ajout rapide",
