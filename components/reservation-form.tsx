@@ -154,6 +154,7 @@ export function ReservationForm({
     reset(defaultValues(null))
     setTableBreakdown([])
     setAllergens([])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, editItem, quickAdd, reset])
 
   function onSubmit(data: FormData) {

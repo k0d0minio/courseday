@@ -5,7 +5,7 @@ import a11y from 'eslint-plugin-jsx-a11y'
 // eslint-config-next already registers the jsx-a11y plugin, so spread rules only to avoid re-registration error.
 const a11yRules = { rules: a11y.flatConfigs.recommended.rules }
 
-export default [
+const config = [
   ...nextConfig,
   a11yRules,
   {
@@ -72,3 +72,5 @@ export default [
     ignores: ['.next/**', 'node_modules/**', 'types/supabase.ts', 'public/sw.js'],
   },
 ]
+
+export default config

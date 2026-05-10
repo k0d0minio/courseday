@@ -86,7 +86,6 @@ export function QuickAddInput({ open, onOpenChange, contextDate, onSuccess, disa
                 setError(null)
               }}
               placeholder={t('placeholder')}
-              autoFocus
               disabled={isPending || disabled}
               aria-invalid={error ? true : undefined}
               aria-errormessage={error ? errId : undefined}

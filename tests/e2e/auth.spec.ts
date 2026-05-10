@@ -43,7 +43,7 @@ test.describe('Authentication', () => {
     await expect(page).toHaveURL(`${tenantUrl}/`)
   })
 
-  test('authenticated user can sign out', async ({ signedInPage, tenantUrl }) => {
+  test('authenticated user can sign out', async ({ signedInPage, tenantUrl: _tenantUrl }) => {
     // Open user menu and sign out
     await signedInPage
       .getByRole('button', { name: /sign out|user menu/i })
