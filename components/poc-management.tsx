@@ -176,8 +176,7 @@ export function PocManagement() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Points of Contact</h2>
+      <div className="flex justify-end">
         <Button
           size="sm"
           onClick={() => {
