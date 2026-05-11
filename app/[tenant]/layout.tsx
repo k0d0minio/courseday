@@ -29,7 +29,7 @@ import { GlobalQuickAdd } from '@/components/global-quick-add'
 import { StaffMobileSettings } from '@/components/staff-mobile-settings'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { CalendarDays, User } from 'lucide-react'
+import { CalendarDays } from 'lucide-react'
 
 const getTenantRow = cache(async (tenantId: string) => {
   const supabase = await createSupabaseServerClient()
@@ -156,29 +156,7 @@ export default async function TenantLayout({ children }: { children: React.React
                         </TooltipProvider>
                       </span>
                     )}
-                    {/* Profile link — all signed-in members, desktop */}
-                    {user && (
-                      <span className="hidden sm:inline-flex">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="iconSm"
-                                aria-label={t('profile')}
-                                asChild
-                              >
-                                <Link href="/profile">
-                                  <User />
-                                </Link>
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>{t('profile')}</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </span>
-                    )}
-                    {/* Staff settings — mobile only, non-editors */}
+                    {/* Staff settings drawer — non-editors, all breakpoints */}
                     {!editor && user && <StaffMobileSettings />}
                     <span className="hidden sm:inline-flex">
                       <NotificationBell initialCount={unreadCount} />

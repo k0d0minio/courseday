@@ -36,7 +36,7 @@ export function StaffMobileSettings() {
   }
 
   return (
-    <span className="sm:hidden">
+    <span>
       <Drawer>
         <DrawerTrigger asChild>
           <Button variant="ghost" size="iconSm" aria-label={t('settings')}>
