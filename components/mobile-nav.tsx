@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/drawer'
 import { getVisibleSettingsRoutes } from '@/components/settings-dropdown'
 import { useFeatureFlag } from '@/lib/feature-flags-context'
-import { useKeyboardShortcuts } from '@/lib/keyboard-shortcuts'
+import { useQuickAdd } from '@/lib/quick-add-context'
 import { getUnreadCount } from '@/app/actions/notifications'
 
 interface MobileNavProps {
@@ -35,7 +35,7 @@ export function MobileNav({ today, isEditor, isMember, initialUnreadCount }: Mob
   const qaT = useTranslations('Tenant.quickAdd')
   const showChecklists = useFeatureFlag('checklists')
   const showStaffSchedule = useFeatureFlag('staff_schedule')
-  const { setQuickAddOpen } = useKeyboardShortcuts()
+  const { setQuickAddOpen } = useQuickAdd()
   const settingsRoutes = getVisibleSettingsRoutes({
     checklists: showChecklists,
     staffSchedule: showStaffSchedule,
