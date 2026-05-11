@@ -1,13 +1,19 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import { useTranslations } from 'next-intl'
 import { DayNav } from '@/components/day-nav'
 import { DayNotes } from '@/components/day-notes'
+import { ShiftCard } from '@/components/shift-card'
 import { TableBreakdownDisplay } from '@/components/table-breakdown-display'
 import { useFeatureFlag } from '@/lib/feature-flags-context'
-import type { ActivityWithRelations, Reservation, BreakfastConfiguration } from '@/types/index'
+import type {
+  ActivityWithRelations,
+  Reservation,
+  BreakfastConfiguration,
+  ShiftWithAssignee,
+} from '@/types/index'
 import type { DayNote } from '@/app/actions/day-notes'
 import type { WeatherData } from '@/app/actions/weather'
 import type { DailyBriefRecord } from '@/types/daily-brief'
@@ -25,6 +31,7 @@ type Props = {
   activities: ActivityWithRelations[]
   reservations: Reservation[]
   breakfastConfigs: BreakfastConfiguration[]
+  shifts?: ShiftWithAssignee[]
   dayNotes: DayNote[]
   setDayNotes: Dispatch<SetStateAction<DayNote[]>>
   weather: WeatherData | null
@@ -45,6 +52,7 @@ export function ViewerDayDashboard({
   activities,
   reservations,
   breakfastConfigs,
+  shifts = [],
   dayNotes,
   setDayNotes,
   weather,
@@ -53,16 +61,23 @@ export function ViewerDayDashboard({
   briefIsEmpty,
   briefOverrideAuthorName = null,
 }: Props) {
-  const { impersonationRole } = useAuth()
+  const { impersonationRole, user } = useAuth()
 
   const td = useTranslations('Tenant.day')
   const tsummary = useTranslations('Tenant.summary')
   const te = useTranslations('Tenant.entry')
   const tb = useTranslations('Tenant.breakfastCard')
+  const tMySchedule = useTranslations('Tenant.staff.mySchedule')
   const showReservations = useFeatureFlag('reservations')
   const showBreakfast = useFeatureFlag('breakfast_config')
+  const showStaffSchedule = useFeatureFlag('staff_schedule')
   const showWeatherReporting = useFeatureFlag('weather_reporting')
   const showDailyBrief = useFeatureFlag('daily_brief')
+
+  const myShift = useMemo<ShiftWithAssignee | null>(() => {
+    if (!user || !showStaffSchedule) return null
+    return shifts.find((s) => s.user_id === user.id) ?? null
+  }, [shifts, user, showStaffSchedule])
 
   const visibleBreakfastConfigs = showBreakfast ? breakfastConfigs : []
   const visibleReservations = showReservations ? reservations : []
@@ -109,6 +124,13 @@ export function ViewerDayDashboard({
         isEditor={false}
         currentUserId={undefined}
       />
+
+      {showStaffSchedule && myShift && (
+        <section className="space-y-2">
+          <h2 className="font-semibold">{tMySchedule('title')}</h2>
+          <ShiftCard dayId={dayId} item={myShift} isEditor={false} isOwner />
+        </section>
+      )}
 
       {/* Expandable stat blocks — click to reveal item list */}
       <div className="space-y-3">

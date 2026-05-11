@@ -36,6 +36,8 @@ vi.mock('@/lib/shift-notifications', () => ({
 
 import { isFeatureEnabled } from '@/app/actions/feature-flags'
 import { createTenantClient } from '@/lib/supabase-server'
+import { requireEditor, getUserRole } from '@/lib/membership'
+import { getUser } from '@/app/actions/auth'
 import { awaitNotifications } from '@/lib/notifications'
 import {
   notifyShiftAssigned,
@@ -453,5 +455,140 @@ describe('setShiftActuals', () => {
     const result = await setShiftActuals(SHIFT_ID, { actual_start: null, actual_end: null })
     assertFailure(result)
     expect(result.error).toMatch(/disabled/i)
+  })
+})
+
+// ── owner (non-editor) self-clock authorisation ──────────────────────────────
+
+describe('clockInShift — owner authorisation', () => {
+  it('lets a non-editor clock in their own shift', async () => {
+    vi.mocked(getUserRole).mockResolvedValue('staff')
+    vi.mocked(getUser).mockResolvedValue({ id: USER_UUID } as never)
+
+    const selectChain = makeChain({
+      data: { actual_start: null, user_id: USER_UUID },
+      error: null,
+    })
+    const updateChain = makeChain({
+      data: { ...SHIFT_ROW, actual_start: new Date().toISOString() },
+      error: null,
+    })
+    const from = vi.fn().mockReturnValueOnce(selectChain).mockReturnValueOnce(updateChain)
+    mockClient(from)
+
+    const result = await clockInShift(SHIFT_ID)
+    assertSuccess(result)
+    expect(result.data.actual_start).toBeTruthy()
+  })
+
+  it("rejects a non-editor clocking in someone else's shift", async () => {
+    vi.mocked(getUserRole).mockResolvedValue('staff')
+    vi.mocked(getUser).mockResolvedValue({ id: USER_UUID } as never)
+
+    const selectChain = makeChain({
+      data: { actual_start: null, user_id: OTHER_UUID },
+      error: null,
+    })
+    const from = vi.fn().mockReturnValue(selectChain)
+    mockClient(from)
+
+    const result = await clockInShift(SHIFT_ID)
+    assertFailure(result)
+    expect(result.error).toMatch(/own shift/i)
+  })
+
+  it('allows an editor to clock in any shift (regression)', async () => {
+    vi.mocked(getUserRole).mockResolvedValue('editor')
+    vi.mocked(getUser).mockResolvedValue({ id: 'editor-user-id' } as never)
+
+    const selectChain = makeChain({
+      data: { actual_start: null, user_id: OTHER_UUID },
+      error: null,
+    })
+    const updateChain = makeChain({
+      data: { ...SHIFT_ROW, actual_start: new Date().toISOString() },
+      error: null,
+    })
+    const from = vi.fn().mockReturnValueOnce(selectChain).mockReturnValueOnce(updateChain)
+    mockClient(from)
+
+    const result = await clockInShift(SHIFT_ID)
+    assertSuccess(result)
+  })
+
+  it('rejects a non-member', async () => {
+    vi.mocked(getUserRole).mockResolvedValue(null)
+    vi.mocked(getUser).mockResolvedValue({ id: USER_UUID } as never)
+
+    const selectChain = makeChain({
+      data: { actual_start: null, user_id: USER_UUID },
+      error: null,
+    })
+    const from = vi.fn().mockReturnValue(selectChain)
+    mockClient(from)
+
+    const result = await clockInShift(SHIFT_ID)
+    assertFailure(result)
+    expect(result.error).toMatch(/not authorised/i)
+  })
+})
+
+describe('clockOutShift — owner authorisation', () => {
+  it('lets a non-editor clock out their own shift', async () => {
+    vi.mocked(getUserRole).mockResolvedValue('staff')
+    vi.mocked(getUser).mockResolvedValue({ id: USER_UUID } as never)
+
+    const selectChain = makeChain({
+      data: { actual_start: new Date().toISOString(), actual_end: null, user_id: USER_UUID },
+      error: null,
+    })
+    const updateChain = makeChain({
+      data: { ...SHIFT_ROW, actual_end: new Date().toISOString() },
+      error: null,
+    })
+    const from = vi.fn().mockReturnValueOnce(selectChain).mockReturnValueOnce(updateChain)
+    mockClient(from)
+
+    const result = await clockOutShift(SHIFT_ID)
+    assertSuccess(result)
+  })
+
+  it("rejects a non-editor clocking out someone else's shift", async () => {
+    vi.mocked(getUserRole).mockResolvedValue('staff')
+    vi.mocked(getUser).mockResolvedValue({ id: USER_UUID } as never)
+
+    const selectChain = makeChain({
+      data: { actual_start: new Date().toISOString(), actual_end: null, user_id: OTHER_UUID },
+      error: null,
+    })
+    const from = vi.fn().mockReturnValue(selectChain)
+    mockClient(from)
+
+    const result = await clockOutShift(SHIFT_ID)
+    assertFailure(result)
+    expect(result.error).toMatch(/own shift/i)
+  })
+})
+
+describe('setShiftActuals — owner authorisation', () => {
+  it("rejects a non-editor editing someone else's actuals", async () => {
+    vi.mocked(getUserRole).mockResolvedValue('staff')
+    vi.mocked(getUser).mockResolvedValue({ id: USER_UUID } as never)
+
+    const selectChain = makeChain({ data: { user_id: OTHER_UUID }, error: null })
+    const from = vi.fn().mockReturnValue(selectChain)
+    mockClient(from)
+
+    const result = await setShiftActuals(SHIFT_ID, { actual_start: null, actual_end: null })
+    assertFailure(result)
+    expect(result.error).toMatch(/own shift/i)
+  })
+})
+
+describe('updateShift — editor regression', () => {
+  it('rejects non-editors via requireEditor guard', async () => {
+    vi.mocked(requireEditor).mockRejectedValueOnce(new Error('NEXT_REDIRECT'))
+
+    await expect(updateShift(SHIFT_ID, DAY_ID, VALID_SHIFT_DATA)).rejects.toThrow()
   })
 })
