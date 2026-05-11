@@ -13,6 +13,7 @@ import { dailyBriefContentSchema } from '@/lib/daily-brief-schema'
 import type { DailyBriefContent, DailyBriefRecord, RegenerableSection } from '@/types/daily-brief'
 import { formatDailyBriefMarkdown } from '@/lib/daily-brief-format'
 import { regenerateBriefSection } from '@/app/actions/daily-brief'
+import type { WeatherData } from '@/app/actions/weather'
 
 const REGENERATE_DEBOUNCE_MS = 2000
 
@@ -31,6 +32,8 @@ type Props = {
   overrideAuthorName?: string | null
   /** Viewer mode: hides card chrome (title, copy button). Empty/not-generated state renders nothing. */
   chromeless?: boolean
+  /** Inline weather summary shown at top of card; only rendered when non-null. */
+  weather?: WeatherData | null
 }
 
 export function DailyBriefCard({
@@ -42,6 +45,7 @@ export function DailyBriefCard({
   briefIsEmpty = false,
   overrideAuthorName = null,
   chromeless = false,
+  weather = null,
 }: Props) {
   const t = useTranslations('Tenant.dailyBrief')
   const router = useRouter()
@@ -150,7 +154,6 @@ export function DailyBriefCard({
 
   const hasBrief = brief !== null
   const streaming = isLoading && !hasBrief
-  const covers = streamedObject?.covers
 
   // Chromeless + no brief = render nothing (viewer sees no placeholder)
   if (chromeless && !hasBrief && !streaming) return null
@@ -194,6 +197,23 @@ export function DailyBriefCard({
       )}
 
       <div className={`space-y-3 ${chromeless ? 'p-0' : 'p-4'}`}>
+        {weather && (
+          <div className="bg-muted/30 flex items-center gap-3 rounded-lg border px-4 py-3">
+            <span className="shrink-0 text-3xl leading-none" aria-hidden="true">
+              {weather.emoji}
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-medium">{weather.description}</p>
+              <p className="text-muted-foreground text-xs">
+                {weather.tempMax}° / {weather.tempMin}°C
+                {weather.precipitationProbability > 0 && (
+                  <> · {weather.precipitationProbability}% rain</>
+                )}
+              </p>
+            </div>
+          </div>
+        )}
+
         {stale && isEditor && !isLoading && (
           <div className="flex items-center justify-between gap-2 rounded-md border border-amber-200/60 bg-amber-50 px-2.5 py-2 dark:border-amber-900/50 dark:bg-amber-950/40">
             <p className="text-xs text-amber-800/90 dark:text-amber-200/90">{t('stale')}</p>
@@ -241,29 +261,6 @@ export function DailyBriefCard({
               </div>
             )}
 
-            {covers ? (
-              <div className="animate-in fade-in grid grid-cols-3 gap-2 text-center text-sm duration-300">
-                <div className="bg-muted/50 rounded-md py-2">
-                  <div className="text-muted-foreground text-xs">{t('coversBreakfast')}</div>
-                  <div className="font-semibold tabular-nums">{covers.breakfast ?? '—'}</div>
-                </div>
-                <div className="bg-muted/50 rounded-md py-2">
-                  <div className="text-muted-foreground text-xs">{t('coversActivities')}</div>
-                  <div className="font-semibold tabular-nums">{covers.activities ?? '—'}</div>
-                </div>
-                <div className="bg-muted/50 rounded-md py-2">
-                  <div className="text-muted-foreground text-xs">{t('coversReservations')}</div>
-                  <div className="font-semibold tabular-nums">{covers.reservations ?? '—'}</div>
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-3 gap-2">
-                <Skeleton className="h-12 rounded-md" />
-                <Skeleton className="h-12 rounded-md" />
-                <Skeleton className="h-12 rounded-md" />
-              </div>
-            )}
-
             <div className="space-y-1.5 pt-1">
               <Skeleton className="h-3 w-1/3" />
               <Skeleton className="h-3 w-11/12" />
@@ -289,23 +286,6 @@ export function DailyBriefCard({
                   t={t}
                 />
               )}
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 text-center text-sm">
-              <div className="bg-muted/50 rounded-md py-2">
-                <div className="text-muted-foreground text-xs">{t('coversBreakfast')}</div>
-                <div className="font-semibold tabular-nums">{brief.content.covers.breakfast}</div>
-              </div>
-              <div className="bg-muted/50 rounded-md py-2">
-                <div className="text-muted-foreground text-xs">{t('coversActivities')}</div>
-                <div className="font-semibold tabular-nums">{brief.content.covers.activities}</div>
-              </div>
-              <div className="bg-muted/50 rounded-md py-2">
-                <div className="text-muted-foreground text-xs">{t('coversReservations')}</div>
-                <div className="font-semibold tabular-nums">
-                  {brief.content.covers.reservations}
-                </div>
-              </div>
             </div>
 
             <details className="group text-sm">

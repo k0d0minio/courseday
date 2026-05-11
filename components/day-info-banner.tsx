@@ -81,12 +81,6 @@ function AllergenBlock({
   )
 }
 
-/** Fades in a section when it first receives content during streaming. */
-function StreamSection({ show, children }: { show: boolean; children: React.ReactNode }) {
-  if (!show) return null
-  return <div className="animate-in fade-in duration-300">{children}</div>
-}
-
 export function DayInfoBanner({
   weather,
   showWeather,
@@ -390,7 +384,6 @@ function StreamingBriefContent({
   object: StreamPartial
   t: ReturnType<typeof useTranslations<'Tenant.dailyBrief'>>
 }) {
-  const covers = object?.covers
   return (
     <div className="space-y-3">
       {object?.headline ? (
@@ -411,23 +404,6 @@ function StreamingBriefContent({
           <div className="bg-muted h-4 w-5/6 animate-pulse rounded" />
         </div>
       )}
-
-      <StreamSection show={Boolean(covers)}>
-        <div className="grid grid-cols-3 gap-2 text-center text-sm">
-          <div className="bg-muted/50 rounded-md py-2">
-            <div className="text-muted-foreground text-xs">{t('coversBreakfast')}</div>
-            <div className="font-semibold tabular-nums">{covers?.breakfast ?? '—'}</div>
-          </div>
-          <div className="bg-muted/50 rounded-md py-2">
-            <div className="text-muted-foreground text-xs">{t('coversActivities')}</div>
-            <div className="font-semibold tabular-nums">{covers?.activities ?? '—'}</div>
-          </div>
-          <div className="bg-muted/50 rounded-md py-2">
-            <div className="text-muted-foreground text-xs">{t('coversReservations')}</div>
-            <div className="font-semibold tabular-nums">{covers?.reservations ?? '—'}</div>
-          </div>
-        </div>
-      </StreamSection>
     </div>
   )
 }
@@ -477,21 +453,6 @@ function SettledBriefContent({
             t={t}
           />
         )}
-      </div>
-
-      <div className="grid grid-cols-3 gap-2 text-center text-sm">
-        <div className="bg-muted/50 rounded-md py-2">
-          <div className="text-muted-foreground text-xs">{t('coversBreakfast')}</div>
-          <div className="font-semibold tabular-nums">{brief.content.covers.breakfast}</div>
-        </div>
-        <div className="bg-muted/50 rounded-md py-2">
-          <div className="text-muted-foreground text-xs">{t('coversActivities')}</div>
-          <div className="font-semibold tabular-nums">{brief.content.covers.activities}</div>
-        </div>
-        <div className="bg-muted/50 rounded-md py-2">
-          <div className="text-muted-foreground text-xs">{t('coversReservations')}</div>
-          <div className="font-semibold tabular-nums">{brief.content.covers.reservations}</div>
-        </div>
       </div>
 
       <details className="group text-sm">

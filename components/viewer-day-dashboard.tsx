@@ -1,19 +1,13 @@
 'use client'
 
+import { useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import { useTranslations } from 'next-intl'
 import { DayNav } from '@/components/day-nav'
 import { DayNotes } from '@/components/day-notes'
-import { WeatherCard } from '@/components/weather-card'
 import { TableBreakdownDisplay } from '@/components/table-breakdown-display'
 import { useFeatureFlag } from '@/lib/feature-flags-context'
-import { ShiftCard } from '@/components/shift-card'
-import type {
-  ActivityWithRelations,
-  Reservation,
-  BreakfastConfiguration,
-  ShiftWithAssignee,
-} from '@/types/index'
+import type { ActivityWithRelations, Reservation, BreakfastConfiguration } from '@/types/index'
 import type { DayNote } from '@/app/actions/day-notes'
 import type { WeatherData } from '@/app/actions/weather'
 import type { DailyBriefRecord } from '@/types/daily-brief'
@@ -38,7 +32,6 @@ type Props = {
   dailyBrief: DailyBriefRecord | null
   briefStale?: boolean
   briefIsEmpty?: boolean
-  shifts: ShiftWithAssignee[]
   briefOverrideAuthorName?: string | null
 }
 
@@ -59,7 +52,6 @@ export function ViewerDayDashboard({
   dailyBrief,
   briefStale,
   briefIsEmpty,
-  shifts,
   briefOverrideAuthorName = null,
 }: Props) {
   const { impersonationRole } = useAuth()
@@ -67,14 +59,12 @@ export function ViewerDayDashboard({
   useDayViewHotkeys({ date, today, impersonationRole })
 
   const td = useTranslations('Tenant.day')
-  const ts = useTranslations('Tenant.staff.section')
   const tsummary = useTranslations('Tenant.summary')
   const te = useTranslations('Tenant.entry')
   const tb = useTranslations('Tenant.breakfastCard')
   const showReservations = useFeatureFlag('reservations')
   const showBreakfast = useFeatureFlag('breakfast_config')
   const showWeatherReporting = useFeatureFlag('weather_reporting')
-  const showStaffSchedule = useFeatureFlag('staff_schedule')
   const showDailyBrief = useFeatureFlag('daily_brief')
 
   const visibleBreakfastConfigs = showBreakfast ? breakfastConfigs : []
@@ -83,6 +73,18 @@ export function ViewerDayDashboard({
   const totalBreakfastCovers = visibleBreakfastConfigs.reduce((s, b) => s + b.total_guests, 0)
   const totalActivityCovers = activities.reduce((s, a) => s + (a.expected_covers ?? 0), 0)
   const totalReservationCovers = visibleReservations.reduce((s, r) => s + (r.guest_count ?? 0), 0)
+
+  const [openBlocks, setOpenBlocks] = useState<Set<'breakfast' | 'activities' | 'reservations'>>(
+    new Set()
+  )
+  const toggleBlock = (key: 'breakfast' | 'activities' | 'reservations') => {
+    setOpenBlocks((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-6 sm:px-6">
@@ -97,11 +99,10 @@ export function ViewerDayDashboard({
           briefStale={briefStale ?? false}
           briefIsEmpty={briefIsEmpty ?? false}
           overrideAuthorName={briefOverrideAuthorName}
+          weather={showWeatherReporting ? weather : null}
           chromeless
         />
       )}
-
-      {showWeatherReporting && weather && <WeatherCard weather={weather} />}
 
       <DayNotes
         dayId={dayId}
@@ -112,57 +113,84 @@ export function ViewerDayDashboard({
         currentUserId={undefined}
       />
 
-      {/* Summary — large numbers for at-a-glance reading */}
-      <div
-        className={`grid gap-3 ${showBreakfast && showReservations ? 'grid-cols-3' : showBreakfast || showReservations ? 'grid-cols-2' : 'grid-cols-1'}`}
-      >
-        {showBreakfast && <StatBlock label={tsummary('breakfast')} value={totalBreakfastCovers} />}
-        <StatBlock label={tsummary('activities')} value={totalActivityCovers} />
-        {showReservations && (
-          <StatBlock label={tsummary('reservations')} value={totalReservationCovers} />
+      {/* Expandable stat blocks — click to reveal item list */}
+      <div className="space-y-3">
+        <div
+          className={`grid gap-3 ${showBreakfast && showReservations ? 'grid-cols-3' : showBreakfast || showReservations ? 'grid-cols-2' : 'grid-cols-1'}`}
+        >
+          {showBreakfast && (
+            // eslint-disable-next-line no-restricted-syntax
+            <button
+              className="bg-card hover:bg-muted/30 cursor-pointer rounded-lg border px-3 py-4 text-center transition-colors"
+              onClick={() => toggleBlock('breakfast')}
+              aria-expanded={openBlocks.has('breakfast')}
+            >
+              <p className="text-4xl leading-none font-bold tabular-nums">{totalBreakfastCovers}</p>
+              <p className="text-muted-foreground mt-2 text-xs leading-tight">
+                {tsummary('breakfast')}
+              </p>
+            </button>
+          )}
+          {/* eslint-disable-next-line no-restricted-syntax */}
+          <button
+            className="bg-card hover:bg-muted/30 cursor-pointer rounded-lg border px-3 py-4 text-center transition-colors"
+            onClick={() => toggleBlock('activities')}
+            aria-expanded={openBlocks.has('activities')}
+          >
+            <p className="text-4xl leading-none font-bold tabular-nums">{totalActivityCovers}</p>
+            <p className="text-muted-foreground mt-2 text-xs leading-tight">
+              {tsummary('activities')}
+            </p>
+          </button>
+          {showReservations && (
+            // eslint-disable-next-line no-restricted-syntax
+            <button
+              className="bg-card hover:bg-muted/30 cursor-pointer rounded-lg border px-3 py-4 text-center transition-colors"
+              onClick={() => toggleBlock('reservations')}
+              aria-expanded={openBlocks.has('reservations')}
+            >
+              <p className="text-4xl leading-none font-bold tabular-nums">
+                {totalReservationCovers}
+              </p>
+              <p className="text-muted-foreground mt-2 text-xs leading-tight">
+                {tsummary('reservations')}
+              </p>
+            </button>
+          )}
+        </div>
+
+        {openBlocks.has('breakfast') && showBreakfast && (
+          <section className="space-y-2">
+            {visibleBreakfastConfigs.length === 0 ? (
+              <p className="text-muted-foreground text-sm">{td('noBreakfasts')}</p>
+            ) : (
+              visibleBreakfastConfigs.map((item) => (
+                <BreakfastRow key={item.id} item={item} t={tb} />
+              ))
+            )}
+          </section>
+        )}
+
+        {openBlocks.has('activities') && (
+          <section className="space-y-2">
+            {activities.length === 0 ? (
+              <p className="text-muted-foreground text-sm">{td('noEntries')}</p>
+            ) : (
+              activities.map((item) => <ActivityRow key={item.id} item={item} t={te} />)
+            )}
+          </section>
+        )}
+
+        {openBlocks.has('reservations') && showReservations && (
+          <section className="space-y-2">
+            {visibleReservations.length === 0 ? (
+              <p className="text-muted-foreground text-sm">{td('noReservations')}</p>
+            ) : (
+              visibleReservations.map((item) => <ReservationRow key={item.id} item={item} />)
+            )}
+          </section>
         )}
       </div>
-
-      {showStaffSchedule && (
-        <ViewerSection title={ts('title')} empty={shifts.length === 0} emptyLabel={ts('empty')}>
-          {shifts.map((item) => (
-            <ShiftCard key={item.id} dayId={dayId} item={item} isEditor={false} />
-          ))}
-        </ViewerSection>
-      )}
-
-      {/* Breakfast */}
-      <ViewerSection
-        title={td('breakfast')}
-        empty={visibleBreakfastConfigs.length === 0}
-        emptyLabel={td('noBreakfasts')}
-      >
-        {visibleBreakfastConfigs.map((item) => (
-          <BreakfastRow key={item.id} item={item} t={tb} />
-        ))}
-      </ViewerSection>
-
-      {/* Activities */}
-      <ViewerSection
-        title={td('activities')}
-        empty={activities.length === 0}
-        emptyLabel={td('noEntries')}
-      >
-        {activities.map((item) => (
-          <ActivityRow key={item.id} item={item} t={te} />
-        ))}
-      </ViewerSection>
-
-      {/* Reservations */}
-      <ViewerSection
-        title={td('reservations')}
-        empty={visibleReservations.length === 0}
-        emptyLabel={td('noReservations')}
-      >
-        {visibleReservations.map((item) => (
-          <ReservationRow key={item.id} item={item} />
-        ))}
-      </ViewerSection>
     </div>
   )
 }
@@ -170,40 +198,6 @@ export function ViewerDayDashboard({
 // ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
-
-function StatBlock({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="bg-card rounded-lg border px-3 py-4 text-center">
-      <p className="text-4xl leading-none font-bold tabular-nums">{value}</p>
-      <p className="text-muted-foreground mt-2 text-xs leading-tight">{label}</p>
-    </div>
-  )
-}
-
-function ViewerSection({
-  title,
-  empty,
-  emptyLabel,
-  children,
-}: {
-  title: string
-  empty: boolean
-  emptyLabel: string
-  children?: React.ReactNode
-}) {
-  return (
-    <section className="space-y-3">
-      <h2 className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-        {title}
-      </h2>
-      {empty ? (
-        <p className="text-muted-foreground text-sm">{emptyLabel}</p>
-      ) : (
-        <div className="space-y-2">{children}</div>
-      )}
-    </section>
-  )
-}
 
 function BreakfastRow({
   item,
@@ -303,9 +297,7 @@ function formatTimeRange(
 ): string {
   const fmt = (s: string) => s.slice(0, 5)
   if (start && end) {
-    return t
-      ? t('timeRange', { start: fmt(start), end: fmt(end) })
-      : `${fmt(start)} \u2013 ${fmt(end)}`
+    return t ? t('timeRange', { start: fmt(start), end: fmt(end) }) : `${fmt(start)} – ${fmt(end)}`
   }
   if (start) return t ? t('timeFrom', { time: fmt(start) }) : fmt(start)
   if (end) return t ? t('timeUntil', { time: fmt(end) }) : fmt(end)

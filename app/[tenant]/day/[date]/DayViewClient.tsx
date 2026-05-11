@@ -7,7 +7,6 @@ import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 import { useDayRealtime } from './useDayRealtime'
 import { useTranslations } from 'next-intl'
 import { DayNav } from '@/components/day-nav'
-import { DaySummaryCard } from '@/components/day-summary-card'
 import { ViewerDayDashboard } from '@/components/viewer-day-dashboard'
 import { ActivityCard } from '@/components/activity-card'
 import { ReservationCard } from '@/components/reservation-card'
@@ -110,7 +109,6 @@ export function DayViewClient(props: DayViewProps) {
         activities={live.activities}
         reservations={live.reservations}
         breakfastConfigs={live.breakfastConfigs}
-        shifts={live.shifts}
         dayNotes={live.dayNotes}
         setDayNotes={live.setDayNotes}
       />
@@ -144,6 +142,7 @@ function DayViewEditor({
   showStaffSchedule: boolean
 }) {
   const t = useTranslations('Tenant.day')
+  const tsummary = useTranslations('Tenant.summary')
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -151,6 +150,18 @@ function DayViewEditor({
   const showBreakfast = useFeatureFlag('breakfast_config')
   const showWeatherReporting = useFeatureFlag('weather_reporting')
   const showDailyBrief = useFeatureFlag('daily_brief')
+
+  const [openBlocks, setOpenBlocks] = useState<Set<'breakfast' | 'activities' | 'reservations'>>(
+    new Set()
+  )
+  const toggleBlock = (key: 'breakfast' | 'activities' | 'reservations') => {
+    setOpenBlocks((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
 
   const {
     activities,
@@ -337,11 +348,119 @@ function DayViewEditor({
         />
       )}
 
-      <DaySummaryCard
-        activities={activities}
-        reservations={reservations}
-        breakfastConfigs={breakfastConfigs}
-      />
+      {/* Expandable stat blocks — click to reveal item list with editor affordances */}
+      <div className="space-y-3">
+        <div
+          className={`grid gap-3 ${showBreakfast && showReservations ? 'grid-cols-3' : showBreakfast || showReservations ? 'grid-cols-2' : 'grid-cols-1'}`}
+        >
+          {showBreakfast && (
+            // eslint-disable-next-line no-restricted-syntax
+            <button
+              className="bg-card hover:bg-muted/30 cursor-pointer rounded-lg border px-3 py-4 text-center transition-colors"
+              onClick={() => toggleBlock('breakfast')}
+              aria-expanded={openBlocks.has('breakfast')}
+            >
+              <p className="text-4xl leading-none font-bold tabular-nums">
+                {breakfastConfigs.reduce((s, b) => s + b.total_guests, 0)}
+              </p>
+              <p className="text-muted-foreground mt-2 text-xs leading-tight">
+                {tsummary('breakfast')}
+              </p>
+            </button>
+          )}
+          {/* eslint-disable-next-line no-restricted-syntax */}
+          <button
+            className="bg-card hover:bg-muted/30 cursor-pointer rounded-lg border px-3 py-4 text-center transition-colors"
+            onClick={() => toggleBlock('activities')}
+            aria-expanded={openBlocks.has('activities')}
+          >
+            <p className="text-4xl leading-none font-bold tabular-nums">
+              {activities.reduce((s, a) => s + (a.expected_covers ?? 0), 0)}
+            </p>
+            <p className="text-muted-foreground mt-2 text-xs leading-tight">
+              {tsummary('activities')}
+            </p>
+          </button>
+          {showReservations && (
+            // eslint-disable-next-line no-restricted-syntax
+            <button
+              className="bg-card hover:bg-muted/30 cursor-pointer rounded-lg border px-3 py-4 text-center transition-colors"
+              onClick={() => toggleBlock('reservations')}
+              aria-expanded={openBlocks.has('reservations')}
+            >
+              <p className="text-4xl leading-none font-bold tabular-nums">
+                {reservations.reduce((s, r) => s + (r.guest_count ?? 0), 0)}
+              </p>
+              <p className="text-muted-foreground mt-2 text-xs leading-tight">
+                {tsummary('reservations')}
+              </p>
+            </button>
+          )}
+        </div>
+
+        {openBlocks.has('breakfast') && showBreakfast && (
+          <section className="space-y-2">
+            {breakfastConfigs.length === 0 ? (
+              <p className="text-muted-foreground text-sm">{t('noBreakfasts')}</p>
+            ) : (
+              breakfastConfigs.map((item) => (
+                <BreakfastCard
+                  key={item.id}
+                  item={item}
+                  isEditor={authState.isEditor}
+                  onEdit={openEditBreakfast}
+                  onDeleted={handleBreakfastDeleted}
+                  onBeforeEdit={(el) => {
+                    returnFocusRef.current = el
+                  }}
+                />
+              ))
+            )}
+          </section>
+        )}
+
+        {openBlocks.has('activities') && (
+          <section className="space-y-2">
+            {activities.length === 0 ? (
+              <p className="text-muted-foreground text-sm">{t('noEntries')}</p>
+            ) : (
+              activities.map((item) => (
+                <ActivityCard
+                  key={item.id}
+                  item={item}
+                  isEditor={authState.isEditor}
+                  onEdit={openEditActivity}
+                  onDeleted={handleActivityDeleted}
+                  onBeforeEdit={(el) => {
+                    returnFocusRef.current = el
+                  }}
+                />
+              ))
+            )}
+          </section>
+        )}
+
+        {openBlocks.has('reservations') && showReservations && (
+          <section className="space-y-2">
+            {reservations.length === 0 ? (
+              <p className="text-muted-foreground text-sm">{t('noReservations')}</p>
+            ) : (
+              reservations.map((item) => (
+                <ReservationCard
+                  key={item.id}
+                  item={item}
+                  isEditor={authState.isEditor}
+                  onEdit={openEditReservation}
+                  onDeleted={handleReservationDeleted}
+                  onBeforeEdit={(el) => {
+                    returnFocusRef.current = el
+                  }}
+                />
+              ))
+            )}
+          </section>
+        )}
+      </div>
 
       {showStaffSchedule && (
         <StaffScheduleSection
@@ -354,76 +473,6 @@ function DayViewEditor({
           forecastBreakdown={forecastBreakdown}
           addTriggerRef={shiftAddTriggerRef}
         />
-      )}
-
-      {showBreakfast && (
-        <section className="space-y-3">
-          <h2 className="font-semibold">{t('breakfast')}</h2>
-          {breakfastConfigs.length === 0 ? (
-            <p className="text-muted-foreground text-sm">{t('noBreakfasts')}</p>
-          ) : (
-            <div className="space-y-2">
-              {breakfastConfigs.map((item) => (
-                <BreakfastCard
-                  key={item.id}
-                  item={item}
-                  isEditor={authState.isEditor}
-                  onEdit={openEditBreakfast}
-                  onDeleted={handleBreakfastDeleted}
-                  onBeforeEdit={(el) => {
-                    returnFocusRef.current = el
-                  }}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      <section className="space-y-3">
-        <h2 className="font-semibold">{t('activities')}</h2>
-        {activities.length === 0 ? (
-          <p className="text-muted-foreground text-sm">{t('noEntries')}</p>
-        ) : (
-          <div className="space-y-2">
-            {activities.map((item) => (
-              <ActivityCard
-                key={item.id}
-                item={item}
-                isEditor={authState.isEditor}
-                onEdit={openEditActivity}
-                onDeleted={handleActivityDeleted}
-                onBeforeEdit={(el) => {
-                  returnFocusRef.current = el
-                }}
-              />
-            ))}
-          </div>
-        )}
-      </section>
-
-      {showReservations && (
-        <section className="space-y-3">
-          <h2 className="font-semibold">{t('reservations')}</h2>
-          {reservations.length === 0 ? (
-            <p className="text-muted-foreground text-sm">{t('noReservations')}</p>
-          ) : (
-            <div className="space-y-2">
-              {reservations.map((item) => (
-                <ReservationCard
-                  key={item.id}
-                  item={item}
-                  isEditor={authState.isEditor}
-                  onEdit={openEditReservation}
-                  onDeleted={handleReservationDeleted}
-                  onBeforeEdit={(el) => {
-                    returnFocusRef.current = el
-                  }}
-                />
-              ))}
-            </div>
-          )}
-        </section>
       )}
 
       <DayNotes
