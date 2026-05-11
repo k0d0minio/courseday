@@ -25,6 +25,7 @@ import { getTenantToday } from '@/lib/day-utils'
 import { getSuperadminImpersonationRole } from '@/lib/superadmin'
 import { getTenantPalette, getTenantThemeCssVariables } from '@/lib/theme/palettes'
 import { QuickAddProvider } from '@/lib/quick-add-context'
+import { ActiveDayProvider } from '@/lib/active-day-context'
 import { GlobalQuickAdd } from '@/components/global-quick-add'
 import { StaffMobileSettings } from '@/components/staff-mobile-settings'
 import { Button } from '@/components/ui/button'
@@ -110,76 +111,78 @@ export default async function TenantLayout({ children }: { children: React.React
       <FeatureFlagProvider flags={featureFlags}>
         <TenantProvider tenantId={tenant.id} tenantSlug={tenant.slug}>
           <AuthProvider>
-            <QuickAddProvider>
-              <a
-                href="#main-content"
-                className="focus:bg-background focus:ring-ring sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:rounded focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:ring-2"
-              >
-                {t('skipToContent')}
-              </a>
-              <div
-                className="tenant-themed flex min-h-screen flex-col"
-                dir={dir}
-                style={accentStyle}
-              >
-                <header className="flex h-14 items-center justify-between border-b px-6">
-                  <Logo logoUrl={row?.logo_url ?? null} tenantName={row?.name ?? null} />
-                  <div className="flex items-center gap-1">
-                    <OfflineStatusPill />
-                    {/* AI quick-add — editors only */}
-                    {editor && <GlobalQuickAdd />}
-                    {/* Settings dropdown — editors only, desktop */}
-                    {editor && (
+            <ActiveDayProvider tenantTodayYmd={today}>
+              <QuickAddProvider>
+                <a
+                  href="#main-content"
+                  className="focus:bg-background focus:ring-ring sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:rounded focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:ring-2"
+                >
+                  {t('skipToContent')}
+                </a>
+                <div
+                  className="tenant-themed flex min-h-screen flex-col"
+                  dir={dir}
+                  style={accentStyle}
+                >
+                  <header className="flex h-14 items-center justify-between border-b px-6">
+                    <Logo logoUrl={row?.logo_url ?? null} tenantName={row?.name ?? null} />
+                    <div className="flex items-center gap-1">
+                      <OfflineStatusPill />
+                      {/* AI quick-add — editors only */}
+                      {editor && <GlobalQuickAdd />}
+                      {/* Settings dropdown — editors only, desktop */}
+                      {editor && (
+                        <span className="hidden sm:inline-flex">
+                          <SettingsDropdown />
+                        </span>
+                      )}
+                      {/* My schedule link — non-editors on desktop when staff_schedule on */}
+                      {!editor && featureFlags.staff_schedule && user && (
+                        <span className="hidden sm:inline-flex">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="iconSm"
+                                  aria-label={t('mySchedule')}
+                                  asChild
+                                >
+                                  <Link href="/my-schedule">
+                                    <CalendarDays />
+                                  </Link>
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>{t('mySchedule')}</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </span>
+                      )}
+                      {/* Staff settings drawer — non-editors, all breakpoints */}
+                      {!editor && user && <StaffMobileSettings />}
                       <span className="hidden sm:inline-flex">
-                        <SettingsDropdown />
+                        <NotificationBell initialCount={unreadCount} />
                       </span>
-                    )}
-                    {/* My schedule link — non-editors on desktop when staff_schedule on */}
-                    {!editor && featureFlags.staff_schedule && user && (
-                      <span className="hidden sm:inline-flex">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="iconSm"
-                                aria-label={t('mySchedule')}
-                                asChild
-                              >
-                                <Link href="/my-schedule">
-                                  <CalendarDays />
-                                </Link>
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>{t('mySchedule')}</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </span>
-                    )}
-                    {/* Staff settings drawer — non-editors, all breakpoints */}
-                    {!editor && user && <StaffMobileSettings />}
-                    <span className="hidden sm:inline-flex">
-                      <NotificationBell initialCount={unreadCount} />
-                    </span>
-                  </div>
-                </header>
-                <main id="main-content" className="flex-1 pb-16 sm:pb-0">
-                  {children}
-                </main>
-              </div>
-              <MobileNav
-                today={today}
-                isEditor={editor}
-                isMember={isMember}
-                initialUnreadCount={unreadCount}
-              />
-              {superadminImpersonationRole && (
-                <SuperadminReturnPopup role={superadminImpersonationRole} />
-              )}
-              <Toaster richColors closeButton />
-              <PwaRegister />
-              <PwaInstallPrompt />
-            </QuickAddProvider>
+                    </div>
+                  </header>
+                  <main id="main-content" className="flex-1 pb-16 sm:pb-0">
+                    {children}
+                  </main>
+                </div>
+                <MobileNav
+                  today={today}
+                  isEditor={editor}
+                  isMember={isMember}
+                  initialUnreadCount={unreadCount}
+                />
+                {superadminImpersonationRole && (
+                  <SuperadminReturnPopup role={superadminImpersonationRole} />
+                )}
+                <Toaster richColors closeButton />
+                <PwaRegister />
+                <PwaInstallPrompt />
+              </QuickAddProvider>
+            </ActiveDayProvider>
           </AuthProvider>
         </TenantProvider>
       </FeatureFlagProvider>
