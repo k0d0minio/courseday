@@ -25,7 +25,9 @@ export function validateRows(
   rows: RawImportRow[],
   assignees: ShiftAssignee[]
 ): ValidatedImportRow[] {
-  const emailMap = new Map(assignees.map((a) => [a.email.toLowerCase(), a]))
+  const emailMap = new Map(
+    assignees.map((a): [string, ShiftAssignee] => [a.email.toLowerCase(), a])
+  )
 
   return rows.map((raw) => {
     const base = {

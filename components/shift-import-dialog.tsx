@@ -143,12 +143,24 @@ export function ShiftImportDialog({ isOpen, onClose, onSuccess }: Props) {
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 sticky top-0">
                   <tr>
-                    <th className="px-3 py-2 text-left font-medium">{t('columnDate')}</th>
-                    <th className="px-3 py-2 text-left font-medium">{t('columnStart')}</th>
-                    <th className="px-3 py-2 text-left font-medium">{t('columnEnd')}</th>
-                    <th className="px-3 py-2 text-left font-medium">{t('columnEmail')}</th>
-                    <th className="px-3 py-2 text-left font-medium">{t('columnRole')}</th>
-                    <th className="px-3 py-2 text-left font-medium">{t('columnStatus')}</th>
+                    <th scope="col" className="px-3 py-2 text-left font-medium">
+                      {t('columnDate')}
+                    </th>
+                    <th scope="col" className="px-3 py-2 text-left font-medium">
+                      {t('columnStart')}
+                    </th>
+                    <th scope="col" className="px-3 py-2 text-left font-medium">
+                      {t('columnEnd')}
+                    </th>
+                    <th scope="col" className="px-3 py-2 text-left font-medium">
+                      {t('columnEmail')}
+                    </th>
+                    <th scope="col" className="px-3 py-2 text-left font-medium">
+                      {t('columnRole')}
+                    </th>
+                    <th scope="col" className="px-3 py-2 text-left font-medium">
+                      {t('columnStatus')}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
