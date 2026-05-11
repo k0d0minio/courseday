@@ -48,19 +48,23 @@ import {
 // Schema & types
 // ---------------------------------------------------------------------------
 
-type FormData = {
-  title: string
-  description?: string
-  date?: string
-  startTime?: string
-  endTime?: string
-  expectedCovers?: string
-  venueTypeId?: string
-  pocId?: string
-  notes?: string
-  isRecurring?: boolean
-  recurrenceFrequency?: 'weekly' | 'biweekly' | 'monthly' | 'yearly'
-}
+// Module-level schema used only for type inference — messages are overridden
+// inside the component via useMemo so they can use the t() translation function.
+const _typeSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().optional(),
+  date: z.string().optional(),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
+  expectedCovers: z.string().optional(),
+  venueTypeId: z.string().optional(),
+  pocId: z.string().optional(),
+  notes: z.string().optional(),
+  isRecurring: z.boolean().optional(),
+  recurrenceFrequency: z.enum(['weekly', 'biweekly', 'monthly', 'yearly']).optional(),
+})
+
+type FormData = z.infer<typeof _typeSchema>
 
 const NEW_VALUE = '__new__'
 
