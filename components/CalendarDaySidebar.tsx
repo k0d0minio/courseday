@@ -248,7 +248,7 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
           <ActivityForm
             isOpen={activityModalOpen}
             onClose={() => setActivityModalOpen(false)}
-            date={date}
+            defaultDate={date}
             dayId={data.dayId}
             pocs={data.pocs}
             venueTypes={data.venueTypes}

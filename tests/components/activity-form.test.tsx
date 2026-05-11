@@ -2,6 +2,21 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { NextIntlClientProvider } from 'next-intl'
 
+// jsdom doesn't implement matchMedia; stub it so useIsMobile doesn't throw
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+})
+
 vi.mock('@/lib/tenant-context', () => ({
   useTenant: () => ({ tenantSlug: 'test-tenant', tenantId: 'tid' }),
 }))
