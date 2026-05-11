@@ -38,6 +38,7 @@ export type QuickAddParseData =
       kind: 'activity'
       dayId: string
       contextDate: string
+      resolvedDate: string
       dateAmbiguous: boolean
       defaults: QuickAddActivityFormDefaults
       allergens: AllergenCode[]
@@ -48,6 +49,7 @@ export type QuickAddParseData =
       kind: 'reservation'
       dayId: string
       contextDate: string
+      resolvedDate: string
       dateAmbiguous: boolean
       defaults: QuickAddReservationFormDefaults
       tableBreakdown: number[]
@@ -59,6 +61,7 @@ export type QuickAddParseData =
       kind: 'breakfast'
       dayId: string
       contextDate: string
+      resolvedDate: string
       dateAmbiguous: boolean
       defaults: QuickAddBreakfastFormDefaults
       tableBreakdown: number[]

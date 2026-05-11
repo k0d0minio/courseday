@@ -92,6 +92,7 @@ const baseActivity: QuickAddParseData = {
   kind: 'activity',
   dayId: '00000000-0000-0000-0000-000000000001',
   contextDate: '2026-05-10',
+  resolvedDate: '2026-05-10',
   dateAmbiguous: false,
   defaults: {
     title: 'Member golf',
@@ -110,6 +111,7 @@ const baseReservation: QuickAddParseData = {
   kind: 'reservation',
   dayId: '00000000-0000-0000-0000-000000000001',
   contextDate: '2026-05-10',
+  resolvedDate: '2026-05-10',
   dateAmbiguous: false,
   defaults: {
     guestName: 'Smith',
