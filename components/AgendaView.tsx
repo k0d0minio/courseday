@@ -347,7 +347,7 @@ function AgendaDayRow({
           <ActivityForm
             isOpen={activityOpen}
             onClose={() => setActivityOpen(false)}
-            date={summary.date}
+            defaultDate={summary.date}
             dayId={summary.dayId}
             pocs={expandedData.pocs}
             venueTypes={expandedData.venueTypes}

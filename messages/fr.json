@@ -408,7 +408,9 @@
       "venueTypeAdded": "Type de lieu ajouté.",
       "namePlaceholder": "Nom *",
       "emailPlaceholder": "E-mail (optionnel)",
-      "phonePlaceholder": "Téléphone (optionnel)"
+      "phonePlaceholder": "Téléphone (optionnel)",
+      "dateLabel": "Date",
+      "dateRequired": "La date est requise"
     },
     "reservationForm": {
       "addTitle": "Ajouter une réservation",
@@ -423,7 +425,9 @@
       "save": "Enregistrer",
       "saving": "Enregistrement…",
       "saved": "Réservation ajoutée.",
-      "updated": "Réservation mise à jour."
+      "updated": "Réservation mise à jour.",
+      "dateLabel": "Date",
+      "dateRequired": "La date est requise"
     },
     "breakfastForm": {
       "addTitle": "Ajouter un petit-déjeuner",
@@ -439,7 +443,9 @@
       "save": "Enregistrer",
       "saving": "Enregistrement…",
       "saved": "Petit-déjeuner ajouté.",
-      "updated": "Petit-déjeuner mis à jour."
+      "updated": "Petit-déjeuner mis à jour.",
+      "dateLabel": "Date",
+      "dateRequired": "La date est requise"
     },
     "tableBreakdown": {
       "emptyLabel": "Ajoutez des tables pour définir la disposition des places",
