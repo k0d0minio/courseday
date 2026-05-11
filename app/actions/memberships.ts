@@ -5,6 +5,8 @@ import { getTenantId } from '@/lib/tenant'
 import { getUserRole } from '@/lib/membership'
 import { getUser } from '@/app/actions/auth'
 import { buildAuthConfirmRedirectUrl } from '@/lib/auth-email-redirect'
+import { memberEditSchema } from '@/lib/membership-schema'
+import type { MemberEditInput } from '@/lib/membership-schema'
 import type { ActionResponse } from '@/types/actions'
 
 export type MemberRole = 'editor' | 'staff'
@@ -20,6 +22,7 @@ export interface Member {
   first_name: string | null
   last_name: string | null
   job_title: string | null
+  phone: string | null
 }
 
 export interface PendingInvitation {
@@ -93,7 +96,7 @@ export async function getMembers(): Promise<ActionResponse<Member[]>> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: memberships, error } = await (supabase.from('memberships') as any)
     .select(
-      'id, user_id, role, created_at, hourly_rate, currency, first_name, last_name, job_title'
+      'id, user_id, role, created_at, hourly_rate, currency, first_name, last_name, job_title, phone'
     )
     .eq('tenant_id', tenantId)
     .order('created_at')
@@ -111,6 +114,7 @@ export async function getMembers(): Promise<ActionResponse<Member[]>> {
     first_name: string | null
     last_name: string | null
     job_title: string | null
+    phone: string | null
   }>
 
   const serviceClient = createSupabaseServiceClient()
@@ -136,6 +140,7 @@ export async function getMembers(): Promise<ActionResponse<Member[]>> {
         first_name: m.first_name,
         last_name: m.last_name,
         job_title: m.job_title,
+        phone: m.phone,
       }
     }),
   }
@@ -463,6 +468,39 @@ export async function updateStaffProfile(
       first_name: data.first_name.trim() || null,
       last_name: data.last_name.trim() || null,
       job_title: data.job_title.trim() || null,
+    })
+    .eq('id', membershipId)
+    .eq('tenant_id', tenantId)
+
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: undefined }
+}
+
+export async function updateMember(
+  membershipId: string,
+  input: MemberEditInput
+): Promise<ActionResponse> {
+  const tenantId = await getTenantId()
+  const currentRole = await getUserRole(tenantId)
+  if (currentRole !== 'editor') return { success: false, error: 'Not authorized.' }
+
+  const parsed = memberEditSchema.safeParse(input)
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message ?? 'Invalid input.' }
+  }
+
+  const { first_name, last_name, phone, job_title, hourly_rate, currency } = parsed.data
+
+  const serviceClient = createSupabaseServiceClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (serviceClient.from('memberships') as any)
+    .update({
+      first_name: first_name.trim() || null,
+      last_name: last_name.trim() || null,
+      phone: phone.trim() || null,
+      job_title: job_title.trim() || null,
+      hourly_rate,
+      currency: currency.trim().toUpperCase() || null,
     })
     .eq('id', membershipId)
     .eq('tenant_id', tenantId)
