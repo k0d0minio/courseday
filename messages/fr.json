@@ -183,7 +183,16 @@
       "themeLight": "Clair",
       "themeDark": "Sombre",
       "mySchedule": "Mon planning",
-      "profile": "Mon profil"
+      "profile": "Mon profil",
+      "notifications": "Notifications",
+      "unread": "non lus"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "empty": "Aucune notification pour l'instant.",
+      "markAllRead": "Tout marquer comme lu",
+      "loadMore": "Charger plus",
+      "loading": "Chargement…"
     },
     "join": {
       "homeAria": "Accueil",

@@ -79,7 +79,16 @@
       "skipToContent": "Zum Hauptinhalt springen",
       "today": "Heute",
       "mySchedule": "Mein Dienstplan",
-      "profile": "Mein Profil"
+      "profile": "Mein Profil",
+      "notifications": "Benachrichtigungen",
+      "unread": "ungelesen"
+    },
+    "notifications": {
+      "title": "Benachrichtigungen",
+      "empty": "Noch keine Benachrichtigungen.",
+      "markAllRead": "Alle als gelesen markieren",
+      "loadMore": "Mehr laden",
+      "loading": "Wird geladen…"
     },
     "join": {
       "homeAria": "Startseite",

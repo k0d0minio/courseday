@@ -38,6 +38,40 @@ export async function getNotifications(): Promise<ActionResponse<Notification[]>
   return { success: true, data: (data ?? []) as Notification[] }
 }
 
+export interface NotificationsPage {
+  notifications: Notification[]
+  hasMore: boolean
+}
+
+export async function getNotificationsPage(
+  offset: number,
+  limit: number
+): Promise<ActionResponse<NotificationsPage>> {
+  const tenantId = await getTenantId()
+  const role = await getUserRole(tenantId)
+  if (!role) return { success: false, error: 'Not a member.' }
+
+  const user = await getUser()
+  if (!user) return { success: false, error: 'Not authenticated.' }
+
+  const { supabase } = await createTenantClient()
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit)
+
+  if (error) return { success: false, error: error.message }
+  const rows = (data ?? []) as Notification[]
+  const hasMore = rows.length > limit
+  return {
+    success: true,
+    data: { notifications: hasMore ? rows.slice(0, limit) : rows, hasMore },
+  }
+}
+
 export async function markNotificationRead(id: string): Promise<ActionResponse> {
   const user = await getUser()
   if (!user) return { success: false, error: 'Not authenticated.' }

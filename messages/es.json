@@ -79,7 +79,16 @@
       "skipToContent": "Saltar al contenido principal",
       "today": "Hoy",
       "mySchedule": "Mi horario",
-      "profile": "Mi perfil"
+      "profile": "Mi perfil",
+      "notifications": "Notificaciones",
+      "unread": "sin leer"
+    },
+    "notifications": {
+      "title": "Notificaciones",
+      "empty": "Aún no hay notificaciones.",
+      "markAllRead": "Marcar todo como leído",
+      "loadMore": "Cargar más",
+      "loading": "Cargando…"
     },
     "join": {
       "homeAria": "Inicio",
