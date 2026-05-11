@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useTransition, type RefObject } from 'react'
+import { ensureDayExists } from '@/app/actions/days'
 import { useForm } from 'react-hook-form'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { z } from 'zod'
@@ -29,6 +30,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/u
 const formSchema = z.object({
   groupName: z.string().optional(),
   guestCount: z.string().optional(),
+  date: z.string().optional(),
   startTime: z.string().optional(),
   notes: z.string().optional(),
 })
@@ -61,7 +63,8 @@ export type BreakfastQuickAdd = {
 type Props = {
   isOpen: boolean
   onClose: () => void
-  dayId: string
+  /** If provided, skips the date field and ensureDayExists call. */
+  dayId?: string
   editItem?: BreakfastConfiguration | null
   onSuccess: (config: BreakfastConfiguration) => void
   returnFocusRef?: RefObject<HTMLElement | null>
@@ -75,7 +78,7 @@ type Props = {
 export function BreakfastForm({
   isOpen,
   onClose,
-  dayId,
+  dayId: dayIdProp,
   editItem,
   onSuccess,
   returnFocusRef,
@@ -141,10 +144,25 @@ export function BreakfastForm({
 
   function onSubmit(data: FormData) {
     startTransition(async () => {
+      let resolvedDayId = dayIdProp
+      if (!resolvedDayId) {
+        if (!data.date) {
+          toast.error(t('dateRequired'))
+          return
+        }
+        const dayResult = await ensureDayExists(data.date)
+        if (!dayResult.success) {
+          toast.error(dayResult.error)
+          return
+        }
+        resolvedDayId = dayResult.data.id
+      }
+      const finalDayId = resolvedDayId as string
+
       const guestCount = data.guestCount ? parseInt(data.guestCount, 10) : undefined
 
       const payload = {
-        dayId,
+        dayId: finalDayId,
         groupName: data.groupName || undefined,
         guestCount,
         tableBreakdown: tableBreakdown.length > 0 ? tableBreakdown : undefined,
@@ -156,7 +174,7 @@ export function BreakfastForm({
         entity: 'breakfast',
         operation: isEditing ? 'update' : 'create',
         tenantSlug,
-        dayId,
+        dayId: finalDayId,
         payload: isEditing ? { ...payload, id: editItem!.id } : payload,
       })
 
@@ -169,7 +187,7 @@ export function BreakfastForm({
         onSuccess({
           id: `pending-${result.clientMutationId}`,
           tenant_id: '',
-          day_id: dayId,
+          day_id: finalDayId,
           breakfast_date: '',
           group_name: payload.groupName ?? null,
           table_breakdown: payload.tableBreakdown ?? null,
@@ -209,6 +227,12 @@ export function BreakfastForm({
 
   const formBody = (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" data-testid="breakfast-form">
+      {!dayIdProp && (
+        <div className="space-y-1">
+          <Label htmlFor="bf-date">{t('dateLabel')} *</Label>
+          <Input id="bf-date" type="date" {...register('date')} data-testid="breakfast-form-date" />
+        </div>
+      )}
       <div className={cn('space-y-1', qaRing('groupName'))}>
         <Label htmlFor="bf-group">{t('groupNameLabel')}</Label>
         <Input
@@ -316,10 +340,11 @@ export function BreakfastForm({
 // ---------------------------------------------------------------------------
 
 function defaultValues(editItem?: BreakfastConfiguration | null): FormData {
-  if (!editItem) return { groupName: '', guestCount: '', startTime: '', notes: '' }
+  if (!editItem) return { groupName: '', guestCount: '', date: '', startTime: '', notes: '' }
   return {
     groupName: editItem.group_name ?? '',
     guestCount: editItem.total_guests > 0 ? String(editItem.total_guests) : '',
+    date: '',
     startTime: editItem.start_time ?? '',
     notes: editItem.notes ?? '',
   }

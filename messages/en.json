@@ -434,7 +434,9 @@
       "venueTypeAdded": "Venue type added.",
       "namePlaceholder": "Name *",
       "emailPlaceholder": "Email (optional)",
-      "phonePlaceholder": "Phone (optional)"
+      "phonePlaceholder": "Phone (optional)",
+      "dateLabel": "Date",
+      "dateRequired": "Date is required"
     },
     "reservationForm": {
       "addTitle": "Add reservation",
@@ -449,7 +451,9 @@
       "save": "Save",
       "saving": "Saving…",
       "saved": "Reservation added.",
-      "updated": "Reservation updated."
+      "updated": "Reservation updated.",
+      "dateLabel": "Date",
+      "dateRequired": "Date is required"
     },
     "breakfastForm": {
       "addTitle": "Add breakfast",
@@ -465,7 +469,9 @@
       "save": "Save",
       "saving": "Saving…",
       "saved": "Breakfast added.",
-      "updated": "Breakfast updated."
+      "updated": "Breakfast updated.",
+      "dateLabel": "Date",
+      "dateRequired": "Date is required"
     },
     "tableBreakdown": {
       "emptyLabel": "Add tables to define the seating layout",

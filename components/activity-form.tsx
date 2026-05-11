@@ -10,6 +10,7 @@ import { useTranslations } from 'next-intl'
 import { createPOC } from '@/app/actions/poc'
 import { createVenueType } from '@/app/actions/venue-type'
 import { createActivityTag, getAllActivityTags } from '@/app/actions/activity-tags'
+import { ensureDayExists } from '@/app/actions/days'
 import { generateRecurrenceDates } from '@/lib/day-utils'
 import { filterAllergenCodes, type AllergenCode } from '@/lib/allergens'
 import type { QuickAddActivityFormDefaults, QuickAddGapId } from '@/lib/quick-add-types'
@@ -50,6 +51,7 @@ import {
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().optional(),
+  date: z.string().optional(),
   startTime: z.string().optional(),
   endTime: z.string().optional(),
   expectedCovers: z.string().optional(),
@@ -93,10 +95,12 @@ export type ActivityQuickAddSeed = {
 type Props = {
   isOpen: boolean
   onClose: () => void
-  date: string
-  dayId: string
-  pocs: PointOfContact[]
-  venueTypes: VenueType[]
+  /** Pre-filled date (from day view). When absent, a date picker is shown. */
+  defaultDate?: string
+  /** If provided, skips the date field and ensureDayExists call. */
+  dayId?: string
+  pocs?: PointOfContact[]
+  venueTypes?: VenueType[]
   editItem?: ActivityWithRelations | null
   onSuccess: (item: Activity) => void
   returnFocusRef?: RefObject<HTMLElement | null>
@@ -111,10 +115,10 @@ type Props = {
 export function ActivityForm({
   isOpen,
   onClose,
-  date,
-  dayId,
-  pocs: initialPocs,
-  venueTypes: initialVenueTypes,
+  defaultDate,
+  dayId: dayIdProp,
+  pocs: initialPocs = [],
+  venueTypes: initialVenueTypes = [],
   editItem,
   onSuccess,
   returnFocusRef,
@@ -248,10 +252,13 @@ export function ActivityForm({
   const qaRing = (field: QuickAddGapId) =>
     qaGapFieldKeys?.has(field) ? 'rounded-md ring-2 ring-amber-500/40 p-0.5 -m-0.5' : ''
 
+  const watchDate = watch('date')
+  const effectiveDate = defaultDate ?? watchDate ?? ''
+
   const occurrenceCount = useMemo(() => {
-    if (!watchIsRecurring || !watchFrequency) return 0
-    return Math.min(52, 1 + generateRecurrenceDates(date, watchFrequency).length)
-  }, [date, watchIsRecurring, watchFrequency])
+    if (!watchIsRecurring || !watchFrequency || !effectiveDate) return 0
+    return Math.min(52, 1 + generateRecurrenceDates(effectiveDate, watchFrequency).length)
+  }, [effectiveDate, watchIsRecurring, watchFrequency])
 
   function handleSavePoc() {
     if (!newPocName.trim()) return
@@ -289,9 +296,24 @@ export function ActivityForm({
 
   function onSubmit(data: FormData) {
     startTransition(async () => {
+      let resolvedDayId = dayIdProp
+      if (!resolvedDayId) {
+        if (!data.date) {
+          toast.error(t('dateRequired'))
+          return
+        }
+        const dayResult = await ensureDayExists(data.date)
+        if (!dayResult.success) {
+          toast.error(dayResult.error)
+          return
+        }
+        resolvedDayId = dayResult.data.id
+      }
+      const finalDayId = resolvedDayId as string
+
       const payload = {
         title: data.title,
-        dayId,
+        dayId: finalDayId,
         description: data.description || undefined,
         startTime: data.startTime || undefined,
         endTime: data.endTime || undefined,
@@ -309,7 +331,7 @@ export function ActivityForm({
         entity: 'activities',
         operation: isEditing ? 'update' : 'create',
         tenantSlug,
-        dayId,
+        dayId: finalDayId,
         payload: isEditing ? { ...payload, id: editItem!.id } : payload,
       })
 
@@ -322,7 +344,7 @@ export function ActivityForm({
         onSuccess({
           id: `pending-${result.clientMutationId}`,
           tenant_id: '',
-          day_id: dayId,
+          day_id: finalDayId,
           title: payload.title,
           description: payload.description ?? null,
           start_time: payload.startTime ?? null,
@@ -362,6 +384,13 @@ export function ActivityForm({
 
   const formBody = (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" data-testid="activity-form">
+      {/* Date — only shown when no dayId is pre-resolved (global add mode) */}
+      {!dayIdProp && (
+        <div className="space-y-1">
+          <Label htmlFor="af-date">{t('dateLabel')} *</Label>
+          <Input id="af-date" type="date" {...register('date')} data-testid="activity-form-date" />
+        </div>
+      )}
       {/* Title */}
       <div className={cn('space-y-1', qaRing('title'))}>
         <Label htmlFor="af-title">{t('titleLabel')} *</Label>
@@ -803,6 +832,7 @@ function defaultValues(editItem?: ActivityWithRelations | null): FormData {
     return {
       title: '',
       description: '',
+      date: '',
       startTime: '',
       endTime: '',
       expectedCovers: '',
@@ -816,6 +846,7 @@ function defaultValues(editItem?: ActivityWithRelations | null): FormData {
   return {
     title: editItem.title,
     description: editItem.description ?? '',
+    date: '',
     startTime: editItem.start_time ?? '',
     endTime: editItem.end_time ?? '',
     expectedCovers: editItem.expected_covers != null ? String(editItem.expected_covers) : '',

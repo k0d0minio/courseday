@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useTransition, type RefObject } from 'react'
+import { ensureDayExists } from '@/app/actions/days'
 import { useForm } from 'react-hook-form'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { z } from 'zod'
@@ -29,6 +30,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/u
 const formSchema = z.object({
   guestName: z.string().optional(),
   guestCount: z.string().optional(),
+  date: z.string().optional(),
   startTime: z.string().optional(),
   endTime: z.string().optional(),
   notes: z.string().optional(),
@@ -65,7 +67,8 @@ export type ReservationQuickAdd =
 type Props = {
   isOpen: boolean
   onClose: () => void
-  dayId: string
+  /** If provided, skips the date field and ensureDayExists call. */
+  dayId?: string
   editItem?: Reservation | null
   onSuccess: (item: Reservation) => void
   returnFocusRef?: RefObject<HTMLElement | null>
@@ -79,7 +82,7 @@ type Props = {
 export function ReservationForm({
   isOpen,
   onClose,
-  dayId,
+  dayId: dayIdProp,
   editItem,
   onSuccess,
   returnFocusRef,
@@ -159,8 +162,23 @@ export function ReservationForm({
 
   function onSubmit(data: FormData) {
     startTransition(async () => {
+      let resolvedDayId = dayIdProp
+      if (!resolvedDayId) {
+        if (!data.date) {
+          toast.error(t('dateRequired'))
+          return
+        }
+        const dayResult = await ensureDayExists(data.date)
+        if (!dayResult.success) {
+          toast.error(dayResult.error)
+          return
+        }
+        resolvedDayId = dayResult.data.id
+      }
+      const finalDayId = resolvedDayId as string
+
       const payload = {
-        dayId,
+        dayId: finalDayId,
         guestName: data.guestName || undefined,
         guestCount: data.guestCount ? parseInt(data.guestCount, 10) : undefined,
         startTime: data.startTime || undefined,
@@ -174,7 +192,7 @@ export function ReservationForm({
         entity: 'reservations',
         operation: isEditing ? 'update' : 'create',
         tenantSlug,
-        dayId,
+        dayId: finalDayId,
         payload: isEditing ? { ...payload, id: editItem!.id } : payload,
       })
 
@@ -187,7 +205,7 @@ export function ReservationForm({
         const optimistic: Reservation = {
           id: `pending-${result.clientMutationId}`,
           tenant_id: '',
-          day_id: dayId,
+          day_id: finalDayId,
           guest_name: payload.guestName ?? null,
           guest_count: payload.guestCount ?? null,
           start_time: payload.startTime ?? null,
@@ -221,6 +239,17 @@ export function ReservationForm({
 
   const formBody = (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" data-testid="reservation-form">
+      {!dayIdProp && (
+        <div className="space-y-1">
+          <Label htmlFor="rf-date">{t('dateLabel')} *</Label>
+          <Input
+            id="rf-date"
+            type="date"
+            {...register('date')}
+            data-testid="reservation-form-date"
+          />
+        </div>
+      )}
       <div className={cn('space-y-1', qaRing('guestName'))}>
         <Label htmlFor="rf-name">{t('guestNameLabel')}</Label>
         <Input id="rf-name" {...register('guestName')} data-testid="reservation-form-guest-name" />
@@ -325,10 +354,12 @@ export function ReservationForm({
 // ---------------------------------------------------------------------------
 
 function defaultValues(editItem?: Reservation | null): FormData {
-  if (!editItem) return { guestName: '', guestCount: '', startTime: '', endTime: '', notes: '' }
+  if (!editItem)
+    return { guestName: '', guestCount: '', date: '', startTime: '', endTime: '', notes: '' }
   return {
     guestName: editItem.guest_name ?? '',
     guestCount: editItem.guest_count != null ? String(editItem.guest_count) : '',
+    date: '',
     startTime: editItem.start_time ?? '',
     endTime: editItem.end_time ?? '',
     notes: editItem.notes ?? '',
