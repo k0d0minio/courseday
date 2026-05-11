@@ -79,6 +79,7 @@ function activity(title: string, startTime: string, covers: string): QuickAddPar
     kind: 'activity',
     dayId: DAY,
     contextDate: CTX,
+    resolvedDate: CTX,
     dateAmbiguous: false,
     defaults: {
       title,
@@ -99,6 +100,7 @@ function reservation(name: string, count: string, startTime: string): QuickAddPa
     kind: 'reservation',
     dayId: DAY,
     contextDate: CTX,
+    resolvedDate: CTX,
     dateAmbiguous: false,
     defaults: { guestName: name, guestCount: count, startTime, endTime: '', notes: '' },
     tableBreakdown: [],
@@ -113,6 +115,7 @@ function breakfast(group: string, count: string, startTime: string): QuickAddPar
     kind: 'breakfast',
     dayId: DAY,
     contextDate: CTX,
+    resolvedDate: CTX,
     dateAmbiguous: false,
     defaults: { groupName: group, guestCount: count, startTime, notes: '' },
     tableBreakdown: [],
