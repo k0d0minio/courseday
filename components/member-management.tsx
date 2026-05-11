@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { Check, Pencil, Trash2, UserPlus, X } from 'lucide-react'
+import { CalendarDays, Pencil, Trash2, UserPlus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import {
   getMembers,
@@ -13,8 +13,9 @@ import {
   cancelInvitation,
 } from '@/app/actions/memberships'
 import type { Member, PendingInvitation, MemberRole } from '@/app/actions/memberships'
-import { ProfileForm } from '@/app/[tenant]/profile/profile-form'
-import { updateMemberPayRate } from '@/app/actions/pay-rates'
+import { useFeatureFlag } from '@/lib/feature-flags-context'
+import { MemberEditDialog } from '@/components/member-edit-dialog'
+import { MemberScheduleEditor } from '@/components/member-schedule-editor'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -55,127 +56,22 @@ function RoleBadge({ role, label }: { role: MemberRole; label: string }) {
 }
 
 // ---------------------------------------------------------------------------
-// Pay rate inline editor
+// Single-role invite dialog
 // ---------------------------------------------------------------------------
 
-function PayRateEditor({
-  member,
-  onSaved,
+function InviteDialog({
+  role,
+  open,
+  onOpenChange,
+  onInvited,
 }: {
-  member: Member
-  onSaved: (id: string, rate: number | null, currency: string | null) => void
+  role: MemberRole
+  open: boolean
+  onOpenChange: (v: boolean) => void
+  onInvited: () => void
 }) {
   const t = useTranslations('Tenant.members')
-  const [editing, setEditing] = useState(false)
-  const [rateStr, setRateStr] = useState(member.hourly_rate?.toString() ?? '')
-  const [currency, setCurrency] = useState(member.currency ?? 'EUR')
-  const [isPending, startTransition] = useTransition()
-
-  function handleEdit() {
-    setRateStr(member.hourly_rate?.toString() ?? '')
-    setCurrency(member.currency ?? 'EUR')
-    setEditing(true)
-  }
-
-  function handleCancel() {
-    setEditing(false)
-  }
-
-  function handleSave() {
-    const parsed = rateStr.trim() === '' ? null : parseFloat(rateStr)
-    if (parsed !== null && (isNaN(parsed) || parsed < 0)) {
-      toast.error(t('payRate.invalidRate'))
-      return
-    }
-    const cur = currency.trim().toUpperCase()
-    if (cur && !/^[A-Z]{3}$/.test(cur)) {
-      toast.error(t('payRate.invalidCurrency'))
-      return
-    }
-    startTransition(async () => {
-      const result = await updateMemberPayRate(member.id, {
-        hourly_rate: parsed,
-        currency: cur || null,
-      })
-      if (!result.success) {
-        toast.error(result.error)
-        return
-      }
-      toast.success(t('payRate.saved'))
-      onSaved(member.id, parsed, cur || null)
-      setEditing(false)
-    })
-  }
-
-  if (!editing) {
-    const display =
-      member.hourly_rate !== null
-        ? `${member.hourly_rate} ${member.currency ?? ''}`
-        : t('payRate.notSet')
-    return (
-      <div className="flex items-center gap-1.5">
-        <span className="text-muted-foreground text-sm tabular-nums">{display}</span>
-        <Button
-          variant="ghost"
-          size="iconXs"
-          onClick={handleEdit}
-          aria-label={t('payRate.editAria')}
-        >
-          <Pencil className="size-3.5" />
-        </Button>
-      </div>
-    )
-  }
-
-  return (
-    <div className="flex items-center gap-1.5">
-      <Input
-        type="number"
-        min={0}
-        step="0.01"
-        value={rateStr}
-        onChange={(e) => setRateStr(e.target.value)}
-        placeholder="0.00"
-        className="h-8 w-20 text-sm"
-        aria-label={t('payRate.rateLabel')}
-      />
-      <Input
-        value={currency}
-        onChange={(e) => setCurrency(e.target.value.toUpperCase().slice(0, 3))}
-        placeholder="EUR"
-        className="h-8 w-16 text-sm uppercase"
-        aria-label={t('payRate.currencyLabel')}
-        maxLength={3}
-      />
-      <Button
-        variant="ghost"
-        size="iconXs"
-        disabled={isPending}
-        onClick={handleSave}
-        aria-label={t('payRate.saveAria')}
-      >
-        <Check className="size-3.5" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="iconXs"
-        onClick={handleCancel}
-        aria-label={t('payRate.cancelAria')}
-      >
-        <X className="size-3.5" />
-      </Button>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Invite form
-// ---------------------------------------------------------------------------
-
-function InviteForm({ onInvited }: { onInvited: () => void }) {
-  const t = useTranslations('Tenant.members')
   const [email, setEmail] = useState('')
-  const [role, setRole] = useState<MemberRole>('staff')
   const [isPending, startTransition] = useTransition()
 
   function handleSubmit(e: React.FormEvent) {
@@ -188,61 +84,89 @@ function InviteForm({ onInvited }: { onInvited: () => void }) {
       }
       toast.success(result.data.emailed ? t('invited') : t('invitedExisting'))
       setEmail('')
-      setRole('staff')
+      onOpenChange(false)
       onInvited()
     })
   }
 
   return (
-    <Card className="gap-0 overflow-hidden py-0 shadow-sm">
-      <CardHeader className="bg-muted/40 border-b px-5 py-4 sm:px-6">
-        <CardTitle className="text-base">{t('inviteTitle')}</CardTitle>
-      </CardHeader>
-      <CardContent className="px-5 py-5 sm:px-6">
-        <form onSubmit={handleSubmit}>
-          <p id="invite-fields-desc" className="sr-only">
-            {t('emailLabel')}, {t('roleLabel')}
-          </p>
-          <div
-            className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3"
-            aria-describedby="invite-fields-desc"
-          >
-            <Input
-              id="invite-email"
-              type="email"
-              className="h-10 min-h-10 w-full flex-1 sm:min-w-0"
-              placeholder={t('emailPlaceholder')}
-              aria-label={t('emailLabel')}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <Select value={role} onValueChange={(v) => setRole(v as MemberRole)}>
-              <SelectTrigger
-                id="invite-role"
-                className="!h-10 min-h-10 w-full shrink-0 sm:w-[10.5rem]"
-                aria-label={t('roleLabel')}
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent align="start">
-                <SelectItem value="staff">{t('roleStaff')}</SelectItem>
-                <SelectItem value="editor">{t('roleEditor')}</SelectItem>
-              </SelectContent>
-            </Select>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {role === 'editor' ? t('inviteEditorTitle') : t('inviteStaffTitle')}
+          </DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+          <Input
+            type="email"
+            placeholder={t('emailPlaceholder')}
+            aria-label={t('emailLabel')}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <div className="flex justify-end gap-2">
             <Button
-              type="submit"
-              size="lg"
-              className="w-full shrink-0 sm:w-auto"
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
               disabled={isPending}
             >
+              {t('cancelAction')}
+            </Button>
+            <Button type="submit" disabled={isPending}>
               <UserPlus className="size-4 shrink-0" aria-hidden />
               {isPending ? t('inviting') : t('invite')}
             </Button>
           </div>
         </form>
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Invite section — two buttons
+// ---------------------------------------------------------------------------
+
+function InviteSection({ onInvited }: { onInvited: () => void }) {
+  const t = useTranslations('Tenant.members')
+  const [inviteRole, setInviteRole] = useState<MemberRole | null>(null)
+
+  return (
+    <>
+      <Card className="gap-0 overflow-hidden py-0 shadow-sm">
+        <CardHeader className="bg-muted/40 border-b px-5 py-4 sm:px-6">
+          <CardTitle className="text-base">{t('inviteTitle')}</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 px-5 py-5 sm:flex-row sm:px-6">
+          <Button
+            variant="outline"
+            onClick={() => setInviteRole('editor')}
+            className="flex-1 sm:flex-none"
+          >
+            <UserPlus className="size-4 shrink-0" aria-hidden />
+            {t('inviteEditor')}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setInviteRole('staff')}
+            className="flex-1 sm:flex-none"
+          >
+            <UserPlus className="size-4 shrink-0" aria-hidden />
+            {t('inviteStaff')}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <InviteDialog
+        role={inviteRole ?? 'staff'}
+        open={inviteRole !== null}
+        onOpenChange={(v) => { if (!v) setInviteRole(null) }}
+        onInvited={onInvited}
+      />
+    </>
   )
 }
 
@@ -252,12 +176,14 @@ function InviteForm({ onInvited }: { onInvited: () => void }) {
 
 export function MemberManagement({ currentUserId }: { currentUserId: string }) {
   const t = useTranslations('Tenant.members')
+  const showStaffSchedule = useFeatureFlag('staff_schedule')
   const [members, setMembers] = useState<Member[]>([])
   const [pending, setPending] = useState<PendingInvitation[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [removeTarget, setRemoveTarget] = useState<Member | null>(null)
-  const [editProfileTarget, setEditProfileTarget] = useState<Member | null>(null)
+  const [editTarget, setEditTarget] = useState<Member | null>(null)
+  const [scheduleTarget, setScheduleTarget] = useState<Member | null>(null)
   const [isRemoving, startRemoveTransition] = useTransition()
   const [isCancelling, startCancelTransition] = useTransition()
 
@@ -283,8 +209,8 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
     refresh().finally(() => setLoading(false))
   }, [])
 
-  function handlePayRateSaved(id: string, rate: number | null, currency: string | null) {
-    setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, hourly_rate: rate, currency } : m)))
+  function handleMemberSaved(id: string, patch: Partial<Member>) {
+    setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)))
   }
 
   function handleRoleChange(member: Member, newRole: MemberRole) {
@@ -353,7 +279,6 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
                       {t('role')}
                     </TableHead>
                     <TableHead className="h-11 w-36 font-medium">{t('joined')}</TableHead>
-                    <TableHead className="h-11 w-40 font-medium">{t('payRate.header')}</TableHead>
                     <TableHead className="h-11 w-14 pr-6" aria-hidden />
                   </TableRow>
                 </TableHeader>
@@ -390,20 +315,25 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
                         <TableCell className="text-muted-foreground py-3 text-sm tabular-nums">
                           {new Date(member.created_at).toLocaleDateString()}
                         </TableCell>
-                        <TableCell className="py-3">
-                          <PayRateEditor member={member} onSaved={handlePayRateSaved} />
-                        </TableCell>
                         <TableCell className="py-3 pr-6 text-right">
                           {!isSelf && (
                             <div className="flex items-center justify-end gap-1">
-                              {member.role === 'staff' && (
+                              <Button
+                                variant="ghost"
+                                size="iconSm"
+                                onClick={() => setEditTarget(member)}
+                                aria-label={t('editMember')}
+                              >
+                                <Pencil className="size-4" />
+                              </Button>
+                              {showStaffSchedule && (
                                 <Button
                                   variant="ghost"
                                   size="iconSm"
-                                  onClick={() => setEditProfileTarget(member)}
-                                  aria-label={t('editProfile')}
+                                  onClick={() => setScheduleTarget(member)}
+                                  aria-label={t('editSchedule')}
                                 >
-                                  <Pencil className="size-4" />
+                                  <CalendarDays className="size-4" />
                                 </Button>
                               )}
                               <Button
@@ -428,7 +358,7 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
         </CardContent>
       </Card>
 
-      <InviteForm onInvited={refresh} />
+      <InviteSection onInvited={refresh} />
 
       {pending.length > 0 && (
         <Card className="gap-0 overflow-hidden py-0 shadow-sm">
@@ -477,27 +407,20 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
         </Card>
       )}
 
-      <Dialog
-        open={!!editProfileTarget}
-        onOpenChange={(v) => {
-          if (!v) setEditProfileTarget(null)
+      <MemberEditDialog
+        member={editTarget}
+        open={!!editTarget}
+        onOpenChange={(v) => { if (!v) setEditTarget(null) }}
+        onSaved={(patch) => {
+          if (editTarget) handleMemberSaved(editTarget.id, patch)
         }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('editProfileTitle')}</DialogTitle>
-          </DialogHeader>
-          {editProfileTarget && (
-            <ProfileForm
-              membershipId={editProfileTarget.id}
-              initialFirstName={editProfileTarget.first_name ?? ''}
-              initialLastName={editProfileTarget.last_name ?? ''}
-              initialJobTitle={editProfileTarget.job_title ?? ''}
-              onSaved={() => setEditProfileTarget(null)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      />
+
+      <MemberScheduleEditor
+        member={scheduleTarget}
+        open={!!scheduleTarget}
+        onOpenChange={(v) => { if (!v) setScheduleTarget(null) }}
+      />
 
       <AlertDialog
         open={!!removeTarget}
