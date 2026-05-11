@@ -672,7 +672,16 @@
       "statusReviewing": "Reviewing",
       "statusAccepted": "Accepted",
       "statusRejected": "Rejected",
-      "statusShipped": "Shipped"
+      "statusShipped": "Shipped",
+      "priorityLabel": "Priority (optional)",
+      "priorityPlaceholder": "How urgent is this?",
+      "priorityNiceToHave": "Nice to have",
+      "priorityWouldHelp": "Would help",
+      "priorityBlocking": "Blocking",
+      "workaroundLabel": "What do you do today when this comes up?",
+      "workaroundPlaceholder": "Describe your current workaround (optional)",
+      "expectedOutcomeLabel": "What would good look like?",
+      "expectedOutcomePlaceholder": "Describe the ideal outcome (optional)"
     },
     "onboarding": {
       "title": "Set up your venue",

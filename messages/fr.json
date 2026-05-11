@@ -633,7 +633,16 @@
       "statusReviewing": "En cours d'examen",
       "statusAccepted": "Acceptée",
       "statusRejected": "Refusée",
-      "statusShipped": "Livrée"
+      "statusShipped": "Livrée",
+      "priorityLabel": "Priorité (optionnel)",
+      "priorityPlaceholder": "À quel point est-ce urgent ?",
+      "priorityNiceToHave": "Souhaitable",
+      "priorityWouldHelp": "Serait utile",
+      "priorityBlocking": "Bloquant",
+      "workaroundLabel": "Que faites-vous aujourd'hui quand cela se produit ?",
+      "workaroundPlaceholder": "Décrivez votre contournement actuel (optionnel)",
+      "expectedOutcomeLabel": "À quoi ressemblerait une bonne solution ?",
+      "expectedOutcomePlaceholder": "Décrivez le résultat idéal (optionnel)"
     },
     "onboarding": {
       "title": "Configurer votre établissement",

@@ -1,18 +1,30 @@
 'use client'
 
 import { useEffect, useState, useTransition } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
 import { createFeatureRequest, getTenantFeatureRequests } from '@/app/actions/feature-requests'
 import type { FeatureRequest, FeatureRequestStatus } from '@/app/actions/feature-requests'
-import { featureRequestSchema, type FeatureRequestFormData } from '@/lib/feature-request-schema'
+import {
+  featureRequestSchema,
+  type FeatureRequestFormData,
+  type FeatureRequestPriority,
+  FEATURE_REQUEST_PRIORITY,
+} from '@/lib/feature-request-schema'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 
 // ---------------------------------------------------------------------------
@@ -49,10 +61,11 @@ export function FeatureRequestManagement() {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors },
   } = useForm<FeatureRequestFormData>({
     resolver: standardSchemaResolver(featureRequestSchema),
-    defaultValues: { title: '', description: '' },
+    defaultValues: { title: '', description: '', workaround: '', expected_outcome: '' },
   })
 
   useEffect(() => {
@@ -89,6 +102,14 @@ export function FeatureRequestManagement() {
         | 'statusShipped'
     )
 
+  const priorityLabel = (p: FeatureRequestPriority) =>
+    t(
+      `priority${p
+        .split('_')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join('')}` as 'priorityNiceToHave' | 'priorityWouldHelp' | 'priorityBlocking'
+    )
+
   return (
     <div className="space-y-8">
       {/* Submit form */}
@@ -111,6 +132,59 @@ export function FeatureRequestManagement() {
           />
           {errors.description && (
             <p className="text-destructive text-sm">{errors.description.message}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="fr-priority">{t('priorityLabel')}</Label>
+          <Controller
+            name="priority"
+            control={control}
+            render={({ field }) => (
+              <Select
+                value={field.value ?? ''}
+                onValueChange={(v) =>
+                  field.onChange(v === '' ? undefined : (v as FeatureRequestPriority))
+                }
+              >
+                <SelectTrigger id="fr-priority">
+                  <SelectValue placeholder={t('priorityPlaceholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {FEATURE_REQUEST_PRIORITY.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {priorityLabel(p)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="fr-workaround">{t('workaroundLabel')}</Label>
+          <Textarea
+            id="fr-workaround"
+            placeholder={t('workaroundPlaceholder')}
+            rows={2}
+            {...register('workaround')}
+          />
+          {errors.workaround && (
+            <p className="text-destructive text-sm">{errors.workaround.message}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="fr-outcome">{t('expectedOutcomeLabel')}</Label>
+          <Textarea
+            id="fr-outcome"
+            placeholder={t('expectedOutcomePlaceholder')}
+            rows={2}
+            {...register('expected_outcome')}
+          />
+          {errors.expected_outcome && (
+            <p className="text-destructive text-sm">{errors.expected_outcome.message}</p>
           )}
         </div>
 

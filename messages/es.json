@@ -505,7 +505,16 @@
       "statusReviewing": "En revisión",
       "statusAccepted": "Aceptada",
       "statusRejected": "Rechazada",
-      "statusShipped": "Publicada"
+      "statusShipped": "Publicada",
+      "priorityLabel": "Prioridad (opcional)",
+      "priorityPlaceholder": "¿Qué tan urgente es esto?",
+      "priorityNiceToHave": "Sería bueno tener",
+      "priorityWouldHelp": "Ayudaría",
+      "priorityBlocking": "Bloqueante",
+      "workaroundLabel": "¿Qué hace hoy cuando esto ocurre?",
+      "workaroundPlaceholder": "Describa su solución actual (opcional)",
+      "expectedOutcomeLabel": "¿Cómo sería una buena solución?",
+      "expectedOutcomePlaceholder": "Describa el resultado ideal (opcional)"
     },
     "onboarding": {
       "title": "Configura tu establecimiento",
