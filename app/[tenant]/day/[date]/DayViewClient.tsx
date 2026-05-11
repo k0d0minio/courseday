@@ -26,7 +26,6 @@ import { DayInfoBanner } from '@/components/day-info-banner'
 import { StaffScheduleSection } from '@/components/staff-schedule-section'
 import { useFeatureFlag } from '@/lib/feature-flags-context'
 import { useActiveDay } from '@/lib/active-day-context'
-import { useDayViewHotkeys } from '@/lib/keyboard-shortcuts'
 import type {
   Activity,
   ActivityWithRelations,
@@ -282,15 +281,6 @@ function DayViewEditor({
   function handleBreakfastDeleted(id: string) {
     setBreakfastConfigs((prev) => prev.filter((c) => c.id !== id))
   }
-
-  useDayViewHotkeys({
-    date,
-    today,
-    impersonationRole: authState.impersonationRole,
-    onOpenActivity: openAddActivity,
-    ...(showReservations ? { onOpenReservation: openAddReservation } : {}),
-    ...(showBreakfast ? { onOpenBreakfast: openAddBreakfast } : {}),
-  })
 
   useEffect(() => {
     const create = searchParams.get('create')

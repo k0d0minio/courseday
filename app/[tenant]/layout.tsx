@@ -24,7 +24,7 @@ import { getUnreadCount } from '@/app/actions/notifications'
 import { getTenantToday } from '@/lib/day-utils'
 import { getSuperadminImpersonationRole } from '@/lib/superadmin'
 import { getTenantPalette, getTenantThemeCssVariables } from '@/lib/theme/palettes'
-import { TenantKeyboardShell } from '@/components/tenant-keyboard-shell'
+import { QuickAddProvider } from '@/lib/quick-add-context'
 import { GlobalQuickAdd } from '@/components/global-quick-add'
 import { StaffMobileSettings } from '@/components/staff-mobile-settings'
 import { Button } from '@/components/ui/button'
@@ -110,7 +110,7 @@ export default async function TenantLayout({ children }: { children: React.React
       <FeatureFlagProvider flags={featureFlags}>
         <TenantProvider tenantId={tenant.id} tenantSlug={tenant.slug}>
           <AuthProvider>
-            <TenantKeyboardShell tenantTodayYmd={today}>
+            <QuickAddProvider>
               <a
                 href="#main-content"
                 className="focus:bg-background focus:ring-ring sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:rounded focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:ring-2"
@@ -179,7 +179,7 @@ export default async function TenantLayout({ children }: { children: React.React
               <Toaster richColors closeButton />
               <PwaRegister />
               <PwaInstallPrompt />
-            </TenantKeyboardShell>
+            </QuickAddProvider>
           </AuthProvider>
         </TenantProvider>
       </FeatureFlagProvider>

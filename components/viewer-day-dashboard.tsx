@@ -12,7 +12,6 @@ import type { DayNote } from '@/app/actions/day-notes'
 import type { WeatherData } from '@/app/actions/weather'
 import type { DailyBriefRecord } from '@/types/daily-brief'
 import { useAuth } from '@/lib/AuthProvider'
-import { useDayViewHotkeys } from '@/lib/keyboard-shortcuts'
 import { DailyBriefCard } from '@/components/daily-brief-card'
 
 // ---------------------------------------------------------------------------
@@ -55,8 +54,6 @@ export function ViewerDayDashboard({
   briefOverrideAuthorName = null,
 }: Props) {
   const { impersonationRole } = useAuth()
-
-  useDayViewHotkeys({ date, today, impersonationRole })
 
   const td = useTranslations('Tenant.day')
   const tsummary = useTranslations('Tenant.summary')
