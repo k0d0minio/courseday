@@ -44,7 +44,7 @@ export async function getDaySummaries(
     supabase.from('reservation').select('day_id').eq('tenant_id', tenantId).in('day_id', dayIds),
     supabase
       .from('breakfast_configuration')
-      .select('breakfast_date,total_guests')
+      .select('breakfast_date')
       .eq('tenant_id', tenantId)
       .gte('breakfast_date', start)
       .lte('breakfast_date', end),
@@ -78,7 +78,7 @@ export async function getDaySummaries(
 
   for (const item of breakfastRes.data ?? []) {
     const s = summaryMap.get((item as { breakfast_date: string }).breakfast_date)
-    if (s) s.breakfastCount += (item as { total_guests: number }).total_guests
+    if (s) s.breakfastCount++
   }
 
   const summaries = [...summaryMap.values()].sort((a, b) => a.date.localeCompare(b.date))

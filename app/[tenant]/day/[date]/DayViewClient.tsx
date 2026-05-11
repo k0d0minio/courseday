@@ -351,11 +351,18 @@ function DayViewEditor({
               aria-expanded={openBlocks.has('breakfast')}
             >
               <p className="text-4xl leading-none font-bold tabular-nums">
-                {breakfastConfigs.reduce((s, b) => s + b.total_guests, 0)}
+                {breakfastConfigs.length}
               </p>
               <p className="text-muted-foreground mt-2 text-xs leading-tight">
                 {tsummary('breakfast')}
               </p>
+              {breakfastConfigs.reduce((s, b) => s + b.total_guests, 0) > 0 && (
+                <p className="text-muted-foreground mt-0.5 text-xs leading-tight">
+                  {tsummary('coversShort', {
+                    count: breakfastConfigs.reduce((s, b) => s + b.total_guests, 0),
+                  })}
+                </p>
+              )}
             </button>
           )}
           {/* eslint-disable-next-line no-restricted-syntax */}
@@ -364,9 +371,7 @@ function DayViewEditor({
             onClick={() => toggleBlock('activities')}
             aria-expanded={openBlocks.has('activities')}
           >
-            <p className="text-4xl leading-none font-bold tabular-nums">
-              {activities.reduce((s, a) => s + (a.expected_covers ?? 0), 0)}
-            </p>
+            <p className="text-4xl leading-none font-bold tabular-nums">{activities.length}</p>
             <p className="text-muted-foreground mt-2 text-xs leading-tight">
               {tsummary('activities')}
             </p>
@@ -378,12 +383,17 @@ function DayViewEditor({
               onClick={() => toggleBlock('reservations')}
               aria-expanded={openBlocks.has('reservations')}
             >
-              <p className="text-4xl leading-none font-bold tabular-nums">
-                {reservations.reduce((s, r) => s + (r.guest_count ?? 0), 0)}
-              </p>
+              <p className="text-4xl leading-none font-bold tabular-nums">{reservations.length}</p>
               <p className="text-muted-foreground mt-2 text-xs leading-tight">
                 {tsummary('reservations')}
               </p>
+              {reservations.reduce((s, r) => s + (r.guest_count ?? 0), 0) > 0 && (
+                <p className="text-muted-foreground mt-0.5 text-xs leading-tight">
+                  {tsummary('coversShort', {
+                    count: reservations.reduce((s, r) => s + (r.guest_count ?? 0), 0),
+                  })}
+                </p>
+              )}
             </button>
           )}
         </div>

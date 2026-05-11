@@ -307,7 +307,8 @@
     "summary": {
       "breakfast": "Petits-déjeuners",
       "activities": "Activités",
-      "reservations": "Réservations"
+      "reservations": "Réservations",
+      "coversShort": "{count} couverts"
     },
     "sidebar": {
       "selectedDay": "Jour sélectionné",
@@ -324,7 +325,8 @@
       "reservationCount": "{count, plural, one {# réservation} other {# réservations}}",
       "breakfastCoverCount": "{count, plural, one {# couvert petit-déjeuner} other {# couverts petit-déjeuner}}",
       "loading": "Chargement…",
-      "close": "Fermer"
+      "close": "Fermer",
+      "breakfastCount": "{count, plural, one {# petit-déjeuner} other {# petits-déjeuners}}"
     },
     "entry": {
       "deleteTitle": "Supprimer l'activité ?",

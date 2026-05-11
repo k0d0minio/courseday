@@ -213,7 +213,7 @@ function AgendaDayRow({
   if (showReservations && summary.reservationCount > 0)
     countParts.push(ts('reservationCount', { count: summary.reservationCount }))
   if (showBreakfast && summary.breakfastCount > 0)
-    countParts.push(ts('breakfastCoverCount', { count: summary.breakfastCount }))
+    countParts.push(ts('breakfastCount', { count: summary.breakfastCount }))
 
   return (
     <>
@@ -396,7 +396,7 @@ function AgendaDayRow({
                     : prev
                 )
                 onSummaryChanged({
-                  breakfastCount: summary.breakfastCount + item.total_guests,
+                  breakfastCount: summary.breakfastCount + 1,
                 })
               }}
             />

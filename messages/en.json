@@ -333,7 +333,8 @@
     "summary": {
       "breakfast": "Breakfasts",
       "activities": "Activities",
-      "reservations": "Reservations"
+      "reservations": "Reservations",
+      "coversShort": "{count} covers"
     },
     "sidebar": {
       "selectedDay": "Selected day",
@@ -349,6 +350,7 @@
       "activityCount": "{count, plural, one {# activity} other {# activities}}",
       "reservationCount": "{count, plural, one {# reservation} other {# reservations}}",
       "breakfastCoverCount": "{count, plural, one {# breakfast cover} other {# breakfast covers}}",
+      "breakfastCount": "{count, plural, one {# breakfast} other {# breakfasts}}",
       "loading": "Loading…",
       "close": "Close"
     },
