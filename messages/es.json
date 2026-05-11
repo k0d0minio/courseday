@@ -624,7 +624,10 @@
       "jobTitlePlaceholder": "p.ej. Jefe de cocina, Camarero, Gerente",
       "save": "Guardar",
       "saving": "Guardando…",
-      "saved": "Perfil actualizado."
+      "saved": "Perfil actualizado.",
+      "accountSection": "Cuenta",
+      "theme": "Tema",
+      "signOut": "Cerrar sesión"
     }
   }
 }

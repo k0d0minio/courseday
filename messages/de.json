@@ -624,7 +624,10 @@
       "jobTitlePlaceholder": "z.B. Chefkoch, Barkeeper, Manager",
       "save": "Speichern",
       "saving": "Speichern…",
-      "saved": "Profil aktualisiert."
+      "saved": "Profil aktualisiert.",
+      "accountSection": "Konto",
+      "theme": "Darstellung",
+      "signOut": "Abmelden"
     }
   }
 }

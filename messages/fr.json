@@ -752,7 +752,10 @@
       "jobTitlePlaceholder": "ex. Chef de rang, Barman, Directeur",
       "save": "Enregistrer",
       "saving": "Enregistrement…",
-      "saved": "Profil mis à jour."
+      "saved": "Profil mis à jour.",
+      "accountSection": "Compte",
+      "theme": "Thème",
+      "signOut": "Se déconnecter"
     }
   }
 }
