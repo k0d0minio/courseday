@@ -1,30 +1,19 @@
+// This file configures the initialization of Sentry on the server.
+// The config you add here will be used whenever the server handles a request.
+// https://docs.sentry.io/platforms/javascript/guides/nextjs/
+
 import * as Sentry from '@sentry/nextjs'
 
 Sentry.init({
-  dsn: process.env.SENTRY_DSN,
+  dsn: 'https://7f4cada18cb436574e48a775940ebbd5@o4511367397638144.ingest.de.sentry.io/4511367402094672',
 
-  // Tracing is out of scope.
-  tracesSampleRate: 0,
+  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
+  tracesSampleRate: 1,
 
-  enabled: !!process.env.SENTRY_DSN,
+  // Enable logs to be sent to Sentry
+  enableLogs: true,
 
-  beforeSend(event, hint) {
-    const err = hint?.originalException
-
-    // Drop Next.js internal navigation signals — they're controlled flow, not bugs.
-    if (err instanceof Error) {
-      const digest = (err as Error & { digest?: string }).digest
-      if (digest === 'NEXT_NOT_FOUND' || digest?.startsWith('NEXT_REDIRECT')) return null
-
-      // AbortError fires when a client navigates away mid-request — not a bug.
-      if (err.name === 'AbortError') return null
-    }
-
-    // Strip request body to avoid capturing PII (e.g. day-note content, guest names).
-    if (event.request) {
-      delete event.request.data
-    }
-
-    return event
-  },
+  // Enable sending user PII (Personally Identifiable Information)
+  // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
+  sendDefaultPii: true,
 })
