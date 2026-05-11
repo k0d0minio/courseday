@@ -26,6 +26,7 @@ import { getSuperadminImpersonationRole } from '@/lib/superadmin'
 import { getTenantPalette, getTenantThemeCssVariables } from '@/lib/theme/palettes'
 import { TenantKeyboardShell } from '@/components/tenant-keyboard-shell'
 import { GlobalQuickAdd } from '@/components/global-quick-add'
+import { StaffMobileSettings } from '@/components/staff-mobile-settings'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { CalendarDays, User } from 'lucide-react'
@@ -177,6 +178,8 @@ export default async function TenantLayout({ children }: { children: React.React
                         </TooltipProvider>
                       </span>
                     )}
+                    {/* Staff settings — mobile only, non-editors */}
+                    {!editor && user && <StaffMobileSettings />}
                     <span className="hidden sm:inline-flex">
                       <NotificationBell initialCount={unreadCount} />
                     </span>
