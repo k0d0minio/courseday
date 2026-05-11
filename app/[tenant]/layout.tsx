@@ -5,8 +5,6 @@ import { getLocale, getMessages, getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import { Toaster } from 'sonner'
 import { Logo } from '@/components/logo'
-import { UserMenu } from '@/components/user-menu'
-import { ThemeToggle } from '@/components/theme-toggle'
 import { SettingsDropdown } from '@/components/settings-dropdown'
 import { getUser } from '@/app/actions/auth'
 import { getTenantFromHeaders } from '@/lib/tenant'
@@ -125,8 +123,6 @@ export default async function TenantLayout({ children }: { children: React.React
                   <Logo logoUrl={row?.logo_url ?? null} tenantName={row?.name ?? null} />
                   <div className="flex items-center gap-1">
                     <OfflineStatusPill />
-                    {/* Theme toggle — visible to all signed-in users */}
-                    {user && <ThemeToggle />}
                     {/* AI quick-add — editors only */}
                     {editor && <GlobalQuickAdd />}
                     {/* Settings dropdown — editors only, desktop */}
@@ -180,11 +176,6 @@ export default async function TenantLayout({ children }: { children: React.React
                       </span>
                     )}
                     <NotificationBell initialCount={unreadCount} />
-                    {user && (
-                      <span className={editor ? undefined : 'hidden sm:inline-flex'}>
-                        <UserMenu user={user} signOutLabel={t('signOut')} />
-                      </span>
-                    )}
                   </div>
                 </header>
                 <main id="main-content" className="flex-1 pb-16 sm:pb-0">

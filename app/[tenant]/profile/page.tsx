@@ -1,6 +1,9 @@
 import { getTranslations } from 'next-intl/server'
 import { requireTenantMember } from '@/lib/guards'
 import { getMemberProfile } from '@/app/actions/memberships'
+import { signOut } from '@/app/actions/auth'
+import { Button } from '@/components/ui/button'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { ProfileForm } from './profile-form'
 
 export const dynamic = 'force-dynamic'
@@ -20,6 +23,21 @@ export default async function ProfilePage() {
         initialLastName={profile?.last_name ?? ''}
         initialJobTitle={profile?.job_title ?? ''}
       />
+
+      <div className="mt-10">
+        <h2 className="mb-4 text-lg font-semibold">{t('accountSection')}</h2>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm">{t('theme')}</span>
+            <ThemeToggle />
+          </div>
+          <form action={signOut}>
+            <Button type="submit" variant="destructive" className="w-full" data-testid="sign-out">
+              {t('signOut')}
+            </Button>
+          </form>
+        </div>
+      </div>
     </div>
   )
 }

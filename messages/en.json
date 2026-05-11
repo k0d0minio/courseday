@@ -832,7 +832,10 @@
       "jobTitlePlaceholder": "e.g. Head chef, Barman, Manager",
       "save": "Save",
       "saving": "Saving…",
-      "saved": "Profile updated."
+      "saved": "Profile updated.",
+      "accountSection": "Account",
+      "theme": "Theme",
+      "signOut": "Sign out"
     },
     "venueType": {
       "title": "Venue Types",
