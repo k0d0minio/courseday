@@ -2,7 +2,7 @@
 
 import { createTenantClient, createSupabaseServerClient } from '@/lib/supabase-server'
 import { getTenantId } from '@/lib/tenant'
-import { requireEditor } from '@/lib/membership'
+import { requireEditor, getUserRole } from '@/lib/membership'
 import { getUser } from '@/app/actions/auth'
 import { shiftSchema } from '@/lib/shift-schema'
 import type { ShiftFormData } from '@/lib/shift-schema'
@@ -29,6 +29,19 @@ function normaliseTime(s: string | undefined | null): string | null {
 function normaliseNotes(s: string | undefined | null): string | null {
   const t = (s ?? '').trim()
   return t === '' ? null : t
+}
+
+async function authoriseClock(
+  tenantId: string,
+  shiftUserId: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const user = await getUser()
+  if (!user) return { ok: false, error: 'Not authenticated.' }
+  const role = await getUserRole(tenantId)
+  if (!role) return { ok: false, error: 'Not authorised.' }
+  if (role === 'editor') return { ok: true }
+  if (user.id === shiftUserId) return { ok: true }
+  return { ok: false, error: 'You can only clock in/out your own shift.' }
 }
 
 async function assertDayAndMemberBelongToTenant(
@@ -289,7 +302,6 @@ export async function getMyShifts({
 
 export async function clockInShift(shiftId: string): Promise<ActionResponse<Shift>> {
   const tenantId = await getTenantId()
-  await requireEditor(tenantId)
   if (!(await isFeatureEnabled(tenantId, 'staff_schedule'))) {
     return { success: false, error: 'Staff schedule feature is disabled.' }
   }
@@ -298,13 +310,17 @@ export async function clockInShift(shiftId: string): Promise<ActionResponse<Shif
 
   const { data: existing, error: fetchErr } = await supabase
     .from('shift')
-    .select('actual_start')
+    .select('actual_start, user_id')
     .eq('id', shiftId)
     .eq('tenant_id', tenantId)
     .maybeSingle()
 
   if (fetchErr) return { success: false, error: fetchErr.message }
   if (!existing) return { success: false, error: 'Shift not found.' }
+
+  const auth = await authoriseClock(tenantId, (existing as { user_id: string }).user_id)
+  if (!auth.ok) return { success: false, error: auth.error }
+
   if (existing.actual_start) return { success: false, error: 'Already clocked in.' }
 
   const { data, error } = await supabase
@@ -321,7 +337,6 @@ export async function clockInShift(shiftId: string): Promise<ActionResponse<Shif
 
 export async function clockOutShift(shiftId: string): Promise<ActionResponse<Shift>> {
   const tenantId = await getTenantId()
-  await requireEditor(tenantId)
   if (!(await isFeatureEnabled(tenantId, 'staff_schedule'))) {
     return { success: false, error: 'Staff schedule feature is disabled.' }
   }
@@ -330,13 +345,17 @@ export async function clockOutShift(shiftId: string): Promise<ActionResponse<Shi
 
   const { data: existing, error: fetchErr } = await supabase
     .from('shift')
-    .select('actual_start, actual_end')
+    .select('actual_start, actual_end, user_id')
     .eq('id', shiftId)
     .eq('tenant_id', tenantId)
     .maybeSingle()
 
   if (fetchErr) return { success: false, error: fetchErr.message }
   if (!existing) return { success: false, error: 'Shift not found.' }
+
+  const auth = await authoriseClock(tenantId, (existing as { user_id: string }).user_id)
+  if (!auth.ok) return { success: false, error: auth.error }
+
   if (!existing.actual_start) return { success: false, error: 'Not clocked in yet.' }
 
   const { data, error } = await supabase
@@ -356,7 +375,6 @@ export async function setShiftActuals(
   actuals: { actual_start: string | null; actual_end: string | null }
 ): Promise<ActionResponse<Shift>> {
   const tenantId = await getTenantId()
-  await requireEditor(tenantId)
   if (!(await isFeatureEnabled(tenantId, 'staff_schedule'))) {
     return { success: false, error: 'Staff schedule feature is disabled.' }
   }
@@ -368,6 +386,20 @@ export async function setShiftActuals(
   }
 
   const { supabase } = await createTenantClient()
+
+  const { data: existing, error: fetchErr } = await supabase
+    .from('shift')
+    .select('user_id')
+    .eq('id', shiftId)
+    .eq('tenant_id', tenantId)
+    .maybeSingle()
+
+  if (fetchErr) return { success: false, error: fetchErr.message }
+  if (!existing) return { success: false, error: 'Shift not found.' }
+
+  const auth = await authoriseClock(tenantId, (existing as { user_id: string }).user_id)
+  if (!auth.ok) return { success: false, error: auth.error }
+
   const { data, error } = await supabase
     .from('shift')
     .update({

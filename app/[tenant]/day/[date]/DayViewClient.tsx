@@ -109,6 +109,7 @@ export function DayViewClient(props: DayViewProps) {
         activities={live.activities}
         reservations={live.reservations}
         breakfastConfigs={live.breakfastConfigs}
+        shifts={live.shifts}
         dayNotes={live.dayNotes}
         setDayNotes={live.setDayNotes}
       />

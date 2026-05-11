@@ -23,6 +23,8 @@ type Props = {
   dayId: string
   item: ShiftWithAssignee
   isEditor: boolean
+  /** When true, allow the signed-in user to clock themselves in/out for this shift. */
+  isOwner?: boolean
   onEdit?: (item: ShiftWithAssignee) => void
   onDeleted?: (id: string) => void
   onUpdated?: (item: ShiftWithAssignee) => void
@@ -53,7 +55,15 @@ function formatDelta(mins: number): string {
   return `${sign}${h}h${m > 0 ? ` ${m}min` : ''}`
 }
 
-export function ShiftCard({ dayId, item, isEditor, onEdit, onDeleted, onUpdated }: Props) {
+export function ShiftCard({
+  dayId,
+  item,
+  isEditor,
+  isOwner = false,
+  onEdit,
+  onDeleted,
+  onUpdated,
+}: Props) {
   const t = useTranslations('Tenant.staff.card')
   const tActuals = useTranslations('Tenant.staff.actuals')
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -158,7 +168,7 @@ export function ShiftCard({ dayId, item, isEditor, onEdit, onDeleted, onUpdated 
               </div>
             )}
           </div>
-          {isEditor && (
+          {(isEditor || isOwner) && (
             <div className="flex shrink-0 gap-1">
               {!hasActualStart && (
                 <Button
@@ -182,7 +192,7 @@ export function ShiftCard({ dayId, item, isEditor, onEdit, onDeleted, onUpdated 
                   {tActuals('clockOut')}
                 </Button>
               )}
-              {showActuals && (
+              {isEditor && showActuals && (
                 <Button
                   type="button"
                   variant="ghost"
@@ -193,25 +203,29 @@ export function ShiftCard({ dayId, item, isEditor, onEdit, onDeleted, onUpdated 
                   <Timer className="h-4 w-4" />
                 </Button>
               )}
-              <Button
-                type="button"
-                variant="ghost"
-                size="iconSm"
-                onClick={() => onEdit?.(localItem)}
-                aria-label={t('editAria')}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="iconSm"
-                className="text-destructive"
-                onClick={() => setConfirmOpen(true)}
-                aria-label={t('deleteAria')}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              {isEditor && (
+                <>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="iconSm"
+                    onClick={() => onEdit?.(localItem)}
+                    aria-label={t('editAria')}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="iconSm"
+                    className="text-destructive"
+                    onClick={() => setConfirmOpen(true)}
+                    aria-label={t('deleteAria')}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
             </div>
           )}
         </div>
