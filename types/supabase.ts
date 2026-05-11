@@ -592,32 +592,41 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          expected_outcome: string | null
           id: string
+          priority: string | null
           status: string
           tenant_id: string
           title: string
           updated_at: string
           user_id: string
+          workaround: string | null
         }
         Insert: {
           created_at?: string
           description?: string | null
+          expected_outcome?: string | null
           id?: string
+          priority?: string | null
           status?: string
           tenant_id: string
           title: string
           updated_at?: string
           user_id: string
+          workaround?: string | null
         }
         Update: {
           created_at?: string
           description?: string | null
+          expected_outcome?: string | null
           id?: string
+          priority?: string | null
           status?: string
           tenant_id?: string
           title?: string
           updated_at?: string
           user_id?: string
+          workaround?: string | null
         }
         Relationships: [
           {
