@@ -486,7 +486,7 @@ export async function updateMember(
 
   const parsed = memberEditSchema.safeParse(input)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.errors[0]?.message ?? 'Invalid input.' }
+    return { success: false, error: parsed.error.issues[0]?.message ?? 'Invalid input.' }
   }
 
   const { first_name, last_name, phone, job_title, hourly_rate, currency } = parsed.data

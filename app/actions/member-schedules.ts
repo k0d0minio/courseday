@@ -43,7 +43,7 @@ export async function saveMemberSchedule(
   for (const row of rows) {
     const parsed = scheduleRowSchema.safeParse(row)
     if (!parsed.success) {
-      return { success: false, error: parsed.error.errors[0]?.message ?? 'Invalid schedule row.' }
+      return { success: false, error: parsed.error.issues[0]?.message ?? 'Invalid schedule row.' }
     }
   }
 
