@@ -13,13 +13,17 @@ export type RawImportRow = {
   role: string
 }
 
-export type ValidatedImportRow = {
+type BaseImportRow = {
   date: string
   start_time: string
   end_time: string
   email: string
   role: string
-} & ({ status: 'ok'; user_id: string } | { status: 'error'; error: string })
+}
+
+export type ValidatedImportRow =
+  | (BaseImportRow & { status: 'ok'; user_id: string })
+  | (BaseImportRow & { status: 'error'; error: string })
 
 export function validateRows(
   rows: RawImportRow[],

@@ -29,7 +29,7 @@ export function ShiftImportDialog({ isOpen, onClose, onSuccess }: Props) {
 
   const hasErrors = rows?.some((r) => r.status === 'error') ?? false
   const okRows =
-    rows?.filter((r): r is ValidatedImportRow & { status: 'ok' } => r.status === 'ok') ?? []
+    rows?.filter((r): r is Extract<ValidatedImportRow, { status: 'ok' }> => r.status === 'ok') ?? []
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
