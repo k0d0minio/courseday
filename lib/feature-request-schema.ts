@@ -15,3 +15,13 @@ export const featureRequestSchema = z.object({
 })
 
 export type FeatureRequestFormData = z.infer<typeof featureRequestSchema>
+
+export function makeFeatureRequestSchema(t: (key: string) => string) {
+  return z.object({
+    title: z.string().min(1, t('titleRequired')).max(100, t('titleTooLong')),
+    description: z.string().max(1000, t('descriptionTooLong')).optional(),
+    priority: z.enum(FEATURE_REQUEST_PRIORITY).optional(),
+    workaround: z.string().max(1000, t('workaroundTooLong')).optional(),
+    expected_outcome: z.string().max(1000, t('expectedOutcomeTooLong')).optional(),
+  })
+}

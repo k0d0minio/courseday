@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from 'react'
 import { Settings, LogOut, ChevronUp, Sun, Moon, Monitor } from 'lucide-react'
 import Link from 'next/link'
 import { useTheme } from 'next-themes'
+import { useTranslations } from 'next-intl'
 import { signOut } from '@/app/actions/auth'
 import { useAuth } from '@/lib/AuthProvider'
 import { Button } from '@/components/ui/button'
@@ -19,18 +20,19 @@ const themeIcon: Record<ThemeValue, React.ReactNode> = {
   dark: <Moon className="h-4 w-4 shrink-0" />,
 }
 
-const themeLabel: Record<ThemeValue, string> = {
-  system: 'System',
-  light: 'Light',
-  dark: 'Dark',
-}
-
 export function AdminIndicator() {
+  const t = useTranslations('Tenant.adminMenu')
   const { user, isEditor, isLoading } = useAuth()
   const { theme, setTheme } = useTheme()
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const ref = useRef<HTMLDivElement>(null)
+
+  const themeLabel: Record<ThemeValue, string> = {
+    system: t('themeSystem'),
+    light: t('themeLight'),
+    dark: t('themeDark'),
+  }
 
   const currentTheme = (theme as ThemeValue | undefined) ?? 'system'
   function cycleTheme() {
@@ -63,7 +65,7 @@ export function AdminIndicator() {
           <MenuItem asChild>
             <Link href="/admin/settings" onClick={() => setOpen(false)}>
               <Settings className="h-4 w-4 shrink-0" />
-              Settings
+              {t('settings')}
             </Link>
           </MenuItem>
 
@@ -80,7 +82,7 @@ export function AdminIndicator() {
             disabled={isPending}
           >
             <LogOut className="h-4 w-4 shrink-0" />
-            {isPending ? 'Signing out…' : 'Sign out'}
+            {isPending ? t('signingOut') : t('signOut')}
           </MenuItem>
         </div>
       )}

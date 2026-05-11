@@ -14,3 +14,13 @@ export const checklistTemplateSchema = z.object({
 })
 
 export type ChecklistTemplateFormData = z.infer<typeof checklistTemplateSchema>
+
+export function makeChecklistTemplateSchema(t: (key: string) => string) {
+  return z.object({
+    scope: checklistScopeSchema,
+    scopeId: z.string().uuid(t('scopeRequired')),
+    items: z
+      .array(z.object({ label: z.string().min(1, t('itemLabelRequired')).max(200) }))
+      .max(100),
+  })
+}

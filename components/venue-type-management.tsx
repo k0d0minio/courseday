@@ -1,17 +1,18 @@
 'use client'
 
-import { useEffect, useState, useTransition } from 'react'
+import { useEffect, useMemo, useState, useTransition } from 'react'
 import { useForm } from 'react-hook-form'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { toast } from 'sonner'
 import { Pencil, Trash2, Plus } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import {
   getAllVenueTypes,
   createVenueType,
   updateVenueType,
   deleteVenueType,
 } from '@/app/actions/venue-type'
-import { venueTypeSchema, type VenueTypeFormData } from '@/lib/venue-type-schema'
+import { makeVenueTypeSchema, type VenueTypeFormData } from '@/lib/venue-type-schema'
 import type { VenueType } from '@/types/index'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -47,6 +48,9 @@ function VenueTypeDialog({
   initial: VenueType | null
   onSaved: (vt: VenueType) => void
 }) {
+  const t = useTranslations('Tenant.venueType')
+  const tValidation = useTranslations('Tenant.validation')
+  const schema = useMemo(() => makeVenueTypeSchema(tValidation), [tValidation])
   const [isPending, startTransition] = useTransition()
   const {
     register,
@@ -54,7 +58,7 @@ function VenueTypeDialog({
     reset,
     formState: { errors },
   } = useForm<VenueTypeFormData>({
-    resolver: standardSchemaResolver(venueTypeSchema),
+    resolver: standardSchemaResolver(schema),
     defaultValues: { name: '' },
   })
 
@@ -71,7 +75,7 @@ function VenueTypeDialog({
         return
       }
 
-      toast.success(initial ? 'Venue type updated.' : 'Venue type added.')
+      toast.success(initial ? t('updated') : t('added'))
       onSaved(result.data)
       onOpenChange(false)
     })
@@ -106,6 +110,7 @@ function VenueTypeDialog({
 }
 
 export function VenueTypeManagement() {
+  const t = useTranslations('Tenant.venueType')
   const [venueTypes, setVenueTypes] = useState<VenueType[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -146,7 +151,7 @@ export function VenueTypeManagement() {
         return
       }
       setVenueTypes((prev) => prev.filter((v) => v.id !== deleteTarget.id))
-      toast.success('Venue type deleted.')
+      toast.success(t('deleted'))
       setDeleteTarget(null)
     })
   }

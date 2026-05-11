@@ -48,8 +48,10 @@ import {
 // Schema & types
 // ---------------------------------------------------------------------------
 
-const formSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
+// Module-level schema used only for type inference — messages are overridden
+// inside the component via useMemo so they can use the t() translation function.
+const _typeSchema = z.object({
+  title: z.string().min(1),
   description: z.string().optional(),
   date: z.string().optional(),
   startTime: z.string().optional(),
@@ -62,7 +64,7 @@ const formSchema = z.object({
   recurrenceFrequency: z.enum(['weekly', 'biweekly', 'monthly', 'yearly']).optional(),
 })
 
-type FormData = z.infer<typeof formSchema>
+type FormData = z.infer<typeof _typeSchema>
 
 const NEW_VALUE = '__new__'
 
@@ -74,6 +76,7 @@ function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false)
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 639px)')
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMobile(mq.matches)
     const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
     mq.addEventListener('change', handler)
@@ -126,6 +129,24 @@ export function ActivityForm({
 }: Props) {
   const t = useTranslations('Tenant.activityForm')
   const tAllergens = useTranslations('Tenant.allergens')
+  const tValidation = useTranslations('Tenant.validation')
+  const formSchema = useMemo(
+    () =>
+      z.object({
+        title: z.string().min(1, tValidation('titleRequired')),
+        description: z.string().optional(),
+        date: z.string().optional(),
+        startTime: z.string().optional(),
+        endTime: z.string().optional(),
+        expectedCovers: z.string().optional(),
+        venueTypeId: z.string().optional(),
+        pocId: z.string().optional(),
+        notes: z.string().optional(),
+        isRecurring: z.boolean().optional(),
+        recurrenceFrequency: z.enum(['weekly', 'biweekly', 'monthly', 'yearly']).optional(),
+      }),
+    [tValidation]
+  )
   const isMobile = useIsMobile()
   const [isPending, startTransition] = useTransition()
 
@@ -246,6 +267,7 @@ export function ActivityForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, editItem, quickAdd, reset])
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const watchIsRecurring = watch('isRecurring')
   const watchFrequency = watch('recurrenceFrequency')
 

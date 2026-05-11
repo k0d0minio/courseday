@@ -7,3 +7,11 @@ export const pocSchema = z.object({
 })
 
 export type PocFormData = z.infer<typeof pocSchema>
+
+export function makePocSchema(t: (key: string) => string) {
+  return z.object({
+    name: z.string().min(1, t('nameRequired')).max(200),
+    email: z.string().email(t('invalidEmail')).max(254).optional().or(z.literal('')),
+    phone: z.string().max(50).optional().or(z.literal('')),
+  })
+}

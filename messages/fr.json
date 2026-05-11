@@ -242,7 +242,10 @@
       "noReservations": "Aucune réservation pour l'instant.",
       "addBreakfast": "Ajouter petit-déjeuner",
       "addActivity": "Activité",
-      "addReservation": "Ajouter une réservation"
+      "addReservation": "Ajouter une réservation",
+      "noteAdded": "Note ajoutée.",
+      "noteUpdated": "Note mise à jour.",
+      "noteDeleted": "Note supprimée."
     },
     "dailyBrief": {
       "title": "Briefing du jour",
@@ -780,7 +783,9 @@
       "cancel": "Annuler",
       "delete": "Supprimer",
       "deleted": "Type de lieu supprimé.",
-      "saved": "Type de lieu enregistré."
+      "saved": "Type de lieu enregistré.",
+      "updated": "Type de lieu mis à jour.",
+      "added": "Type de lieu ajouté."
     },
     "profile": {
       "title": "Mon profil",
@@ -794,6 +799,38 @@
       "accountSection": "Compte",
       "theme": "Thème",
       "signOut": "Se déconnecter"
+    },
+    "offlineStatus": {
+      "offline": "Hors ligne",
+      "syncing": "Synchronisation",
+      "pending": "{count} en attente",
+      "failed": "{count} échoué(s)",
+      "retry": "Réessayer"
+    },
+    "adminMenu": {
+      "settings": "Paramètres",
+      "themeSystem": "Système",
+      "themeLight": "Clair",
+      "themeDark": "Sombre",
+      "signOut": "Se déconnecter",
+      "signingOut": "Déconnexion…"
+    },
+    "activityTag": {
+      "deleted": "Tag supprimé.",
+      "updated": "Tag mis à jour.",
+      "added": "Tag ajouté."
+    },
+    "validation": {
+      "nameRequired": "Le nom est obligatoire",
+      "titleRequired": "Le titre est obligatoire",
+      "dayIdRequired": "L'identifiant du jour est obligatoire",
+      "invalidEmail": "Adresse e-mail invalide",
+      "itemLabelRequired": "Le libellé de l'élément est obligatoire",
+      "scopeRequired": "Le périmètre est obligatoire",
+      "titleTooLong": "Le titre doit comporter au maximum 100 caractères.",
+      "descriptionTooLong": "La description doit comporter au maximum 1 000 caractères.",
+      "workaroundTooLong": "La solution de contournement doit comporter au maximum 1 000 caractères.",
+      "expectedOutcomeTooLong": "Le résultat attendu doit comporter au maximum 1 000 caractères."
     }
   }
 }

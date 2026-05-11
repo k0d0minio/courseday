@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useTransition } from 'react'
+import { useEffect, useMemo, useState, useTransition } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { toast } from 'sonner'
@@ -8,7 +8,7 @@ import { useTranslations } from 'next-intl'
 import { createFeatureRequest, getTenantFeatureRequests } from '@/app/actions/feature-requests'
 import type { FeatureRequest, FeatureRequestStatus } from '@/app/actions/feature-requests'
 import {
-  featureRequestSchema,
+  makeFeatureRequestSchema,
   type FeatureRequestFormData,
   type FeatureRequestPriority,
   FEATURE_REQUEST_PRIORITY,
@@ -53,6 +53,8 @@ function StatusBadge({ status, label }: { status: FeatureRequestStatus; label: s
 
 export function FeatureRequestManagement() {
   const t = useTranslations('Tenant.featureRequests')
+  const tValidation = useTranslations('Tenant.validation')
+  const schema = useMemo(() => makeFeatureRequestSchema(tValidation), [tValidation])
   const [requests, setRequests] = useState<FeatureRequest[]>([])
   const [loading, setLoading] = useState(true)
   const [isPending, startTransition] = useTransition()
@@ -64,7 +66,7 @@ export function FeatureRequestManagement() {
     control,
     formState: { errors },
   } = useForm<FeatureRequestFormData>({
-    resolver: standardSchemaResolver(featureRequestSchema),
+    resolver: standardSchemaResolver(schema),
     defaultValues: { title: '', description: '', workaround: '', expected_outcome: '' },
   })
 
