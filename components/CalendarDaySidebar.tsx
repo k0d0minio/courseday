@@ -123,8 +123,7 @@ export function CalendarDaySidebar({ date, onClose, onSummaryChanged }: Props) {
         ? data.breakfastConfigs.map((c) => (c.id === config.id ? config : c))
         : [...data.breakfastConfigs, config]
     setData({ ...data, breakfastConfigs: updated })
-    const totalGuests = updated.reduce((s, c) => s + c.total_guests, 0)
-    onSummaryChanged(date, { breakfastCount: totalGuests })
+    onSummaryChanged(date, { breakfastCount: updated.length })
   }
 
   const formattedDate = format(parseISO(date), 'EEEE d MMMM')

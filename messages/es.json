@@ -235,7 +235,8 @@
     "summary": {
       "breakfast": "Desayunos",
       "activities": "Actividades",
-      "reservations": "Reservas"
+      "reservations": "Reservas",
+      "coversShort": "{count} cubiertos"
     },
     "sidebar": {
       "selectedDay": "Día seleccionado",
@@ -252,7 +253,8 @@
       "reservationCount": "{count, plural, one {# reserva} other {# reservas}}",
       "breakfastCoverCount": "{count, plural, one {# cubierto de desayuno} other {# cubiertos de desayuno}}",
       "loading": "Cargando…",
-      "close": "Cerrar"
+      "close": "Cerrar",
+      "breakfastCount": "{count, plural, one {# desayuno} other {# desayunos}}"
     },
     "entry": {
       "deleteTitle": "¿Eliminar actividad?",

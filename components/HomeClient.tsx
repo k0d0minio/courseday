@@ -313,7 +313,7 @@ const CalendarDayCell = memo(function CalendarDayCell({
             ? `${summary.reservationCount} reservations`
             : '',
           showBreakfast && summary.breakfastCount > 0
-            ? `${summary.breakfastCount} breakfast covers`
+            ? `${summary.breakfastCount} ${summary.breakfastCount === 1 ? 'breakfast' : 'breakfasts'}`
             : '',
         ].filter(Boolean)
       : []),
