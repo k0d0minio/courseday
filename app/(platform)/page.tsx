@@ -1,6 +1,7 @@
 import { Hero } from '@/components/landing/hero'
 import { ProblemStrip } from '@/components/landing/problem-strip'
 import { Showcase } from '@/components/landing/showcase'
+import { Features } from '@/components/landing/features'
 import { RolesSection } from '@/components/landing/roles-section'
 import { HowItWorks } from '@/components/landing/how-it-works'
 import { Outcomes } from '@/components/landing/outcomes'
@@ -13,6 +14,7 @@ export default function LandingPage() {
       <Hero />
       <ProblemStrip />
       <Showcase />
+      <Features />
       <RolesSection />
       <HowItWorks />
       <Outcomes />

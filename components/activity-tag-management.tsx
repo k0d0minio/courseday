@@ -1,17 +1,18 @@
 'use client'
 
-import { useEffect, useState, useTransition } from 'react'
+import { useEffect, useMemo, useState, useTransition } from 'react'
 import { useForm } from 'react-hook-form'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { toast } from 'sonner'
 import { Pencil, Trash2, Plus } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import {
   getAllActivityTags,
   createActivityTag,
   updateActivityTag,
   deleteActivityTag,
 } from '@/app/actions/activity-tags'
-import { activityTagSchema, type ActivityTagFormData } from '@/lib/activity-tag-schema'
+import { makeActivityTagSchema, type ActivityTagFormData } from '@/lib/activity-tag-schema'
 import type { ActivityTag } from '@/types/index'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -47,6 +48,8 @@ function ActivityTagDialog({
   initial: ActivityTag | null
   onSaved: (tag: ActivityTag) => void
 }) {
+  const tValidation = useTranslations('Tenant.validation')
+  const schema = useMemo(() => makeActivityTagSchema(tValidation), [tValidation])
   const [isPending, startTransition] = useTransition()
   const {
     register,
@@ -54,7 +57,7 @@ function ActivityTagDialog({
     reset,
     formState: { errors },
   } = useForm<ActivityTagFormData>({
-    resolver: standardSchemaResolver(activityTagSchema),
+    resolver: standardSchemaResolver(schema),
     defaultValues: { name: '' },
   })
 
@@ -108,6 +111,7 @@ function ActivityTagDialog({
 }
 
 export function ActivityTagManagement() {
+  const t = useTranslations('Tenant.activityTag')
   const [tags, setTags] = useState<ActivityTag[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -148,7 +152,7 @@ export function ActivityTagManagement() {
         return
       }
       setTags((prev) => prev.filter((t) => t.id !== deleteTarget.id))
-      toast.success('Tag deleted.')
+      toast.success(t('deleted'))
       setDeleteTarget(null)
     })
   }

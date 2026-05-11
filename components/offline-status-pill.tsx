@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { WifiOff, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
 import {
   refreshOfflineQueueStats,
   retryFailedMutation,
@@ -16,6 +17,7 @@ type Status = {
 }
 
 export function OfflineStatusPill() {
+  const t = useTranslations('Tenant.offlineStatus')
   const [online, setOnline] = useState(typeof navigator === 'undefined' ? true : navigator.onLine)
   const [status, setStatus] = useState<Status>({
     pendingCount: 0,
@@ -45,7 +47,7 @@ export function OfflineStatusPill() {
       } else if (event.type === 'queue:item:failed') {
         toast.error(event.error, {
           action: {
-            label: 'Retry',
+            label: t('retry'),
             onClick: () => retryFailedMutation(event.id).catch(() => undefined),
           },
         })
@@ -57,19 +59,19 @@ export function OfflineStatusPill() {
       window.removeEventListener('offline', onOffline)
       unsubscribe()
     }
-  }, [])
+  }, [t])
 
   if (online && status.pendingCount === 0 && status.failedCount === 0 && !status.syncing) {
     return null
   }
 
   const label = !online
-    ? 'Offline'
+    ? t('offline')
     : status.syncing
-      ? 'Syncing'
+      ? t('syncing')
       : status.pendingCount > 0
-        ? `Pending ${status.pendingCount}`
-        : `Failed ${status.failedCount}`
+        ? t('pending', { count: status.pendingCount })
+        : t('failed', { count: status.failedCount })
 
   return (
     <div className="text-muted-foreground inline-flex items-center gap-1 rounded-full border px-2 py-1 text-xs">

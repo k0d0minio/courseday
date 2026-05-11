@@ -14,7 +14,7 @@ import {
 } from '@/app/actions/checklists'
 import { getAllVenueTypes } from '@/app/actions/venue-type'
 import { getAllActivityTags } from '@/app/actions/activity-tags'
-import { checklistTemplateSchema, type ChecklistTemplateFormData } from '@/lib/checklist-schema'
+import { makeChecklistTemplateSchema, type ChecklistTemplateFormData } from '@/lib/checklist-schema'
 import type { ActivityTag, ChecklistTemplateWithItems, VenueType } from '@/types/index'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -64,6 +64,8 @@ function TemplateDialog({
   onSaved: (tpl: ChecklistTemplateWithItems) => void
 }) {
   const t = useTranslations('Tenant.checklists')
+  const tValidation = useTranslations('Tenant.validation')
+  const schema = useMemo(() => makeChecklistTemplateSchema(tValidation), [tValidation])
   const [isPending, startTransition] = useTransition()
   const {
     register,
@@ -74,7 +76,7 @@ function TemplateDialog({
     control,
     formState: { errors },
   } = useForm<ChecklistTemplateFormData>({
-    resolver: standardSchemaResolver(checklistTemplateSchema),
+    resolver: standardSchemaResolver(schema),
     defaultValues: {
       scope: 'venue_type',
       scopeId: '',
@@ -87,6 +89,7 @@ function TemplateDialog({
     name: 'items',
   })
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const scope = watch('scope')
 
   useEffect(() => {

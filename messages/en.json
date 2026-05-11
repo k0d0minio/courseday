@@ -242,7 +242,10 @@
       "noReservations": "No reservations yet.",
       "addBreakfast": "Add breakfast",
       "addActivity": "Activity",
-      "addReservation": "Add reservation"
+      "addReservation": "Add reservation",
+      "noteAdded": "Note added.",
+      "noteUpdated": "Note updated.",
+      "noteDeleted": "Note deleted."
     },
     "dailyBrief": {
       "title": "Daily brief",
@@ -877,7 +880,41 @@
       "cancel": "Cancel",
       "delete": "Delete",
       "deleted": "Venue type deleted.",
-      "saved": "Venue type saved."
+      "saved": "Venue type saved.",
+      "updated": "Venue type updated.",
+      "added": "Venue type added."
+    },
+    "offlineStatus": {
+      "offline": "Offline",
+      "syncing": "Syncing",
+      "pending": "Pending {count}",
+      "failed": "Failed {count}",
+      "retry": "Retry"
+    },
+    "adminMenu": {
+      "settings": "Settings",
+      "themeSystem": "System",
+      "themeLight": "Light",
+      "themeDark": "Dark",
+      "signOut": "Sign out",
+      "signingOut": "Signing out…"
+    },
+    "activityTag": {
+      "deleted": "Tag deleted.",
+      "updated": "Tag updated.",
+      "added": "Tag added."
+    },
+    "validation": {
+      "nameRequired": "Name is required",
+      "titleRequired": "Title is required",
+      "dayIdRequired": "Day ID is required",
+      "invalidEmail": "Invalid email address",
+      "itemLabelRequired": "Item label is required",
+      "scopeRequired": "Scope is required",
+      "titleTooLong": "Title must be 100 characters or fewer.",
+      "descriptionTooLong": "Description must be 1000 characters or fewer.",
+      "workaroundTooLong": "Workaround must be 1000 characters or fewer.",
+      "expectedOutcomeTooLong": "Expected outcome must be 1000 characters or fewer."
     }
   }
 }

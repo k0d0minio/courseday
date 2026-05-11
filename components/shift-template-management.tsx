@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useTransition } from 'react'
+import { useEffect, useMemo, useState, useTransition } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { toast } from 'sonner'
@@ -12,7 +12,7 @@ import {
   updateShiftTemplate,
   deleteShiftTemplate,
 } from '@/app/actions/shift-templates'
-import { shiftTemplateSchema, type ShiftTemplateFormData } from '@/lib/shift-template-schema'
+import { makeShiftTemplateSchema, type ShiftTemplateFormData } from '@/lib/shift-template-schema'
 import type { ShiftTemplate } from '@/types/index'
 import type { ShiftAssignee } from '@/types/index'
 import { Button } from '@/components/ui/button'
@@ -64,6 +64,8 @@ function TemplateDialog({
   onSaved: (template: ShiftTemplate) => void
 }) {
   const t = useTranslations('Tenant.staff.templates')
+  const tValidation = useTranslations('Tenant.validation')
+  const schema = useMemo(() => makeShiftTemplateSchema(tValidation), [tValidation])
   const [isPending, startTransition] = useTransition()
 
   const {
@@ -73,7 +75,7 @@ function TemplateDialog({
     control,
     formState: { errors },
   } = useForm<ShiftTemplateFormData>({
-    resolver: standardSchemaResolver(shiftTemplateSchema),
+    resolver: standardSchemaResolver(schema),
     defaultValues: toFormValues(initial),
   })
 

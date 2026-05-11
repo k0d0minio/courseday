@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useState, useTransition } from 'react'
+import { useEffect, useMemo, useState, useTransition } from 'react'
 import { useForm } from 'react-hook-form'
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import { toast } from 'sonner'
 import { Pencil, Trash2, Plus } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { getAllPOCs, createPOC, updatePOC, deletePOC } from '@/app/actions/poc'
-import { pocSchema, type PocFormData } from '@/lib/poc-schema'
+import { makePocSchema, type PocFormData } from '@/lib/poc-schema'
 import type { PointOfContact } from '@/types/index'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -46,6 +47,8 @@ function PocDialog({
   initial: PointOfContact | null
   onSaved: (poc: PointOfContact) => void
 }) {
+  const tValidation = useTranslations('Tenant.validation')
+  const schema = useMemo(() => makePocSchema(tValidation), [tValidation])
   const [isPending, startTransition] = useTransition()
   const {
     register,
@@ -53,7 +56,7 @@ function PocDialog({
     reset,
     formState: { errors },
   } = useForm<PocFormData>({
-    resolver: standardSchemaResolver(pocSchema),
+    resolver: standardSchemaResolver(schema),
     defaultValues: { name: '', email: '', phone: '' },
   })
 
@@ -124,6 +127,7 @@ function PocDialog({
 // ---------------------------------------------------------------------------
 
 export function PocManagement() {
+  const t = useTranslations('Tenant.poc')
   const [pocs, setPocs] = useState<PointOfContact[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -169,7 +173,7 @@ export function PocManagement() {
         return
       }
       setPocs((prev) => prev.filter((p) => p.id !== deleteTarget.id))
-      toast.success('Contact deleted.')
+      toast.success(t('deleted'))
       setDeleteTarget(null)
     })
   }

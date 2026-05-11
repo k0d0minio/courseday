@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { Pencil, Trash2, Check, X } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import type { DayNote } from '@/app/actions/day-notes'
 import { mutateWithOfflineQueue } from '@/lib/day-mutation-client'
 import { useTenant } from '@/lib/tenant-context'
@@ -35,6 +36,7 @@ export function DayNotes({
   const setNotes = isControlled ? onNotesChange! : setInternalNotes
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!isControlled) setInternalNotes(initialNotes)
   }, [initialNotes, dayId, isControlled])
   const [draft, setDraft] = useState('')
@@ -43,6 +45,7 @@ export function DayNotes({
   const [isSaving, startSaveTransition] = useTransition()
   const [isDeleting, startDeleteTransition] = useTransition()
   const { tenantSlug } = useTenant()
+  const t = useTranslations('Tenant.day')
 
   function handleAdd() {
     if (!draft.trim()) return
@@ -76,7 +79,7 @@ export function DayNotes({
         setNotes((prev) => [...prev, result.data])
       }
       setDraft('')
-      toast.success('Note added.')
+      toast.success(t('noteAdded'))
     })
   }
 
@@ -111,7 +114,7 @@ export function DayNotes({
         setNotes((prev) => prev.map((n) => (n.id === id ? result.data : n)))
       }
       setEditingId(null)
-      toast.success('Note updated.')
+      toast.success(t('noteUpdated'))
     })
   }
 
@@ -129,7 +132,7 @@ export function DayNotes({
         return
       }
       setNotes((prev) => prev.filter((n) => n.id !== id))
-      toast.success('Note deleted.')
+      toast.success(t('noteDeleted'))
     })
   }
 
