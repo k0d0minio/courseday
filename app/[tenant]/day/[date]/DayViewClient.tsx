@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { DayAddMenu } from '@/components/day-add-menu'
 import dynamic from 'next/dynamic'
 import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 import { useDayRealtime } from './useDayRealtime'
@@ -184,29 +183,21 @@ function DayViewEditor({
   const [editBreakfast, setEditBreakfast] = useState<BreakfastConfiguration | null>(null)
 
   const returnFocusRef = useRef<HTMLElement | null>(null)
-  const addMenuRef = useRef<HTMLButtonElement>(null)
   const shiftAddTriggerRef = useRef<(() => void) | null>(null)
 
   const openAddActivity = useCallback(() => {
-    returnFocusRef.current = addMenuRef.current
     setEditActivity(null)
     setActivityModalOpen(true)
   }, [])
 
   const openAddReservation = useCallback(() => {
-    returnFocusRef.current = addMenuRef.current
     setEditReservation(null)
     setReservationModalOpen(true)
   }, [])
 
   const openAddBreakfast = useCallback(() => {
-    returnFocusRef.current = addMenuRef.current
     setEditBreakfast(null)
     setBreakfastModalOpen(true)
-  }, [])
-
-  const openAddShift = useCallback(() => {
-    shiftAddTriggerRef.current?.()
   }, [])
 
   function openEditActivity(item: ActivityWithRelations) {
@@ -323,13 +314,6 @@ function DayViewEditor({
     <div className="mx-auto max-w-3xl space-y-6 px-3 py-4 sm:px-6 sm:py-8">
       <div className="flex items-center justify-between gap-2">
         <DayNav date={date} today={today} />
-        <DayAddMenu
-          ref={addMenuRef}
-          onAddActivity={openAddActivity}
-          onAddReservation={showReservations ? openAddReservation : undefined}
-          onAddBreakfast={showBreakfast ? openAddBreakfast : undefined}
-          onAddShift={showStaffSchedule && shiftAssignees.length > 0 ? openAddShift : undefined}
-        />
       </div>
 
       {(showDailyBrief || showWeatherReporting) && (
@@ -489,7 +473,7 @@ function DayViewEditor({
         onClose={() => {
           setActivityModalOpen(false)
         }}
-        date={date}
+        defaultDate={date}
         dayId={dayId}
         pocs={pocs}
         venueTypes={venueTypes}

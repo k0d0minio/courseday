@@ -18,6 +18,7 @@ import { getVisibleSettingsRoutes } from '@/components/settings-dropdown'
 import { useFeatureFlag } from '@/lib/feature-flags-context'
 import { useKeyboardShortcuts } from '@/lib/keyboard-shortcuts'
 import { getUnreadCount } from '@/app/actions/notifications'
+import { GlobalAddMenu } from '@/components/global-add-menu'
 
 interface MobileNavProps {
   today: string
@@ -142,6 +143,11 @@ export function MobileNav({ today, isEditor, isMember, initialUnreadCount }: Mob
             <Sparkles className="h-5 w-5" aria-hidden="true" />
             {qaT('openButton')}
           </button>
+        )}
+        {isEditor && (
+          <div className="flex flex-1 items-center justify-center">
+            <GlobalAddMenu />
+          </div>
         )}
 
         {isEditor && (

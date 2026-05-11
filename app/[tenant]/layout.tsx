@@ -26,6 +26,7 @@ import { getSuperadminImpersonationRole } from '@/lib/superadmin'
 import { getTenantPalette, getTenantThemeCssVariables } from '@/lib/theme/palettes'
 import { TenantKeyboardShell } from '@/components/tenant-keyboard-shell'
 import { GlobalQuickAdd } from '@/components/global-quick-add'
+import { GlobalAddMenu } from '@/components/global-add-menu'
 import { StaffMobileSettings } from '@/components/staff-mobile-settings'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -128,6 +129,12 @@ export default async function TenantLayout({ children }: { children: React.React
                     <OfflineStatusPill />
                     {/* AI quick-add — editors only */}
                     {editor && <GlobalQuickAdd />}
+                    {/* Global add menu — editors only */}
+                    {editor && (
+                      <span className="hidden sm:inline-flex">
+                        <GlobalAddMenu />
+                      </span>
+                    )}
                     {/* Settings dropdown — editors only, desktop */}
                     {editor && (
                       <span className="hidden sm:inline-flex">

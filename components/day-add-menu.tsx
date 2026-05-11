@@ -32,6 +32,7 @@ type Props = {
   onAddReservation?: (() => void) | undefined
   onAddBreakfast?: (() => void) | undefined
   onAddShift?: (() => void) | undefined
+  'data-testid'?: string
 }
 
 export function DayAddMenu({
@@ -40,6 +41,7 @@ export function DayAddMenu({
   onAddReservation,
   onAddBreakfast,
   onAddShift,
+  'data-testid': testId = 'day-add-menu',
 }: Props) {
   const tDay = useTranslations('Tenant.day')
   const tStaff = useTranslations('Tenant.staff.section')
@@ -83,7 +85,7 @@ export function DayAddMenu({
     return (
       <Drawer open={open} onOpenChange={setOpen}>
         <DrawerTrigger asChild>
-          <Button ref={ref} size="sm" data-testid="day-add-menu">
+          <Button ref={ref} size="sm" data-testid={testId}>
             <Plus className="mr-1 h-4 w-4" />
             {tPoc('add')}
           </Button>
@@ -101,7 +103,7 @@ export function DayAddMenu({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button ref={ref} size="sm" data-testid="day-add-menu">
+        <Button ref={ref} size="sm" data-testid={testId}>
           <Plus className="mr-1 h-4 w-4" />
           {tPoc('add')}
         </Button>
