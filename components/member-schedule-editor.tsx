@@ -10,7 +10,13 @@ import type { Member } from '@/app/actions/memberships'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 type DraftRow = ScheduleRow & { key: string }
 
@@ -30,16 +36,14 @@ export function MemberScheduleEditor({ member, open, onOpenChange }: MemberSched
   const [loading, setLoading] = useState(false)
   const [isPending, startTransition] = useTransition()
 
-  const DAY_OPTIONS = [0, 1, 2, 3, 4, 5, 6]
+  const DAY_OPTIONS = [0, 1, 2, 3, 4, 5, 6] as const
 
   useEffect(() => {
     if (!open || !member) return
     setLoading(true)
     getMemberSchedule(member.id).then((res) => {
       if (res.success) {
-        setRows(
-          res.data.map((r, i) => ({ ...r, key: `loaded-${i}-${Date.now()}` }))
-        )
+        setRows(res.data.map((r, i) => ({ ...r, key: `loaded-${i}-${Date.now()}` })))
       } else {
         toast.error(res.error)
       }
@@ -126,9 +130,7 @@ export function MemberScheduleEditor({ member, open, onOpenChange }: MemberSched
                 <Input
                   type="time"
                   value={row.end_time ?? ''}
-                  onChange={(e) =>
-                    updateRow(row.key, { end_time: e.target.value || null })
-                  }
+                  onChange={(e) => updateRow(row.key, { end_time: e.target.value || null })}
                   className="h-9 w-28"
                   aria-label={t('endTime')}
                 />

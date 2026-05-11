@@ -163,7 +163,9 @@ function InviteSection({ onInvited }: { onInvited: () => void }) {
       <InviteDialog
         role={inviteRole ?? 'staff'}
         open={inviteRole !== null}
-        onOpenChange={(v) => { if (!v) setInviteRole(null) }}
+        onOpenChange={(v) => {
+          if (!v) setInviteRole(null)
+        }}
         onInvited={onInvited}
       />
     </>
@@ -410,7 +412,9 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
       <MemberEditDialog
         member={editTarget}
         open={!!editTarget}
-        onOpenChange={(v) => { if (!v) setEditTarget(null) }}
+        onOpenChange={(v) => {
+          if (!v) setEditTarget(null)
+        }}
         onSaved={(patch) => {
           if (editTarget) handleMemberSaved(editTarget.id, patch)
         }}
@@ -419,7 +423,9 @@ export function MemberManagement({ currentUserId }: { currentUserId: string }) {
       <MemberScheduleEditor
         member={scheduleTarget}
         open={!!scheduleTarget}
-        onOpenChange={(v) => { if (!v) setScheduleTarget(null) }}
+        onOpenChange={(v) => {
+          if (!v) setScheduleTarget(null)
+        }}
       />
 
       <AlertDialog

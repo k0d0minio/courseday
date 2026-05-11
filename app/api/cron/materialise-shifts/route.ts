@@ -50,12 +50,11 @@ async function materialiseShifts() {
     try {
       // Get all schedule rows for this tenant, joined with membership user/job_title
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: schedules, error: schedErr } = await (
-        supabase.from('member_schedule') as any
-      ).select('day_of_week, start_time, end_time, membership_id, memberships!inner(user_id, job_title)').eq(
-        'tenant_id',
-        tenant.id
-      )
+      const { data: schedules, error: schedErr } = await (supabase.from('member_schedule') as any)
+        .select(
+          'day_of_week, start_time, end_time, membership_id, memberships!inner(user_id, job_title)'
+        )
+        .eq('tenant_id', tenant.id)
 
       if (schedErr || !schedules?.length) continue
 
