@@ -11,7 +11,7 @@ import { getTenantFromHeaders } from '@/lib/tenant'
 import { TenantProvider } from '@/lib/tenant-context'
 import { AuthProvider } from '@/lib/AuthProvider'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
-import { isEditor } from '@/lib/membership'
+import { getUserRole } from '@/lib/membership'
 import { PwaRegister } from '@/components/pwa-register'
 import { PwaInstallPrompt } from '@/components/pwa-install-prompt'
 import { FeatureFlagProvider } from '@/lib/feature-flags-context'
@@ -92,12 +92,14 @@ export default async function TenantLayout({ children }: { children: React.React
   const palette = getTenantPalette(row?.theme_palette ?? null, row?.accent_color ?? null)
   const accentStyle = getTenantThemeCssVariables(palette) as React.CSSProperties
 
-  const [editor, superadminImpersonationRole, t, unreadCount] = await Promise.all([
-    isEditor(tenant.id),
+  const [role, superadminImpersonationRole, t, unreadCount] = await Promise.all([
+    getUserRole(tenant.id),
     user ? getSuperadminImpersonationRole(tenant.id, user.id) : Promise.resolve(null),
     getTranslations('Tenant.nav'),
     getUnreadCount(),
   ])
+  const editor = role === 'editor'
+  const isMember = role !== null
 
   // RTL locales — extend when adding Arabic, Hebrew, etc.
   const RTL_LOCALES = new Set<string>([])
@@ -178,14 +180,21 @@ export default async function TenantLayout({ children }: { children: React.React
                     )}
                     {/* Staff settings — mobile only, non-editors */}
                     {!editor && user && <StaffMobileSettings />}
-                    <NotificationBell initialCount={unreadCount} />
+                    <span className="hidden sm:inline-flex">
+                      <NotificationBell initialCount={unreadCount} />
+                    </span>
                   </div>
                 </header>
                 <main id="main-content" className="flex-1 pb-16 sm:pb-0">
                   {children}
                 </main>
               </div>
-              <MobileNav today={today} isEditor={editor} />
+              <MobileNav
+                today={today}
+                isEditor={editor}
+                isMember={isMember}
+                initialUnreadCount={unreadCount}
+              />
               {superadminImpersonationRole && (
                 <SuperadminReturnPopup role={superadminImpersonationRole} />
               )}

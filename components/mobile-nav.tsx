@@ -1,8 +1,9 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, CalendarDays, Settings, Sparkles, CalendarCheck } from 'lucide-react'
+import { Home, CalendarDays, Settings, Sparkles, CalendarCheck, Bell } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import {
@@ -16,13 +17,18 @@ import {
 import { getVisibleSettingsRoutes } from '@/components/settings-dropdown'
 import { useFeatureFlag } from '@/lib/feature-flags-context'
 import { useKeyboardShortcuts } from '@/lib/keyboard-shortcuts'
+import { getUnreadCount } from '@/app/actions/notifications'
 
 interface MobileNavProps {
   today: string
   isEditor: boolean
+  isMember: boolean
+  initialUnreadCount: number
 }
 
-export function MobileNav({ today, isEditor }: MobileNavProps) {
+const POLL_INTERVAL_MS = 30_000
+
+export function MobileNav({ today, isEditor, isMember, initialUnreadCount }: MobileNavProps) {
   const pathname = usePathname()
   const navT = useTranslations('Tenant.nav')
   const settingsT = useTranslations('Tenant.settings')
@@ -34,6 +40,24 @@ export function MobileNav({ today, isEditor }: MobileNavProps) {
     checklists: showChecklists,
     staffSchedule: showStaffSchedule,
   })
+
+  const [unreadCount, setUnreadCount] = useState(initialUnreadCount)
+
+  useEffect(() => {
+    if (!isMember) return
+    let cancelled = false
+    async function refresh() {
+      const count = await getUnreadCount()
+      if (!cancelled) setUnreadCount(count)
+    }
+    const id = setInterval(refresh, POLL_INTERVAL_MS)
+    return () => {
+      cancelled = true
+      clearInterval(id)
+    }
+  }, [isMember, pathname])
+
+  const notificationsActive = pathname.startsWith('/notifications')
 
   const navItems = [
     { href: '/', label: navT('home'), icon: Home, active: pathname === '/' },
@@ -77,6 +101,35 @@ export function MobileNav({ today, isEditor }: MobileNavProps) {
             {label}
           </Link>
         ))}
+
+        {isMember && (
+          <Link
+            href="/notifications"
+            aria-current={notificationsActive ? 'page' : undefined}
+            aria-label={
+              unreadCount > 0
+                ? `${navT('notifications')} (${unreadCount} ${navT('unread')})`
+                : navT('notifications')
+            }
+            className={cn(
+              'relative flex flex-1 flex-col items-center justify-center gap-1 text-xs font-medium transition-colors',
+              notificationsActive ? 'text-foreground' : 'text-muted-foreground'
+            )}
+          >
+            <span className="relative">
+              <Bell
+                className={cn('h-5 w-5', notificationsActive && 'stroke-[2.5]')}
+                aria-hidden="true"
+              />
+              {unreadCount > 0 && (
+                <span className="bg-primary text-primary-foreground absolute -top-1 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </span>
+            {navT('notifications')}
+          </Link>
+        )}
 
         {isEditor && (
           /* Quick-add center slot — tab nav trigger, bespoke surface. */
