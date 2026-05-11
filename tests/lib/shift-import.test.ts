@@ -6,12 +6,10 @@ vi.mock('papaparse', () => ({
   },
 }))
 vi.mock('exceljs', () => ({
-  default: {
-    Workbook: vi.fn().mockImplementation(() => ({
-      xlsx: { load: vi.fn().mockResolvedValue(undefined) },
-      worksheets: [],
-    })),
-  },
+  Workbook: vi.fn().mockImplementation(() => ({
+    xlsx: { load: vi.fn().mockResolvedValue(undefined) },
+    worksheets: [],
+  })),
 }))
 
 import { validateRows, parseCSVText } from '@/lib/shift-import'

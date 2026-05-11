@@ -1,5 +1,5 @@
 import Papa from 'papaparse'
-import ExcelJS from 'exceljs'
+import * as ExcelJS from 'exceljs'
 import type { ShiftAssignee } from '@/types/index'
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
