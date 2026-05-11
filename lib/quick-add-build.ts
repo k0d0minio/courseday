@@ -15,6 +15,7 @@ const intNull = z.coerce.number().int().nullable()
 // OpenAI strict structured output requires root `type: object` AND every key
 // in `required`. To express "absent", use nullable fields instead of optional.
 const allFields = z.object({
+  date: z.string().date().nullable(),
   title: strNull,
   description: strNull,
   guestName: strNull,
@@ -410,6 +411,7 @@ export function buildDataFromLlm(
       kind: 'activity',
       dayId,
       contextDate,
+      resolvedDate: out.fields.date ?? '',
       dateAmbiguous: out.dateAmbiguous,
       defaults: defaultsRaw,
       allergens: filterAllergenCodes(a.codes) as AllergenCode[],
@@ -454,6 +456,7 @@ export function buildDataFromLlm(
       kind: 'reservation',
       dayId,
       contextDate,
+      resolvedDate: out.fields.date ?? '',
       dateAmbiguous: out.dateAmbiguous,
       defaults: {
         guestName: d.guestName,
@@ -496,6 +499,7 @@ export function buildDataFromLlm(
       kind: 'breakfast',
       dayId,
       contextDate,
+      resolvedDate: f.date ?? '',
       dateAmbiguous: out.dateAmbiguous,
       defaults: {
         groupName: d.groupName,

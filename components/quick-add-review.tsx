@@ -96,7 +96,7 @@ function initialState(data: QuickAddParseData): State {
       notes: data.defaults.notes,
       allergens: data.allergens,
       tableBreakdown: [],
-      date: data.contextDate,
+      date: data.resolvedDate,
     }
   }
   if (data.kind === 'reservation') {
@@ -109,7 +109,7 @@ function initialState(data: QuickAddParseData): State {
       notes: data.defaults.notes,
       allergens: data.allergens,
       tableBreakdown: data.tableBreakdown,
-      date: data.contextDate,
+      date: data.resolvedDate,
     }
   }
   return {
@@ -121,7 +121,7 @@ function initialState(data: QuickAddParseData): State {
     notes: data.defaults.notes,
     allergens: data.allergens,
     tableBreakdown: data.tableBreakdown,
-    date: data.contextDate,
+    date: data.resolvedDate,
   }
 }
 
@@ -144,6 +144,8 @@ export function QuickAddReview({
   // original parse's gap-field highlights.
   const [userChangedKind, setUserChangedKind] = useState(false)
 
+  const dateInputRef = useRef<HTMLInputElement>(null)
+
   const errId = useId()
   const dateId = useId()
   const primaryId = useId()
@@ -159,12 +161,19 @@ export function QuickAddReview({
   useEffect(() => {
     if (lastDataKey.current !== dataKey) {
       lastDataKey.current = dataKey
-
       setUserChangedKind(false)
-
       setState(initialState(data))
     }
   }, [dataKey, data])
+
+  // Auto-focus the date input when the resolved date is blank.
+  useEffect(() => {
+    if (state.date === '') {
+      dateInputRef.current?.focus()
+    }
+    // Only run on mount / when data changes (dataKey), not on every date keystroke.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataKey])
 
   const gapSet = useMemo<ReadonlySet<QuickAddGapId>>(() => {
     if (userChangedKind) return new Set()
@@ -277,7 +286,11 @@ export function QuickAddReview({
 
   const showEndTime = state.kind !== 'breakfast'
 
-  const canSave = !isPending && state.primary.trim().length > 0 && allowedKinds.includes(state.kind)
+  const canSave =
+    !isPending &&
+    state.primary.trim().length > 0 &&
+    state.date !== '' &&
+    allowedKinds.includes(state.kind)
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3" aria-label={t('reviewTitle')}>
@@ -303,15 +316,17 @@ export function QuickAddReview({
         </Select>
       </div>
 
-      {data.dateAmbiguous && (
+      {(data.dateAmbiguous || state.date === '') && (
         <div className="space-y-1.5">
           <Label htmlFor={dateId}>{t('dateLabel')}</Label>
           <Input
+            ref={dateInputRef}
             id={dateId}
             type="date"
             value={state.date}
             onChange={(e) => setState((s) => ({ ...s, date: e.target.value }))}
             disabled={isPending ?? false}
+            required
           />
         </div>
       )}
