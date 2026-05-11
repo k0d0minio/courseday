@@ -584,7 +584,30 @@
         "title": "Horario de personal",
         "addShift": "Añadir turno",
         "empty": "No hay turnos planificados.",
-        "noStaffHint": "Invita a tu equipo en Configuración → Equipo antes de planificar turnos."
+        "noStaffHint": "Invita a tu equipo en Configuración → Equipo antes de planificar turnos.",
+        "importShifts": "Importar turnos"
+      },
+      "importDialog": {
+        "title": "Importar turnos",
+        "description": "Sube un archivo CSV o XLSX (≤ 2 MB). Encabezados requeridos: date (AAAA-MM-DD), start_time (HH:MM), end_time (HH:MM), email. Opcional: role.",
+        "chooseFile": "Elegir archivo",
+        "accepted": "{name} — {count} filas",
+        "parsing": "Procesando…",
+        "parseError": "No se pudo leer el archivo.",
+        "previewTitle": "Vista previa",
+        "columnDate": "Fecha",
+        "columnStart": "Inicio",
+        "columnEnd": "Fin",
+        "columnEmail": "Correo",
+        "columnRole": "Rol",
+        "columnStatus": "Estado",
+        "statusOk": "OK",
+        "allErrors": "Corrige todos los errores antes de importar.",
+        "importButton": "Importar {count} turnos",
+        "importing": "Importando…",
+        "imported": "{count} turnos importados.",
+        "cancel": "Cancelar",
+        "downloadTemplate": "Descargar plantilla"
       },
       "shiftForm": {
         "addTitle": "Añadir turno",

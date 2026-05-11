@@ -712,7 +712,30 @@
         "title": "Planning du personnel",
         "addShift": "Ajouter un shift",
         "empty": "Aucun shift planifié.",
-        "noStaffHint": "Invitez votre équipe dans Paramètres → Équipe avant de planifier des shifts."
+        "noStaffHint": "Invitez votre équipe dans Paramètres → Équipe avant de planifier des shifts.",
+        "importShifts": "Importer des shifts"
+      },
+      "importDialog": {
+        "title": "Importer des shifts",
+        "description": "Importez un fichier CSV ou XLSX (≤ 2 Mo). En-têtes requis : date (AAAA-MM-JJ), start_time (HH:MM), end_time (HH:MM), email. Facultatif : role.",
+        "chooseFile": "Choisir un fichier",
+        "accepted": "{name} — {count} lignes",
+        "parsing": "Analyse…",
+        "parseError": "Impossible de lire le fichier.",
+        "previewTitle": "Aperçu",
+        "columnDate": "Date",
+        "columnStart": "Début",
+        "columnEnd": "Fin",
+        "columnEmail": "Email",
+        "columnRole": "Rôle",
+        "columnStatus": "Statut",
+        "statusOk": "OK",
+        "allErrors": "Corrigez toutes les erreurs avant d'importer.",
+        "importButton": "Importer {count} shifts",
+        "importing": "Importation…",
+        "imported": "{count} shifts importés.",
+        "cancel": "Annuler",
+        "downloadTemplate": "Télécharger le modèle"
       },
       "shiftForm": {
         "addTitle": "Ajouter un shift",

@@ -738,10 +738,33 @@
       "section": {
         "title": "Staff schedule",
         "addShift": "Add shift",
+        "importShifts": "Import shifts",
         "empty": "No shifts scheduled.",
         "noStaffHint": "Invite team members under Settings → Team before scheduling shifts.",
         "scheduledSummary": "Scheduled {hours}",
         "actualSummary": "Actual {hours}"
+      },
+      "importDialog": {
+        "title": "Import shifts",
+        "description": "Upload a CSV or XLSX file (≤ 2 MB). Required headers: date (YYYY-MM-DD), start_time (HH:MM), end_time (HH:MM), email. Optional: role.",
+        "chooseFile": "Choose file",
+        "accepted": "{name} — {count} rows",
+        "parsing": "Parsing…",
+        "parseError": "Could not parse file.",
+        "previewTitle": "Preview",
+        "columnDate": "Date",
+        "columnStart": "Start",
+        "columnEnd": "End",
+        "columnEmail": "Email",
+        "columnRole": "Role",
+        "columnStatus": "Status",
+        "statusOk": "OK",
+        "allErrors": "Fix all errors before importing.",
+        "importButton": "Import {count} shifts",
+        "importing": "Importing…",
+        "imported": "{count} shifts imported.",
+        "cancel": "Cancel",
+        "downloadTemplate": "Download template"
       },
       "forecast": {
         "badge": "Recommended {recommended} · Scheduled {scheduled}",

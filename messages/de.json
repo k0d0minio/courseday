@@ -584,7 +584,30 @@
         "title": "Dienstplan",
         "addShift": "Schicht hinzufügen",
         "empty": "Keine Schichten geplant.",
-        "noStaffHint": "Laden Sie Teammitglieder unter Einstellungen → Team ein, bevor Sie Schichten planen."
+        "noStaffHint": "Laden Sie Teammitglieder unter Einstellungen → Team ein, bevor Sie Schichten planen.",
+        "importShifts": "Schichten importieren"
+      },
+      "importDialog": {
+        "title": "Schichten importieren",
+        "description": "CSV- oder XLSX-Datei hochladen (≤ 2 MB). Pflicht-Header: date (JJJJ-MM-TT), start_time (HH:MM), end_time (HH:MM), email. Optional: role.",
+        "chooseFile": "Datei auswählen",
+        "accepted": "{name} — {count} Zeilen",
+        "parsing": "Wird verarbeitet…",
+        "parseError": "Datei konnte nicht gelesen werden.",
+        "previewTitle": "Vorschau",
+        "columnDate": "Datum",
+        "columnStart": "Beginn",
+        "columnEnd": "Ende",
+        "columnEmail": "E-Mail",
+        "columnRole": "Rolle",
+        "columnStatus": "Status",
+        "statusOk": "OK",
+        "allErrors": "Alle Fehler korrigieren, bevor importiert wird.",
+        "importButton": "{count} Schichten importieren",
+        "importing": "Importiere…",
+        "imported": "{count} Schichten importiert.",
+        "cancel": "Abbrechen",
+        "downloadTemplate": "Vorlage herunterladen"
       },
       "shiftForm": {
         "addTitle": "Schicht hinzufügen",

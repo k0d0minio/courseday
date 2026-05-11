@@ -2,8 +2,11 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { Upload } from 'lucide-react'
 import { ShiftCard } from '@/components/shift-card'
 import { ShiftForm } from '@/components/shift-form'
+import { ShiftImportDialog } from '@/components/shift-import-dialog'
+import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import type { ShiftAssignee, ShiftWithAssignee } from '@/types/index'
@@ -59,6 +62,7 @@ export function StaffScheduleSection({
   const t = useTranslations('Tenant.staff.section')
   const tForecast = useTranslations('Tenant.staff.forecast')
   const [formOpen, setFormOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
   const [editShift, setEditShift] = useState<ShiftWithAssignee | null>(null)
 
   const totalScheduled = shifts.reduce((sum, s) => sum + shiftScheduledMinutes(s), 0)
@@ -120,6 +124,12 @@ export function StaffScheduleSection({
           )}
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          {isEditor && (
+            <Button type="button" variant="outline" size="xs" onClick={() => setImportOpen(true)}>
+              <Upload className="mr-1.5 size-3.5" />
+              {t('importShifts')}
+            </Button>
+          )}
           {isEditor && forecastRecommended > 0 && (
             <TooltipProvider>
               <Tooltip>
@@ -175,14 +185,21 @@ export function StaffScheduleSection({
       )}
 
       {isEditor && (
-        <ShiftForm
-          isOpen={formOpen}
-          onClose={() => setFormOpen(false)}
-          dayId={dayId}
-          assignees={assignees}
-          editItem={editShift}
-          onSuccess={handleSaved}
-        />
+        <>
+          <ShiftForm
+            isOpen={formOpen}
+            onClose={() => setFormOpen(false)}
+            dayId={dayId}
+            assignees={assignees}
+            editItem={editShift}
+            onSuccess={handleSaved}
+          />
+          <ShiftImportDialog
+            isOpen={importOpen}
+            onClose={() => setImportOpen(false)}
+            onSuccess={() => setImportOpen(false)}
+          />
+        </>
       )}
     </section>
   )

@@ -1,6 +1,10 @@
 'use server'
 
-import { createTenantClient, createSupabaseServerClient } from '@/lib/supabase-server'
+import {
+  createTenantClient,
+  createSupabaseServerClient,
+  createSupabaseServiceClient,
+} from '@/lib/supabase-server'
 import { getTenantId } from '@/lib/tenant'
 import { requireEditor } from '@/lib/membership'
 import { getUser } from '@/app/actions/auth'
@@ -8,7 +12,7 @@ import { shiftSchema } from '@/lib/shift-schema'
 import type { ShiftFormData } from '@/lib/shift-schema'
 import type { ActionResponse } from '@/types/actions'
 import type { Shift, ShiftWithAssignee } from '@/types/index'
-import { getTenantAssignees } from '@/app/[tenant]/day/[date]/queries'
+import { getTenantAssignees, getTenantAssigneesList } from '@/app/[tenant]/day/[date]/queries'
 import { isFeatureEnabled } from '@/app/actions/feature-flags'
 import { addDays, format, parseISO } from 'date-fns'
 import { awaitNotifications } from '@/lib/notifications'
@@ -18,6 +22,11 @@ import {
   notifyShiftReassigned,
   notifyShiftCancelled,
 } from '@/lib/shift-notifications'
+import { parseCSVText, parseXLSXBuffer, validateRows } from '@/lib/shift-import'
+import type { ValidatedImportRow } from '@/lib/shift-import'
+import { getWeekdayName } from '@/lib/day-utils'
+
+export type { ValidatedImportRow }
 
 export type MyShiftWithDate = ShiftWithAssignee & { date_iso: string }
 
@@ -382,6 +391,95 @@ export async function setShiftActuals(
 
   if (error) return { success: false, error: error.message }
   return { success: true, data: data as Shift }
+}
+
+export type BulkShiftRow = {
+  date: string
+  user_id: string
+  start_time: string
+  end_time: string
+  role: string
+}
+
+export async function previewShiftImport(
+  formData: FormData
+): Promise<ActionResponse<ValidatedImportRow[]>> {
+  const tenantId = await getTenantId()
+  await requireEditor(tenantId)
+  if (!(await isFeatureEnabled(tenantId, 'staff_schedule'))) {
+    return { success: false, error: 'Staff schedule feature is disabled.' }
+  }
+
+  const file = formData.get('file') as File | null
+  if (!file) return { success: false, error: 'No file provided.' }
+  if (file.size > 2 * 1024 * 1024) return { success: false, error: 'File exceeds 2 MB limit.' }
+
+  const name = file.name.toLowerCase()
+  const buffer = await file.arrayBuffer()
+
+  let rows
+  if (name.endsWith('.csv')) {
+    const text = new TextDecoder().decode(buffer)
+    rows = parseCSVText(text)
+  } else if (name.endsWith('.xlsx')) {
+    rows = await parseXLSXBuffer(buffer)
+  } else {
+    return { success: false, error: 'Unsupported file type. Upload a .csv or .xlsx file.' }
+  }
+
+  if (rows.length === 0) return { success: false, error: 'File contains no data rows.' }
+
+  const assignees = await getTenantAssigneesList(tenantId)
+  const validated = validateRows(rows, assignees)
+
+  return { success: true, data: validated }
+}
+
+export async function bulkCreateShifts(
+  rows: BulkShiftRow[]
+): Promise<ActionResponse<{ count: number }>> {
+  if (rows.length === 0) return { success: false, error: 'No rows to import.' }
+
+  const tenantId = await getTenantId()
+  await requireEditor(tenantId)
+  if (!(await isFeatureEnabled(tenantId, 'staff_schedule'))) {
+    return { success: false, error: 'Staff schedule feature is disabled.' }
+  }
+
+  const supabase = createSupabaseServiceClient()
+
+  const uniqueDates = [...new Set(rows.map((r) => r.date))]
+  const dayRows = uniqueDates.map((d) => ({
+    tenant_id: tenantId,
+    date_iso: d,
+    weekday: getWeekdayName(d),
+  }))
+
+  const { data: days, error: daysError } = await supabase
+    .from('day')
+    .upsert(dayRows, { onConflict: 'tenant_id,date_iso' })
+    .select('id, date_iso')
+
+  if (daysError) return { success: false, error: daysError.message }
+
+  const dateToId = new Map<string, string>(
+    (days ?? []).map((d) => [d.date_iso as string, d.id as string])
+  )
+
+  const shiftRows = rows.map((r) => ({
+    tenant_id: tenantId,
+    day_id: dateToId.get(r.date)!,
+    user_id: r.user_id,
+    role: r.role.trim(),
+    start_time: r.start_time || null,
+    end_time: r.end_time || null,
+    notes: null as string | null,
+  }))
+
+  const { error: insertError } = await supabase.from('shift').insert(shiftRows)
+  if (insertError) return { success: false, error: insertError.message }
+
+  return { success: true, data: { count: rows.length } }
 }
 
 export async function getWeekShifts(weekStart: string): Promise<ShiftWithAssignee[]> {

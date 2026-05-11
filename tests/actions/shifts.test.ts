@@ -20,6 +20,33 @@ vi.mock('@/app/actions/auth', () => ({
 }))
 vi.mock('@/app/[tenant]/day/[date]/queries', () => ({
   getTenantAssignees: vi.fn().mockResolvedValue(new Map()),
+  getTenantAssigneesList: vi
+    .fn()
+    .mockResolvedValue([
+      {
+        user_id: '123e4567-e89b-12d3-a456-426614174000',
+        email: 'jane@example.com',
+        display_name: 'Jane',
+      },
+    ]),
+}))
+vi.mock('@/lib/shift-import', () => ({
+  parseCSVText: vi.fn().mockReturnValue([]),
+  parseXLSXBuffer: vi.fn().mockResolvedValue([]),
+  validateRows: vi
+    .fn()
+    .mockReturnValue([
+      {
+        date: '2026-05-10',
+        start_time: '08:00',
+        end_time: '16:00',
+        email: 'jane@example.com',
+        role: 'Chef',
+        status: 'ok',
+        user_id: '123e4567-e89b-12d3-a456-426614174000',
+      },
+    ]),
+  TEMPLATE_CSV: 'date,start_time,end_time,email,role\n',
 }))
 vi.mock('@/lib/notifications', () => ({
   awaitNotifications: vi.fn().mockResolvedValue(undefined),
@@ -50,7 +77,11 @@ import {
   clockInShift,
   clockOutShift,
   setShiftActuals,
+  bulkCreateShifts,
+  previewShiftImport,
 } from '@/app/actions/shifts'
+import { parseCSVText, parseXLSXBuffer } from '@/lib/shift-import'
+import { createSupabaseServiceClient } from '@/lib/supabase-server'
 import { assertSuccess, assertFailure } from '@/tests/helpers/action-response'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -451,6 +482,158 @@ describe('setShiftActuals', () => {
     vi.mocked(isFeatureEnabled).mockResolvedValue(false)
 
     const result = await setShiftActuals(SHIFT_ID, { actual_start: null, actual_end: null })
+    assertFailure(result)
+    expect(result.error).toMatch(/disabled/i)
+  })
+})
+
+// ── bulkCreateShifts ──────────────────────────────────────────────────────────
+
+function mockServiceClient(fromFn: ReturnType<typeof vi.fn>) {
+  vi.mocked(createSupabaseServiceClient).mockReturnValue({ from: fromFn } as never)
+}
+
+describe('bulkCreateShifts', () => {
+  const BULK_ROWS = [
+    {
+      date: '2026-05-10',
+      user_id: USER_UUID,
+      start_time: '08:00',
+      end_time: '16:00',
+      role: 'Chef',
+    },
+    {
+      date: '2026-05-11',
+      user_id: USER_UUID,
+      start_time: '09:00',
+      end_time: '17:00',
+      role: 'Chef',
+    },
+  ]
+
+  it('upserts days and inserts shifts on valid input', async () => {
+    const dayData = [
+      { id: DAY_ID, date_iso: '2026-05-10' },
+      { id: 'day-2', date_iso: '2026-05-11' },
+    ]
+    const upsertChain = makeChain({ data: dayData, error: null })
+    const insertChain = makeChain({ data: null, error: null })
+    const from = vi.fn().mockReturnValueOnce(upsertChain).mockReturnValueOnce(insertChain)
+    mockServiceClient(from)
+
+    const result = await bulkCreateShifts(BULK_ROWS)
+    assertSuccess(result)
+    expect(result.data.count).toBe(2)
+  })
+
+  it('returns error when feature flag is off', async () => {
+    vi.mocked(isFeatureEnabled).mockResolvedValue(false)
+    const result = await bulkCreateShifts(BULK_ROWS)
+    assertFailure(result)
+    expect(result.error).toMatch(/disabled/i)
+  })
+
+  it('returns error when rows is empty', async () => {
+    const result = await bulkCreateShifts([])
+    assertFailure(result)
+    expect(result.error).toMatch(/no rows/i)
+  })
+
+  it('surfaces day upsert DB error', async () => {
+    const errChain = makeChain({ data: null, error: { message: 'upsert failed' } })
+    const from = vi.fn().mockReturnValue(errChain)
+    mockServiceClient(from)
+
+    const result = await bulkCreateShifts(BULK_ROWS)
+    assertFailure(result)
+    expect(result.error).toBe('upsert failed')
+  })
+
+  it('surfaces shift insert DB error', async () => {
+    const dayData = [
+      { id: DAY_ID, date_iso: '2026-05-10' },
+      { id: 'day-2', date_iso: '2026-05-11' },
+    ]
+    const upsertChain = makeChain({ data: dayData, error: null })
+    const insertChain = makeChain({ data: null, error: { message: 'insert failed' } })
+    const from = vi.fn().mockReturnValueOnce(upsertChain).mockReturnValueOnce(insertChain)
+    mockServiceClient(from)
+
+    const result = await bulkCreateShifts(BULK_ROWS)
+    assertFailure(result)
+    expect(result.error).toBe('insert failed')
+  })
+})
+
+// ── previewShiftImport ────────────────────────────────────────────────────────
+
+describe('previewShiftImport', () => {
+  const RAW_ROWS = [
+    {
+      date: '2026-05-10',
+      start_time: '08:00',
+      end_time: '16:00',
+      email: 'jane@example.com',
+      role: 'Chef',
+    },
+  ]
+
+  function makeFileFormData(name: string, content: string, type: string) {
+    const file = new File([content], name, { type })
+    const fd = new FormData()
+    fd.append('file', file)
+    return fd
+  }
+
+  it('parses CSV and returns validated rows', async () => {
+    vi.mocked(parseCSVText).mockReturnValue(RAW_ROWS)
+
+    const fd = makeFileFormData('shifts.csv', 'date,...\n', 'text/csv')
+    const result = await previewShiftImport(fd)
+    assertSuccess(result)
+    expect(result.data).toHaveLength(1)
+    expect(result.data[0]?.status).toBe('ok')
+  })
+
+  it('parses XLSX and returns validated rows', async () => {
+    vi.mocked(parseXLSXBuffer).mockResolvedValue(RAW_ROWS)
+
+    const fd = makeFileFormData(
+      'shifts.xlsx',
+      'fake-xlsx-data',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    const result = await previewShiftImport(fd)
+    assertSuccess(result)
+    expect(result.data[0]?.status).toBe('ok')
+  })
+
+  it('returns error for unsupported file type', async () => {
+    const fd = makeFileFormData('shifts.xls', 'data', 'application/vnd.ms-excel')
+    const result = await previewShiftImport(fd)
+    assertFailure(result)
+    expect(result.error).toMatch(/unsupported/i)
+  })
+
+  it('returns error when no file provided', async () => {
+    const fd = new FormData()
+    const result = await previewShiftImport(fd)
+    assertFailure(result)
+    expect(result.error).toMatch(/no file/i)
+  })
+
+  it('returns error when file exceeds 2 MB', async () => {
+    const bigContent = 'x'.repeat(2 * 1024 * 1024 + 1)
+    const fd = makeFileFormData('big.csv', bigContent, 'text/csv')
+    const result = await previewShiftImport(fd)
+    assertFailure(result)
+    expect(result.error).toMatch(/2 mb/i)
+  })
+
+  it('returns error when feature flag is off', async () => {
+    vi.mocked(isFeatureEnabled).mockResolvedValue(false)
+    const fd = makeFileFormData('shifts.csv', 'data', 'text/csv')
+    const result = await previewShiftImport(fd)
     assertFailure(result)
     expect(result.error).toMatch(/disabled/i)
   })
