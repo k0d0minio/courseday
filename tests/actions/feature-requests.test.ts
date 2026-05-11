@@ -71,6 +71,7 @@ beforeEach(() => {
   vi.mocked(getUser).mockResolvedValue(USER as never)
   vi.mocked(createTenantClient).mockResolvedValue({
     supabase: makeSupabaseInsert(INSERTED_ROW) as never,
+    tenantId: TENANT.id,
   })
   vi.mocked(createSupabaseServiceClient).mockReturnValue(makeSupabaseInsert(INSERTED_ROW) as never)
   process.env.RESEND_API_KEY = 'test-key'
@@ -95,6 +96,7 @@ describe('createFeatureRequest', () => {
     }
     vi.mocked(createTenantClient).mockResolvedValue({
       supabase: makeSupabaseInsert(row) as never,
+      tenantId: TENANT.id,
     })
 
     const result = await createFeatureRequest({
