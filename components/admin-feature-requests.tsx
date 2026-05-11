@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { getAllFeatureRequests, updateFeatureRequestStatus } from '@/app/actions/feature-requests'
 import type { FeatureRequest, FeatureRequestStatus } from '@/app/actions/feature-requests'
+import type { FeatureRequestPriority } from '@/lib/feature-request-schema'
 import { Badge } from '@/components/ui/badge'
 import {
   Select,
@@ -55,6 +56,26 @@ function StatusBadge({ status }: { status: FeatureRequestStatus }) {
   )
 }
 
+const PRIORITY_CLASSES: Record<FeatureRequestPriority, string> = {
+  nice_to_have: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+  would_help: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300',
+  blocking: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300',
+}
+
+const PRIORITY_LABELS: Record<FeatureRequestPriority, string> = {
+  nice_to_have: 'Nice to have',
+  would_help: 'Would help',
+  blocking: 'Blocking',
+}
+
+function PriorityBadge({ priority }: { priority: FeatureRequestPriority }) {
+  return (
+    <Badge variant="outline" className={cn('border-0', PRIORITY_CLASSES[priority])}>
+      {PRIORITY_LABELS[priority]}
+    </Badge>
+  )
+}
+
 function FeatureRequestRow({
   request,
   tenantName,
@@ -79,16 +100,25 @@ function FeatureRequestRow({
   return (
     <TableRow>
       <TableCell className="max-w-xs text-sm font-medium">
-        <div>
+        <div className="space-y-1">
           <p className="font-medium">{request.title}</p>
           {request.description && (
-            <p className="text-muted-foreground mt-0.5 line-clamp-2 text-xs">
-              {request.description}
+            <p className="text-muted-foreground line-clamp-2 text-xs">{request.description}</p>
+          )}
+          {request.workaround && (
+            <p className="text-muted-foreground text-xs">
+              <span className="font-medium">Workaround:</span> {request.workaround}
+            </p>
+          )}
+          {request.expected_outcome && (
+            <p className="text-muted-foreground text-xs">
+              <span className="font-medium">Good looks like:</span> {request.expected_outcome}
             </p>
           )}
         </div>
       </TableCell>
       <TableCell className="text-muted-foreground text-sm">{tenantName}</TableCell>
+      <TableCell>{request.priority && <PriorityBadge priority={request.priority} />}</TableCell>
       <TableCell>
         <Select
           value={status}
@@ -173,6 +203,7 @@ export function AdminFeatureRequests({ tenants }: { tenants: { id: string; name:
           <TableRow>
             <TableHead>Request</TableHead>
             <TableHead>Tenant</TableHead>
+            <TableHead>Priority</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Submitted</TableHead>
           </TableRow>

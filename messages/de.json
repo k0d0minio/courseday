@@ -505,7 +505,16 @@
       "statusReviewing": "In Prüfung",
       "statusAccepted": "Angenommen",
       "statusRejected": "Abgelehnt",
-      "statusShipped": "Veröffentlicht"
+      "statusShipped": "Veröffentlicht",
+      "priorityLabel": "Priorität (optional)",
+      "priorityPlaceholder": "Wie dringend ist das?",
+      "priorityNiceToHave": "Wäre schön",
+      "priorityWouldHelp": "Würde helfen",
+      "priorityBlocking": "Blockierend",
+      "workaroundLabel": "Was tun Sie heute, wenn das auftritt?",
+      "workaroundPlaceholder": "Beschreiben Sie Ihren aktuellen Workaround (optional)",
+      "expectedOutcomeLabel": "Wie würde eine gute Lösung aussehen?",
+      "expectedOutcomePlaceholder": "Beschreiben Sie das ideale Ergebnis (optional)"
     },
     "onboarding": {
       "title": "Betrieb einrichten",
