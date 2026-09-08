@@ -3,3 +3,22 @@ node_modules/
 pnpm-lock.yaml
 types/supabase.ts
 public/sw.js
+
+# The register and ticket board are prose contracts, not source; rewrapping them
+# buys nothing and pollutes blame. .icm/CONTEXT.md and intake/README.md are also
+# canonical estate assets compared against _system/template/ in icm-board.
+.icm/
+
+# Canonical estate assets (hooks, skills) are compared byte-for-byte against
+# _system/template/claude/ in icm-board — reformatting them here would trade a
+# check failure for silent permanent drift. Agent worktrees under .claude/ also
+# carry a full checkout of their own branch, whose formatting is that branch's
+# business, not this tree's.
+.claude/
+
+# Layer 0 is a prose contract, same reason as .icm/ above.
+AGENTS.md
+
+# The estate rails file is a canonical asset, compared byte-for-byte against
+# _system/template/root/ in icm-board. Same trade as above.
+opencode.jsonc
