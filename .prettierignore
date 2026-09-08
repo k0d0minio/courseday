@@ -5,8 +5,11 @@ types/supabase.ts
 public/sw.js
 
 # The register and ticket board are prose contracts, not source; rewrapping them
-# buys nothing and pollutes blame. .icm/CONTEXT.md and intake/README.md are also
-# canonical estate assets compared against _system/template/ in icm-board.
+# buys nothing and pollutes blame. That is the whole reason: nothing under .icm/ is
+# drift-checked. icm-check.sh compares exactly two classes byte-for-byte — .claude/'s
+# canonical assets and opencode.jsonc — and everything else in the baseline
+# (.icm/CONTEXT.md, .icm/intake/README.md, .claude/settings.json) is seeded when
+# missing and never compared again.
 .icm/
 
 # Canonical estate assets (hooks, skills) are compared byte-for-byte against
@@ -16,7 +19,7 @@ public/sw.js
 # business, not this tree's.
 .claude/
 
-# Layer 0 is a prose contract, same reason as .icm/ above.
+# Layer 0 is a prose contract, same reason as .icm/ above — repo-owned, not compared.
 AGENTS.md
 
 # The estate rails file is a canonical asset, compared byte-for-byte against
