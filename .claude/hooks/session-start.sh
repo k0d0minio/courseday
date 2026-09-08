@@ -7,11 +7,12 @@ set -uo pipefail
 
 # The cloud env step, in repos that carry it. It lives in its own file — reporting a
 # board and hydrating an environment are different jobs, and only one of them touches the
-# network — but it is invoked from here rather than registered in settings.json: this
-# hook already has a SessionStart registration in every repo that has it, while the
-# estate's settings.json files are hand-owned and divergent (16 of 25 differ from the
-# template). One canonical file to fan out beats two dozen policy edits. Inert unless the
-# session was handed a VERCEL_TOKEN, which is no local session — see that file's header.
+# network — but it is invoked from here rather than registered in settings.json, so that
+# one SessionStart entry carries both and a repo's hand-owned settings.json gains nothing
+# new to diverge over. (That entry is now `icm-check --fix`'s to add where it is absent,
+# decision D18 — the divergence this originally routed around is no longer the argument;
+# one registration for two hooks still is.) Inert unless the session was handed a
+# VERCEL_TOKEN, which is no local session — see that file's header.
 hydrate="${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/vercel-env-hydrate.sh"
 if [[ -x "$hydrate" ]]; then "$hydrate" || true; fi
 
