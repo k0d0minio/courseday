@@ -11,9 +11,31 @@ working knowledge.
 ## Branches and what goes where
 
 - Code changes go through a **PR on a `claude/` branch** — never straight to `main`.
-- **Ticket-only commits go straight to `main`** (planning is data): only `.icm/` paths,
-  message `Plan: <one line>` or `Wrap: <one line>`.
+- **Ticket state goes straight to `main` in every repo** (below) — `Plan:` / `Wrap:` /
+  `Scope:` commits, paths staged explicitly. Stubs a run parks or consumes ride that run's
+  own PR instead. icm-board's `today.md` and `Deal:` commits go straight to its `main` too.
 - Never rewrite history on a shared branch; never force-push `main`.
+
+## Ticket commits — straight to main, no PR
+
+A repo's ticket state (`.icm/intake/`) has **one home: `main`**, in icm-board and every
+client repo alike (D39 §8). The board reads `origin/main`, so **pushing is publishing** — an
+unpushed stub does not exist. Every ticket change outside a run — a cut, a move to `_done/`,
+a drop, an epic archive, Scope's front, a parked template change — takes this one shape:
+
+- **Where:** a worktree off `origin/main` (`git worktree add <scratch> origin/main`) — never
+  by moving a shared checkout off the branch it is on.
+- **Paths:** `.icm/intake/**` — plus `.icm/runs/<slug>/**` for Scope's front, and nothing
+  else. Before pushing, `git diff --name-only origin/main...HEAD` lists only those; anything
+  else → **STOP; never push it**, and say what strayed in. Code never rides a ticket commit.
+- **Message** `Plan: <one line>` · `Wrap: <one line>` · `Scope: <slug> — intake cut`.
+- **Push** `git push origin HEAD:main`. Rejected because `main` moved → `git pull --rebase
+  origin main` and push once more; still refused → report it and stop. Where a ruleset
+  guards `main`, the operator's admin bypass is what lets the push land — never
+  `--force`.
+
+No PR is opened for ticket state, and **no PR is ever merged by an agent** — code, lane and
+promotion PRs stay the operator's to merge. GitHub auto-merge is not used.
 
 ## Committing
 
@@ -79,8 +101,20 @@ subscribed session wakes for each one.
   `--json` fields you need, keep `--limit` tight, never page through diffs or comment
   threads the task doesn't need.
 
-Repos on the pipeline profile carry this in `.icm/_shared/github.md` and `.icm/_shared/ci.md`,
+Pipeline repos carry this in `.icm/_shared/github.md` and `.icm/_shared/ci.md`,
 gated by `.icm/scripts/ci-status.sh` — read it there rather than here. Each rule lives once.
+
+## What the session says
+
+This is about the **chat** only — PR bodies, stubs and `handoff.md` stay as full as they need to
+be, and a gate checkbox lives in the PR body, never in chat. In chat: valuable information, easy
+to parse. While working, a short line per phase change or notable event (`CI red on lint —
+fixing`) — no narration of tool calls, no pasted files or diffs. At a stop: a bold outcome line
+`<task> <outcome> · CI <verdict> · <PR link>`, 2–5 bullets of what matters (decisions, surprises,
+what was parked), then `Operator:` as a numbered list of human-only acts with where to do them (a gate is
+named with its PR link), then `Unverified:` when anything was. **Never trimmed:** a STOP and its
+reason, a red check, anything skipped or unverified, a plaintext credential found. Pipeline repos
+hold the full doctrine in `.icm/_shared/output.md`.
 
 ## Finishing
 

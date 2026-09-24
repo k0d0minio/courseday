@@ -26,10 +26,12 @@ Tickets are **stubs** and never live alone:
   `- size:`, `- blocked: <reason>` (external blockage — remove the line when it lifts),
   `- sources:` (cite the evidence).
 
-**The `## Prompt` is the pick-up contract.** It must stand alone pasted into a fresh
-agent session at the repo root — the board's "Copy prompt" sends _only_ that section.
-Write it cold, and have it tell the session to read the stub file for the rest.
-(Repos running the `/pipeline` spine may omit it — `/pipeline new` does the picking up.)
+**The `## Prompt` is the brief Define reads, and it is always required.** It must stand
+alone pasted into a fresh agent session at the repo root. Write it cold, and have it tell
+the session to read the stub file for the rest. What the board's "Copy prompt" sends is
+the pick-up verb where the repo carries the `/pipeline` router (`/pipeline new
+<epic>/<slug>`, or the lane verb for a triage stub) and the `## Prompt` body where it does
+not — the prompt is the brief either way.
 
 ## Status is positional
 
@@ -47,6 +49,20 @@ Write it cold, and have it tell the session to read the stub file for the rest.
 
 - Any plan, backlog or task list becomes stubs here — **never a loose `TODO.md` or
   `BACKLOG.md`**. Cutting what's left is part of ending any session.
-- The board reads `main` via the GitHub API — a stub exists once pushed.
+- The board reads each repo's `main` — so a stub exists once it is pushed there. Outside a
+  run, every ticket change is a direct commit to `main`, in icm-board and client repos alike
+  (`pr-conventions` → Ticket commits); inside a run it rides the run's PR.
 - Legacy flat `PREFIX-NNN` tickets (pre-2026-08-28) are left as they are — migrating a
   repo is `/project`'s judgment work, not a side effect of another task.
+
+## What the session says
+
+This is about the **chat** only — PR bodies, stubs and `handoff.md` stay as full as they need to
+be, and a gate checkbox lives in the PR body, never in chat. In chat: valuable information, easy
+to parse. While working, a short line per phase change or notable event (`CI red on lint —
+fixing`) — no narration of tool calls, no pasted files or diffs. At a stop: a bold outcome line
+`<task> <outcome> · CI <verdict> · <PR link>`, 2–5 bullets of what matters (decisions, surprises,
+what was parked), then `Operator:` as a numbered list of human-only acts with where to do them (a gate is
+named with its PR link), then `Unverified:` when anything was. **Never trimmed:** a STOP and its
+reason, a red check, anything skipped or unverified, a plaintext credential found. Pipeline repos
+hold the full doctrine in `.icm/_shared/output.md`.

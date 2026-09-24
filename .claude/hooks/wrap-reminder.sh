@@ -3,7 +3,7 @@
 # Stop hook. Two questions, each asked once, neither ever acted on:
 #
 #   1. Uncommitted .icm/ changes — the board reads main, so an unpushed stub does not
-#      exist.
+#      exist. Ticket state has one home in every repo, main, reached by a direct commit (D39).
 #   2. Work shipped, stub left open — this branch has commits that changed files outside
 #      .icm/, and an open stub matches the work (the branch is named for its slug, or a
 #      legacy ticket ID appears in a commit subject), while no commit on the branch
@@ -32,7 +32,7 @@ git -C "$repo" rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
 dirty="$(git -C "$repo" status --porcelain -- .icm 2>/dev/null || true)"
 if [[ -n "$dirty" ]]; then
   cat <<'JSON'
-{"decision": "block", "reason": "Uncommitted changes under .icm/ — the tickets board reads main, so unpushed ticket work does not exist. Wrap per the estate discipline: cut what's left into .icm/intake/ (epics or triage), then commit only .icm/ paths (message 'Plan: …' or 'Wrap: …') and push — or tell Jamie it is being left deliberately."}
+{"decision": "block", "reason": "Uncommitted changes under .icm/ — the tickets board reads main, so unpushed ticket work does not exist. Wrap per the estate discipline: cut what's left into .icm/intake/ (epics or triage), then commit only .icm/ paths (message 'Plan: …' or 'Wrap: …') and push them straight to main — or tell Jamie it is being left deliberately."}
 JSON
   exit 0
 fi
