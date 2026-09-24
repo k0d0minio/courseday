@@ -2,6 +2,17 @@
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
     "deny": [
+      "Read(./**/.env)",
+      "Read(./**/.env.local)",
+      "Read(./**/.env.*.local)",
+      "Read(./**/.env.development)",
+      "Read(./**/.env.production)",
+      "Read(./**/.env.preview)",
+      "Read(./**/.env.test)",
+      "Read(./**/.env.vercel)",
+      "Read(./**/*.pem)",
+      "Read(./**/*.key)",
+      "Read(./**/secrets/**)",
       "Bash(pnpm test)",
       "Bash(pnpm test:*)",
       "Bash(pnpm run test)",
@@ -62,14 +73,7 @@
       "Read(./playwright-report/**)",
       "Read(./test-results/**)",
       "Bash(cat ./types/supabase.ts*)",
-      "Bash(cat ./pnpm-lock.yaml*)",
-      "Read(./.env)",
-      "Read(./.env.*)",
-      "Read(./**/.env)",
-      "Read(./**/.env.*)",
-      "Read(./**/*.pem)",
-      "Read(./**/*.key)",
-      "Read(./**/secrets/**)"
+      "Bash(cat ./pnpm-lock.yaml*)"
     ],
     "allow": ["Bash(find *)", "Bash(grep *)", "Read(./messages/*)"]
   },
